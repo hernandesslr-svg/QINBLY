@@ -1951,6 +1951,70 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         contentScale = androidx.compose.ui.layout.ContentScale.Crop
                                     )
 
+                                    Column(
+                                        modifier = Modifier.align(Alignment.CenterEnd).padding(end = 9.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(13.dp)
+                                    ) {
+                                        val overlayColor = Color.White
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color.Black.copy(alpha = 0.35f)).clickable {
+                                                if (post.id.startsWith("demo-post-")) {
+                                                    val wasLiked = post.id in demoLikes
+                                                    demoLikes = if (wasLiked) demoLikes - post.id else demoLikes + post.id
+                                                    prefs.edit().putStringSet("demo_liked_post_ids", demoLikes.toSet()).apply()
+                                                    likedByCurrentUser = !wasLiked
+                                                } else {
+                                                    val token = prefs.getString("token", null)
+                                                    if (token.isNullOrBlank()) onNotice("Entre na sua conta para curtir.")
+                                                    else Thread {
+                                                        try {
+                                                            val liked = VyboraApi.toggleLike(token, post.id)
+                                                            android.os.Handler(android.os.Looper.getMainLooper()).post { likedByCurrentUser = liked }
+                                                        } catch (e: Exception) {
+                                                            android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível curtir.") }
+                                                        }
+                                                    }.start()
+                                                }
+                                            }.padding(7.dp)) {
+                                            Icon(if (likedByCurrentUser) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                                contentDescription = "Curtir", tint = if (likedByCurrentUser) RemoteAppearance.likedColor else overlayColor, modifier = Modifier.size(27.dp))
+                                            Text(post.likes.toString(), color = overlayColor, fontSize = 11.sp)
+                                        }
+                                        Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentar",
+                                            tint = overlayColor, modifier = Modifier.clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)).clickable {
+                                                commentPost = post
+                                                commentDraft = ""
+                                                commentsLoading = true
+                                                Thread {
+                                                    try {
+                                                        val loaded = VyboraApi.getComments(post.id)
+                                                        android.os.Handler(android.os.Looper.getMainLooper()).post { comments = loaded; commentsLoading = false }
+                                                    } catch (e: Exception) {
+                                                        android.os.Handler(android.os.Looper.getMainLooper()).post { commentsLoading = false; onNotice(e.message ?: "Erro nos comentários.") }
+                                                    }
+                                                }.start()
+                                            }.padding(6.dp).size(29.dp))
+                                        Icon(Icons.Default.Share, contentDescription = "Compartilhar",
+                                            tint = overlayColor, modifier = Modifier.clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)).clickable {
+                                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                                    type = "text/plain"
+                                                    putExtra(Intent.EXTRA_TEXT, "Confira esta publicação no QINBLY: https://vybora.com/post/${Uri.encode(post.id)}")
+                                                }
+                                                context.startActivity(Intent.createChooser(intent, "Compartilhar"))
+                                            }.padding(6.dp).size(29.dp))
+                                        Icon(if (post.id in savedPostIds) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                                            contentDescription = "Salvar", tint = overlayColor,
+                                            modifier = Modifier.clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)).clickable {
+                                                savedPostIds = if (post.id in savedPostIds) savedPostIds - post.id else savedPostIds + post.id
+                                                prefs.edit().putStringSet("saved_post_ids", savedPostIds).apply()
+                                            }.padding(6.dp).size(29.dp))
+                                    }
+                                    if (post.caption.isNotBlank()) {
+                                        Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().background(Color.Black.copy(alpha = 0.44f)).padding(start = 12.dp, end = 65.dp, top = 9.dp, bottom = 10.dp)) {
+                                            Text(post.caption, color = Color.White, fontSize = 13.sp, maxLines = 2, lineHeight = 17.sp)
+                                        }
+                                    }
                                     if (demoGallery.size > 1) {
                                         Box(Modifier.align(Alignment.TopEnd).padding(10.dp).clip(CircleShape)
                                             .background(Color(0x99030711)).padding(horizontal = 10.dp, vertical = 5.dp)) {
