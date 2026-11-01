@@ -472,6 +472,8 @@ private fun VyboraApp() {
     var navigationSelectedColor by remember { mutableStateOf(readUiColor("selectedIconColor", 0xFFFFFFFFL)) }
     var navigationUnselectedColor by remember { mutableStateOf(readUiColor("unselectedIconColor", 0xFFFFFFFFL)) }
     LaunchedEffect(RemoteUiRefreshSignal.value) {
+        val manualRefresh = RemoteUiRefreshSignal.value > 0
+        var firstRequest = true
         while (true) {
             val config = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
@@ -491,6 +493,13 @@ private fun VyboraApp() {
                     } finally { connection.disconnect() }
                 } catch (_: Exception) { null }
             }
+            if (manualRefresh && firstRequest) {
+                val message = if (config?.optInt("schemaVersion") == 1)
+                    "Configuração visual recebida: revisão " + config.optInt("revision")
+                else "Falha ao buscar configuração visual no GitHub"
+                android.widget.Toast.makeText(appContext, message, android.widget.Toast.LENGTH_SHORT).show()
+            }
+            firstRequest = false
             if (config?.optInt("schemaVersion") == 1) {
                 val navigation = config.optJSONObject("navigation")
                 if (navigation != null) {
