@@ -154,7 +154,7 @@ private val Muted = Color(0xFFADB2CB)
 
 
 @androidx.compose.runtime.Composable
-private fun RepostVerifiedIcon(verified: Boolean) {
+private fun RepostVerifiedIcon(verified: Boolean, tint: Color = Color.White) {
     androidx.compose.foundation.Canvas(modifier = Modifier.size(24.dp)) {
         val sx = size.width / 28f
         val sy = size.height / 28f
@@ -179,7 +179,7 @@ private fun RepostVerifiedIcon(verified: Boolean) {
             lineTo(5f * sx, 23f * sy)
             lineTo(10f * sx, 26.5f * sy)
         }
-        drawPath(arrows, Color.White, style = stroke)
+        drawPath(arrows, tint, style = stroke)
         if (verified) {
             val check = androidx.compose.ui.graphics.Path().apply {
                 moveTo(10f * sx, 14f * sy)
@@ -192,7 +192,7 @@ private fun RepostVerifiedIcon(verified: Boolean) {
 }
 
 @androidx.compose.runtime.Composable
-private fun RoundedPaperPlaneIcon() {
+private fun RoundedPaperPlaneIcon(tint: Color = Color.White) {
     // Ícone próprio da VYBORA em grade 24x24, contorno 2dp e cantos suaves.
     androidx.compose.foundation.Canvas(modifier = Modifier.size(24.dp)) {
         val x = size.width / 24f
@@ -213,7 +213,7 @@ private fun RoundedPaperPlaneIcon() {
             cap = androidx.compose.ui.graphics.StrokeCap.Round,
             join = androidx.compose.ui.graphics.StrokeJoin.Round
         )
-        drawPath(outline, Color.White, style = stroke)
+        drawPath(outline, tint, style = stroke)
         val fold = androidx.compose.ui.graphics.Path().apply {
             moveTo(8.9f * x, 12.6f * y)
             lineTo(17.5f * x, 8.0f * y)
@@ -454,6 +454,10 @@ private fun AccountSwitcherDialog(
 }
 
 private object RemoteAppearance {
+    var feedTextColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    var feedSecondaryTextColor by androidx.compose.runtime.mutableStateOf(Color(0xFFADB2CB))
+    var feedActionBackgroundColor by androidx.compose.runtime.mutableStateOf(Color(0x66030711))
+    var feedDividerColor by androidx.compose.runtime.mutableStateOf(Color(0xFF252525))
     var headerTextColor by androidx.compose.runtime.mutableStateOf(Color.White)
     var headerUnderlineColor by androidx.compose.runtime.mutableStateOf(Color.White)
     var headerTextSize by androidx.compose.runtime.mutableIntStateOf(17)
@@ -558,6 +562,10 @@ private fun VyboraApp() {
                                 try { Color(android.graphics.Color.parseColor(raw)) } catch (_: Exception) { fallback }
                             else fallback
                         }
+                        RemoteAppearance.feedTextColor = color("feedTextColor", RemoteAppearance.feedTextColor)
+                        RemoteAppearance.feedSecondaryTextColor = color("feedSecondaryTextColor", RemoteAppearance.feedSecondaryTextColor)
+                        RemoteAppearance.feedActionBackgroundColor = color("feedActionBackgroundColor", RemoteAppearance.feedActionBackgroundColor)
+                        RemoteAppearance.feedDividerColor = color("feedDividerColor", RemoteAppearance.feedDividerColor)
                         RemoteAppearance.headerTextColor = color("headerTextColor", RemoteAppearance.headerTextColor)
                         RemoteAppearance.headerUnderlineColor = color("headerUnderlineColor", RemoteAppearance.headerUnderlineColor)
                         RemoteAppearance.actionIconColor = color("actionIconColor", RemoteAppearance.actionIconColor)
@@ -1709,8 +1717,8 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Text("Ainda não há publicações", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                            Text("Quando as pessoas publicarem, elas aparecerão aqui. As ações do feed funcionarão nas publicações reais.", color = Muted, fontSize = 14.sp)
+                            Text("Ainda não há publicações", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("Quando as pessoas publicarem, elas aparecerão aqui. As ações do feed funcionarão nas publicações reais.", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
                             OutlinedButton(onClick = { refreshKey++ }) {
                                 Text("Atualizar feed")
                             }
@@ -1734,8 +1742,8 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     AsyncImage(model = avatarUrl, contentDescription = "Abrir perfil de @${post.username}", modifier = Modifier.size(59.dp).clip(CircleShape).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }, contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                                     Spacer(Modifier.width(10.dp))
                                     Column(Modifier.weight(1f).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }) {
-                                        Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" }, color = Color.White, fontSize = 17.sp, fontWeight = if (nameFontStyle == "Elegante") FontWeight.Medium else FontWeight.Bold, fontFamily = nameFontFamily(nameFontStyle))
-                                        Text("publicação recente", color = Muted, fontSize = 14.sp)
+                                        Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" }, color = RemoteAppearance.feedTextColor, fontSize = 17.sp, fontWeight = if (nameFontStyle == "Elegante") FontWeight.Medium else FontWeight.Bold, fontFamily = nameFontFamily(nameFontStyle))
+                                        Text("publicação recente", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
                                     }
                                     val currentUsername = prefs.getString("username", "").orEmpty()
                                     if (post.username.isNotBlank() && !post.username.equals(currentUsername, ignoreCase = true)) {
@@ -1804,7 +1812,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                             }
                                         }
                                     }
-                                        if (post.caption.isNotBlank()) Text(post.caption, color = Color.White, fontSize = 17.sp, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.fillMaxWidth().background(Color.Transparent).padding(horizontal = 16.dp, vertical = 12.dp), lineHeight = 28.sp)
+                                        if (post.caption.isNotBlank()) Text(post.caption, color = RemoteAppearance.feedTextColor, fontSize = 17.sp, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.fillMaxWidth().background(Color.Transparent).padding(horizontal = 16.dp, vertical = 12.dp), lineHeight = 28.sp)
                             if (post.mediaUrl.isNotBlank() && post.mediaType == "image") {
                                 val demoGallery = remember(post.id) {
                                     when (post.id) {
@@ -1862,7 +1870,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     if (demoGallery.size > 1) {
                                         Box(Modifier.align(Alignment.TopEnd).padding(10.dp).clip(CircleShape)
                                             .background(Color(0x99030711)).padding(horizontal = 10.dp, vertical = 5.dp)) {
-                                            Text("${photoIndex + 1}/${demoGallery.size}", color = Color.White, fontSize = 14.sp)
+                                            Text("${photoIndex + 1}/${demoGallery.size}", color = RemoteAppearance.feedTextColor, fontSize = 14.sp)
                                         }
                                         Row(Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
                                             horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -1919,7 +1927,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     )
                                     Text(
                                         if (post.likes >= 1000) String.format(java.util.Locale("pt", "BR"), "%.1f mil", post.likes / 1000.0) else post.likes.toString(),
-                                        color = Muted,
+                                        color = RemoteAppearance.feedSecondaryTextColor,
                                         fontSize = 14.sp
                                     )
                                 }
@@ -1946,10 +1954,10 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(7.dp)
                                 ) {
-                                    Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White, modifier = Modifier.size(24.dp))
+                                    Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = RemoteAppearance.actionIconColor, modifier = Modifier.size(24.dp))
                                     Text(
                                         if (post.comments >= 1000) String.format(java.util.Locale("pt", "BR"), "%.1f mil", post.comments / 1000.0) else post.comments.toString(),
-                                        color = Muted,
+                                        color = RemoteAppearance.feedSecondaryTextColor,
                                         fontSize = 14.sp
                                     )
                                 }
@@ -1963,10 +1971,10 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(7.dp)
                                 ) {
-                                    RepostVerifiedIcon(post.id in repostedPostIds)
+                                    RepostVerifiedIcon(post.id in repostedPostIds, tint = RemoteAppearance.actionIconColor)
                                     if (post.id.startsWith("demo-post-")) {
                                         val repostCount = 10000 + (post.id.removePrefix("demo-post-").toIntOrNull() ?: 1) * 613
-                                        Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", repostCount / 1000.0), color = Muted, fontSize = 14.sp)
+                                        Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", repostCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
                                     }
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -1989,7 +1997,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 }
                                     if (post.id.startsWith("demo-post-")) {
                                             val saveCount = 11000 + (post.id.removePrefix("demo-post-").toIntOrNull() ?: 1) * 721
-                                            Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", saveCount / 1000.0), color = Muted, fontSize = 14.sp)
+                                            Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", saveCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
                                     }
                                 }
 
@@ -2056,14 +2064,14 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(7.dp)
                                 ) {
-                                    RoundedPaperPlaneIcon()
+                                    RoundedPaperPlaneIcon(tint = RemoteAppearance.actionIconColor)
                                     if (post.id.startsWith("demo-post-")) {
                                         val shareCount = 12000 + (post.id.removePrefix("demo-post-").toIntOrNull() ?: 1) * 987
-                                        Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", shareCount / 1000.0), color = Muted, fontSize = 14.sp)
+                                        Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", shareCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
                                     }
                                 }
                             }
-                            Box(Modifier.fillMaxWidth().padding(horizontal = 14.dp).height(1.dp).background(Color(0xFF252525)))
+                            Box(Modifier.fillMaxWidth().padding(horizontal = 14.dp).height(1.dp).background(RemoteAppearance.feedDividerColor))
 
 
 
@@ -2071,18 +2079,18 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).aspectRatio(1.38f).clip(RoundedCornerShape(12.dp)).background(Color.Black)) {
                                     Box(Modifier.fillMaxSize().clickable { fullscreenVideoId = post.id }) {
                                         InlineVideoPlayer(url = post.mediaUrl, modifier = Modifier.fillMaxSize(), autoplay = false)
-                                        Icon(Icons.Default.Fullscreen, contentDescription = "Abrir vídeo em tela inteira", tint = Color.White, modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(28.dp))
+                                        Icon(Icons.Default.Fullscreen, contentDescription = "Abrir vídeo em tela inteira", tint = RemoteAppearance.actionIconColor, modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(28.dp))
                                     }
                                 }
                             }
                             if (post.mediaType == "video") {
-                                Text("♫ som original - ${post.displayName.ifBlank { post.username }}", color = Muted, fontSize = 14.sp, maxLines = 1, modifier = Modifier.padding(horizontal = 10.dp))
+                                Text("♫ som original - ${post.displayName.ifBlank { post.username }}", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp, maxLines = 1, modifier = Modifier.padding(horizontal = 10.dp))
                             }
                             if (post.mediaType != "image") {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(Color(0x66030711))
+                                        .background(RemoteAppearance.feedActionBackgroundColor)
                                         .heightIn(min = 56.dp)
                                         .padding(horizontal = 16.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
@@ -2123,7 +2131,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         )
                                         Text(
                                             if (post.likes >= 1000) String.format(java.util.Locale("pt", "BR"), "%.1f mil", post.likes / 1000.0) else post.likes.toString(),
-                                            color = Muted,
+                                            color = RemoteAppearance.feedSecondaryTextColor,
                                             fontSize = 14.sp
                                         )
                                     }
@@ -2150,10 +2158,10 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(7.dp)
                                     ) {
-                                        Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White, modifier = Modifier.size(24.dp))
+                                        Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = RemoteAppearance.actionIconColor, modifier = Modifier.size(24.dp))
                                         Text(
                                             if (post.comments >= 1000) String.format(java.util.Locale("pt", "BR"), "%.1f mil", post.comments / 1000.0) else post.comments.toString(),
-                                            color = Muted,
+                                            color = RemoteAppearance.feedSecondaryTextColor,
                                             fontSize = 14.sp
                                         )
                                     }
@@ -2167,10 +2175,10 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(7.dp)
                                     ) {
-                                        RepostVerifiedIcon(post.id in repostedPostIds)
+                                        RepostVerifiedIcon(post.id in repostedPostIds, tint = RemoteAppearance.actionIconColor)
                                         if (post.id.startsWith("demo-post-")) {
                                             val repostCount = 10000 + (post.id.removePrefix("demo-post-").toIntOrNull() ?: 1) * 613
-                                            Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", repostCount / 1000.0), color = Muted, fontSize = 14.sp)
+                                            Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", repostCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
                                         }
                                     }
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -2193,7 +2201,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     }
                                         if (post.id.startsWith("demo-post-")) {
                                                 val saveCount = 11000 + (post.id.removePrefix("demo-post-").toIntOrNull() ?: 1) * 721
-                                                Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", saveCount / 1000.0), color = Muted, fontSize = 14.sp)
+                                                Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", saveCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
                                         }
                                     }
 
@@ -2260,10 +2268,10 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(7.dp)
                                     ) {
-                                        RoundedPaperPlaneIcon()
+                                        RoundedPaperPlaneIcon(tint = RemoteAppearance.actionIconColor)
                                         if (post.id.startsWith("demo-post-")) {
                                         val shareCount = 12000 + (post.id.removePrefix("demo-post-").toIntOrNull() ?: 1) * 987
-                                        Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", shareCount / 1000.0), color = Muted, fontSize = 14.sp)
+                                        Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", shareCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
                                     }
                                     }
                                 }
