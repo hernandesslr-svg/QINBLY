@@ -519,7 +519,6 @@ private fun VyboraApp() {
     var showSearchDialog by remember { mutableStateOf(false) }
     var publicProfileUsername by remember { mutableStateOf("") }
     var messageRecipient by remember { mutableStateOf("") }
-    val appContext = androidx.compose.ui.platform.LocalContext.current
     VyboraApi.initialize(appContext)
     val appPrefs = remember { appContext.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
     var loggedInUser by remember { mutableStateOf(appPrefs.getString("username", "") ?: "") }
