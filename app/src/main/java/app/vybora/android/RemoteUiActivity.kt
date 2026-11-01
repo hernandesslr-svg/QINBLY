@@ -153,6 +153,25 @@ class RemoteUiActivity : ComponentActivity() {
      * A tela de atualização é montada localmente e consulta o GitHub Releases.
      * Assim, a atualização do APK não depende da disponibilidade do backend Railway.
      */
+    private fun showReleaseFallback() {
+        val apkUrl = "https://github.com/hernandesslr-svg/VYBORA/releases/latest/download/vybora-release.apk"
+        val html = """
+            <!doctype html><html lang="pt-BR"><meta name="viewport" content="width=device-width,initial-scale=1">
+            <meta charset="utf-8"><title>Atualizações do QINBLY</title>
+            <style>body{background:#050711;color:#f5f5fb;font:16px Arial,sans-serif;padding:20px}
+            .card{background:#111528;border:1px solid #292d43;border-radius:20px;padding:24px;margin-top:24px}
+            button{background:#8b35ff;color:white;border:0;border-radius:12px;padding:16px;font-weight:bold}
+            p{line-height:1.5;color:#c8ccdb}</style>
+            <h1>Atualizações do QINBLY</h1><section class="card">
+            <h3>Download disponível</h3>
+            <p>O GitHub limitou temporariamente a consulta de versões. Você ainda pode baixar a versão publicada mais recente sem sair do aplicativo.</p>
+            <p>Confirme a instalação somente se a versão oferecida for mais recente que a instalada.</p>
+            <button onclick="VyboraNative.downloadAndInstall('https://github.com/hernandesslr-svg/VYBORA/releases/latest/download/vybora-release.apk')">Baixar atualização</button>
+            </section></html>
+        """.trimIndent()
+        runOnUiThread { webView.loadDataWithBaseURL("https://github.com/", html, "text/html", "UTF-8", null) }
+    }
+
     private fun loadLatestReleasePage() {
         Thread {
             try {
@@ -169,7 +188,14 @@ class RemoteUiActivity : ComponentActivity() {
                     val status = connection.responseCode
                     val stream = if (status in 200..299) connection.inputStream else connection.errorStream
                     val response = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
-                    if (status !in 200..299) throw IllegalStateException("GitHub respondeu HTTP $status.")
+                    if (status !in 200..299) {
+                        if (status == 403 || status == 429) {
+                            // GitHub REST API can be rate-limited on shared mobile IPs.
+                            // Fall back to the public release download URL without requiring API access.
+                            return@Thread showReleaseFallback()
+                        }
+                        throw IllegalStateException("GitHub respondeu HTTP $status.")
+                    }
                     JSONObject(response)
                 } finally {
                     connection.disconnect()
