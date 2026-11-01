@@ -1529,10 +1529,12 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
                     this.player = player
                     useController = false
                     setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+                    resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                 } },
                 update = { view ->
                     view.player = player
                     view.useController = false
+                    view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                 }
             )
             if (!isPlaying) {
@@ -1739,15 +1741,15 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
         val feedFilters = listOf("Novidades", "Tendências", "Vídeos", "Fotos", "Perto de você")
         val feedFilterIcons = listOf("✦", "🔥", "▶", "▣", "📍")
         androidx.compose.foundation.lazy.LazyRow(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-            contentPadding = PaddingValues(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            contentPadding = PaddingValues(horizontal = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp)
         ) {
             items(feedFilters.size) { index ->
                 val filter = feedFilters[index]
                 val active = selectedFeedFilter == filter
                 Surface(
-                    color = if (active) Color(0xFF1269EA) else Color(0xFFF0F2F6),
+                    color = if (active) Color(0xFF6900C7) else Color(0xFFF1ECF5),
                     shape = RoundedCornerShape(22.dp),
                     modifier = Modifier.clickable { selectedFeedFilter = filter }
                 ) {
@@ -1755,9 +1757,9 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                         "${feedFilterIcons[index]} $filter",
                         color = if (active) Color.White else Color(0xFF202632),
                         fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                        fontSize = 11.sp,
+                        fontSize = 12.sp,
                         maxLines = 1,
-                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp)
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
                     )
                 }
             }
@@ -2017,7 +2019,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                                 modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) })
                                             Text("· Há 2 min", color = Color.White.copy(alpha = 0.85f), fontSize = 11.sp)
                                         }
-                                        Text(post.caption.ifBlank { "Publicação de " + post.displayName.ifBlank { post.username } }, color = Color.White, fontSize = 13.sp, maxLines = 2, lineHeight = 17.sp)
+                                        if (post.caption.isNotBlank()) Text(post.caption, color = Color.White, fontSize = 13.sp, maxLines = 2, lineHeight = 17.sp)
                                     }
                                     if (demoGallery.size > 1) {
                                         Box(Modifier.align(Alignment.TopEnd).padding(10.dp).clip(CircleShape)
@@ -2126,7 +2128,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                                 modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) })
                                             Text("· Há 2 min", color = Color.White.copy(alpha = 0.85f), fontSize = 11.sp)
                                         }
-                                        Text(post.caption.ifBlank { "Publicação de " + post.displayName.ifBlank { post.username } }, color = Color.White, fontSize = 13.sp, maxLines = 2)
+                                        if (post.caption.isNotBlank()) Text(post.caption, color = Color.White, fontSize = 13.sp, maxLines = 2)
                                     }
                                 }
                             }
