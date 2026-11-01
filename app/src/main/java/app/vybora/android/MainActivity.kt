@@ -1762,26 +1762,6 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                 }
             }
         }
-        val filterTitle = when (selectedFeedFilter) {
-            "Novidades" -> "Novidades"
-            "Tendências" -> "Tendências"
-            "Vídeos" -> "Vídeos"
-            "Fotos" -> "Fotos"
-            else -> "Perto de você"
-        }
-        val filterDescription = when (selectedFeedFilter) {
-            "Novidades" -> "Publicações mais recentes desta área"
-            "Tendências" -> "Publicações populares nesta área"
-            "Vídeos" -> "Apenas publicações em vídeo"
-            "Fotos" -> "Apenas publicações com fotos"
-            else -> "Publicações da sua região"
-        }
-        Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 16.dp, top = 9.dp, bottom = 13.dp)) {
-            Text("${feedFilterIcons[feedFilters.indexOf(selectedFeedFilter).coerceAtLeast(0)]} $filterTitle", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 21.sp)
-            Text(filterDescription, color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
-        }
-
-
         if (!loading && displayedPosts.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
