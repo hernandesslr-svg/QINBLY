@@ -1529,14 +1529,47 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
         )
     }
     // Publicações reais recentes aparecem primeiro; demonstrações ficam depois.
-    val refreshOnlyTestPosts = remember {
-        listOf(
-            VyboraApi.PostSummary("refresh-test-01", "Ensaio de moda íntima, estilo e confiança 🖤 #QINBLY", "https://images.pexels.com/photos/13636983/pexels-photo-13636983.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "camila.monteiro.teste", "Camila Monteiro", 84, 12, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160"),
-            VyboraApi.PostSummary("refresh-test-02", "Renda preta e atitude ✨ #QINBLY", "https://images.pexels.com/photos/11254431/pexels-photo-11254431.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "bruna.martins.teste", "Bruna Martins", 61, 8, "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=160"),
-            VyboraApi.PostSummary("refresh-test-03", "Editorial de moda íntima 🤎 #QINBLY", "https://images.pexels.com/photos/16585363/pexels-photo-16585363.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "juliana.freitas.teste", "Juliana Freitas", 109, 17, "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160")
-        )
+    var remoteTestPosts by remember { mutableStateOf<List<VyboraApi.PostSummary>>(emptyList()) }
+    LaunchedEffect(refreshKey) {
+        if (refreshKey > 0) {
+            val fetched = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    val url = java.net.URL("https://raw.githubusercontent.com/hernandesslr-svg/VYBORA/main/remote-config/test-feed.json?refresh=" + System.currentTimeMillis())
+                    val connection = url.openConnection() as java.net.HttpURLConnection
+                    try {
+                        connection.connectTimeout = 5000
+                        connection.readTimeout = 5000
+                        connection.useCaches = false
+                        if (connection.responseCode !in 200..299) null else {
+                            val raw = connection.inputStream.bufferedReader().use { it.readText() }
+                            if (raw.length > 65536) null else {
+                                val root = JSONObject(raw)
+                                if (root.optInt("schemaVersion") != 1) null else {
+                                    val items = root.optJSONArray("posts") ?: org.json.JSONArray()
+                                    (0 until minOf(items.length(), 30)).mapNotNull { index ->
+                                        val item = items.optJSONObject(index) ?: return@mapNotNull null
+                                        val id = item.optString("id")
+                                        val media = item.optString("mediaUrl")
+                                        if (id.isBlank() || !media.startsWith("https://")) null
+                                        else VyboraApi.PostSummary(
+                                            id, item.optString("caption"), media, "image",
+                                            item.optString("username"), item.optString("displayName"),
+                                            item.optInt("likes"), item.optInt("comments"), item.optString("avatarUrl")
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } finally { connection.disconnect() }
+                } catch (_: Exception) { null }
+            }
+            if (fetched != null) {
+                remoteTestPosts = fetched
+                onNotice("Feed de teste atualizado: " + fetched.size + " publicações")
+            } else onNotice("Não foi possível buscar o feed de teste no GitHub")
+        }
     }
-    val displayedPosts = (posts.sortedByDescending { it.createdAt } + (if (refreshKey > 0) refreshOnlyTestPosts else emptyList()) + demoPosts + extraDemoPosts).distinctBy { it.id }
+    val displayedPosts = (remoteTestPosts + posts.sortedByDescending { it.createdAt } + demoPosts + extraDemoPosts).distinctBy { it.id }
     LaunchedEffect(refreshKey) {
         loading = true
         Thread {
