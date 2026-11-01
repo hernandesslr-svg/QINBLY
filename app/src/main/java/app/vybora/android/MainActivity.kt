@@ -1287,7 +1287,29 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
             val seconds = (position * duration).toLong().coerceAtLeast(0L) / 1000L
             val total = duration.coerceAtLeast(0L) / 1000L
             Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')} / ${total / 60}:${(total % 60).toString().padStart(2, '0')}", color = Color.White, fontSize = 12.sp)
-            androidx.compose.material3.Slider(value = position.coerceIn(0f, 1f), onValueChange = { value -> position = value; if (duration > 0L) player.seekTo((duration * value).toLong()) }, colors = androidx.compose.material3.SliderDefaults.colors(thumbColor = Color(0xFF168BFF), activeTrackColor = Color(0xFF168BFF), inactiveTrackColor = Color.LightGray))
+            BoxWithConstraints(
+                Modifier.fillMaxWidth().height(24.dp)
+                    .pointerInput(duration) {
+                        androidx.compose.foundation.gestures.detectTapGestures { tap ->
+                            val fraction = (tap.x / size.width.toFloat()).coerceIn(0f, 1f)
+                            position = fraction
+                            if (duration > 0L) player.seekTo((duration * fraction).toLong())
+                        }
+                    }
+                    .pointerInput(duration) {
+                        detectDragGestures { change, _ ->
+                            val fraction = (change.position.x / size.width.toFloat()).coerceIn(0f, 1f)
+                            position = fraction
+                            if (duration > 0L) player.seekTo((duration * fraction).toLong())
+                            change.consume()
+                        }
+                    },
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(3.dp)).background(Color.White.copy(alpha = 0.48f)))
+                Box(Modifier.fillMaxWidth(position.coerceIn(0f, 1f)).height(3.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFF168BFF)))
+                Box(Modifier.offset(x = maxWidth * position.coerceIn(0f, 1f) - 4.dp).size(8.dp).clip(CircleShape).background(Color(0xFF168BFF)))
+            }
         }
     }
 }
@@ -2098,9 +2120,9 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                         if (pagerState.currentPage == page) {
                             VyboraFullscreenVideo(video.mediaUrl, Modifier.fillMaxSize())
                         }
-                        Column(Modifier.align(Alignment.BottomEnd).padding(end = 10.dp, bottom = 130.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(Modifier.align(Alignment.BottomEnd).padding(end = 14.dp, bottom = 122.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             listOf(Icons.Default.Person, Icons.Default.PersonAdd, Icons.Default.FavoriteBorder, Icons.Default.ChatBubbleOutline, Icons.Default.Share, Icons.Default.Archive, Icons.Default.MoreHoriz).forEach {
-                                Icon(it, contentDescription = null, tint = Color.White, modifier = Modifier.size(36.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.25f)).padding(7.dp))
+                                Icon(it, contentDescription = null, tint = Color.White, modifier = Modifier.size(34.dp).padding(5.dp))
                             }
                         }
                     }
