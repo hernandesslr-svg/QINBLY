@@ -1571,6 +1571,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
     var repostedPostIds by remember { mutableStateOf(prefs.getStringSet("reposted_post_ids_local", emptySet())?.toSet() ?: emptySet()) }
     var unreadNotifications by remember { mutableIntStateOf(0) }
     var selectedFeedTab by remember { mutableStateOf("Para você") }
+    var selectedFeedFilter by remember { mutableStateOf("Novidades") }
     LaunchedEffect(prefs.getString("token", null)) {
         val token = prefs.getString("token", null)
         if (token.isNullOrBlank()) {
@@ -1670,7 +1671,19 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
             } else onNotice("Não foi possível buscar o feed de teste no GitHub")
         }
     }
-    val displayedPosts = (remoteTestPosts + posts.sortedByDescending { it.createdAt } + demoPosts + extraDemoPosts).distinctBy { it.id }
+    val allFeedPosts = (remoteTestPosts + posts.sortedByDescending { it.createdAt } + demoPosts + extraDemoPosts).distinctBy { it.id }
+    val feedTabPosts = when (selectedFeedTab) {
+        "Amigos" -> allFeedPosts.filter { it.isFollowing }
+        "Em alta" -> allFeedPosts.sortedWith(compareByDescending<VyboraApi.PostSummary> { it.likes + it.comments * 3 }.thenByDescending { it.createdAt })
+        else -> allFeedPosts
+    }
+    val displayedPosts = when (selectedFeedFilter) {
+        "Vídeos" -> feedTabPosts.filter { it.mediaType.equals("video", ignoreCase = true) }
+        "Fotos" -> feedTabPosts.filter { it.mediaType.equals("image", ignoreCase = true) }
+        "Tendências" -> feedTabPosts.sortedByDescending { it.likes + it.comments * 3 }
+        "Perto de você" -> emptyList() // A API ainda não retorna localização verificada das publicações.
+        else -> feedTabPosts.sortedByDescending { it.createdAt }
+    }
     LaunchedEffect(refreshKey) {
         loading = true
         Thread {
@@ -1720,6 +1733,52 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                     }
                 }
             }
+        }
+
+
+        val feedFilters = listOf("Novidades", "Tendências", "Vídeos", "Fotos", "Perto de você")
+        val feedFilterIcons = listOf("✦", "🔥", "▶", "▣", "●")
+        androidx.compose.foundation.lazy.LazyRow(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            items(feedFilters.size) { index ->
+                val filter = feedFilters[index]
+                val active = selectedFeedFilter == filter
+                Surface(
+                    color = if (active) Color(0xFF1269EA) else Color(0xFFF0F2F6),
+                    shape = RoundedCornerShape(22.dp),
+                    modifier = Modifier.clickable { selectedFeedFilter = filter }
+                ) {
+                    Text(
+                        "${feedFilterIcons[index]} $filter",
+                        color = if (active) Color.White else Color(0xFF202632),
+                        fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        modifier = Modifier.padding(horizontal = 11.dp, vertical = 9.dp)
+                    )
+                }
+            }
+        }
+        val filterTitle = when (selectedFeedFilter) {
+            "Novidades" -> "Novidades"
+            "Tendências" -> "Tendências"
+            "Vídeos" -> "Vídeos"
+            "Fotos" -> "Fotos"
+            else -> "Perto de você"
+        }
+        val filterDescription = when (selectedFeedFilter) {
+            "Novidades" -> "Publicações mais recentes"
+            "Tendências" -> "Assuntos e publicações em alta"
+            "Vídeos" -> "Apenas publicações em vídeo"
+            "Fotos" -> "Apenas publicações com fotos"
+            else -> "Publicações da sua região"
+        }
+        Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 16.dp, top = 9.dp, bottom = 13.dp)) {
+            Text("${feedFilterIcons[feedFilters.indexOf(selectedFeedFilter).coerceAtLeast(0)]} $filterTitle", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 21.sp)
+            Text(filterDescription, color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
         }
 
 
