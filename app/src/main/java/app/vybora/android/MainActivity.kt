@@ -1740,8 +1740,12 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
 
         val feedFilters = listOf("Novidades", "Tendências", "Vídeos", "Fotos", "Perto de você")
         val feedFilterIcons = listOf("✦", "🔥", "▶", "▣", "📍")
+        val feedFilterAccent = listOf(
+            Color(0xFF7438ED), Color(0xFFFF663C), Color(0xFF6951DB),
+            Color(0xFF8550DB), Color(0xFFCA329A)
+        )
         androidx.compose.foundation.lazy.LazyRow(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 9.dp, bottom = 12.dp),
             contentPadding = PaddingValues(horizontal = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(7.dp)
         ) {
@@ -1749,18 +1753,33 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                 val filter = feedFilters[index]
                 val active = selectedFeedFilter == filter
                 Surface(
-                    color = if (active) Color(0xFF6900C7) else Color(0xFFF1ECF5),
-                    shape = RoundedCornerShape(22.dp),
-                    modifier = Modifier.clickable { selectedFeedFilter = filter }
+                    color = Color.Transparent,
+                    shape = RoundedCornerShape(25.dp),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(25.dp))
+                        .background(
+                            if (active) Brush.horizontalGradient(
+                                listOf(Color(0xFF4826C9), Color(0xFF9A0BD6))
+                            ) else Brush.horizontalGradient(
+                                listOf(Color(0xFFF5F1F9), Color(0xFFEEEAF5))
+                            )
+                        )
+                        .clickable { selectedFeedFilter = filter }
                 ) {
-                    Text(
-                        "${feedFilterIcons[index]} $filter",
-                        color = if (active) Color.White else Color(0xFF202632),
-                        fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(feedFilterIcons[index],
+                            color = if (active) Color.White else feedFilterAccent[index],
+                            fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(filter,
+                            color = if (active) Color.White else Color(0xFF20202B),
+                            fontSize = 11.sp,
+                            fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
+                            maxLines = 1)
+                    }
                 }
             }
         }
