@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 24,
+  "revision": 25,
   "navigation": {
     "indicatorColor": "#FF2196F3",
     "backgroundColor": "#FFFFFFFF",
@@ -41,6 +41,14 @@
     "feedTextColor": "#FF000000",
     "feedSecondaryTextColor": "#FF333333",
     "feedActionBackgroundColor": "#FFFFFFFF",
-    "feedDividerColor": "#FFE5E5E5"
+    "feedDividerColor": "#FFE5E5E5",
+    "navigationUnderlineWidth": 30,
+    "navigationUnderlineHeight": 3,
+    "navigationUnderlineOffset": 6,
+    "navigationUnderlineVisible": true,
+    "screenBackgroundColor": "#FFFFFFFF",
+    "screenTextColor": "#FF000000",
+    "screenSecondaryTextColor": "#FF333333",
+    "actionsVisible": true
   }
 }
