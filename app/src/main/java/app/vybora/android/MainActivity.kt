@@ -473,7 +473,7 @@ private object RemoteAppearance {
     var actionIconSize by androidx.compose.runtime.mutableIntStateOf(24)
     var actionsVisible by androidx.compose.runtime.mutableStateOf(true)
     var navigationLabels by androidx.compose.runtime.mutableStateOf(listOf("Início", "Lives", "Criar", "Mensagens", "Perfil"))
-    var feedLabels by androidx.compose.runtime.mutableStateOf(listOf("Para você", "Amigos", "Em alta"))
+    var feedLabels by androidx.compose.runtime.mutableStateOf(listOf("Descobrir", "Seguindo", "Comunidade"))
     var navigationLabelSize by androidx.compose.runtime.mutableIntStateOf(14)
     var headerBackgroundColor by androidx.compose.runtime.mutableStateOf(Color.Black)
     var headerHorizontalPadding by androidx.compose.runtime.mutableIntStateOf(24)
@@ -1570,7 +1570,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
     var savedPostIds by remember { mutableStateOf(prefs.getStringSet("saved_post_ids", emptySet())?.toSet() ?: emptySet()) }
     var repostedPostIds by remember { mutableStateOf(prefs.getStringSet("reposted_post_ids_local", emptySet())?.toSet() ?: emptySet()) }
     var unreadNotifications by remember { mutableIntStateOf(0) }
-    var selectedFeedTab by remember { mutableStateOf("Para você") }
+    var selectedFeedTab by remember { mutableStateOf("Descobrir") }
     var selectedFeedFilter by remember { mutableStateOf("Novidades") }
     LaunchedEffect(prefs.getString("token", null)) {
         val token = prefs.getString("token", null)
@@ -1673,8 +1673,8 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
     }
     val allFeedPosts = (remoteTestPosts + posts.sortedByDescending { it.createdAt } + demoPosts + extraDemoPosts).distinctBy { it.id }
     val feedTabPosts = when (selectedFeedTab) {
-        "Amigos" -> allFeedPosts.filter { it.isFollowing }
-        "Em alta" -> allFeedPosts.sortedWith(compareByDescending<VyboraApi.PostSummary> { it.likes + it.comments * 3 }.thenByDescending { it.createdAt })
+        "Seguindo" -> allFeedPosts.filter { it.isFollowing }
+        "Comunidade" -> allFeedPosts.filter { it.comments > 0 }.sortedWith(compareByDescending<VyboraApi.PostSummary> { it.comments }.thenByDescending { it.createdAt })
         else -> allFeedPosts
     }
     val displayedPosts = when (selectedFeedFilter) {
@@ -1706,7 +1706,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
             Modifier.fillMaxWidth().padding(start = RemoteAppearance.headerHorizontalPadding.dp, end = 12.dp, top = RemoteAppearance.headerVerticalPadding.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            listOf("Para você", "Amigos", "Em alta").forEachIndexed { feedIndex, feedTab ->
+            listOf("Descobrir", "Seguindo", "Comunidade").forEachIndexed { feedIndex, feedTab ->
                 val selected = selectedFeedTab == feedTab
                 Column(
                     modifier = Modifier.weight(1f).clickable { selectedFeedTab = feedTab }.padding(vertical = 6.dp),
@@ -1770,8 +1770,8 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
             else -> "Perto de você"
         }
         val filterDescription = when (selectedFeedFilter) {
-            "Novidades" -> "Publicações mais recentes"
-            "Tendências" -> "Assuntos e publicações em alta"
+            "Novidades" -> "Publicações mais recentes desta área"
+            "Tendências" -> "Publicações populares nesta área"
             "Vídeos" -> "Apenas publicações em vídeo"
             "Fotos" -> "Apenas publicações com fotos"
             else -> "Publicações da sua região"
@@ -5573,7 +5573,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
 
 @Composable
 private fun LivePage(onNotice: (String) -> Unit) {
-    var selectedCategory by remember { mutableStateOf("Para você") }
+    var selectedCategory by remember { mutableStateOf("Descobrir") }
     val categories = listOf("Para você", "Em alta", "Jogos", "Música", "Seguindo")
     Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
