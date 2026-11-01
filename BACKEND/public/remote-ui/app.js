@@ -129,8 +129,78 @@
         card.append(image);
       } else if (String(post.mediaType).startsWith("video")) {
         const video = element("video", "post-media");
-        video.src = mediaUrl; video.controls = true; video.preload = "metadata";
-        card.append(video);
+        video.src = mediaUrl; video.controls = false; video.preload = "metadata"; video.playsInline = true;
+        const openPlayer = element("button", "vybora-open-player", "▶ Assistir vídeo");
+        openPlayer.type = "button";
+        openPlayer.addEventListener("click", () => {
+          const overlay = element("div", "vybora-player-overlay");
+          overlay.setAttribute("role", "dialog");
+          overlay.setAttribute("aria-label", "Reprodução de vídeo");
+          const player = element("video", "vybora-player-video");
+          player.src = mediaUrl; player.playsInline = true; player.autoplay = true; player.loop = true;
+          const close = element("button", "vybora-player-close", "‹");
+          close.type = "button"; close.setAttribute("aria-label", "Fechar vídeo");
+          const pause = element("button", "vybora-player-pause", "❚❚");
+          pause.type = "button"; pause.setAttribute("aria-label", "Pausar vídeo");
+          const rail = element("div", "vybora-player-rail");
+          const profile = element("button", "vybora-player-avatar");
+          profile.type = "button"; profile.setAttribute("aria-label", "Perfil do autor");
+          profile.append(avatar(name, author.avatarUrl || author.avatar_url));
+          const follow = element("button", "vybora-player-action", "⊕");
+          follow.type = "button"; follow.setAttribute("aria-label", "Seguir perfil");
+          follow.addEventListener("click", () => toast("Abra o perfil para seguir."));
+          const likeVideo = element("button", "vybora-player-action", "♡");
+          likeVideo.type = "button"; likeVideo.setAttribute("aria-label", "Curtir");
+          likeVideo.addEventListener("click", () => { overlay.remove(); player.pause(); like.click(); });
+          const commentVideo = element("button", "vybora-player-action", "♧");
+          commentVideo.type = "button"; commentVideo.setAttribute("aria-label", "Comentários");
+          commentVideo.addEventListener("click", () => { overlay.remove(); player.pause(); renderComments(post); });
+          const share = element("button", "vybora-player-action", "↗");
+          share.type = "button"; share.setAttribute("aria-label", "Compartilhar");
+          share.addEventListener("click", async () => {
+            try { if (navigator.share) await navigator.share({url: mediaUrl}); else if (navigator.clipboard) { await navigator.clipboard.writeText(mediaUrl); toast("Link copiado."); } }
+            catch (_) {}
+          });
+          const save = element("button", "vybora-player-action", "♧");
+          save.type = "button"; save.setAttribute("aria-label", "Salvar vídeo");
+          save.addEventListener("click", () => toast("Opção de salvar indisponível."));
+          const more = element("button", "vybora-player-action", "⋯");
+          more.type = "button"; more.setAttribute("aria-label", "Mais opções");
+          more.addEventListener("click", () => toast("Mais opções"));
+          rail.append(profile, follow, likeVideo, commentVideo, share, save, more);
+          const timeline = element("div", "vybora-player-timeline");
+          const time = element("span", "", "0:00 / 0:00");
+          const seek = element("input", "vybora-player-seek");
+          seek.type = "range"; seek.min = "0"; seek.max = "1000"; seek.value = "0";
+          seek.setAttribute("aria-label", "Avançar ou voltar no vídeo");
+          const format = seconds => { const n = Math.floor(Number(seconds) || 0); return Math.floor(n / 60) + ":" + String(n % 60).padStart(2, "0"); };
+          const sync = () => {
+            const duration = Number.isFinite(player.duration) ? player.duration : 0;
+            if (duration > 0) seek.value = String(Math.round(player.currentTime / duration * 1000));
+            time.textContent = format(player.currentTime) + " / " + format(duration);
+            seek.style.setProperty("--progress", (Number(seek.value) / 10) + "%");
+          };
+          player.addEventListener("timeupdate", sync);
+          player.addEventListener("loadedmetadata", sync);
+          seek.addEventListener("input", () => {
+            if (Number.isFinite(player.duration) && player.duration > 0) player.currentTime = Number(seek.value) / 1000 * player.duration;
+            sync();
+          });
+          const toggle = () => { if (player.paused) player.play().catch(() => {}); else player.pause(); };
+          pause.addEventListener("click", toggle);
+          player.addEventListener("click", toggle);
+          player.addEventListener("play", () => { pause.textContent = "❚❚"; pause.setAttribute("aria-label", "Pausar vídeo"); });
+          player.addEventListener("pause", () => { pause.textContent = "▶"; pause.setAttribute("aria-label", "Continuar vídeo"); });
+          timeline.append(time, seek);
+          const dismiss = () => { player.pause(); overlay.remove(); document.removeEventListener("keydown", onKey); };
+          const onKey = event => { if (event.key === "Escape") dismiss(); };
+          close.addEventListener("click", dismiss);
+          document.addEventListener("keydown", onKey);
+          overlay.append(player, close, pause, rail, timeline);
+          document.body.append(overlay);
+          player.play().catch(() => { pause.textContent = "▶"; });
+        });
+        card.append(video, openPlayer);
       }
     }
     const actions = element("div", "post-actions");
