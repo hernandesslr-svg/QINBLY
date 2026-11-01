@@ -1908,7 +1908,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 var dragDistance by remember(post.id) { mutableFloatStateOf(0f) }
                                 Box(
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
-                                        .aspectRatio(0.82f)
+                                        .aspectRatio(0.68f)
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(Color.Black)
                                 ) {
@@ -2036,7 +2036,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 }
 
                             } else if (post.mediaUrl.isNotBlank() && post.mediaType == "video") {
-                                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).aspectRatio(0.82f)
+                                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).aspectRatio(0.68f)
                                     .clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
                                     Surface(
                                         modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
