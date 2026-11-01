@@ -1912,6 +1912,15 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(Color.Black)
                                 ) {
+                                    Surface(
+                                        modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
+                                        color = Color(0xFF6620C9).copy(alpha = 0.92f),
+                                        shape = RoundedCornerShape(18.dp)
+                                    ) {
+                                        Text("$selectedFeedTab + $selectedFeedFilter", color = Color.White,
+                                            fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp))
+                                    }
                                     AsyncImage(
                                         model = shownPhoto, contentDescription = "Foto ${photoIndex + 1} de ${demoGallery.size}",
                                         modifier = Modifier.fillMaxSize()
@@ -2029,6 +2038,15 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                             } else if (post.mediaUrl.isNotBlank() && post.mediaType == "video") {
                                 Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).aspectRatio(0.82f)
                                     .clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
+                                    Surface(
+                                        modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
+                                        color = Color(0xFF6620C9).copy(alpha = 0.92f),
+                                        shape = RoundedCornerShape(18.dp)
+                                    ) {
+                                        Text("$selectedFeedTab + $selectedFeedFilter", color = Color.White,
+                                            fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp))
+                                    }
                                     Box(Modifier.fillMaxSize().clickable { fullscreenVideoId = post.id }) {
                                         InlineVideoPlayer(url = post.mediaUrl, modifier = Modifier.fillMaxSize(), autoplay = false)
                                     }
