@@ -26,6 +26,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.input.pointer.pointerInput
@@ -1290,7 +1291,7 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
             BoxWithConstraints(
                 Modifier.fillMaxWidth().height(24.dp)
                     .pointerInput(duration) {
-                        androidx.compose.foundation.gestures.detectTapGestures { tap: androidx.compose.ui.geometry.Offset ->
+                        detectTapGestures { tap: androidx.compose.ui.geometry.Offset ->
                             val fraction = (tap.x / size.width.toFloat()).coerceIn(0f, 1f)
                             position = fraction
                             if (duration > 0L) player.seekTo((duration * fraction).toLong())
