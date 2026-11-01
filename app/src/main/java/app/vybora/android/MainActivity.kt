@@ -1643,7 +1643,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                     modifier = Modifier.weight(1f).clickable { selectedFeedTab = feedTab }.padding(vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(RemoteAppearance.feedLabels[feedIndex], color = RemoteAppearance.headerTextColor, fontSize = RemoteAppearance.headerTextSize.sp, maxLines = 1,
+                    Text(if (RemoteAppearance.headerVisible) RemoteAppearance.feedLabels[feedIndex] else "", color = RemoteAppearance.headerTextColor, fontSize = RemoteAppearance.headerTextSize.sp, maxLines = 1,
                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
                     Spacer(Modifier.height(6.dp))
                     Box(Modifier.width(if (selected) 58.dp else 0.dp).height(3.dp)
@@ -1891,8 +1891,8 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     Icon(
                                         if (likedByCurrentUser) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                         contentDescription = if (likedByCurrentUser) "Descurtir" else "Curtir",
-                                        tint = if (likedByCurrentUser) Color(0xFFFF3045) else Color.White,
-                                        modifier = Modifier.size(24.dp)
+                                        tint = if (likedByCurrentUser) Color(0xFFFF3045) else RemoteAppearance.actionIconColor,
+                                        modifier = Modifier.size(RemoteAppearance.actionIconSize.dp)
                                     )
                                     Text(
                                         if (post.likes >= 1000) String.format(java.util.Locale("pt", "BR"), "%.1f mil", post.likes / 1000.0) else post.likes.toString(),
