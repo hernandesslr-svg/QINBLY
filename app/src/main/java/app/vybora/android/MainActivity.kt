@@ -2497,7 +2497,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                             ) {
                                 Box(
                                     modifier = Modifier.size(48.dp).clip(CircleShape)
-                                        .background(Brush.linearGradient(listOf(Violet, Pink))),
+                                        .background(RemoteAppearance.commentInputBackgroundColor),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
@@ -2567,7 +2567,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 ) {
                                     items(commentEmojiGroups) { group ->
                                         Surface(
-                                            color = if (selectedCommentEmojiCategory == group.first) Violet.copy(alpha = 0.35f) else RemoteAppearance.commentInputBackgroundColor,
+                                            color = if (selectedCommentEmojiCategory == group.first) RemoteAppearance.commentAccentColor.copy(alpha = 0.18f) else RemoteAppearance.commentInputBackgroundColor,
                                             shape = RoundedCornerShape(18.dp),
                                             modifier = Modifier.clickable { selectedCommentEmojiCategory = group.first }
                                         ) {
@@ -2689,9 +2689,9 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 }
                             },
                             modifier = Modifier.size(48.dp).clip(CircleShape)
-                                .background(if (commentDraft.isNotBlank()) Brush.linearGradient(listOf(Pink, Violet)) else Brush.linearGradient(listOf(Color(0xFF454553), Color(0xFF454553))))
+                                .background(if (commentDraft.isNotBlank()) Brush.linearGradient(listOf(RemoteAppearance.commentAccentColor, RemoteAppearance.commentAccentColor)) else Brush.linearGradient(listOf(RemoteAppearance.commentDividerColor, RemoteAppearance.commentDividerColor)))
                         ) {
-                            Icon(Icons.Default.Send, contentDescription = "Enviar comentário", tint = Color.Black)
+                            Icon(Icons.Default.Send, contentDescription = "Enviar comentário", tint = RemoteAppearance.commentTextColor)
                         }
                     }
                     }
