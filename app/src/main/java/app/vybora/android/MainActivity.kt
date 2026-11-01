@@ -456,6 +456,24 @@ private fun AccountSwitcherDialog(
 @Composable
 private fun VyboraApp() {
     var tab by remember { mutableIntStateOf(0) }
+    var navigationIndicatorColor by remember { mutableStateOf(Color(0xFF00C853)) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val remoteColor = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    val response = VyboraApi.getNavigationAppearance()
+                    if (response.optInt("schemaVersion") != 1) null
+                    else {
+                        val hex = response.optString("indicatorColor")
+                        if (Regex("^#[0-9a-fA-F]{6}$").matches(hex)) Color(android.graphics.Color.parseColor(hex)) else null
+                    }
+                } catch (_: Exception) { null }
+            }
+            if (remoteColor != null) navigationIndicatorColor = remoteColor
+            kotlinx.coroutines.delay(30000L)
+        }
+    }
+
     var liked by remember { mutableStateOf(setOf<String>()) }
     var notice by remember { mutableStateOf("") }
     var profileStat by remember { mutableStateOf("") }
@@ -578,7 +596,7 @@ private fun VyboraApp() {
                     val navColors = NavigationBarItemDefaults.colors(
                         selectedIconColor = Color.White,
                         selectedTextColor = Color.White,
-                        indicatorColor = Color(0xFF00C853),
+                        indicatorColor = navigationIndicatorColor,
                         unselectedIconColor = Color.White,
                         unselectedTextColor = Color.White
                     )
