@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 15,
+  "revision": 16,
   "navigation": {
     "indicatorColor": "#FF4CAF50",
     "backgroundColor": "#99030710",
@@ -27,7 +27,7 @@
       "Amigos",
       "Em alta"
     ],
-    "headerBackgroundColor": "#FF4CAF50",
+    "headerBackgroundColor": "#FF000000",
     "headerHorizontalPadding": 24,
     "headerVerticalPadding": 10,
     "feedSpacing": 0,
