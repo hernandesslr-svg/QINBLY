@@ -453,6 +453,10 @@ private fun AccountSwitcherDialog(
  }
 }
 
+private object RemoteUiRefreshSignal {
+    var value by androidx.compose.runtime.mutableIntStateOf(0)
+}
+
 @Composable
 private fun VyboraApp() {
     var tab by remember { mutableIntStateOf(0) }
@@ -467,8 +471,7 @@ private fun VyboraApp() {
     var navigationBackgroundColor by remember { mutableStateOf(readUiColor("backgroundColor", 0x99030710L)) }
     var navigationSelectedColor by remember { mutableStateOf(readUiColor("selectedIconColor", 0xFFFFFFFFL)) }
     var navigationUnselectedColor by remember { mutableStateOf(readUiColor("unselectedIconColor", 0xFFFFFFFFL)) }
-    var remoteUiRefreshKey by remember { mutableIntStateOf(0) }
-    LaunchedEffect(remoteUiRefreshKey) {
+    LaunchedEffect(RemoteUiRefreshSignal.value) {
         while (true) {
             val config = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
@@ -1580,7 +1583,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
         } else {
             val feedListState = androidx.compose.foundation.lazy.rememberLazyListState()
             LaunchedEffect(refreshKey, displayedPosts.size) { feedListState.scrollToItem(0) }
-            androidx.compose.material3.pulltorefresh.PullToRefreshBox(isRefreshing = refreshingFeed, onRefresh = { remoteUiRefreshKey++; if (!refreshingFeed) { refreshingFeed = true; refreshKey++ } }, modifier = Modifier.fillMaxSize()) {
+            androidx.compose.material3.pulltorefresh.PullToRefreshBox(isRefreshing = refreshingFeed, onRefresh = { RemoteUiRefreshSignal.value++; if (!refreshingFeed) { refreshingFeed = true; refreshKey++ } }, modifier = Modifier.fillMaxSize()) {
             LazyColumn(state = feedListState, verticalArrangement = Arrangement.spacedBy(0.dp), contentPadding = PaddingValues(bottom = 12.dp)) {
                 if (!loading && displayedPosts.isEmpty()) {
                     item {
