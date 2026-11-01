@@ -721,12 +721,12 @@ private fun VyboraApp() {
                     val navColors = NavigationBarItemDefaults.colors(
                         selectedIconColor = navigationSelectedColor,
                         selectedTextColor = navigationSelectedColor,
-                        indicatorColor = navigationIndicatorColor,
+                        indicatorColor = Color.Transparent,
                         unselectedIconColor = navigationUnselectedColor,
                         unselectedTextColor = navigationUnselectedColor
                     )
-                    NavigationBarItem(selected = tab == 0 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; messageRecipient = ""; showAuth = false; tab = 0 }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Início", fontSize = 14.sp) }, colors = navColors)
-                    NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; tab = 3 }, icon = { Icon(Icons.Default.Radio, null) }, label = { Text("Lives", fontSize = 14.sp) }, colors = navColors)
+                    NavigationBarItem(selected = tab == 0 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; messageRecipient = ""; showAuth = false; tab = 0 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Home, null); if (tab == 0 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = 6.dp).width(30.dp).height(3.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text("Início", fontSize = 14.sp) }, colors = navColors)
+                    NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Radio, null); if (tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = 6.dp).width(30.dp).height(3.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text("Lives", fontSize = 14.sp) }, colors = navColors)
                     NavigationBarItem(selected = false, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; tab = 2 }, icon = {
                         Box(
                             Modifier.size(width = 30.dp, height = 30.dp)
@@ -740,7 +740,8 @@ private fun VyboraApp() {
                         selected = tab == 1 && !showNotifications,
                         onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; tab = 1 },
                         icon = {
-                            Box(Modifier.size(28.dp), contentAlignment = Alignment.Center) {
+                            Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+                                if (tab == 1 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = 6.dp).width(30.dp).height(3.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor))
                                 Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Mensagens")
                                 if (unreadMessages > 0) {
                                     Box(
@@ -766,7 +767,7 @@ private fun VyboraApp() {
                         label = { Text("Mensagens", fontSize = 14.sp) },
                         colors = navColors
                     )
-                    NavigationBarItem(selected = tab == 4 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; tab = 4 }, icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") }, label = { Text("Perfil", fontSize = 14.sp) }, colors = navColors)
+                    NavigationBarItem(selected = tab == 4 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; tab = 4 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Person, contentDescription = "Perfil"); if (tab == 4 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = 6.dp).width(30.dp).height(3.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text("Perfil", fontSize = 14.sp) }, colors = navColors)
                 }
             }
             }
