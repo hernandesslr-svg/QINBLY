@@ -145,11 +145,11 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 
-private val Night = Color(0xFF050711)
-private val Panel = Color(0xFF111528)
+private val Night = Color.White
+private val Panel = Color.White
 private val Violet = Color(0xFFFFFFFF)
 private val Pink = Color(0xFFFFFFFF)
-private val Muted = Color(0xFFADB2CB)
+private val Muted = Color(0xFF333333)
 
 
 
@@ -391,7 +391,7 @@ private fun AccountSwitcherDialog(
  androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
   Surface(Modifier.fillMaxWidth(), color = Panel, shape = RoundedCornerShape(26.dp), border = BorderStroke(1.dp, Violet.copy(alpha = .55f))) {
    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-    Text("Trocar de conta", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+    Text("Trocar de conta", color = Color.Black, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
     Text("Escolha uma conta para continuar", color = Muted)
     if (accounts.isEmpty()) Text("Nenhuma conta salva neste aparelho ainda.", color = Muted, style = MaterialTheme.typography.bodySmall)
     accounts.forEach { account ->
@@ -411,7 +411,7 @@ private fun AccountSwitcherDialog(
         Text(account.username.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
        }
        Column(Modifier.weight(1f).padding(start = 12.dp)) {
-        Text(account.displayName.ifBlank { account.username }, color = Color.White, fontWeight = FontWeight.SemiBold)
+        Text(account.displayName.ifBlank { account.username }, color = Color.Black, fontWeight = FontWeight.SemiBold)
         Text("@" + account.username.removePrefix("@"), color = Muted, style = MaterialTheme.typography.bodySmall)
        }
        if (active) Icon(Icons.Default.CheckCircle, contentDescription = "Conta atual", tint = Pink)
@@ -419,7 +419,7 @@ private fun AccountSwitcherDialog(
        if (selected) {
         Spacer(Modifier.width(8.dp))
         IconButton(onClick = { confirmRemove = account.username }, modifier = Modifier.size(32.dp)) {
-         Icon(Icons.Default.Close, contentDescription = "Remover conta", tint = Color.White)
+         Icon(Icons.Default.Close, contentDescription = "Remover conta", tint = Color.Black)
         }
        }
       }
@@ -754,7 +754,7 @@ private fun VyboraApp() {
                                     ) {
                                         Text(
                                             if (unreadMessages > 99) "99+" else unreadMessages.toString(),
-                                            color = Color.White,
+                                            color = Color.Black,
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,
                                             maxLines = 1
@@ -830,8 +830,8 @@ private fun VyboraApp() {
                     }
                     3 -> Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("Lives", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                        IconButton(onClick = { showSearchDialog = true }) { Icon(Icons.Default.Search, contentDescription = "Pesquisar lives e pessoas", tint = Color.White) }
-                        IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Menu, contentDescription = "Abrir menu e configurações", tint = Color.White) }
+                        IconButton(onClick = { showSearchDialog = true }) { Icon(Icons.Default.Search, contentDescription = "Pesquisar lives e pessoas", tint = Color.Black) }
+                        IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Menu, contentDescription = "Abrir menu e configurações", tint = Color.Black) }
                     }
                      else -> Unit
                 }
@@ -1051,10 +1051,10 @@ private fun VyboraApp() {
                     Column(Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 12.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = { profileStat = "" }) {
-                                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.Black)
                             }
                             Column(Modifier.weight(1f)) {
-                                Text(profileStat, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(profileStat, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.Black)
                                 Text(
                                     if (profileStat == "Seguidores") "Pessoas que seguem você" else if (profileStat == "Seguindo") "Pessoas que você segue" else "Atividade do perfil",
                                     color = Muted,
@@ -1095,7 +1095,7 @@ private fun VyboraApp() {
                                                 }
                                             }
                                             Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                                Text(user.displayName.ifBlank { user.username }, fontWeight = FontWeight.SemiBold, color = Color.White)
+                                                Text(user.displayName.ifBlank { user.username }, fontWeight = FontWeight.SemiBold, color = Color.Black)
                                                 Text("@${user.username}", color = Muted, style = MaterialTheme.typography.bodySmall)
                                             }
                                             Icon(Icons.Default.ChevronRight, contentDescription = "Abrir perfil", tint = Muted)
@@ -1157,7 +1157,7 @@ private fun NotificationsPage(
     }
     Column(Modifier.fillMaxSize().background(Night).padding(horizontal = 18.dp, vertical = 10.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White) }
+            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.Black) }
             Text("Notificações", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             Box(Modifier.size(30.dp), contentAlignment = Alignment.Center) {
                 Icon(Icons.Default.Notifications, contentDescription = null, tint = Pink)
@@ -1169,7 +1169,7 @@ private fun NotificationsPage(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(if (unreadVisibleNotifications > 99) "99+" else unreadVisibleNotifications.toString(),
-                            color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                            color = Color.Black, fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
             }
@@ -1214,11 +1214,11 @@ private fun NotificationsPage(
                             AsyncImage(model = item.actorAvatarUrl, contentDescription = "Foto de $actor", modifier = Modifier.size(46.dp).clip(CircleShape), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                         } else {
                             Box(Modifier.size(46.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Pink, Violet))), contentAlignment = Alignment.Center) {
-                                Icon(if (item.kind == "system") Icons.Default.Info else Icons.Default.Notifications, contentDescription = null, tint = Color.White)
+                                Icon(if (item.kind == "system") Icons.Default.Info else Icons.Default.Notifications, contentDescription = null, tint = Color.Black)
                             }
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text("$actor $description", color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                            Text("$actor $description", color = Color.Black, style = MaterialTheme.typography.bodyMedium)
                             Text(item.createdAt, color = Muted, style = MaterialTheme.typography.labelSmall)
                         }
                         if (item.readAt.isBlank()) Box(Modifier.size(9.dp).clip(CircleShape).background(Color(0xFFFF3045)))
@@ -1282,7 +1282,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
             Column(Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 10.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.Black)
                     }
                     Text(
                         when (searchContext) {
@@ -1356,7 +1356,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                                     }
                                 }
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                    Text(user.displayName.ifBlank { user.username }, color = Color.White, fontWeight = FontWeight.SemiBold)
+                                    Text(user.displayName.ifBlank { user.username }, color = Color.Black, fontWeight = FontWeight.SemiBold)
                                     Text("@${user.username}", color = Muted, style = MaterialTheme.typography.bodySmall)
                                     if (user.bio.isNotBlank()) Text(user.bio, color = Muted, maxLines = 1, style = MaterialTheme.typography.labelSmall)
                                 }
@@ -1430,7 +1430,7 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
         Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 18.dp, end = 18.dp, bottom = 68.dp)) {
             val seconds = (position * duration).toLong().coerceAtLeast(0L) / 1000L
             val total = duration.coerceAtLeast(0L) / 1000L
-            Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')} / ${total / 60}:${(total % 60).toString().padStart(2, '0')}", color = Color.White, fontSize = 12.sp)
+            Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')} / ${total / 60}:${(total % 60).toString().padStart(2, '0')}", color = Color.Black, fontSize = 12.sp)
             BoxWithConstraints(
                 Modifier.fillMaxWidth().height(24.dp)
                     .pointerInput(duration) {
@@ -1682,11 +1682,11 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                 }
             }
             IconButton(onClick = onSearch, modifier = Modifier.size(40.dp)) {
-                Icon(Icons.Default.Search, contentDescription = "Buscar", tint = Color.White, modifier = Modifier.size(26.dp))
+                Icon(Icons.Default.Search, contentDescription = "Buscar", tint = Color.Black, modifier = Modifier.size(26.dp))
             }
             Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
                 IconButton(onClick = onNotifications, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.Default.Notifications, contentDescription = "Notificações", tint = Color.White, modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.Notifications, contentDescription = "Notificações", tint = Color.Black, modifier = Modifier.size(28.dp))
                 }
                 if (unreadNotifications > 0) {
                     Box(Modifier.align(Alignment.TopEnd).offset(x = (-1).dp, y = 1.dp).clip(CircleShape)
@@ -2306,7 +2306,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                         }
                         Column(Modifier.align(Alignment.BottomEnd).padding(end = 14.dp, bottom = 122.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             listOf(Icons.Default.Person, Icons.Default.PersonAdd, Icons.Default.FavoriteBorder, Icons.Default.ChatBubbleOutline, Icons.Default.Share, Icons.Default.Archive, Icons.Default.MoreHoriz).forEach {
-                                Icon(it, contentDescription = null, tint = Color.White, modifier = Modifier.size(34.dp).padding(5.dp))
+                                Icon(it, contentDescription = null, tint = Color.Black, modifier = Modifier.size(34.dp).padding(5.dp))
                             }
                         }
                     }
@@ -2315,12 +2315,12 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                     onClick = { fullscreenVideoId = null },
                     modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "Fechar tela inteira", tint = Color.White)
+                    Icon(Icons.Default.Close, contentDescription = "Fechar tela inteira", tint = Color.Black)
                 }
                 Text(
                     "${pagerState.currentPage + 1}/${fullscreenVideos.size}",
                     modifier = Modifier.align(Alignment.TopEnd).padding(24.dp),
-                    color = Color.White, fontSize = 13.sp
+                    color = Color.Black, fontSize = 13.sp
                 )
             }
         }
@@ -2329,7 +2329,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
         androidx.compose.ui.window.Dialog(onDismissRequest = { expandedMedia = "" }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
             Box(Modifier.fillMaxSize().background(Color.Black).clickable { expandedMedia = "" }, contentAlignment = Alignment.Center) {
                 AsyncImage(model = expandedMedia, contentDescription = "Imagem ampliada", modifier = Modifier.fillMaxWidth().fillMaxHeight(0.9f), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
-                IconButton(onClick = { expandedMedia = "" }, modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)) { Icon(Icons.Default.Close, contentDescription = "Fechar imagem", tint = Color.White) }
+                IconButton(onClick = { expandedMedia = "" }, modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)) { Icon(Icons.Default.Close, contentDescription = "Fechar imagem", tint = Color.Black) }
             }
         }
     }
@@ -2438,7 +2438,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                     ) {
                         Text(
                             "Comentários",
-                            color = Color.White,
+                            color = Color.Black,
                             fontSize = 25.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.clickable(enabled = showCommentEmojis) { showCommentEmojis = false }
@@ -2477,7 +2477,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 ) {
                                     Text(
                                         comment.displayName.ifBlank { comment.username }.ifBlank { "U" }.take(1).uppercase(),
-                                        color = Color.White,
+                                        color = Color.Black,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 18.sp
                                     )
@@ -2485,7 +2485,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 Column(modifier = Modifier.weight(1f).padding(start = 14.dp, end = 8.dp)) {
                                     Text(
                                         comment.displayName.ifBlank { comment.username }.ifBlank { "Usuário" },
-                                        color = Color.White,
+                                        color = Color.Black,
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 16.sp
                                     )
@@ -2548,7 +2548,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         ) {
                                             Text(
                                                 group.first,
-                                                color = Color.White,
+                                                color = Color.Black,
                                                 fontSize = 14.sp,
                                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
                                             )
@@ -2666,7 +2666,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                             modifier = Modifier.size(48.dp).clip(CircleShape)
                                 .background(if (commentDraft.isNotBlank()) Brush.linearGradient(listOf(Pink, Violet)) else Brush.linearGradient(listOf(Color(0xFF454553), Color(0xFF454553))))
                         ) {
-                            Icon(Icons.Default.Send, contentDescription = "Enviar comentário", tint = Color.White)
+                            Icon(Icons.Default.Send, contentDescription = "Enviar comentário", tint = Color.Black)
                         }
                     }
                     }
@@ -2838,7 +2838,7 @@ private fun MessagesPage(recipientUsername: String, onSearch: () -> Unit, onOpen
                                 }
                             }
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                                Text(conversation.displayName.ifBlank { conversation.username }, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                                Text(conversation.displayName.ifBlank { conversation.username }, color = Color.Black, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1)
                                 Text(conversation.body.ifBlank { "@${conversation.username}" }, color = if (conversation.unreadCount > 0) Color.White else Muted, maxLines = 1, style = MaterialTheme.typography.bodyLarge)
                             }
                             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -2902,14 +2902,14 @@ private fun MessagesPage(recipientUsername: String, onSearch: () -> Unit, onOpen
                     Icon(Icons.Default.Search, contentDescription = "Pesquisar nesta conversa", tint = Pink)
                 }
                 IconButton(onClick = { onNotice("A chamada de voz ficará disponível quando o serviço de chamadas for integrado.") }) {
-                    Icon(Icons.Default.Call, contentDescription = "Ligar", tint = Color.White)
+                    Icon(Icons.Default.Call, contentDescription = "Ligar", tint = Color.Black)
                 }
                 IconButton(onClick = { onNotice("A chamada de vídeo ficará disponível quando o serviço de chamadas for integrado.") }) {
                     Icon(Icons.Default.Videocam, contentDescription = "Chamada de vídeo", tint = Color.White)
                 }
                 Box {
                     IconButton(onClick = { showConversationMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Opções da conversa", tint = Color.White)
+                        Icon(Icons.Default.MoreVert, contentDescription = "Opções da conversa", tint = Color.Black)
                     }
                     DropdownMenu(expanded = showConversationMenu, onDismissRequest = { showConversationMenu = false }, modifier = Modifier.background(Panel)) {
                         DropdownMenuItem(
@@ -3052,7 +3052,7 @@ private fun MessagesPage(recipientUsername: String, onSearch: () -> Unit, onOpen
                     modifier = Modifier.size(48.dp).background(Brush.linearGradient(listOf(Pink, Violet)), CircleShape),
                     enabled = !sending
                 ) {
-                    Icon(Icons.Default.Send, contentDescription = "Enviar mensagem", tint = Color.White, modifier = Modifier.size(25.dp))
+                    Icon(Icons.Default.Send, contentDescription = "Enviar mensagem", tint = Color.Black, modifier = Modifier.size(25.dp))
                 }
             }
             if (showClearConfirm) {
@@ -3179,7 +3179,7 @@ private fun ProfilePage(username: String, displayName: String, bio: String, phot
             AsyncImage(model = coverImage, contentDescription = "Foto de capa do perfil", modifier = Modifier.fillMaxSize().clickable { expandedImage = originalCoverUrl.ifBlank { coverImage } }, contentScale = androidx.compose.ui.layout.ContentScale.Crop)
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(colorStops = arrayOf(0.0f to Color.Black.copy(alpha = 0.10f), 0.48f to Color.Transparent, 0.76f to Night.copy(alpha = 0.68f), 1.0f to Night))))
             IconButton(onClick = onSettings, modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 10.dp).size(38.dp)) {
-                Icon(Icons.Default.Menu, contentDescription = "Configurações do perfil", tint = Color.White, modifier = Modifier.size(25.dp))
+                Icon(Icons.Default.Menu, contentDescription = "Configurações do perfil", tint = Color.Black, modifier = Modifier.size(25.dp))
             }
             IconButton(onClick = onEditProfilePhoto, modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp).size(36.dp).background(Color.Black.copy(alpha = 0.32f), CircleShape)) {
                 Icon(Icons.Default.CameraAlt, contentDescription = "Editar foto do perfil", tint = Color.White.copy(alpha = 0.88f), modifier = Modifier.size(20.dp))
@@ -3190,9 +3190,9 @@ private fun ProfilePage(username: String, displayName: String, bio: String, phot
         Row(Modifier.fillMaxWidth().padding(start = 18.dp, end = 14.dp, top = 12.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = Color.Black, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 1)
                     Column(Modifier.clickable { onEdit() }.padding(horizontal = 2.dp, vertical = 3.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Icon(Icons.Default.Edit, contentDescription = "Editar informações do perfil", tint = Color.White, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Edit, contentDescription = "Editar informações do perfil", tint = Color.Black, modifier = Modifier.size(18.dp))
                         Box(Modifier.width(18.dp).height(2.dp).background(Brush.horizontalGradient(listOf(Pink, Violet)), RoundedCornerShape(2.dp)))
                     }
                 }
@@ -3204,7 +3204,7 @@ private fun ProfilePage(username: String, displayName: String, bio: String, phot
                 ProfileStat("Seguindo", followingCount.toString(), Icons.Default.PersonAddAlt1) { onStat("Seguindo") }
             }
         }
-        if (shownBio.isNotBlank()) Text(shownBio, Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 5.dp), color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 3)
+        if (shownBio.isNotBlank()) Text(shownBio, Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 5.dp), color = Color.Black, style = MaterialTheme.typography.bodyMedium, maxLines = 3)
         else Text("Ainda não adicionou uma descrição.", Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 5.dp), color = Muted, style = MaterialTheme.typography.bodyMedium)
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
             listOf("Publicações", "Vídeos", "Republicações", "Curtidas", "Salvos").forEach { item ->
@@ -3235,7 +3235,7 @@ private fun ProfilePage(username: String, displayName: String, bio: String, phot
             Box(Modifier.fillMaxWidth().weight(1f).padding(22.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Default.GridView, contentDescription = null, tint = Violet, modifier = Modifier.size(38.dp))
-                    Text("Você ainda não publicou nada", fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Você ainda não publicou nada", fontWeight = FontWeight.Bold, color = Color.Black)
                     Text("Compartilhe sua primeira publicação com a comunidade.", color = Muted, style = MaterialTheme.typography.bodySmall)
                 }
             }
@@ -3246,10 +3246,10 @@ private fun ProfilePage(username: String, displayName: String, bio: String, phot
                     Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(8.dp)).background(Brush.linearGradient(listOf(Color(0xFF241047), Color(0xFF9D236E), Color(0xFF071A38)))).clickable { if (post.mediaUrl.isNotBlank()) expandedImage = post.mediaUrl }) {
                         if (post.mediaUrl.isNotBlank()) AsyncImage(model = post.mediaUrl, contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                         else Column(Modifier.align(Alignment.Center).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(30.dp))
-                            Text(post.caption.ifBlank { "QINBLY" }, color = Color.White, maxLines = 4, style = MaterialTheme.typography.labelSmall)
+                            if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = null, tint = Color.Black, modifier = Modifier.size(30.dp))
+                            Text(post.caption.ifBlank { "QINBLY" }, color = Color.Black, maxLines = 4, style = MaterialTheme.typography.labelSmall)
                         }
-                        if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = Color.White, modifier = Modifier.align(Alignment.TopEnd).padding(5.dp))
+                        if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = Color.Black, modifier = Modifier.align(Alignment.TopEnd).padding(5.dp))
                     }
                 }
             }
@@ -3271,7 +3271,7 @@ private fun ProfilePage(username: String, displayName: String, bio: String, phot
                 IconButton(
                     onClick = { expandedImage = "" },
                     modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).background(Color.Black.copy(alpha = 0.65f), CircleShape)
-                ) { Icon(Icons.Default.ArrowBack, contentDescription = "Fechar imagem", tint = Color.White) }
+                ) { Icon(Icons.Default.ArrowBack, contentDescription = "Fechar imagem", tint = Color.Black) }
             }
         }
     }
@@ -3324,7 +3324,7 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onCancel, enabled = !loading) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.Black)
             }
             Spacer(Modifier.width(4.dp))
             Text("Acesso à conta", color = Muted, style = MaterialTheme.typography.titleSmall)
@@ -3335,9 +3335,9 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
                 Modifier.size(76.dp).clip(RoundedCornerShape(24.dp)).background(Brush.linearGradient(listOf(Pink, Violet))),
                 contentAlignment = Alignment.Center
             ) {
-                Text("V", color = Color.White, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black)
+                Text("V", color = Color.Black, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black)
             }
-            Text("QINBLY", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
+            Text("QINBLY", color = Color.Black, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
             Text(
                 if (createAccount) "Crie sua conta e faça parte da comunidade." else "Entre para se conectar com sua comunidade.",
                 color = Muted, style = MaterialTheme.typography.bodyMedium
@@ -3350,7 +3350,7 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
             shape = RoundedCornerShape(26.dp)
         ) {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text(if (createAccount) "Criar conta" else "Bem-vindo de volta", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(if (createAccount) "Criar conta" else "Bem-vindo de volta", color = Color.Black, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text(if (createAccount) "Preencha os dados para começar." else "Escolha como deseja entrar.", color = Muted, style = MaterialTheme.typography.bodySmall)
 
                 Button(
@@ -3378,7 +3378,7 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
                     shape = RoundedCornerShape(18.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Violet, contentColor = Color.White)
                 ) {
-                    if (loading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
+                    if (loading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.Black)
                     else Text("Continuar com Google", fontWeight = FontWeight.Bold)
                 }
 
@@ -3486,7 +3486,7 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
                     shape = RoundedCornerShape(18.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Pink, contentColor = Color.White)
                 ) {
-                    if (loading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
+                    if (loading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.Black)
                     else Text(if (createAccount) "Criar minha conta" else "Entrar", fontWeight = FontWeight.Bold)
                 }
 
@@ -3533,8 +3533,8 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     val effectOptions = listOf("Original", "Vivo", "Neon", "Quente", "Frio", "Preto e branco", "Cinema", "Retrô", "Brilho", "Contraste", "Saturação", "Fade", "Glow", "Desfoque", "VHS", "Granulado", "Vinheta")
     Column(Modifier.fillMaxSize().background(Night).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack, enabled = !loading) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White) }
-            Text("Editar perfil", modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
+            IconButton(onClick = onBack, enabled = !loading) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.Black) }
+            Text("Editar perfil", modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.Black)
             Button(
                 onClick = {
                     if (name.isBlank()) error = "Informe seu nome."
@@ -3568,13 +3568,13 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                 colors = ButtonDefaults.buttonColors(containerColor = Pink, contentColor = Color.White),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 9.dp)
             ) {
-                if (loading) CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp) else Text("Salvar", fontWeight = FontWeight.Bold)
+                if (loading) CircularProgressIndicator(Modifier.size(18.dp), color = Color.Black, strokeWidth = 2.dp) else Text("Salvar", fontWeight = FontWeight.Bold)
             }
         }
 
         Column(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(name.ifBlank { "Seu nome" }, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(name.ifBlank { "Seu nome" }, color = Color.Black, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text("@${username.ifBlank { "seuusuario" }}", color = Muted, style = MaterialTheme.typography.bodyLarge)
             }
 
@@ -3598,7 +3598,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                             onValueChange = { onValue(it.take(max)) },
                             enabled = !loading,
                             singleLine = singleLine,
-                            textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 16.sp),
+                            textStyle = androidx.compose.ui.text.TextStyle(color = Color.Black, fontSize = 16.sp),
                             cursorBrush = Brush.linearGradient(listOf(Pink, Violet)),
                             modifier = Modifier.fillMaxWidth(),
                             decorationBox = { inner ->
@@ -3654,12 +3654,12 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack, enabled = !loading) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Cancelar e voltar", tint = Color.White)
+                Icon(Icons.Default.ArrowBack, contentDescription = "Cancelar e voltar", tint = Color.Black)
             }
             Text(
                 "Arraste para ajustar",
                 modifier = Modifier.weight(1f),
-                color = Color.White,
+                color = Color.Black,
                 fontWeight = FontWeight.SemiBold,
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -3671,7 +3671,7 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
                 } },
                 enabled = selectedProfilePhoto != null && !loading
             ) {
-                Icon(Icons.Default.CheckCircle, contentDescription = "Confirmar ajuste", tint = Color.White)
+                Icon(Icons.Default.CheckCircle, contentDescription = "Confirmar ajuste", tint = Color.Black)
             }
         }
 
@@ -3738,9 +3738,9 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.White, modifier = Modifier.size(36.dp))
-                    Text("Escolha uma foto para ajustar", color = Color.White, fontWeight = FontWeight.Medium)
+                    Text("Escolha uma foto para ajustar", color = Color.Black, fontWeight = FontWeight.Medium)
                     OutlinedButton(onClick = { profilePhotoPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
-                        Text("Escolher imagem", color = Color.White)
+                        Text("Escolher imagem", color = Color.Black)
                     }
                 }
             }
@@ -3833,7 +3833,7 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Pink, contentColor = Color.White)
             ) {
-                if (loading) CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                if (loading) CircularProgressIndicator(Modifier.size(18.dp), color = Color.Black, strokeWidth = 2.dp)
                 else Text("Salvar", fontWeight = FontWeight.Bold)
             }
         }
@@ -3936,10 +3936,10 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
     Column(Modifier.fillMaxSize().background(Color(0xFF080B10)).padding(horizontal = 12.dp, vertical = 8.dp)) {
         Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { if (section == "font_names" || section == "font_app") section = "appearance" else if (section == "home") onBack() else section = "home" }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.Black)
             }
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.Black)
                 Text(if (section == "home") "Gerencie sua conta e sua experiência" else "Personalize sua experiência no QINBLY", color = Muted, style = MaterialTheme.typography.bodySmall)
             }
         }
@@ -3950,7 +3950,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                     Spacer(Modifier.width(10.dp))
                     androidx.compose.foundation.text.BasicTextField(
                         value = search, onValueChange = { search = it }, singleLine = true,
-                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 15.sp),
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.Black, fontSize = 15.sp),
                         cursorBrush = Brush.horizontalGradient(listOf(Color(0xFF2196F3), Color(0xFF1976D2))), modifier = Modifier.fillMaxWidth(),
                         decorationBox = { inner -> Box { if (search.isBlank()) Text("Buscar configurações...", color = Muted); inner() } }
                     )
@@ -4015,10 +4015,10 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                         Surface(color = Panel, shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Icon(Icons.Default.Person, contentDescription = null, tint = Violet, modifier = Modifier.size(42.dp))
-                                Text("Faça login para acessar mais opções", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text("Faça login para acessar mais opções", color = Color.Black, fontWeight = FontWeight.Bold)
                                 Text("Entre na sua conta para personalizar sua experiência e salvar suas preferências.", color = Muted, style = MaterialTheme.typography.bodySmall)
                                 Button(onClick = onAuth, colors = ButtonDefaults.buttonColors(containerColor = Pink), modifier = Modifier.fillMaxWidth()) {
-                                    Text("Login", color = Color.White, fontWeight = FontWeight.Bold)
+                                    Text("Login", color = Color.Black, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -4081,7 +4081,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                     items(options) { option ->
                         val selected = if (section == "font_names") nameFontStyle == option else appFontStyle == option
                         Row(Modifier.fillMaxWidth().clickable { if (section == "font_names") onNameFontChange(option) else onAppFontChange(option) }.padding(vertical = 14.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(if (section == "font_names") "Ana Lima" else "QINBLY", fontFamily = nameFontFamily(option), fontSize = 19.sp, fontWeight = if (option == "Negrito") FontWeight.ExtraBold else FontWeight.Medium, color = Color.White, modifier = Modifier.weight(1f))
+                            Text(if (section == "font_names") "Ana Lima" else "QINBLY", fontFamily = nameFontFamily(option), fontSize = 19.sp, fontWeight = if (option == "Negrito") FontWeight.ExtraBold else FontWeight.Medium, color = Color.Black, modifier = Modifier.weight(1f))
                             Text(option, color = if (selected) Color.White else Muted, fontSize = 13.sp)
                             Spacer(Modifier.width(12.dp))
                             Icon(if (selected) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked, contentDescription = null, tint = if (selected) Color.White else Muted, modifier = Modifier.size(20.dp))
@@ -4339,9 +4339,9 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
             }
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.25f), Color.Transparent, Night))))
             Row(Modifier.fillMaxWidth().align(Alignment.TopStart).padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White) }
+                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.Black) }
                 Spacer(Modifier.weight(1f))
-                IconButton(onClick = { showMoreOptions = true }) { Icon(Icons.Default.MoreHoriz, contentDescription = "Opções deste perfil", tint = Color.White, modifier = Modifier.size(25.dp)) }
+                IconButton(onClick = { showMoreOptions = true }) { Icon(Icons.Default.MoreHoriz, contentDescription = "Opções deste perfil", tint = Color.Black, modifier = Modifier.size(25.dp)) }
             }
             Row(
                 Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(start = 18.dp, end = 12.dp, bottom = 12.dp),
@@ -4349,7 +4349,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
             ) {
                 Column(Modifier.weight(1.05f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Text(displayName, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 1)
+                        Text(displayName, color = Color.Black, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 1)
                         Icon(Icons.Default.CheckCircle, contentDescription = "Perfil", tint = Pink, modifier = Modifier.size(19.dp))
                     }
                     Text("@$publicUsername", color = Color.White.copy(alpha = 0.9f), maxLines = 1)
@@ -4363,7 +4363,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
 
 
         }
-        if (bio.isNotBlank()) Text(bio, Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp), color = Color.White, style = MaterialTheme.typography.bodyMedium)
+        if (bio.isNotBlank()) Text(bio, Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp), color = Color.Black, style = MaterialTheme.typography.bodyMedium)
         else Text("Ainda não adicionou uma descrição.", Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp), color = Muted, style = MaterialTheme.typography.bodyMedium)
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = {
@@ -4427,7 +4427,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.GridView, contentDescription = null, tint = Violet, modifier = Modifier.size(34.dp))
                     Spacer(Modifier.height(8.dp))
-                    Text("Nenhuma publicação ainda", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Nenhuma publicação ainda", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
             }
         } else {
@@ -4440,9 +4440,9 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                                 if (post.mediaUrl.isNotBlank()) {
                                     AsyncImage(model = post.mediaUrl, contentDescription = "Publicação de $displayName", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                                 } else {
-                                    Text(post.caption.ifBlank { "QINBLY" }, color = Color.White, modifier = Modifier.align(Alignment.Center).padding(8.dp), maxLines = 4)
+                                    Text(post.caption.ifBlank { "QINBLY" }, color = Color.Black, modifier = Modifier.align(Alignment.Center).padding(8.dp), maxLines = 4)
                                 }
-                                if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = Color.White, modifier = Modifier.align(Alignment.TopEnd).padding(5.dp))
+                                if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = Color.Black, modifier = Modifier.align(Alignment.TopEnd).padding(5.dp))
                             }
                         }
                         repeat(3 - rowPosts.size) { Spacer(Modifier.weight(1f).height(145.dp)) }
@@ -4457,7 +4457,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
             Box(Modifier.fillMaxWidth().heightIn(max = 650.dp).clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
                 AsyncImage(model = expandedImage, contentDescription = "Imagem ampliada de $displayName", modifier = Modifier.fillMaxWidth().heightIn(min = 280.dp, max = 650.dp).clickable { expandedImage = null }, contentScale = androidx.compose.ui.layout.ContentScale.Fit)
                 IconButton(onClick = { expandedImage = null }, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).background(Color.Black.copy(alpha = 0.65f), CircleShape)) {
-                    Icon(Icons.Default.Close, contentDescription = "Fechar imagem", tint = Color.White)
+                    Icon(Icons.Default.Close, contentDescription = "Fechar imagem", tint = Color.Black)
                 }
             }
         }
@@ -4475,7 +4475,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                     }, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Default.Warning, contentDescription = null, tint = Pink)
                         Spacer(Modifier.width(8.dp))
-                        Text("Denunciar perfil", color = Color.White)
+                        Text("Denunciar perfil", color = Color.Black)
                     }
                     TextButton(onClick = {
                         showMoreOptions = false
@@ -4483,7 +4483,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                     }, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Default.Block, contentDescription = null, tint = Pink)
                         Spacer(Modifier.width(8.dp))
-                        Text("Bloquear perfil", color = Color.White)
+                        Text("Bloquear perfil", color = Color.Black)
                     }
                 }
             },
@@ -4514,8 +4514,8 @@ private fun ProfileStat(label: String, count: String, icon: ImageVector, onClick
     Column(Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(icon, contentDescription = label, tint = if (label == "Publicações") Pink else Color.White, modifier = Modifier.size(22.dp))
         Spacer(Modifier.height(3.dp))
-        Text(count, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = Color.White)
+        Text(count, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.Black)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = Color.Black)
     }
 }
 
@@ -4767,10 +4767,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                     Modifier.size(124.dp).border(3.dp, Pink, CircleShape).clip(CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(76.dp))
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.Black, modifier = Modifier.size(76.dp))
                 }
-                Text("Publicado!", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text("Seu conteúdo já está no feed.", color = Color.White, style = MaterialTheme.typography.bodyLarge)
+                Text("Publicado!", color = Color.Black, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("Seu conteúdo já está no feed.", color = Color.Black, style = MaterialTheme.typography.bodyLarge)
                 Button(
                     onClick = {
                         publishSuccess = false
@@ -4850,7 +4850,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
             }
             if (effectOverlay.isNotEmpty()) {
                 Text(effectOverlay, modifier = Modifier.align(Alignment.Center).padding(bottom = 120.dp),
-                    color = Color.White, style = MaterialTheme.typography.headlineLarge)
+                    color = Color.Black, style = MaterialTheme.typography.headlineLarge)
             }
             Box(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp)) {
                 Row(
@@ -4860,16 +4860,16 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     IconButton(onClick = { if (isRecording) activeRecording?.stop(); onCameraCancelled() }) {
-                        Icon(Icons.Default.Close, contentDescription = "Fechar câmera", tint = Color.White, modifier = Modifier.size(28.dp))
+                        Icon(Icons.Default.Close, contentDescription = "Fechar câmera", tint = Color.Black, modifier = Modifier.size(28.dp))
                     }
                     IconButton(onClick = {
                         flashEnabled = !flashEnabled
                         imageCapture?.flashMode = if (flashEnabled) androidx.camera.core.ImageCapture.FLASH_MODE_ON else androidx.camera.core.ImageCapture.FLASH_MODE_OFF
                     }) {
-                        Text(if (flashEnabled) "⚡" else "ϟ", color = Color.White, style = MaterialTheme.typography.titleLarge)
+                        Text(if (flashEnabled) "⚡" else "ϟ", color = Color.Black, style = MaterialTheme.typography.titleLarge)
                     }
                     IconButton(onClick = { onNotice("Configurações da câmera") }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Configurações", tint = Color.White)
+                        Icon(Icons.Default.Settings, contentDescription = "Configurações", tint = Color.Black)
                     }
                 }
 
@@ -4891,9 +4891,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                                 .border(1.dp, Color(0x557D7D83), CircleShape)
                                 .clickable { activeCameraPanel = if (activeCameraPanel == label) "" else label },
                                 contentAlignment = Alignment.Center) {
-                                Icon(icon, contentDescription = label, tint = Color.White, modifier = Modifier.size(22.dp))
+                                Icon(icon, contentDescription = label, tint = Color.Black, modifier = Modifier.size(22.dp))
                             }
-                            Text(label, color = Color.White, style = MaterialTheme.typography.labelSmall)
+                            Text(label, color = Color.Black, style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }
@@ -4909,13 +4909,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                             Text(activeCameraPanel, color = Color.White, fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                             IconButton(onClick = { activeCameraPanel = "" }, modifier = Modifier.size(30.dp)) {
-                                Icon(Icons.Default.Close, contentDescription = "Fechar painel", tint = Color.White)
+                                Icon(Icons.Default.Close, contentDescription = "Fechar painel", tint = Color.Black)
                             }
                         }
                         when(activeCameraPanel) {
                             "Filtros", "Efeitos" -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 listOf("Original", "Quente", "Frio", "Vivo", "Cinema", "P&B").forEach { f ->
-                                    Text(f, color = Color.White, style = MaterialTheme.typography.labelSmall,
+                                    Text(f, color = Color.Black, style = MaterialTheme.typography.labelSmall,
                                         modifier = Modifier.weight(1f).clip(RoundedCornerShape(9.dp))
                                             .background(if (selectedFilter == f) Color(0xFF55545B) else Color(0xFF292A31))
                                             .clickable { selectedFilter = f; selectedEffect = f }
@@ -4924,21 +4924,21 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                             }
                             "Velocidade" -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                                 listOf("0,3×", "0,5×", "1×", "2×", "3×").forEach { v ->
-                                    Text(v, color = Color.White, modifier = Modifier.clip(CircleShape)
+                                    Text(v, color = Color.Black, modifier = Modifier.clip(CircleShape)
                                         .background(if (selectedVideoSpeed == v) Color(0xFF55545B) else Color.Transparent)
                                         .clickable { selectedVideoSpeed = v }.padding(10.dp))
                                 }
                             }
                             "Formato" -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                                 listOf("9:16", "1:1", "4:3").forEach { f ->
-                                    Text(f, color = Color.White, modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                                    Text(f, color = Color.Black, modifier = Modifier.clip(RoundedCornerShape(8.dp))
                                         .background(if (selectedCameraFormat == f) Color(0xFF55545B) else Color(0xFF292A31))
                                         .clickable { selectedCameraFormat = f }.padding(horizontal = 18.dp, vertical = 10.dp))
                                 }
                             }
                             "Timer" -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                                 listOf("Desligado", "3 s", "5 s", "10 s").forEach { v ->
-                                    Text(v, color = Color.White, modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                                    Text(v, color = Color.Black, modifier = Modifier.clip(RoundedCornerShape(8.dp))
                                         .background(if (selectedTimerSeconds == v) Color(0xFF55545B) else Color(0xFF292A31))
                                         .clickable { selectedTimerSeconds = v }.padding(horizontal = 10.dp, vertical = 10.dp))
                                 }
@@ -4955,7 +4955,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                                             imageCapture?.flashMode = if (flashEnabled) androidx.camera.core.ImageCapture.FLASH_MODE_ON else androidx.camera.core.ImageCapture.FLASH_MODE_OFF
                                         } else onNotice("$option: configuração da câmera")
                                     }.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Text(option, color = Color.White, modifier = Modifier.weight(1f))
+                                        Text(option, color = Color.Black, modifier = Modifier.weight(1f))
                                         Text(if (option == "Flash" && flashEnabled) "Ligado" else "›", color = Color(0xFFB8B8BE))
                                     }
                                 }
@@ -4998,7 +4998,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                     }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceEvenly) {
                         IconButton(onClick = { galleryFilter = "Todos"; openVyboraGallery() }, modifier = Modifier.size(52.dp).background(Color(0x77392843), CircleShape)) {
-                            Icon(Icons.Default.PhotoLibrary, contentDescription = "Galeria", tint = Color.White)
+                            Icon(Icons.Default.PhotoLibrary, contentDescription = "Galeria", tint = Color.Black)
                         }
                         Box(Modifier.size(78.dp).clip(CircleShape).background(Color.White).padding(5.dp).clip(CircleShape).background(Color(0xFFFF3045)).clickable {
                             if (captureMode == "Vídeo") {
@@ -5047,13 +5047,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
         Column(Modifier.fillMaxSize().background(Color(0xFF080808)).padding(horizontal = 14.dp)) {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { galleryOpen = false; gallerySelection.clear() }) {
-                    Icon(Icons.Default.Close, contentDescription = "Fechar galeria", tint = Color.White)
+                    Icon(Icons.Default.Close, contentDescription = "Fechar galeria", tint = Color.Black)
                 }
                 Column(Modifier.weight(1f)) {
-                    Text("Recentes", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("Recentes", color = Color.Black, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text("Escolha uma foto ou vídeo", color = Color.LightGray, style = MaterialTheme.typography.bodySmall)
                 }
-                TextButton(onClick = { galleryFilter = "Todos" }) { Text("▾", color = Color.White) }
+                TextButton(onClick = { galleryFilter = "Todos" }) { Text("▾", color = Color.Black) }
             }
             Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("Todos", "Fotos", "Vídeos").forEach { filter ->
@@ -5074,7 +5074,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                 else -> true
             } }
             if (galleryLoading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color.White) }
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color.Black) }
             } else if (visibleAssets.isEmpty()) {
                 Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Text("Nenhuma mídia encontrada.", color = Color.LightGray)
@@ -5107,13 +5107,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                                 Row(Modifier.align(Alignment.BottomStart).fillMaxWidth().background(Color(0x66000000)).padding(5.dp),
                                     verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
-                                    Text("VÍDEO", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                                    Text("VÍDEO", color = Color.Black, style = MaterialTheme.typography.labelSmall)
                                 }
                             }
                             Box(Modifier.align(Alignment.TopEnd).padding(6.dp).size(23.dp).border(1.5.dp, Color.White, CircleShape)
                                 .background(if (selectedIndex >= 0) Color(0xFFB12AFF) else Color(0x55000000), CircleShape),
                                 contentAlignment = Alignment.Center) {
-                                if (selectedIndex >= 0) Text("1", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                                if (selectedIndex >= 0) Text("1", color = Color.Black, style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -5211,11 +5211,11 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                 }
             }
             if (editorSticker.isNotBlank()) {
-                Text(editorSticker, modifier = Modifier.align(Alignment.Center), color = Color.White, style = MaterialTheme.typography.displayLarge)
+                Text(editorSticker, modifier = Modifier.align(Alignment.Center), color = Color.Black, style = MaterialTheme.typography.displayLarge)
             }
             if (editorText.isNotBlank()) {
                 Text(editorText, modifier = Modifier.align(Alignment.Center).padding(horizontal = 28.dp, vertical = 72.dp),
-                    color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
+                    color = Color.Black, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0x99000000), Color.Transparent, Color.Transparent, Color(0xEE000000)))))
@@ -5237,7 +5237,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                     .size(48.dp).border(1.dp, Color(0x557E828B), CircleShape)
                     .background(Color(0x88303030), CircleShape)
             ) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.Black)
             }
             Row(
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp)
@@ -5249,8 +5249,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(9.dp)
             ) {
-                Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
-                Text("Adicionar som", color = Color.White, fontWeight = FontWeight.SemiBold)
+                Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color.Black, modifier = Modifier.size(20.dp))
+                Text("Adicionar som", color = Color.Black, fontWeight = FontWeight.SemiBold)
             }
 
             // Nova coluna de ferramentas do editor, com identidade visual própria.
@@ -5324,7 +5324,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                             Icon(
                                 imageVector = symbol,
                                 contentDescription = tool,
-                                tint = Color.White,
+                                tint = Color.Black,
                                 modifier = Modifier.size(26.dp)
                             )
                         }
@@ -5411,7 +5411,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF77717E)),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
+                        Icon(Icons.Default.Add, contentDescription = null, tint = Color.Black)
                         Spacer(Modifier.width(6.dp))
                         Text("Seu Story", color = Color.White, fontWeight = FontWeight.SemiBold)
                     }
@@ -5447,11 +5447,11 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { publishSettings = false }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Voltar à edição", tint = Color.White)
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Voltar à edição", tint = Color.Black)
                 }
-                Text("Nova publicação", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Nova publicação", color = Color.Black, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = { publishSettings = false }) { Text("Editar", color = Color.White) }
+                TextButton(onClick = { publishSettings = false }) { Text("Editar", color = Color.Black) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.Top) {
                 if ((selectedUri ?: sourceUri) != null && selectedType == "foto") {
@@ -5463,7 +5463,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                     )
                 } else {
                     Box(Modifier.width(86.dp).height(112.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF222222)), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.PlayCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(34.dp))
+                        Icon(Icons.Default.PlayCircle, contentDescription = null, tint = Color.Black, modifier = Modifier.size(34.dp))
                     }
                 }
                 OutlinedTextField(
@@ -5487,49 +5487,49 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
             }
             Divider(color = Color(0xFF303030))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.PersonAddAlt1, contentDescription = null, tint = Color.White)
+                Icon(Icons.Default.PersonAddAlt1, contentDescription = null, tint = Color.Black)
                 Spacer(Modifier.width(14.dp))
-                Text("Marcar pessoas", color = Color.White, modifier = Modifier.weight(1f))
+                Text("Marcar pessoas", color = Color.Black, modifier = Modifier.weight(1f))
                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Language, contentDescription = null, tint = Color.White)
+                Icon(Icons.Default.Language, contentDescription = null, tint = Color.Black)
                 Spacer(Modifier.width(14.dp))
-                Text("Adicionar localização", color = Color.White, modifier = Modifier.weight(1f))
+                Text("Adicionar localização", color = Color.Black, modifier = Modifier.weight(1f))
                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Mic, contentDescription = null, tint = Color.White)
+                Icon(Icons.Default.Mic, contentDescription = null, tint = Color.Black)
                 Spacer(Modifier.width(14.dp))
-                Text("Adicionar música", color = Color.White, modifier = Modifier.weight(1f))
+                Text("Adicionar música", color = Color.Black, modifier = Modifier.weight(1f))
                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
             }
             Divider(color = Color(0xFF303030))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Groups, contentDescription = null, tint = Color.White)
+                Icon(Icons.Default.Groups, contentDescription = null, tint = Color.Black)
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Público", color = Color.White)
+                    Text("Público", color = Color.Black)
                     Text("Todos podem ver sua publicação", color = Color.LightGray, style = MaterialTheme.typography.bodySmall)
                 }
                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.ChatBubbleOutline, contentDescription = null, tint = Color.White)
+                Icon(Icons.Default.ChatBubbleOutline, contentDescription = null, tint = Color.Black)
                 Spacer(Modifier.width(14.dp))
-                Text("Permitir comentários", color = Color.White, modifier = Modifier.weight(1f))
+                Text("Permitir comentários", color = Color.Black, modifier = Modifier.weight(1f))
                 androidx.compose.material3.Switch(checked = allowComments, onCheckedChange = { allowComments = it }, colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = Color(0xFF1976D2), checkedThumbColor = Color.White))
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Share, contentDescription = null, tint = Color.White)
+                Icon(Icons.Default.Share, contentDescription = null, tint = Color.Black)
                 Spacer(Modifier.width(14.dp))
-                Text("Permitir compartilhamento", color = Color.White, modifier = Modifier.weight(1f))
+                Text("Permitir compartilhamento", color = Color.Black, modifier = Modifier.weight(1f))
                 androidx.compose.material3.Switch(checked = allowSharing, onCheckedChange = { allowSharing = it }, colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = Color(0xFF1976D2), checkedThumbColor = Color.White))
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.FileDownload, contentDescription = null, tint = Color.White)
+                Icon(Icons.Default.FileDownload, contentDescription = null, tint = Color.Black)
                 Spacer(Modifier.width(14.dp))
-                Text("Salvar no dispositivo", color = Color.White, modifier = Modifier.weight(1f))
+                Text("Salvar no dispositivo", color = Color.Black, modifier = Modifier.weight(1f))
                 androidx.compose.material3.Switch(checked = saveToDevice, onCheckedChange = { saveToDevice = it }, colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = Color(0xFF1976D2), checkedThumbColor = Color.White))
             }
             Button(
@@ -5604,7 +5604,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
                 Text(publishError, color = Color(0xFFFF8A80), style = MaterialTheme.typography.bodyMedium)
             }
             TextButton(onClick = { publishSettings = false }) {
-                Text("Voltar à edição", color = Color.White)
+                Text("Voltar à edição", color = Color.Black)
             }
         }
     }
@@ -5623,7 +5623,7 @@ private fun LivePage(onNotice: (String) -> Unit) {
                     border = androidx.compose.foundation.BorderStroke(1.dp, if (selectedCategory == category) Pink else Color(0xFF292D48)),
                     modifier = Modifier.clickable { selectedCategory = category }
                 ) {
-                    Text(category, Modifier.padding(horizontal = 10.dp, vertical = 10.dp), color = Color.White, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                    Text(category, Modifier.padding(horizontal = 10.dp, vertical = 10.dp), color = Color.Black, style = MaterialTheme.typography.labelMedium, maxLines = 1)
                 }
             }
         }
@@ -5636,9 +5636,9 @@ private fun LivePage(onNotice: (String) -> Unit) {
             Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF140D31), Color(0xFF5E155D), Color(0xFF10182D))))) {
                 Column(Modifier.align(Alignment.Center).padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Box(Modifier.size(58.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Pink, Violet))), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Radio, contentDescription = null, tint = Color.White, modifier = Modifier.size(31.dp))
+                        Icon(Icons.Default.Radio, contentDescription = null, tint = Color.Black, modifier = Modifier.size(31.dp))
                     }
-                    Text("Entre no universo das Lives", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Entre no universo das Lives", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.Black)
                     Text("Descubra criadores, jogos, música e conversas ao vivo.", color = Muted, style = MaterialTheme.typography.bodyMedium)
                     Button(onClick = { onNotice("As transmissões e a reprodução ao vivo ainda precisam ser conectadas ao servidor de mídia.") }, colors = ButtonDefaults.buttonColors(containerColor = Pink), shape = RoundedCornerShape(14.dp)) {
                         Text("Explorar transmissões")
