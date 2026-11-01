@@ -1696,6 +1696,24 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
             VyboraApi.PostSummary("demo-near-03", "📍 TESTE LOCAL · Paisagens da região 🌅", "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=1000", "image", "lucas.local.demo", "Lucas Ferreira", 91, 13, "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=160")
         )
     }
+    val moreDemoVideos = remember {
+        val urls = listOf("BigBuckBunny.mp4", "ElephantsDream.mp4", "ForBiggerBlazes.mp4", "ForBiggerEscapes.mp4", "ForBiggerFun.mp4", "ForBiggerJoyrides.mp4", "Sintel.mp4", "TearsOfSteel.mp4")
+        (1..32).map { n ->
+            VyboraApi.PostSummary("video-sample-$n", "Vídeo de teste número $n", "https://storage.googleapis.com/gtv-videos-bucket/sample/${urls[(n - 1) % urls.size]}", "video", "creator.video.$n", "Criador $n", n * 25, n * 3, "")
+        }
+    }
+    val moreDemoLives = remember {
+        val topics = listOf("Música", "Jogos", "Bate-papo", "Moda", "Culinária", "Arte")
+        (1..32).map { n ->
+            VyboraApi.PostSummary("live-sample-$n", "LIVE SIMULADA: ${topics[(n - 1) % topics.size]} · Teste $n", "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=900", "image", "creator.live.$n", "Apresentador $n", n * 21, n * 4, "")
+        }
+    }
+    val moreDemoNearby = remember {
+        val topics = listOf("Parque", "Café", "Praça", "Paisagem", "Feira", "Passeio")
+        (1..32).map { n ->
+            VyboraApi.PostSummary("near-sample-$n", "LOCAL FICTÍCIO: ${topics[(n - 1) % topics.size]} · Teste $n", "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=900", "image", "creator.near.$n", "Morador $n", n * 9, n, "")
+        }
+    }
     val allFeedPosts = (remoteTestPosts + posts.sortedByDescending { it.createdAt } + demoPosts + extraDemoPosts).distinctBy { it.id }
     val feedTabPosts = when (selectedFeedTab) {
         "Seguindo" -> allFeedPosts.filter { it.isFollowing }
@@ -1703,11 +1721,11 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
         else -> allFeedPosts
     }
     val displayedPosts = when (selectedFeedFilter) {
-        "Vídeos" -> (filterDemoPosts + feedTabPosts.filter { it.mediaType.equals("video", ignoreCase = true) }).distinctBy { it.id }
+        "Vídeos" -> (filterDemoPosts + moreDemoVideos + feedTabPosts.filter { it.mediaType.equals("video", ignoreCase = true) }).distinctBy { it.id }
         "Fotos" -> feedTabPosts.filter { it.mediaType.equals("image", ignoreCase = true) }
         "Tendências" -> feedTabPosts.sortedByDescending { it.likes + it.comments * 3 }
-        "Lives" -> liveDemoPosts // Apenas simulação de lives, sem espectadores reais ou streaming.
-        "Perto de mim" -> nearbyDemoPosts // Exemplos fictícios, não baseados na localização do aparelho.
+        "Lives" -> liveDemoPosts + moreDemoLives // Apenas simulação de lives, sem espectadores reais ou streaming.
+        "Perto de mim" -> nearbyDemoPosts + moreDemoNearby // Exemplos fictícios, não baseados na localização do aparelho.
         else -> feedTabPosts.sortedByDescending { it.createdAt }
     }
     LaunchedEffect(refreshKey) {
