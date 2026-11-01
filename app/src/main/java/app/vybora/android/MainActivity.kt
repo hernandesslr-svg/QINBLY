@@ -88,6 +88,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.RadioButtonChecked
@@ -1249,6 +1250,47 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
 }
 
 @Composable
+private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val player = remember(url) {
+        ExoPlayer.Builder(context).build().apply {
+            setMediaItem(MediaItem.fromUri(url))
+            repeatMode = androidx.media3.common.Player.REPEAT_MODE_ONE
+            prepare()
+            playWhenReady = true
+        }
+    }
+    var playing by remember(url) { mutableStateOf(true) }
+    var position by remember(url) { mutableStateOf(0f) }
+    var duration by remember(url) { mutableStateOf(0L) }
+    DisposableEffect(player) { onDispose { player.release() } }
+    androidx.compose.runtime.LaunchedEffect(player) {
+        while (true) {
+            val d = player.duration
+            if (d > 0) {
+                duration = d
+                position = player.currentPosition.coerceIn(0L, d).toFloat() / d.toFloat()
+            }
+            kotlinx.coroutines.delay(200L)
+        }
+    }
+    Box(modifier.background(Color.Black)) {
+        AndroidView(Modifier.fillMaxSize(), factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false } }, update = { it.player = player; it.useController = false })
+        Box(Modifier.fillMaxSize().clickable {
+            if (player.isPlaying) { player.pause(); playing = false } else { player.play(); playing = true }
+        }, contentAlignment = Alignment.Center) {
+            Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, contentDescription = "Pausar ou continuar", tint = Color.White, modifier = Modifier.size(64.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.42f)).padding(14.dp))
+        }
+        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 18.dp, end = 18.dp, bottom = 24.dp)) {
+            val seconds = (position * duration).toLong().coerceAtLeast(0L) / 1000L
+            val total = duration.coerceAtLeast(0L) / 1000L
+            Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')} / ${total / 60}:${(total % 60).toString().padStart(2, '0')}", color = Color.White, fontSize = 12.sp)
+            androidx.compose.material3.Slider(value = position.coerceIn(0f, 1f), onValueChange = { value -> position = value; if (duration > 0L) player.seekTo((duration * value).toLong()) }, colors = androidx.compose.material3.SliderDefaults.colors(thumbColor = Color(0xFF168BFF), activeTrackColor = Color(0xFF168BFF), inactiveTrackColor = Color.LightGray))
+        }
+    }
+}
+
+@Composable
 private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autoplay: Boolean = false) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var playbackError by remember(url) { mutableStateOf(false) }
@@ -2052,16 +2094,12 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                     val video = fullscreenVideos[page]
                     Box(Modifier.fillMaxSize().background(Color.Black)) {
                         if (pagerState.currentPage == page) {
-                            InlineVideoPlayer(url = video.mediaUrl, modifier = Modifier.fillMaxSize(), autoplay = true)
+                            VyboraFullscreenVideo(video.mediaUrl, Modifier.fillMaxSize())
                         }
-                        Column(
-                            Modifier.align(Alignment.BottomStart).fillMaxWidth()
-                                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC000000))))
-                                .padding(start = 18.dp, end = 72.dp, bottom = 38.dp, top = 70.dp)
-                        ) {
-                            Text("@${video.username}", color = Color.White, fontWeight = FontWeight.Bold)
-                            if (video.caption.isNotBlank()) Text(video.caption, color = Color.White, maxLines = 3)
-                            Text("♫ som original - ${video.displayName.ifBlank { video.username }}", color = Color.White, fontSize = 12.sp)
+                        Column(Modifier.align(Alignment.CenterEnd).padding(end = 12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            listOf(Icons.Default.Person, Icons.Default.PersonAdd, Icons.Default.FavoriteBorder, Icons.Default.ChatBubbleOutline, Icons.Default.Share, Icons.Default.Archive, Icons.Default.MoreHoriz).forEach {
+                                Icon(it, contentDescription = null, tint = Color.White, modifier = Modifier.size(42.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)).padding(8.dp))
+                            }
                         }
                     }
                 }
