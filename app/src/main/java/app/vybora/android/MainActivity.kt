@@ -1952,9 +1952,9 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     )
 
                                     Column(
-                                        modifier = Modifier.align(Alignment.CenterEnd).padding(end = 9.dp),
+                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 9.dp, bottom = 82.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(13.dp)
+                                        verticalArrangement = Arrangement.spacedBy(20.dp)
                                     ) {
                                         val overlayColor = Color.White
                                         Column(horizontalAlignment = Alignment.CenterHorizontally,
@@ -2010,8 +2010,16 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                                 prefs.edit().putStringSet("saved_post_ids", savedPostIds).apply()
                                             }.padding(6.dp).size(29.dp))
                                     }
-                                    if (post.caption.isNotBlank()) {
-                                        Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().background(Color.Black.copy(alpha = 0.44f)).padding(start = 12.dp, end = 65.dp, top = 9.dp, bottom = 10.dp)) {
+                                    Column(
+                                        modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth()
+                                            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.58f))))
+                                            .padding(start = 13.dp, end = 68.dp, top = 34.dp, bottom = 13.dp),
+                                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                                    ) {
+                                        Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" } + " · Há 2 min",
+                                            color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) })
+                                        if (post.caption.isNotBlank()) {
                                             Text(post.caption, color = Color.White, fontSize = 13.sp, maxLines = 2, lineHeight = 17.sp)
                                         }
                                     }
@@ -2035,6 +2043,13 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).aspectRatio(0.90f).clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
                                     Box(Modifier.fillMaxSize().clickable { fullscreenVideoId = post.id }) {
                                         InlineVideoPlayer(url = post.mediaUrl, modifier = Modifier.fillMaxSize(), autoplay = false)
+                                        Column(Modifier.align(Alignment.BottomStart).fillMaxWidth()
+                                            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f))))
+                                            .padding(start = 13.dp, end = 65.dp, top = 36.dp, bottom = 13.dp)) {
+                                            Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" } + " · Há 2 min",
+                                                color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                            if (post.caption.isNotBlank()) Text(post.caption, color = Color.White, fontSize = 13.sp, maxLines = 2)
+                                        }
                                         Icon(Icons.Default.Fullscreen, contentDescription = "Abrir vídeo em tela inteira", tint = RemoteAppearance.actionIconColor, modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(28.dp))
                                     }
                                 }
