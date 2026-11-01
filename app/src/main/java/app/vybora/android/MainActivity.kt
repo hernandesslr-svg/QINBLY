@@ -476,7 +476,9 @@ private fun VyboraApp() {
                     try {
                         connection.connectTimeout = 8000
                         connection.readTimeout = 8000
-                        connection.setRequestProperty("Cache-Control", "no-cache")
+                        connection.useCaches = false
+                        connection.setRequestProperty("Cache-Control", "no-cache, no-store, max-age=0")
+                        connection.setRequestProperty("Pragma", "no-cache")
                         if (connection.responseCode !in 200..299) null
                         else {
                             val raw = connection.inputStream.bufferedReader().use { it.readText() }
@@ -505,7 +507,7 @@ private fun VyboraApp() {
                     editor.apply()
                 }
             }
-            kotlinx.coroutines.delay(2000L)
+            kotlinx.coroutines.delay(1000L)
         }
     }
 
