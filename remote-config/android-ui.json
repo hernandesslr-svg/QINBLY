@@ -1,10 +1,31 @@
 {
   "schemaVersion": 1,
-  "revision": 11,
+  "revision": 12,
   "navigation": {
     "indicatorColor": "#33FFFFFF",
     "backgroundColor": "#99030710",
     "selectedIconColor": "#FFFFFFFF",
     "unselectedIconColor": "#FFFFFFFF"
+  },
+  "appearance": {
+    "headerTextColor": "#FFFFFFFF",
+    "headerUnderlineColor": "#FFFFFFFF",
+    "headerTextSize": 17,
+    "headerVisible": true,
+    "actionIconColor": "#FFFFFFFF",
+    "actionIconSize": 24,
+    "navigationLabelSize": 14,
+    "navigationLabels": [
+      "Início",
+      "Lives",
+      "Criar",
+      "Mensagens",
+      "Perfil"
+    ],
+    "feedLabels": [
+      "Para você",
+      "Amigos",
+      "Em alta"
+    ]
   }
 }
