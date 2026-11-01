@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 16,
+  "revision": 17,
   "navigation": {
     "indicatorColor": "#FF4CAF50",
     "backgroundColor": "#99030710",
@@ -8,8 +8,8 @@
     "unselectedIconColor": "#FFFFFFFF"
   },
   "appearance": {
-    "headerTextColor": "#FFFFFFFF",
-    "headerUnderlineColor": "#FFFFFFFF",
+    "headerTextColor": "#FF000000",
+    "headerUnderlineColor": "#FF000000",
     "headerTextSize": 17,
     "headerVisible": true,
     "actionIconColor": "#FFFFFFFF",
@@ -27,7 +27,7 @@
       "Amigos",
       "Em alta"
     ],
-    "headerBackgroundColor": "#FF000000",
+    "headerBackgroundColor": "#FFFFFFFF",
     "headerHorizontalPadding": 24,
     "headerVerticalPadding": 10,
     "feedSpacing": 0,
