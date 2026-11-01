@@ -1529,7 +1529,14 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
         )
     }
     // Publicações reais recentes aparecem primeiro; demonstrações ficam depois.
-    val displayedPosts = (posts.sortedByDescending { it.createdAt } + demoPosts + extraDemoPosts).distinctBy { it.id }
+    val refreshOnlyTestPosts = remember {
+        listOf(
+            VyboraApi.PostSummary("refresh-test-01", "Um fim de tarde diferente por aqui 🌅 #QINBLY", "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=900", "image", "camila.monteiro.teste", "Camila Monteiro", 84, 12, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160"),
+            VyboraApi.PostSummary("refresh-test-02", "Café, boas ideias e um novo começo ☕", "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=900", "image", "rafael.costa.teste", "Rafael Costa", 61, 8, "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160"),
+            VyboraApi.PostSummary("refresh-test-03", "Aproveitando cada momento 🌊", "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900", "image", "juliana.freitas.teste", "Juliana Freitas", 109, 17, "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160")
+        )
+    }
+    val displayedPosts = (posts.sortedByDescending { it.createdAt } + (if (refreshKey > 0) refreshOnlyTestPosts else emptyList()) + demoPosts + extraDemoPosts).distinctBy { it.id }
     LaunchedEffect(refreshKey) {
         loading = true
         Thread {
