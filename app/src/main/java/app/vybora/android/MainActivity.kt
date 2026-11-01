@@ -1929,7 +1929,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 var dragDistance by remember(post.id) { mutableFloatStateOf(0f) }
                                 Box(
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
-                                        .aspectRatio(0.68f)
+                                        .aspectRatio(0.60f)
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(Color.Black)
                                 ) {
@@ -2057,7 +2057,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 }
 
                             } else if (post.mediaUrl.isNotBlank() && post.mediaType == "video") {
-                                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).aspectRatio(0.68f)
+                                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).aspectRatio(0.60f)
                                     .clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
                                     Surface(
                                         modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
@@ -2155,9 +2155,6 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 Text(post.caption, color = RemoteAppearance.feedTextColor, fontSize = 15.sp,
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
                                     maxLines = 3, lineHeight = 20.sp)
-                            }
-                            if (post.mediaType == "video" && post.mediaUrl.isNotBlank()) {
-                                Text("♫ som original - ${post.displayName.ifBlank { post.username }}", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp, maxLines = 1, modifier = Modifier.padding(horizontal = 10.dp))
                             }
                             if (post.mediaType != "image" && post.mediaType != "video") {
                                 Row(
