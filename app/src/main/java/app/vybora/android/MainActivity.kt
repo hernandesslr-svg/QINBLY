@@ -505,7 +505,7 @@ private fun VyboraApp() {
                     editor.apply()
                 }
             }
-            kotlinx.coroutines.delay(30000L)
+            kotlinx.coroutines.delay(2000L)
         }
     }
 
