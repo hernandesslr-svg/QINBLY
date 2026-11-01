@@ -1681,7 +1681,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
         "Vídeos" -> feedTabPosts.filter { it.mediaType.equals("video", ignoreCase = true) }
         "Fotos" -> feedTabPosts.filter { it.mediaType.equals("image", ignoreCase = true) }
         "Tendências" -> feedTabPosts.sortedByDescending { it.likes + it.comments * 3 }
-        "Perto de você" -> emptyList() // A API ainda não retorna localização verificada das publicações.
+        "Perto de você" -> emptyList() // Não mostrar publicações sem geolocalização confirmada.
         else -> feedTabPosts.sortedByDescending { it.createdAt }
     }
     LaunchedEffect(refreshKey) {
@@ -1801,8 +1801,8 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Text("Ainda não há publicações", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                            Text("Quando as pessoas publicarem, elas aparecerão aqui. As ações do feed funcionarão nas publicações reais.", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
+                            Text(if (selectedFeedFilter == "Perto de você") "Publicações locais indisponíveis" else "Ainda não há publicações", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text(if (selectedFeedFilter == "Perto de você") "A localização das publicações ainda não é fornecida pelo serviço. Não exibiremos resultados inventados." else "Quando as pessoas publicarem, elas aparecerão aqui.", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
                             OutlinedButton(onClick = { refreshKey++ }) {
                                 Text("Atualizar feed")
                             }
@@ -1822,7 +1822,8 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                             }
 
                                         if (post.mediaUrl.isBlank() || (post.mediaType != "image" && post.mediaType != "video")) {
-                                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().background(Color.Transparent).padding(horizontal = 14.dp, vertical = 7.dp)) {
+                                        if (selectedFeedFilter == "Novidades") {
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().background(Color.Transparent).padding(horizontal = 14.dp, vertical = 7.dp)) {
                                     val avatarUrl = post.avatarUrl.ifBlank { "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=240&auto=format&fit=crop&q=80" }
                                     AsyncImage(model = avatarUrl, contentDescription = "Abrir perfil de @${post.username}", modifier = Modifier.size(40.dp).clip(CircleShape).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }, contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                                     Spacer(Modifier.width(10.dp))
@@ -1899,6 +1900,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     }
                                         
                             }
+                                    }
                             if (post.mediaUrl.isNotBlank() && post.mediaType == "image") {
                                 val demoGallery = remember(post.id) {
                                     when (post.id) {
@@ -1928,7 +1930,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 var dragDistance by remember(post.id) { mutableFloatStateOf(0f) }
                                 Box(
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
-                                        .aspectRatio(0.90f)
+                                        .aspectRatio(0.82f)
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(Color.Black)
                                 ) {
@@ -1954,9 +1956,9 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     )
 
                                     Column(
-                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 9.dp, bottom = 72.dp),
+                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 9.dp, bottom = 62.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(22.dp)
+                                        verticalArrangement = Arrangement.spacedBy(24.dp)
                                     ) {
                                         val overlayColor = Color.White
                                         Column(horizontalAlignment = Alignment.CenterHorizontally,
@@ -2042,7 +2044,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 }
 
                             } else if (post.mediaUrl.isNotBlank() && post.mediaType == "video") {
-                                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).aspectRatio(0.90f)
+                                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).aspectRatio(0.82f)
                                     .clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
                                     Box(Modifier.fillMaxSize().clickable { fullscreenVideoId = post.id }) {
                                         InlineVideoPlayer(url = post.mediaUrl, modifier = Modifier.fillMaxSize(), autoplay = false)
