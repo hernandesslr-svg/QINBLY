@@ -1275,7 +1275,7 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
         }
     }
     Box(modifier.background(Color.Black)) {
-        AndroidView(Modifier.fillMaxSize(), factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false } }, update = { it.player = player; it.useController = false })
+        AndroidView(modifier = Modifier.fillMaxSize(), factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false } }, update = { view -> view.player = player; view.useController = false })
         Box(Modifier.fillMaxSize().clickable {
             if (player.isPlaying) { player.pause(); playing = false } else { player.play(); playing = true }
         }, contentAlignment = Alignment.Center) {
