@@ -474,8 +474,8 @@ private fun VyboraApp() {
                     val url = java.net.URL("https://raw.githubusercontent.com/hernandesslr-svg/VYBORA/main/remote-config/android-ui.json")
                     val connection = url.openConnection() as java.net.HttpURLConnection
                     try {
-                        connection.connectTimeout = 8000
-                        connection.readTimeout = 8000
+                        connection.connectTimeout = 2000
+                        connection.readTimeout = 2000
                         connection.useCaches = false
                         connection.setRequestProperty("Cache-Control", "no-cache, no-store, max-age=0")
                         connection.setRequestProperty("Pragma", "no-cache")
@@ -507,7 +507,7 @@ private fun VyboraApp() {
                     editor.apply()
                 }
             }
-            kotlinx.coroutines.delay(1000L)
+            kotlinx.coroutines.delay(500L)
         }
     }
 
