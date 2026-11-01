@@ -476,21 +476,29 @@ private fun VyboraApp() {
         var firstRequest = true
         while (true) {
             val config = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                try {
-                    val url = java.net.URL("https://raw.githubusercontent.com/hernandesslr-svg/VYBORA/main/remote-config/android-ui.json?refresh=" + System.currentTimeMillis())
-                    val connection = url.openConnection() as java.net.HttpURLConnection
+                fun fetchJson(urlString: String, githubApi: Boolean): JSONObject? {
+                    val connection = java.net.URL(urlString).openConnection() as java.net.HttpURLConnection
                     try {
-                        connection.connectTimeout = 2000
-                        connection.readTimeout = 2000
+                        connection.connectTimeout = 5000
+                        connection.readTimeout = 5000
                         connection.useCaches = false
                         connection.setRequestProperty("Cache-Control", "no-cache, no-store, max-age=0")
                         connection.setRequestProperty("Pragma", "no-cache")
-                        if (connection.responseCode !in 200..299) null
-                        else {
-                            val raw = connection.inputStream.bufferedReader().use { it.readText() }
-                            if (raw.length > 8192) null else JSONObject(raw)
-                        }
+                        if (githubApi) connection.setRequestProperty("Accept", "application/vnd.github+json")
+                        if (connection.responseCode !in 200..299) return null
+                        val raw = connection.inputStream.bufferedReader().use { it.readText() }
+                        if (raw.length > 100000) return null
+                        if (!githubApi) return JSONObject(raw)
+                        val encoded = JSONObject(raw).optString("content").replace("\\n", "").replace("\\r", "")
+                        val decoded = String(android.util.Base64.decode(encoded, android.util.Base64.DEFAULT), Charsets.UTF_8)
+                        return JSONObject(decoded)
                     } finally { connection.disconnect() }
+                }
+                try {
+                    val nonce = System.currentTimeMillis().toString()
+                    // GitHub Contents API avoids stale raw.githubusercontent.com CDN revisions.
+                    fetchJson("https://api.github.com/repos/hernandesslr-svg/VYBORA/contents/remote-config/android-ui.json?ref=main&nonce=" + nonce, true)
+                        ?: fetchJson("https://raw.githubusercontent.com/hernandesslr-svg/VYBORA/main/remote-config/android-ui.json?refresh=" + nonce, false)
                 } catch (_: Exception) { null }
             }
             if (manualRefresh && firstRequest) {
