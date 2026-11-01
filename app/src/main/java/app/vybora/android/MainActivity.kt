@@ -1673,6 +1673,29 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
             } else onNotice("Não foi possível buscar o feed de teste no GitHub")
         }
     }
+    // Conteúdo de demonstração por filtro: somente no aparelho, nunca no Supabase.
+    // Lives são simulações visuais, não transmissões ativas.
+    val filterDemoPosts = remember {
+        listOf(
+            VyboraApi.PostSummary("demo-video-01", "Vídeo de teste: aventura e animação 🎬", "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", "video", "studio.demo", "Studio Demo", 346, 42, "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160"),
+            VyboraApi.PostSummary("demo-video-02", "Vídeo de teste: cenas e movimento 🎥", "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", "video", "cine.demo", "Cine Demo", 287, 31, "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=160"),
+            VyboraApi.PostSummary("demo-video-03", "Vídeo de teste: natureza e aventura 🌿", "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4", "video", "aventura.demo", "Aventura Demo", 219, 18, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160")
+        )
+    }
+    val liveDemoPosts = remember {
+        listOf(
+            VyboraApi.PostSummary("demo-live-01", "🔴 SIMULAÇÃO DE LIVE · Conversando com vocês! 💬", "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1000", "image", "julia.live.demo", "Júlia Ribeiro", 732, 94, "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=160"),
+            VyboraApi.PostSummary("demo-live-02", "🔴 SIMULAÇÃO DE LIVE · Música e bate-papo 🎤", "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=1000", "image", "rafa.live.demo", "Rafael Costa", 418, 63, "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160"),
+            VyboraApi.PostSummary("demo-live-03", "🔴 SIMULAÇÃO DE LIVE · Preparando uma receita 🍳", "https://images.unsplash.com/photo-1556911220-bff31c812dba?w=1000", "image", "bia.live.demo", "Bia Santos", 295, 28, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160")
+        )
+    }
+    val nearbyDemoPosts = remember {
+        listOf(
+            VyboraApi.PostSummary("demo-near-01", "📍 TESTE LOCAL · Praça e passeio pela cidade 🌳", "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1000", "image", "marcos.local.demo", "Marcos Lima", 82, 9, "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160"),
+            VyboraApi.PostSummary("demo-near-02", "📍 TESTE LOCAL · Café da tarde ☕", "https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1000", "image", "ana.local.demo", "Ana Clara", 65, 7, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160"),
+            VyboraApi.PostSummary("demo-near-03", "📍 TESTE LOCAL · Paisagens da região 🌅", "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=1000", "image", "lucas.local.demo", "Lucas Ferreira", 91, 13, "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=160")
+        )
+    }
     val allFeedPosts = (remoteTestPosts + posts.sortedByDescending { it.createdAt } + demoPosts + extraDemoPosts).distinctBy { it.id }
     val feedTabPosts = when (selectedFeedTab) {
         "Seguindo" -> allFeedPosts.filter { it.isFollowing }
@@ -1680,11 +1703,11 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
         else -> allFeedPosts
     }
     val displayedPosts = when (selectedFeedFilter) {
-        "Vídeos" -> feedTabPosts.filter { it.mediaType.equals("video", ignoreCase = true) }
+        "Vídeos" -> (filterDemoPosts + feedTabPosts.filter { it.mediaType.equals("video", ignoreCase = true) }).distinctBy { it.id }
         "Fotos" -> feedTabPosts.filter { it.mediaType.equals("image", ignoreCase = true) }
         "Tendências" -> feedTabPosts.sortedByDescending { it.likes + it.comments * 3 }
-        "Lives" -> emptyList() // Lives precisam de uma fonte de transmissões ativas.
-        "Perto de mim" -> emptyList() // Não mostrar publicações sem geolocalização confirmada.
+        "Lives" -> liveDemoPosts // Apenas simulação de lives, sem espectadores reais ou streaming.
+        "Perto de mim" -> nearbyDemoPosts // Exemplos fictícios, não baseados na localização do aparelho.
         else -> feedTabPosts.sortedByDescending { it.createdAt }
     }
     LaunchedEffect(refreshKey) {
