@@ -475,7 +475,7 @@ private fun VyboraApp() {
         while (true) {
             val config = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
-                    val url = java.net.URL("https://raw.githubusercontent.com/hernandesslr-svg/VYBORA/main/remote-config/android-ui.json")
+                    val url = java.net.URL("https://raw.githubusercontent.com/hernandesslr-svg/VYBORA/main/remote-config/android-ui.json?refresh=" + System.currentTimeMillis())
                     val connection = url.openConnection() as java.net.HttpURLConnection
                     try {
                         connection.connectTimeout = 2000
