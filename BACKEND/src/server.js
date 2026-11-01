@@ -38,6 +38,13 @@ app.disable('x-powered-by');
 app.use(helmet({ contentSecurityPolicy: { directives: { 'img-src': ["'self'", 'data:', 'https:'], 'media-src': ["'self'", 'https:'], 'connect-src': ["'self'"], 'frame-ancestors': ["'none'"] } } }));
 app.use(cors({ origin: process.env.CORS_ORIGIN === '*' ? true : (process.env.CORS_ORIGIN || '').split(',').filter(Boolean), credentials: false }));
 app.use(express.json({ limit: '64kb' }));
+// Safe, allowlisted remote appearance values. Change NAV_INDICATOR_COLOR on the server without an APK.
+app.get('/api/ui/navigation', (_req, res) => {
+  const requested = String(process.env.NAV_INDICATOR_COLOR || '#00C853').trim();
+  const indicatorColor = /^#[0-9a-fA-F]{6}$/.test(requested) ? requested : '#00C853';
+  res.set('Cache-Control', 'no-store, max-age=0');
+  res.json({ schemaVersion: 1, indicatorColor });
+});
 app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false }));
 const asyncRoute = fn => (req,res,next) => Promise.resolve(fn(req,res,next)).catch(next);
 const tokenFor = user => jwt.sign({ sub: user.id }, jwtSecret, { expiresIn: '7d', issuer: 'vybora-api', audience: 'vybora-app' });
