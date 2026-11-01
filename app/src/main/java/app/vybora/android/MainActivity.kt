@@ -1279,9 +1279,11 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
         Box(Modifier.fillMaxSize().clickable {
             if (player.isPlaying) { player.pause(); playing = false } else { player.play(); playing = true }
         }, contentAlignment = Alignment.Center) {
-            Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, contentDescription = "Pausar ou continuar", tint = Color.White, modifier = Modifier.size(64.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.42f)).padding(14.dp))
+            if (!playing) {
+                Icon(Icons.Default.PlayArrow, contentDescription = "Continuar vídeo", tint = Color.White, modifier = Modifier.size(52.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.42f)).padding(12.dp))
+            }
         }
-        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 18.dp, end = 18.dp, bottom = 24.dp)) {
+        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 18.dp, end = 18.dp, bottom = 68.dp)) {
             val seconds = (position * duration).toLong().coerceAtLeast(0L) / 1000L
             val total = duration.coerceAtLeast(0L) / 1000L
             Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')} / ${total / 60}:${(total % 60).toString().padStart(2, '0')}", color = Color.White, fontSize = 12.sp)
@@ -2096,9 +2098,9 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                         if (pagerState.currentPage == page) {
                             VyboraFullscreenVideo(video.mediaUrl, Modifier.fillMaxSize())
                         }
-                        Column(Modifier.align(Alignment.CenterEnd).padding(end = 12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(Modifier.align(Alignment.BottomEnd).padding(end = 10.dp, bottom = 130.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             listOf(Icons.Default.Person, Icons.Default.PersonAdd, Icons.Default.FavoriteBorder, Icons.Default.ChatBubbleOutline, Icons.Default.Share, Icons.Default.Archive, Icons.Default.MoreHoriz).forEach {
-                                Icon(it, contentDescription = null, tint = Color.White, modifier = Modifier.size(42.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)).padding(8.dp))
+                                Icon(it, contentDescription = null, tint = Color.White, modifier = Modifier.size(36.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.25f)).padding(7.dp))
                             }
                         }
                     }
