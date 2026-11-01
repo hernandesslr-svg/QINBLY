@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 26,
+  "revision": 27,
   "navigation": {
     "indicatorColor": "#FF2196F3",
     "backgroundColor": "#FFFFFFFF",
@@ -9,7 +9,7 @@
   },
   "appearance": {
     "headerTextColor": "#FF000000",
-    "headerUnderlineColor": "#FF000000",
+    "headerUnderlineColor": "#FF1269EA",
     "headerTextSize": 17,
     "headerVisible": true,
     "actionIconColor": "#FF000000",
