@@ -464,6 +464,18 @@ private object RemoteAppearance {
     var navigationLabels by androidx.compose.runtime.mutableStateOf(listOf("Início", "Lives", "Criar", "Mensagens", "Perfil"))
     var feedLabels by androidx.compose.runtime.mutableStateOf(listOf("Para você", "Amigos", "Em alta"))
     var navigationLabelSize by androidx.compose.runtime.mutableIntStateOf(14)
+    var headerBackgroundColor by androidx.compose.runtime.mutableStateOf(Color.Black)
+    var headerHorizontalPadding by androidx.compose.runtime.mutableIntStateOf(24)
+    var headerVerticalPadding by androidx.compose.runtime.mutableIntStateOf(10)
+    var feedSpacing by androidx.compose.runtime.mutableIntStateOf(0)
+    var badgeColor by androidx.compose.runtime.mutableStateOf(Color(0xFFFF3045))
+    var likedColor by androidx.compose.runtime.mutableStateOf(Color(0xFFFF3045))
+    var profileAccentColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    var commentAccentColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    var messageAccentColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    var playerProgressColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    var enableDemoFeed by androidx.compose.runtime.mutableStateOf(true)
+    var showFeedHeader by androidx.compose.runtime.mutableStateOf(true)
 }
 
 private object RemoteUiRefreshSignal {
@@ -549,6 +561,17 @@ private fun VyboraApp() {
                         RemoteAppearance.headerTextColor = color("headerTextColor", RemoteAppearance.headerTextColor)
                         RemoteAppearance.headerUnderlineColor = color("headerUnderlineColor", RemoteAppearance.headerUnderlineColor)
                         RemoteAppearance.actionIconColor = color("actionIconColor", RemoteAppearance.actionIconColor)
+                        RemoteAppearance.headerBackgroundColor = color("headerBackgroundColor", RemoteAppearance.headerBackgroundColor)
+                        RemoteAppearance.badgeColor = color("badgeColor", RemoteAppearance.badgeColor)
+                        RemoteAppearance.likedColor = color("likedColor", RemoteAppearance.likedColor)
+                        RemoteAppearance.profileAccentColor = color("profileAccentColor", RemoteAppearance.profileAccentColor)
+                        RemoteAppearance.commentAccentColor = color("commentAccentColor", RemoteAppearance.commentAccentColor)
+                        RemoteAppearance.messageAccentColor = color("messageAccentColor", RemoteAppearance.messageAccentColor)
+                        RemoteAppearance.playerProgressColor = color("playerProgressColor", RemoteAppearance.playerProgressColor)
+                        RemoteAppearance.headerHorizontalPadding = appearance.optInt("headerHorizontalPadding", RemoteAppearance.headerHorizontalPadding).coerceIn(0, 40)
+                        RemoteAppearance.headerVerticalPadding = appearance.optInt("headerVerticalPadding", RemoteAppearance.headerVerticalPadding).coerceIn(0, 32)
+                        RemoteAppearance.feedSpacing = appearance.optInt("feedSpacing", RemoteAppearance.feedSpacing).coerceIn(0, 32)
+                        RemoteAppearance.showFeedHeader = appearance.optBoolean("showFeedHeader", RemoteAppearance.showFeedHeader)
                         RemoteAppearance.headerTextSize = appearance.optInt("headerTextSize", RemoteAppearance.headerTextSize).coerceIn(12, 24)
                         RemoteAppearance.actionIconSize = appearance.optInt("actionIconSize", RemoteAppearance.actionIconSize).coerceIn(16, 36)
                         RemoteAppearance.navigationLabelSize = appearance.optInt("navigationLabelSize", RemoteAppearance.navigationLabelSize).coerceIn(10, 18)
@@ -565,7 +588,7 @@ private fun VyboraApp() {
                     editor.apply()
                 }
             }
-            kotlinx.coroutines.delay(500L)
+            kotlinx.coroutines.delay(60000L)
         }
     }
 
@@ -1632,9 +1655,9 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
             }
         }.start()
     }
-    Column(Modifier.fillMaxSize().background(Color.Black).padding(0.dp)) {
+    Column(Modifier.fillMaxSize().background(RemoteAppearance.headerBackgroundColor).padding(0.dp)) {
         Row(
-            Modifier.fillMaxWidth().padding(start = 24.dp, end = 12.dp, top = 10.dp, bottom = 12.dp),
+            Modifier.fillMaxWidth().padding(start = RemoteAppearance.headerHorizontalPadding.dp, end = 12.dp, top = RemoteAppearance.headerVerticalPadding.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             listOf("Para você", "Amigos", "Em alta").forEachIndexed { feedIndex, feedTab ->
@@ -1678,7 +1701,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
             val feedListState = androidx.compose.foundation.lazy.rememberLazyListState()
             LaunchedEffect(refreshKey, displayedPosts.size) { feedListState.scrollToItem(0) }
             androidx.compose.material3.pulltorefresh.PullToRefreshBox(isRefreshing = refreshingFeed, onRefresh = { RemoteUiRefreshSignal.value++; if (!refreshingFeed) { refreshingFeed = true; refreshKey++ } }, modifier = Modifier.fillMaxSize()) {
-            LazyColumn(state = feedListState, verticalArrangement = Arrangement.spacedBy(0.dp), contentPadding = PaddingValues(bottom = 12.dp)) {
+            LazyColumn(state = feedListState, verticalArrangement = Arrangement.spacedBy(RemoteAppearance.feedSpacing.dp), contentPadding = PaddingValues(bottom = 12.dp)) {
                 if (!loading && displayedPosts.isEmpty()) {
                     item {
                         Column(
@@ -1891,7 +1914,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     Icon(
                                         if (likedByCurrentUser) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                         contentDescription = if (likedByCurrentUser) "Descurtir" else "Curtir",
-                                        tint = if (likedByCurrentUser) Color(0xFFFF3045) else RemoteAppearance.actionIconColor,
+                                        tint = if (likedByCurrentUser) RemoteAppearance.likedColor else RemoteAppearance.actionIconColor,
                                         modifier = Modifier.size(RemoteAppearance.actionIconSize.dp)
                                     )
                                     Text(
