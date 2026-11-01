@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "revision": 17,
+  "revision": 18,
   "navigation": {
-    "indicatorColor": "#FF4CAF50",
-    "backgroundColor": "#99030710",
-    "selectedIconColor": "#FFFFFFFF",
-    "unselectedIconColor": "#FFFFFFFF"
+    "indicatorColor": "#FF000000",
+    "backgroundColor": "#FFFFFFFF",
+    "selectedIconColor": "#FF000000",
+    "unselectedIconColor": "#FF000000"
   },
   "appearance": {
     "headerTextColor": "#FF000000",
     "headerUnderlineColor": "#FF000000",
     "headerTextSize": 17,
     "headerVisible": true,
-    "actionIconColor": "#FFFFFFFF",
+    "actionIconColor": "#FF000000",
     "actionIconSize": 24,
     "navigationLabelSize": 14,
     "navigationLabels": [
@@ -33,10 +33,10 @@
     "feedSpacing": 0,
     "badgeColor": "#FFFF3045",
     "likedColor": "#FFFF3045",
-    "profileAccentColor": "#FFFFFFFF",
-    "commentAccentColor": "#FFFFFFFF",
-    "messageAccentColor": "#FFFFFFFF",
-    "playerProgressColor": "#FFFFFFFF",
+    "profileAccentColor": "#FF000000",
+    "commentAccentColor": "#FF000000",
+    "messageAccentColor": "#FF000000",
+    "playerProgressColor": "#FF000000",
     "showFeedHeader": true
   }
 }
