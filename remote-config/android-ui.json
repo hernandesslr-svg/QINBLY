@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 18,
+  "revision": 19,
   "navigation": {
     "indicatorColor": "#FF000000",
     "backgroundColor": "#FFFFFFFF",
@@ -37,6 +37,10 @@
     "commentAccentColor": "#FF000000",
     "messageAccentColor": "#FF000000",
     "playerProgressColor": "#FF000000",
-    "showFeedHeader": true
+    "showFeedHeader": true,
+    "feedTextColor": "#FF000000",
+    "feedSecondaryTextColor": "#FF333333",
+    "feedActionBackgroundColor": "#FFFFFFFF",
+    "feedDividerColor": "#FFE5E5E5"
   }
 }
