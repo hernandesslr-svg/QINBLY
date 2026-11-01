@@ -1771,13 +1771,13 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                             modifier = Modifier.width(80.dp).height(36.dp),
                                             contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp),
                                             shape = RoundedCornerShape(18.dp),
-                                            border = BorderStroke(1.dp, Color.White),
+                                            border = BorderStroke(1.dp, RemoteAppearance.feedTextColor),
                                             colors = ButtonDefaults.outlinedButtonColors(
-                                                containerColor = if (isFollowingPost) Color.White else Color.Transparent,
-                                                contentColor = if (isFollowingPost) Color.Black else Color.White
+                                                containerColor = if (isFollowingPost) RemoteAppearance.feedTextColor else Color.Transparent,
+                                                contentColor = if (isFollowingPost) Color.White else RemoteAppearance.feedTextColor
                                             )
                                         ) {
-                                            Text(if (isFollowingPost) "Seguindo" else "Seguir", fontSize = 14.sp, color = if (isFollowingPost) Color.Black else Color.White)
+                                            Text(if (isFollowingPost) "Seguindo" else "Seguir", fontSize = 14.sp, color = if (isFollowingPost) Color.White else RemoteAppearance.feedTextColor)
                                         }
                                         Spacer(Modifier.width(3.dp))
                                     }
@@ -1991,7 +1991,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     Icon(
                                         if (post.id in savedPostIds) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                                         contentDescription = if (post.id in savedPostIds) "Remover dos salvos" else "Salvar publicação",
-                                        tint = if (post.id in savedPostIds) Color(0xFFFFD54F) else Color.White,
+                                        tint = if (post.id in savedPostIds) Color(0xFFFFD54F) else RemoteAppearance.actionIconColor,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }
@@ -2126,7 +2126,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         Icon(
                                             if (likedByCurrentUser) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                             contentDescription = if (likedByCurrentUser) "Descurtir" else "Curtir",
-                                            tint = if (likedByCurrentUser) Color(0xFFFF3045) else Color.White,
+                                            tint = if (likedByCurrentUser) Color(0xFFFF3045) else RemoteAppearance.actionIconColor,
                                             modifier = Modifier.size(24.dp)
                                         )
                                         Text(
@@ -2195,7 +2195,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         Icon(
                                             if (post.id in savedPostIds) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                                             contentDescription = if (post.id in savedPostIds) "Remover dos salvos" else "Salvar publicação",
-                                            tint = if (post.id in savedPostIds) Color(0xFFFFD54F) else Color.White,
+                                            tint = if (post.id in savedPostIds) Color(0xFFFFD54F) else RemoteAppearance.actionIconColor,
                                             modifier = Modifier.size(24.dp)
                                         )
                                     }
