@@ -453,6 +453,19 @@ private fun AccountSwitcherDialog(
  }
 }
 
+private object RemoteAppearance {
+    var headerTextColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    var headerUnderlineColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    var headerTextSize by androidx.compose.runtime.mutableIntStateOf(17)
+    var headerVisible by androidx.compose.runtime.mutableStateOf(true)
+    var actionIconColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    var actionIconSize by androidx.compose.runtime.mutableIntStateOf(24)
+    var actionsVisible by androidx.compose.runtime.mutableStateOf(true)
+    var navigationLabels by androidx.compose.runtime.mutableStateOf(listOf("Início", "Lives", "Criar", "Mensagens", "Perfil"))
+    var feedLabels by androidx.compose.runtime.mutableStateOf(listOf("Para você", "Amigos", "Em alta"))
+    var navigationLabelSize by androidx.compose.runtime.mutableIntStateOf(14)
+}
+
 private object RemoteUiRefreshSignal {
     var value by androidx.compose.runtime.mutableIntStateOf(0)
 }
@@ -525,6 +538,30 @@ private fun VyboraApp() {
                     applyColor("backgroundColor") { navigationBackgroundColor = it }
                     applyColor("selectedIconColor") { navigationSelectedColor = it }
                     applyColor("unselectedIconColor") { navigationUnselectedColor = it }
+                    val appearance = config.optJSONObject("appearance")
+                    if (appearance != null) {
+                        fun color(key: String, fallback: Color): Color {
+                            val raw = appearance.optString(key)
+                            return if (Regex("^#[0-9a-fA-F]{8}$").matches(raw))
+                                try { Color(android.graphics.Color.parseColor(raw)) } catch (_: Exception) { fallback }
+                            else fallback
+                        }
+                        RemoteAppearance.headerTextColor = color("headerTextColor", RemoteAppearance.headerTextColor)
+                        RemoteAppearance.headerUnderlineColor = color("headerUnderlineColor", RemoteAppearance.headerUnderlineColor)
+                        RemoteAppearance.actionIconColor = color("actionIconColor", RemoteAppearance.actionIconColor)
+                        RemoteAppearance.headerTextSize = appearance.optInt("headerTextSize", RemoteAppearance.headerTextSize).coerceIn(12, 24)
+                        RemoteAppearance.actionIconSize = appearance.optInt("actionIconSize", RemoteAppearance.actionIconSize).coerceIn(16, 36)
+                        RemoteAppearance.navigationLabelSize = appearance.optInt("navigationLabelSize", RemoteAppearance.navigationLabelSize).coerceIn(10, 18)
+                        RemoteAppearance.headerVisible = appearance.optBoolean("headerVisible", RemoteAppearance.headerVisible)
+                        RemoteAppearance.actionsVisible = appearance.optBoolean("actionsVisible", RemoteAppearance.actionsVisible)
+                        fun labels(key: String, count: Int, fallback: List<String>): List<String> {
+                            val arr = appearance.optJSONArray(key) ?: return fallback
+                            if (arr.length() != count) return fallback
+                            return (0 until count).map { index -> arr.optString(index).take(22).ifBlank { fallback[index] } }
+                        }
+                        RemoteAppearance.navigationLabels = labels("navigationLabels", 5, RemoteAppearance.navigationLabels)
+                        RemoteAppearance.feedLabels = labels("feedLabels", 3, RemoteAppearance.feedLabels)
+                    }
                     editor.apply()
                 }
             }
@@ -1600,17 +1637,17 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
             Modifier.fillMaxWidth().padding(start = 24.dp, end = 12.dp, top = 10.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            listOf("Para você", "Amigos", "Em alta").forEach { feedTab ->
+            listOf("Para você", "Amigos", "Em alta").forEachIndexed { feedIndex, feedTab ->
                 val selected = selectedFeedTab == feedTab
                 Column(
                     modifier = Modifier.weight(1f).clickable { selectedFeedTab = feedTab }.padding(vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(feedTab, color = Color.White, fontSize = 17.sp, maxLines = 1,
+                    Text(RemoteAppearance.feedLabels[feedIndex], color = RemoteAppearance.headerTextColor, fontSize = RemoteAppearance.headerTextSize.sp, maxLines = 1,
                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
                     Spacer(Modifier.height(6.dp))
                     Box(Modifier.width(if (selected) 58.dp else 0.dp).height(3.dp)
-                        .clip(CircleShape).background(Color.White))
+                        .clip(CircleShape).background(RemoteAppearance.headerUnderlineColor))
                 }
             }
             IconButton(onClick = onSearch, modifier = Modifier.size(40.dp)) {
