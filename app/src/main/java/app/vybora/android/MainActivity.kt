@@ -483,6 +483,11 @@ private object RemoteAppearance {
     var likedColor by androidx.compose.runtime.mutableStateOf(Color(0xFFFF3045))
     var profileAccentColor by androidx.compose.runtime.mutableStateOf(Color.White)
     var commentAccentColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    var commentBackgroundColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    var commentTextColor by androidx.compose.runtime.mutableStateOf(Color.Black)
+    var commentSecondaryTextColor by androidx.compose.runtime.mutableStateOf(Color(0xFF555555))
+    var commentInputBackgroundColor by androidx.compose.runtime.mutableStateOf(Color(0xFFF5F5F5))
+    var commentDividerColor by androidx.compose.runtime.mutableStateOf(Color(0xFFE5E5E5))
     var messageAccentColor by androidx.compose.runtime.mutableStateOf(Color.White)
     var playerProgressColor by androidx.compose.runtime.mutableStateOf(Color.White)
     var enableDemoFeed by androidx.compose.runtime.mutableStateOf(true)
@@ -588,6 +593,11 @@ private fun VyboraApp() {
                         RemoteAppearance.likedColor = color("likedColor", RemoteAppearance.likedColor)
                         RemoteAppearance.profileAccentColor = color("profileAccentColor", RemoteAppearance.profileAccentColor)
                         RemoteAppearance.commentAccentColor = color("commentAccentColor", RemoteAppearance.commentAccentColor)
+                        RemoteAppearance.commentBackgroundColor = color("commentBackgroundColor", RemoteAppearance.commentBackgroundColor)
+                        RemoteAppearance.commentTextColor = color("commentTextColor", RemoteAppearance.commentTextColor)
+                        RemoteAppearance.commentSecondaryTextColor = color("commentSecondaryTextColor", RemoteAppearance.commentSecondaryTextColor)
+                        RemoteAppearance.commentInputBackgroundColor = color("commentInputBackgroundColor", RemoteAppearance.commentInputBackgroundColor)
+                        RemoteAppearance.commentDividerColor = color("commentDividerColor", RemoteAppearance.commentDividerColor)
                         RemoteAppearance.messageAccentColor = color("messageAccentColor", RemoteAppearance.messageAccentColor)
                         RemoteAppearance.playerProgressColor = color("playerProgressColor", RemoteAppearance.playerProgressColor)
                         RemoteAppearance.headerHorizontalPadding = appearance.optInt("headerHorizontalPadding", RemoteAppearance.headerHorizontalPadding).coerceIn(0, 40)
@@ -2441,7 +2451,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                         .height(panelHeight)
                         .offset(y = (-5).dp)
                         .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
-                        .background(Brush.verticalGradient(listOf(Color(0xFF171722), Color(0xFF090A12))))
+                        .background(RemoteAppearance.commentBackgroundColor)
                         .clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) { }
                 ) {
                     Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
@@ -2453,19 +2463,19 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                     ) {
                         Text(
                             "Comentários",
-                            color = Color.Black,
+                            color = RemoteAppearance.commentTextColor,
                             fontSize = 25.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.clickable(enabled = showCommentEmojis) { showCommentEmojis = false }
                         )
-                        Text("  ${comments.size}", color = Muted, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                        Text("  ${comments.size}", color = RemoteAppearance.commentSecondaryTextColor, fontSize = 14.sp, modifier = Modifier.weight(1f))
                         var sortComments by remember { mutableStateOf("Principais") }
                         TextButton(onClick = { sortComments = if (sortComments == "Principais") "Recentes" else "Principais" }) {
-                            Text(sortComments, color = Color(0xFFD8D5E7), fontSize = 14.sp)
-                            Icon(Icons.Default.ChevronRight, contentDescription = "Ordenar comentários", tint = Color(0xFFD8D5E7), modifier = Modifier.padding(start = 3.dp).size(18.dp))
+                            Text(sortComments, color = RemoteAppearance.commentTextColor, fontSize = 14.sp)
+                            Icon(Icons.Default.ChevronRight, contentDescription = "Ordenar comentários", tint = RemoteAppearance.commentTextColor, modifier = Modifier.padding(start = 3.dp).size(18.dp))
                         }
                     }
-                    HorizontalDivider(color = Color(0xFF292936))
+                    HorizontalDivider(color = RemoteAppearance.commentDividerColor)
 
 
                     LazyColumn(
@@ -2492,7 +2502,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 ) {
                                     Text(
                                         comment.displayName.ifBlank { comment.username }.ifBlank { "U" }.take(1).uppercase(),
-                                        color = Color.Black,
+                                        color = RemoteAppearance.commentTextColor,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 18.sp
                                     )
@@ -2500,28 +2510,28 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 Column(modifier = Modifier.weight(1f).padding(start = 14.dp, end = 8.dp)) {
                                     Text(
                                         comment.displayName.ifBlank { comment.username }.ifBlank { "Usuário" },
-                                        color = Color.Black,
+                                        color = RemoteAppearance.commentTextColor,
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 16.sp
                                     )
-                                    Text("agora", color = Muted, fontSize = 14.sp, modifier = Modifier.padding(top = 2.dp))
-                                    Text(comment.body, color = Color(0xFFF2F0F7), fontSize = 16.sp, modifier = Modifier.padding(top = 8.dp))
+                                    Text("agora", color = RemoteAppearance.commentSecondaryTextColor, fontSize = 14.sp, modifier = Modifier.padding(top = 2.dp))
+                                    Text(comment.body, color = RemoteAppearance.commentTextColor, fontSize = 16.sp, modifier = Modifier.padding(top = 8.dp))
                                     Text(
                                         "Responder",
-                                        color = Color(0xFFB9B7CA),
+                                        color = RemoteAppearance.commentTextColor,
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium,
                                         modifier = Modifier.padding(top = 10.dp).clickable { commentDraft = "@${comment.username} " }
                                     )
                                 }
-                                Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir comentário", tint = Color(0xFFB9B7CA), modifier = Modifier.padding(top = 6.dp).size(22.dp))
+                                Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir comentário", tint = RemoteAppearance.commentTextColor, modifier = Modifier.padding(top = 6.dp).size(22.dp))
                             }
-                            HorizontalDivider(color = Color(0xFF252531))
+                            HorizontalDivider(color = RemoteAppearance.commentDividerColor)
                         }
                         if (comments.isEmpty() && !commentsLoading) {
                             item {
                                 Box(Modifier.fillMaxWidth().padding(vertical = 40.dp), contentAlignment = Alignment.Center) {
-                                    Text("Seja a primeira pessoa a comentar.", color = Muted)
+                                    Text("Seja a primeira pessoa a comentar.", color = RemoteAppearance.commentSecondaryTextColor)
                                 }
                             }
                         }
@@ -2548,7 +2558,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                             Column(
                                 modifier = Modifier.fillMaxWidth()
                                     .heightIn(max = if (dialogKeyboardVisible) 300.dp else 360.dp)
-                                    .background(Color(0xFF080A12))
+                                    .background(RemoteAppearance.commentBackgroundColor)
                                     .padding(horizontal = 10.dp, vertical = 8.dp)
                             ) {
                                 LazyRow(
@@ -2557,13 +2567,13 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 ) {
                                     items(commentEmojiGroups) { group ->
                                         Surface(
-                                            color = if (selectedCommentEmojiCategory == group.first) Violet.copy(alpha = 0.35f) else Color(0xFF1B1B2B),
+                                            color = if (selectedCommentEmojiCategory == group.first) Violet.copy(alpha = 0.35f) else RemoteAppearance.commentInputBackgroundColor,
                                             shape = RoundedCornerShape(18.dp),
                                             modifier = Modifier.clickable { selectedCommentEmojiCategory = group.first }
                                         ) {
                                             Text(
                                                 group.first,
-                                                color = Color.Black,
+                                                color = RemoteAppearance.commentTextColor,
                                                 fontSize = 14.sp,
                                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
                                             )
@@ -2572,7 +2582,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 }
                                 Text(
                                     "EMOJIS E REAÇÕES",
-                                    color = Muted,
+                                    color = RemoteAppearance.commentSecondaryTextColor,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
@@ -2583,7 +2593,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         modifier = Modifier.fillMaxWidth().weight(1f),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("Seus emojis recentes aparecerão aqui.", color = Muted, fontSize = 13.sp)
+                                        Text("Seus emojis recentes aparecerão aqui.", color = RemoteAppearance.commentSecondaryTextColor, fontSize = 13.sp)
                                     }
                                 } else {
                                     LazyVerticalGrid(
@@ -2611,10 +2621,10 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 }
                             }
                         }
-                        HorizontalDivider(color = Color(0xFF303041))
+                        HorizontalDivider(color = RemoteAppearance.commentDividerColor)
                         Row(
                             modifier = Modifier.fillMaxWidth()
-                                .background(Color(0xFF191925))
+                                .background(RemoteAppearance.commentInputBackgroundColor)
                                 .padding(horizontal = 14.dp, vertical = 10.dp)
                                 // Move only the composer row clear of Android's overlaid navigation controls.
                                 .offset(y = if (dialogKeyboardVisible) 0.dp else 0.dp),
@@ -2629,16 +2639,16 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                         OutlinedTextField(
                             value = commentDraft,
                             onValueChange = { commentDraft = it.take(1200) },
-                            placeholder = { Text("Adicione um comentário...", color = Muted) },
+                            placeholder = { Text("Adicione um comentário...", color = RemoteAppearance.commentSecondaryTextColor) },
                             modifier = Modifier.weight(1f).padding(start = 10.dp),
                             shape = RoundedCornerShape(28.dp),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = Color(0xFF686879),
-                                unfocusedBorderColor = Color(0xFF555564),
-                                cursorColor = Pink,
+                                focusedTextColor = RemoteAppearance.commentTextColor,
+                                unfocusedTextColor = RemoteAppearance.commentTextColor,
+                                focusedBorderColor = RemoteAppearance.commentAccentColor,
+                                unfocusedBorderColor = RemoteAppearance.commentDividerColor,
+                                cursorColor = RemoteAppearance.commentAccentColor,
                                 focusedContainerColor = Color.Transparent,
                                 unfocusedContainerColor = Color.Transparent
                             )
