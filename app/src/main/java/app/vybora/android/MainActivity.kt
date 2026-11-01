@@ -456,20 +456,55 @@ private fun AccountSwitcherDialog(
 @Composable
 private fun VyboraApp() {
     var tab by remember { mutableIntStateOf(0) }
-    var navigationIndicatorColor by remember { mutableStateOf(Color(0xFF00C853)) }
+    // GitHub-hosted, data-only UI configuration. No executable code is downloaded.
+    val appContext = androidx.compose.ui.platform.LocalContext.current
+    val uiPreferences = remember { appContext.getSharedPreferences("vybora_remote_ui", android.content.Context.MODE_PRIVATE) }
+    fun readUiColor(key: String, fallback: Long): Color {
+        val saved = uiPreferences.getString(key, null) ?: return Color(fallback)
+        return try { Color(android.graphics.Color.parseColor(saved)) } catch (_: Exception) { Color(fallback) }
+    }
+    var navigationIndicatorColor by remember { mutableStateOf(readUiColor("indicatorColor", 0x33FFFFFFL)) }
+    var navigationBackgroundColor by remember { mutableStateOf(readUiColor("backgroundColor", 0x99030710L)) }
+    var navigationSelectedColor by remember { mutableStateOf(readUiColor("selectedIconColor", 0xFFFFFFFFL)) }
+    var navigationUnselectedColor by remember { mutableStateOf(readUiColor("unselectedIconColor", 0xFFFFFFFFL)) }
     LaunchedEffect(Unit) {
         while (true) {
-            val remoteColor = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val config = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
-                    val response = VyboraApi.getNavigationAppearance()
-                    if (response.optInt("schemaVersion") != 1) null
-                    else {
-                        val hex = response.optString("indicatorColor")
-                        if (Regex("^#[0-9a-fA-F]{6}$").matches(hex)) Color(android.graphics.Color.parseColor(hex)) else null
-                    }
+                    val url = java.net.URL("https://raw.githubusercontent.com/hernandesslr-svg/VYBORA/main/remote-config/android-ui.json")
+                    val connection = url.openConnection() as java.net.HttpURLConnection
+                    try {
+                        connection.connectTimeout = 8000
+                        connection.readTimeout = 8000
+                        connection.setRequestProperty("Cache-Control", "no-cache")
+                        if (connection.responseCode !in 200..299) null
+                        else {
+                            val raw = connection.inputStream.bufferedReader().use { it.readText() }
+                            if (raw.length > 8192) null else JSONObject(raw)
+                        }
+                    } finally { connection.disconnect() }
                 } catch (_: Exception) { null }
             }
-            if (remoteColor != null) navigationIndicatorColor = remoteColor
+            if (config?.optInt("schemaVersion") == 1) {
+                val navigation = config.optJSONObject("navigation")
+                if (navigation != null) {
+                    val editor = uiPreferences.edit()
+                    fun applyColor(key: String, apply: (Color) -> Unit) {
+                        val value = navigation.optString(key)
+                        if (Regex("^#[0-9a-fA-F]{8}$").matches(value)) {
+                            try {
+                                apply(Color(android.graphics.Color.parseColor(value)))
+                                editor.putString(key, value)
+                            } catch (_: Exception) { }
+                        }
+                    }
+                    applyColor("indicatorColor") { navigationIndicatorColor = it }
+                    applyColor("backgroundColor") { navigationBackgroundColor = it }
+                    applyColor("selectedIconColor") { navigationSelectedColor = it }
+                    applyColor("unselectedIconColor") { navigationUnselectedColor = it }
+                    editor.apply()
+                }
+            }
             kotlinx.coroutines.delay(30000L)
         }
     }
@@ -589,16 +624,16 @@ private fun VyboraApp() {
                     }
                 }
                 NavigationBar(
-                    containerColor = Color(0x99030710),
+                    containerColor = navigationBackgroundColor,
                     contentColor = Color.White,
                     tonalElevation = 0.dp
                 ) {
                     val navColors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.White,
-                        selectedTextColor = Color.White,
+                        selectedIconColor = navigationSelectedColor,
+                        selectedTextColor = navigationSelectedColor,
                         indicatorColor = navigationIndicatorColor,
-                        unselectedIconColor = Color.White,
-                        unselectedTextColor = Color.White
+                        unselectedIconColor = navigationUnselectedColor,
+                        unselectedTextColor = navigationUnselectedColor
                     )
                     NavigationBarItem(selected = tab == 0 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; messageRecipient = ""; showAuth = false; tab = 0 }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Início", fontSize = 14.sp) }, colors = navColors)
                     NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; tab = 3 }, icon = { Icon(Icons.Default.Radio, null) }, label = { Text("Lives", fontSize = 14.sp) }, colors = navColors)
