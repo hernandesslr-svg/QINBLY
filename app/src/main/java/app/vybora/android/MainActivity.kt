@@ -1712,7 +1712,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                     modifier = Modifier.weight(1f).clickable { selectedFeedTab = feedTab }.padding(vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(if (RemoteAppearance.headerVisible) RemoteAppearance.feedLabels[feedIndex] else "", color = RemoteAppearance.headerTextColor, fontSize = RemoteAppearance.headerTextSize.sp, maxLines = 1,
+                    Text(if (RemoteAppearance.headerVisible) feedTab else "", color = RemoteAppearance.headerTextColor, fontSize = RemoteAppearance.headerTextSize.sp, maxLines = 1,
                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
                     Spacer(Modifier.height(6.dp))
                     Box(Modifier.width(if (selected) 58.dp else 0.dp).height(3.dp)
@@ -1822,7 +1822,6 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                             }
 
                                         if (post.mediaUrl.isBlank() || (post.mediaType != "image" && post.mediaType != "video")) {
-                                        if (selectedFeedFilter == "Novidades") {
                                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().background(Color.Transparent).padding(horizontal = 14.dp, vertical = 7.dp)) {
                                     val avatarUrl = post.avatarUrl.ifBlank { "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=240&auto=format&fit=crop&q=80" }
                                     AsyncImage(model = avatarUrl, contentDescription = "Abrir perfil de @${post.username}", modifier = Modifier.size(40.dp).clip(CircleShape).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }, contentScale = androidx.compose.ui.layout.ContentScale.Crop)
@@ -1900,7 +1899,6 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     }
                                         
                             }
-                                    }
                             if (post.mediaUrl.isNotBlank() && post.mediaType == "image") {
                                 val demoGallery = remember(post.id) {
                                     when (post.id) {
@@ -2020,12 +2018,17 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                             .padding(start = 13.dp, end = 68.dp, top = 34.dp, bottom = 13.dp),
                                         verticalArrangement = Arrangement.spacedBy(3.dp)
                                     ) {
-                                        Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" } + " · Há 2 min",
-                                            color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) })
-                                        if (post.caption.isNotBlank()) {
-                                            Text(post.caption, color = Color.White, fontSize = 13.sp, maxLines = 2, lineHeight = 17.sp)
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                                            AsyncImage(model = post.avatarUrl, contentDescription = "Perfil do autor",
+                                                modifier = Modifier.size(29.dp).clip(CircleShape)
+                                                    .clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) },
+                                                contentScale = ContentScale.Crop)
+                                            Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" },
+                                                color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) })
+                                            Text("· Há 2 min", color = Color.White.copy(alpha = 0.85f), fontSize = 11.sp)
                                         }
+                                        Text(post.caption.ifBlank { "Publicação de " + post.displayName.ifBlank { post.username } }, color = Color.White, fontSize = 13.sp, maxLines = 2, lineHeight = 17.sp)
                                     }
                                     if (demoGallery.size > 1) {
                                         Box(Modifier.align(Alignment.TopEnd).padding(10.dp).clip(CircleShape)
@@ -2115,10 +2118,17 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                             .padding(start = 13.dp, end = 68.dp, top = 34.dp, bottom = 13.dp),
                                         verticalArrangement = Arrangement.spacedBy(3.dp)
                                     ) {
-                                        Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" } + " · Há 2 min",
-                                            color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) })
-                                        if (post.caption.isNotBlank()) Text(post.caption, color = Color.White, fontSize = 13.sp, maxLines = 2)
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                                            AsyncImage(model = post.avatarUrl, contentDescription = "Perfil do autor",
+                                                modifier = Modifier.size(29.dp).clip(CircleShape)
+                                                    .clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) },
+                                                contentScale = ContentScale.Crop)
+                                            Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" },
+                                                color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) })
+                                            Text("· Há 2 min", color = Color.White.copy(alpha = 0.85f), fontSize = 11.sp)
+                                        }
+                                        Text(post.caption.ifBlank { "Publicação de " + post.displayName.ifBlank { post.username } }, color = Color.White, fontSize = 13.sp, maxLines = 2)
                                     }
                                 }
                             }
