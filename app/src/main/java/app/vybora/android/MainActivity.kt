@@ -2040,21 +2040,85 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 }
 
                             } else if (post.mediaUrl.isNotBlank() && post.mediaType == "video") {
-                                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).aspectRatio(0.90f).clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
+                                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).aspectRatio(0.90f)
+                                    .clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
                                     Box(Modifier.fillMaxSize().clickable { fullscreenVideoId = post.id }) {
                                         InlineVideoPlayer(url = post.mediaUrl, modifier = Modifier.fillMaxSize(), autoplay = false)
-                                        Column(Modifier.align(Alignment.BottomStart).fillMaxWidth()
-                                            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f))))
-                                            .padding(start = 13.dp, end = 65.dp, top = 36.dp, bottom = 13.dp)) {
-                                            Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" } + " · Há 2 min",
-                                                color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                            if (post.caption.isNotBlank()) Text(post.caption, color = Color.White, fontSize = 13.sp, maxLines = 2)
+                                    }
+                                    Column(
+                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 9.dp, bottom = 82.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                                    ) {
+                                        val overlayColor = Color.White
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color.Black.copy(alpha = 0.35f)).clickable {
+                                                if (post.id.startsWith("demo-post-")) {
+                                                    val wasLiked = post.id in demoLikes
+                                                    demoLikes = if (wasLiked) demoLikes - post.id else demoLikes + post.id
+                                                    prefs.edit().putStringSet("demo_liked_post_ids", demoLikes.toSet()).apply()
+                                                    likedByCurrentUser = !wasLiked
+                                                } else {
+                                                    val token = prefs.getString("token", null)
+                                                    if (token.isNullOrBlank()) onNotice("Entre na sua conta para curtir.")
+                                                    else Thread {
+                                                        try {
+                                                            val liked = VyboraApi.toggleLike(token, post.id)
+                                                            android.os.Handler(android.os.Looper.getMainLooper()).post { likedByCurrentUser = liked }
+                                                        } catch (e: Exception) {
+                                                            android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível curtir.") }
+                                                        }
+                                                    }.start()
+                                                }
+                                            }.padding(7.dp)) {
+                                            Icon(if (likedByCurrentUser) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                                contentDescription = "Curtir", tint = if (likedByCurrentUser) RemoteAppearance.likedColor else overlayColor, modifier = Modifier.size(27.dp))
+                                            Text(post.likes.toString(), color = overlayColor, fontSize = 11.sp)
                                         }
-                                        Icon(Icons.Default.Fullscreen, contentDescription = "Abrir vídeo em tela inteira", tint = RemoteAppearance.actionIconColor, modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(28.dp))
+                                        Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentar",
+                                            tint = overlayColor, modifier = Modifier.clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)).clickable {
+                                                commentPost = post
+                                                commentDraft = ""
+                                                commentsLoading = true
+                                                Thread {
+                                                    try {
+                                                        val loaded = VyboraApi.getComments(post.id)
+                                                        android.os.Handler(android.os.Looper.getMainLooper()).post { comments = loaded; commentsLoading = false }
+                                                    } catch (e: Exception) {
+                                                        android.os.Handler(android.os.Looper.getMainLooper()).post { commentsLoading = false; onNotice(e.message ?: "Erro nos comentários.") }
+                                                    }
+                                                }.start()
+                                            }.padding(6.dp).size(29.dp))
+                                        Icon(Icons.Default.Share, contentDescription = "Compartilhar",
+                                            tint = overlayColor, modifier = Modifier.clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)).clickable {
+                                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                                    type = "text/plain"
+                                                    putExtra(Intent.EXTRA_TEXT, "Confira esta publicação no QINBLY: https://vybora.com/post/${Uri.encode(post.id)}")
+                                                }
+                                                context.startActivity(Intent.createChooser(intent, "Compartilhar"))
+                                            }.padding(6.dp).size(29.dp))
+                                        Icon(if (post.id in savedPostIds) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                                            contentDescription = "Salvar", tint = overlayColor,
+                                            modifier = Modifier.clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)).clickable {
+                                                savedPostIds = if (post.id in savedPostIds) savedPostIds - post.id else savedPostIds + post.id
+                                                prefs.edit().putStringSet("saved_post_ids", savedPostIds).apply()
+                                            }.padding(6.dp).size(29.dp))
+                                    }
+
+                                    Column(
+                                        modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth()
+                                            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.58f))))
+                                            .padding(start = 13.dp, end = 68.dp, top = 34.dp, bottom = 13.dp),
+                                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                                    ) {
+                                        Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" } + " · Há 2 min",
+                                            color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) })
+                                        if (post.caption.isNotBlank()) Text(post.caption, color = Color.White, fontSize = 13.sp, maxLines = 2)
                                     }
                                 }
                             }
-                            if (post.caption.isNotBlank()) {
+                            if (post.mediaType != "image" && post.mediaType != "video" && post.caption.isNotBlank()) {
                                 Text(post.caption, color = RemoteAppearance.feedTextColor, fontSize = 15.sp,
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
                                     maxLines = 3, lineHeight = 20.sp)
@@ -2062,7 +2126,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                             if (post.mediaType == "video") {
                                 Text("♫ som original - ${post.displayName.ifBlank { post.username }}", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp, maxLines = 1, modifier = Modifier.padding(horizontal = 10.dp))
                             }
-                            if (post.mediaType != "image") {
+                            if (post.mediaType != "image" && post.mediaType != "video") {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
