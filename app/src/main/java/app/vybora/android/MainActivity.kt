@@ -1683,7 +1683,8 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
         "Vídeos" -> feedTabPosts.filter { it.mediaType.equals("video", ignoreCase = true) }
         "Fotos" -> feedTabPosts.filter { it.mediaType.equals("image", ignoreCase = true) }
         "Tendências" -> feedTabPosts.sortedByDescending { it.likes + it.comments * 3 }
-        "Perto de você" -> emptyList() // Não mostrar publicações sem geolocalização confirmada.
+        "Lives" -> emptyList() // Lives precisam de uma fonte de transmissões ativas.
+        "Perto de mim" -> emptyList() // Não mostrar publicações sem geolocalização confirmada.
         else -> feedTabPosts.sortedByDescending { it.createdAt }
     }
     LaunchedEffect(refreshKey) {
@@ -1738,11 +1739,11 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
         }
 
 
-        val feedFilters = listOf("Novidades", "Tendências", "Vídeos", "Fotos", "Perto de você")
-        val feedFilterIcons = listOf("✦", "🔥", "▶", "▣", "📍")
+        val feedFilters = listOf("Novidades", "Tendências", "Vídeos", "Fotos", "Lives", "Perto de mim")
+        val feedFilterIcons = listOf("✦", "🔥", "▶", "▣", "◉", "⌖")
         val feedFilterAccent = listOf(
-            Color(0xFF7438ED), Color(0xFFFF663C), Color(0xFF6951DB),
-            Color(0xFF8550DB), Color(0xFFCA329A)
+            Color(0xFF1655E8), Color(0xFFFF663C), Color(0xFF111827),
+            Color(0xFF1655E8), Color(0xFF1655E8), Color(0xFF1655E8)
         )
         androidx.compose.foundation.lazy.LazyRow(
             modifier = Modifier.fillMaxWidth().padding(top = 9.dp, bottom = 12.dp),
@@ -1759,9 +1760,9 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                         .clip(RoundedCornerShape(25.dp))
                         .background(
                             if (active) Brush.horizontalGradient(
-                                listOf(Color(0xFF4826C9), Color(0xFF9A0BD6))
+                                listOf(Color(0xFF244BFF), Color(0xFF006BEB))
                             ) else Brush.horizontalGradient(
-                                listOf(Color(0xFFF5F1F9), Color(0xFFEEEAF5))
+                                listOf(Color(0xFFF3F7FF), Color(0xFFEAF2FF))
                             )
                         )
                         .clickable { selectedFeedFilter = filter }
@@ -1810,7 +1811,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Text(if (selectedFeedFilter == "Perto de você") "Publicações locais indisponíveis" else "Ainda não há publicações", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text(if (selectedFeedFilter == "Perto de mim") "Publicações locais indisponíveis" else "Ainda não há publicações", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                             Text(if (selectedFeedFilter == "Perto de você") "A localização das publicações ainda não é fornecida pelo serviço. Não exibiremos resultados inventados." else "Quando as pessoas publicarem, elas aparecerão aqui.", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
                             OutlinedButton(onClick = { refreshKey++ }) {
                                 Text("Atualizar feed")
