@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 25,
+  "revision": 26,
   "navigation": {
     "indicatorColor": "#FF2196F3",
     "backgroundColor": "#FFFFFFFF",
@@ -34,7 +34,7 @@
     "badgeColor": "#FFFF3045",
     "likedColor": "#FFFF3045",
     "profileAccentColor": "#FF000000",
-    "commentAccentColor": "#FF000000",
+    "commentAccentColor": "#FF2196F3",
     "messageAccentColor": "#FF000000",
     "playerProgressColor": "#FF000000",
     "showFeedHeader": true,
@@ -49,6 +49,11 @@
     "screenBackgroundColor": "#FFFFFFFF",
     "screenTextColor": "#FF000000",
     "screenSecondaryTextColor": "#FF333333",
-    "actionsVisible": true
+    "actionsVisible": true,
+    "commentBackgroundColor": "#FFFFFFFF",
+    "commentTextColor": "#FF000000",
+    "commentSecondaryTextColor": "#FF555555",
+    "commentInputBackgroundColor": "#FFF5F5F5",
+    "commentDividerColor": "#FFE5E5E5"
   }
 }
