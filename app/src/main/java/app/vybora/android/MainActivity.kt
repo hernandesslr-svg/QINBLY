@@ -1737,11 +1737,11 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
 
 
         val feedFilters = listOf("Novidades", "Tendências", "Vídeos", "Fotos", "Perto de você")
-        val feedFilterIcons = listOf("✦", "🔥", "▶", "▣", "●")
+        val feedFilterIcons = listOf("✦", "🔥", "▶", "▣", "📍")
         androidx.compose.foundation.lazy.LazyRow(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
             contentPadding = PaddingValues(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(7.dp)
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             items(feedFilters.size) { index ->
                 val filter = feedFilters[index]
@@ -1755,9 +1755,9 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                         "${feedFilterIcons[index]} $filter",
                         color = if (active) Color.White else Color(0xFF202632),
                         fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         maxLines = 1,
-                        modifier = Modifier.padding(horizontal = 11.dp, vertical = 9.dp)
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp)
                     )
                 }
             }
@@ -1821,6 +1821,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                 mutableStateOf(if (post.id.startsWith("demo-post-")) prefs.getBoolean(followingPrefKey, false) else post.isFollowing)
                             }
 
+                                        if (post.mediaUrl.isBlank() || (post.mediaType != "image" && post.mediaType != "video")) {
                                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().background(Color.Transparent).padding(horizontal = 14.dp, vertical = 7.dp)) {
                                     val avatarUrl = post.avatarUrl.ifBlank { "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=240&auto=format&fit=crop&q=80" }
                                     AsyncImage(model = avatarUrl, contentDescription = "Abrir perfil de @${post.username}", modifier = Modifier.size(40.dp).clip(CircleShape).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }, contentScale = androidx.compose.ui.layout.ContentScale.Crop)
@@ -1897,6 +1898,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         }
                                     }
                                         
+                            }
                             if (post.mediaUrl.isNotBlank() && post.mediaType == "image") {
                                 val demoGallery = remember(post.id) {
                                     when (post.id) {
@@ -1952,9 +1954,9 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     )
 
                                     Column(
-                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 9.dp, bottom = 82.dp),
+                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 9.dp, bottom = 72.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                                        verticalArrangement = Arrangement.spacedBy(22.dp)
                                     ) {
                                         val overlayColor = Color.White
                                         Column(horizontalAlignment = Alignment.CenterHorizontally,
@@ -2046,9 +2048,9 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         InlineVideoPlayer(url = post.mediaUrl, modifier = Modifier.fillMaxSize(), autoplay = false)
                                     }
                                     Column(
-                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 9.dp, bottom = 82.dp),
+                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 9.dp, bottom = 72.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                                        verticalArrangement = Arrangement.spacedBy(22.dp)
                                     ) {
                                         val overlayColor = Color.White
                                         Column(horizontalAlignment = Alignment.CenterHorizontally,
@@ -2123,7 +2125,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
                                     maxLines = 3, lineHeight = 20.sp)
                             }
-                            if (post.mediaType == "video") {
+                            if (post.mediaType == "video" && post.mediaUrl.isNotBlank()) {
                                 Text("♫ som original - ${post.displayName.ifBlank { post.username }}", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp, maxLines = 1, modifier = Modifier.padding(horizontal = 10.dp))
                             }
                             if (post.mediaType != "image" && post.mediaType != "video") {
