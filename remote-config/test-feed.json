@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "revision": 1,
+  "posts": [
+    {
+      "id": "remote-test-01",
+      "caption": "Ensaio de moda íntima, estilo e confiança 🖤",
+      "mediaUrl": "https://images.pexels.com/photos/13636983/pexels-photo-13636983.jpeg?auto=compress&cs=tinysrgb&w=1000",
+      "username": "camila.monteiro.teste",
+      "displayName": "Camila Monteiro",
+      "likes": 84,
+      "comments": 12,
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160"
+    },
+    {
+      "id": "remote-test-02",
+      "caption": "Renda preta e atitude ✨",
+      "mediaUrl": "https://images.pexels.com/photos/11254431/pexels-photo-11254431.jpeg?auto=compress&cs=tinysrgb&w=1000",
+      "username": "bruna.martins.teste",
+      "displayName": "Bruna Martins",
+      "likes": 61,
+      "comments": 8,
+      "avatarUrl": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=160"
+    },
+    {
+      "id": "remote-test-03",
+      "caption": "Editorial de moda íntima 🤎",
+      "mediaUrl": "https://images.pexels.com/photos/16585363/pexels-photo-16585363.jpeg?auto=compress&cs=tinysrgb&w=1000",
+      "username": "juliana.freitas.teste",
+      "displayName": "Juliana Freitas",
+      "likes": 109,
+      "comments": 17,
+      "avatarUrl": "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160"
+    }
+  ]
+}
