@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "revision": 14,
+  "revision": 15,
   "navigation": {
-    "indicatorColor": "#33FFFFFF",
+    "indicatorColor": "#FF4CAF50",
     "backgroundColor": "#99030710",
     "selectedIconColor": "#FFFFFFFF",
     "unselectedIconColor": "#FFFFFFFF"
