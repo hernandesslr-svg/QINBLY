@@ -49,6 +49,8 @@ object VyboraApi {
             JSONObject().put("username", username.trim().lowercase())
                 .put("displayName", displayName.trim()).put("bio", bio.trim()), token)
 
+    fun getNavigationAppearance(): JSONObject = request("GET", "/api/ui/navigation")
+
     fun getMyProfile(token: String): JSONObject = request("GET", "/api/auth/me", null, token)
 
     fun exportMyData(token: String): JSONObject = request("GET", "/api/users/me/export", null, token)
