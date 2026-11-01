@@ -1793,7 +1793,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
             val feedListState = androidx.compose.foundation.lazy.rememberLazyListState()
             LaunchedEffect(refreshKey, displayedPosts.size) { feedListState.scrollToItem(0) }
             androidx.compose.material3.pulltorefresh.PullToRefreshBox(isRefreshing = refreshingFeed, onRefresh = { RemoteUiRefreshSignal.value++; if (!refreshingFeed) { refreshingFeed = true; refreshKey++ } }, modifier = Modifier.fillMaxSize()) {
-            LazyColumn(state = feedListState, verticalArrangement = Arrangement.spacedBy(RemoteAppearance.feedSpacing.dp), contentPadding = PaddingValues(bottom = 12.dp)) {
+            LazyColumn(state = feedListState, verticalArrangement = Arrangement.spacedBy(14.dp), contentPadding = PaddingValues(top = 6.dp, bottom = 18.dp)) {
                 if (!loading && displayedPosts.isEmpty()) {
                     item {
                         Column(
