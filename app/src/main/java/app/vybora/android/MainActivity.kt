@@ -577,7 +577,7 @@ private fun VyboraApp() {
                     val navColors = NavigationBarItemDefaults.colors(
                         selectedIconColor = Color.White,
                         selectedTextColor = Color.White,
-                        indicatorColor = Color(0x33FFFFFF),
+                        indicatorColor = Color(0xFF00C853),
                         unselectedIconColor = Color.White,
                         unselectedTextColor = Color.White
                     )
