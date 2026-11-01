@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 12,
+  "revision": 13,
   "navigation": {
     "indicatorColor": "#33FFFFFF",
     "backgroundColor": "#99030710",
@@ -26,6 +26,17 @@
       "Para você",
       "Amigos",
       "Em alta"
-    ]
+    ],
+    "headerBackgroundColor": "#FF000000",
+    "headerHorizontalPadding": 24,
+    "headerVerticalPadding": 10,
+    "feedSpacing": 0,
+    "badgeColor": "#FFFF3045",
+    "likedColor": "#FFFF3045",
+    "profileAccentColor": "#FFFFFFFF",
+    "commentAccentColor": "#FFFFFFFF",
+    "messageAccentColor": "#FFFFFFFF",
+    "playerProgressColor": "#FFFFFFFF",
+    "showFeedHeader": true
   }
 }
