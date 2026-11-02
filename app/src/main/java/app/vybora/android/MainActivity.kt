@@ -745,8 +745,8 @@ private fun VyboraApp() {
                     tonalElevation = 0.dp
                 ) {
                     val navColors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = navigationSelectedColor,
-                        selectedTextColor = navigationSelectedColor,
+                        selectedIconColor = Color(0xFF1677F2),
+                        selectedTextColor = Color(0xFF1677F2),
                         indicatorColor = Color.Transparent,
                         unselectedIconColor = navigationUnselectedColor,
                         unselectedTextColor = navigationUnselectedColor
@@ -756,10 +756,10 @@ private fun VyboraApp() {
                     NavigationBarItem(selected = false, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; tab = 2 }, icon = {
                         Box(
                             Modifier.size(width = 30.dp, height = 30.dp)
-                                .border(1.5.dp, Color.White, RoundedCornerShape(8.dp)),
+                                .border(2.dp, Color(0xFF1677F2), RoundedCornerShape(9.dp)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Criar publicação", modifier = Modifier.size(22.dp))
+                            Icon(Icons.Default.Add, contentDescription = "Criar publicação", modifier = Modifier.size(22.dp), tint = Color(0xFF1677F2))
                         }
                     }, label = { Text(RemoteAppearance.navigationLabels[2], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                     NavigationBarItem(
@@ -2175,6 +2175,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                             fontSize = 12.sp
                                         )
                                     }
+                                    Box(Modifier.width(1.dp).height(18.dp).background(Color(0xFFE1E4E9)))
                                     Row(
                                         modifier = Modifier.clickable {
                                             commentPost = post
@@ -2205,6 +2206,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                             fontSize = 12.sp
                                         )
                                     }
+                                    Box(Modifier.width(1.dp).height(18.dp).background(Color(0xFFE1E4E9)))
                                     Row(
                                         modifier = Modifier.clickable {
                                             val alreadyReposted = post.id in repostedPostIds
@@ -2221,6 +2223,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                             Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", repostCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
                                         }
                                     }
+                                    Box(Modifier.width(1.dp).height(18.dp).background(Color(0xFFE1E4E9)))
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                                     IconButton(
                                                                                 onClick = {
