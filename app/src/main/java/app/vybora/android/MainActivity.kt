@@ -3329,19 +3329,7 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
         painter = androidx.compose.ui.res.painterResource(frames[style.coerceIn(0, frames.lastIndex)]),
         contentDescription = "Moldura decorativa do perfil",
         contentScale = ContentScale.FillBounds,
-        modifier = Modifier.size(diameter)
-            .graphicsLayer {
-                compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
-            }
-            .drawWithContent {
-                drawContent()
-                drawCircle(
-                    color = Color.Transparent,
-                    radius = size.minDimension * 0.435f,
-                    center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f),
-                    blendMode = androidx.compose.ui.graphics.BlendMode.Clear
-                )
-            }
+        modifier = Modifier.size(diameter).zIndex(10f)
     )
 }
 
