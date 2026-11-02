@@ -468,21 +468,42 @@ private object QiblyTheme {
 
 private object RemoteAppearance {
     var feedTextColor by androidx.compose.runtime.mutableStateOf(Color.White)
-    var feedSecondaryTextColor by androidx.compose.runtime.mutableStateOf(Color(0xFFADB2CB))
-    var feedActionBackgroundColor by androidx.compose.runtime.mutableStateOf(Color(0x66030711))
-    var feedDividerColor by androidx.compose.runtime.mutableStateOf(Color(0xFF252525))
+    private var feedSecondaryTextColorBase by androidx.compose.runtime.mutableStateOf(Color(0xFFADB2CB))
+    var feedSecondaryTextColor: Color
+        get() = if (QiblyTheme.dark) Color(0xFFB4BDCA) else feedSecondaryTextColorBase
+        set(value) { feedSecondaryTextColorBase = value }
+    private var feedActionBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color(0x66030711))
+    var feedActionBackgroundColor: Color
+        get() = if (QiblyTheme.dark) Color(0xFF1A202B) else feedActionBackgroundColorBase
+        set(value) { feedActionBackgroundColorBase = value }
+    private var feedDividerColorBase by androidx.compose.runtime.mutableStateOf(Color(0xFF252525))
+    var feedDividerColor: Color
+        get() = if (QiblyTheme.dark) Color(0xFF303B4C) else feedDividerColorBase
+        set(value) { feedDividerColorBase = value }
     var navigationUnderlineWidth by androidx.compose.runtime.mutableIntStateOf(30)
     var navigationUnderlineHeight by androidx.compose.runtime.mutableIntStateOf(3)
     var navigationUnderlineOffset by androidx.compose.runtime.mutableIntStateOf(6)
     var navigationUnderlineVisible by androidx.compose.runtime.mutableStateOf(true)
-    var screenBackgroundColor by androidx.compose.runtime.mutableStateOf(Color.White)
-    var screenTextColor by androidx.compose.runtime.mutableStateOf(Color.Black)
-    var screenSecondaryTextColor by androidx.compose.runtime.mutableStateOf(Color(0xFF333333))
+    private var screenBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color.White)
+    var screenBackgroundColor: Color
+        get() = if (QiblyTheme.dark) Color(0xFF0E1118) else screenBackgroundColorBase
+        set(value) { screenBackgroundColorBase = value }
+    private var screenTextColorBase by androidx.compose.runtime.mutableStateOf(Color.Black)
+    var screenTextColor: Color
+        get() = if (QiblyTheme.dark) Color(0xFFF5F7FA) else screenTextColorBase
+        set(value) { screenTextColorBase = value }
+    private var screenSecondaryTextColorBase by androidx.compose.runtime.mutableStateOf(Color(0xFF333333))
+    var screenSecondaryTextColor: Color
+        get() = if (QiblyTheme.dark) Color(0xFFB4BDCA) else screenSecondaryTextColorBase
+        set(value) { screenSecondaryTextColorBase = value }
     var headerTextColor by androidx.compose.runtime.mutableStateOf(Color.White)
     var headerUnderlineColor by androidx.compose.runtime.mutableStateOf(Color.White)
     var headerTextSize by androidx.compose.runtime.mutableIntStateOf(17)
     var headerVisible by androidx.compose.runtime.mutableStateOf(true)
-    var actionIconColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    private var actionIconColorBase by androidx.compose.runtime.mutableStateOf(Color.White)
+    var actionIconColor: Color
+        get() = if (QiblyTheme.dark) Color(0xFFF5F7FA) else actionIconColorBase
+        set(value) { actionIconColorBase = value }
     var actionIconSize by androidx.compose.runtime.mutableIntStateOf(24)
     var actionsVisible by androidx.compose.runtime.mutableStateOf(true)
     var navigationLabels by androidx.compose.runtime.mutableStateOf(listOf("Início", "Lives", "Criar", "Mensagens", "Perfil"))
