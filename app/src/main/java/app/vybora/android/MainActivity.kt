@@ -515,6 +515,7 @@ private object RemoteUiRefreshSignal {
 @Composable
 private fun VyboraApp() {
     var tab by remember { mutableIntStateOf(0) }
+    var navTopRequest by remember { mutableIntStateOf(0) }
     // GitHub-hosted, data-only UI configuration. No executable code is downloaded.
     val appContext = androidx.compose.ui.platform.LocalContext.current
     val uiPreferences = remember { appContext.getSharedPreferences("vybora_remote_ui", android.content.Context.MODE_PRIVATE) }
@@ -768,8 +769,8 @@ private fun VyboraApp() {
                         unselectedIconColor = navigationUnselectedColor,
                         unselectedTextColor = navigationUnselectedColor
                     )
-                    NavigationBarItem(selected = tab == 0 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; messageRecipient = ""; showAuth = false; tab = 0 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Home, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 0 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text(RemoteAppearance.navigationLabels[0], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
-                    NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Radio, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text(RemoteAppearance.navigationLabels[1], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
+                    NavigationBarItem(selected = tab == 0 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; messageRecipient = ""; showAuth = false; if (tab == 0) navTopRequest++; tab = 0 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Home, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 0 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text(RemoteAppearance.navigationLabels[0], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
+                    NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 3) navTopRequest++; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Radio, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text(RemoteAppearance.navigationLabels[1], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                     NavigationBarItem(selected = false, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; tab = 2 }, icon = {
                         Box(
                             Modifier.size(width = 30.dp, height = 30.dp)
@@ -781,7 +782,7 @@ private fun VyboraApp() {
                     }, label = { Text(RemoteAppearance.navigationLabels[2], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                     NavigationBarItem(
                         selected = tab == 1 && !showNotifications,
-                        onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; tab = 1 },
+                        onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 1) navTopRequest++; tab = 1 },
                         icon = {
                             Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
                                 if (RemoteAppearance.navigationUnderlineVisible && tab == 1 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor))
@@ -810,7 +811,7 @@ private fun VyboraApp() {
                         label = { Text(RemoteAppearance.navigationLabels[3], fontSize = RemoteAppearance.navigationLabelSize.sp) },
                         colors = navColors
                     )
-                    NavigationBarItem(selected = tab == 4 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; tab = 4 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Person, contentDescription = "Perfil"); if (RemoteAppearance.navigationUnderlineVisible && tab == 4 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text(RemoteAppearance.navigationLabels[4], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
+                    NavigationBarItem(selected = tab == 4 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 4) navTopRequest++; tab = 4 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Person, contentDescription = "Perfil"); if (RemoteAppearance.navigationUnderlineVisible && tab == 4 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text(RemoteAppearance.navigationLabels[4], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                 }
             }
             }
@@ -977,10 +978,10 @@ private fun VyboraApp() {
                         onNotice = { notice = it }
                     )
                 } else androidx.compose.runtime.key(accountSessionVersion) { when (tab) {
-                    0 -> FeedPage(currentUsername = loggedInUser, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true })
-                    1 -> MessagesPage(recipientUsername = messageRecipient, onSearch = { showSearchDialog = true }, onOpenConversation = { messageRecipient = it }, onOpenProfile = { publicProfileUsername = it }, onNotice = { notice = it })
+                    0 -> FeedPage(scrollToTopRequest = navTopRequest, currentUsername = loggedInUser, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true })
+                    1 -> MessagesPage(scrollToTopRequest = navTopRequest, recipientUsername = messageRecipient, onSearch = { showSearchDialog = true }, onOpenConversation = { messageRecipient = it }, onOpenProfile = { publicProfileUsername = it }, onNotice = { notice = it })
                     2 -> PostPage(onNotice = { notice = it }, onCameraCancelled = { tab = 0 })
-                    3 -> LivePage(onNotice = { notice = it })
+                    3 -> LivePage(scrollToTopRequest = navTopRequest, onNotice = { notice = it })
                     else -> if (showAuth) {
                         AuthPage(
                             onSuccess = { username ->
@@ -1006,7 +1007,7 @@ private fun VyboraApp() {
                             },
                             onCancel = { showAuth = false }
                         )
-                    } else ProfilePage(username = loggedInUser, displayName = profileName, bio = profileBio, photoRefreshKey = profilePhotoRefreshKey, onNotice = { notice = it }, onStat = { stat ->
+                    } else ProfilePage(scrollToTopRequest = navTopRequest, username = loggedInUser, displayName = profileName, bio = profileBio, photoRefreshKey = profilePhotoRefreshKey, onNotice = { notice = it }, onStat = { stat ->
                         profileStat = stat
                         profileStatUsers = emptyList()
                         val tokenUser = loggedInUser
@@ -1574,7 +1575,7 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
 
 @Composable
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onAddStory: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit) {
+private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontStyle: String, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onAddStory: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
     var posts by remember { mutableStateOf<List<VyboraApi.PostSummary>>(emptyList()) }
@@ -1892,6 +1893,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
         } else {
             val feedListState = androidx.compose.foundation.lazy.rememberLazyListState()
             LaunchedEffect(refreshKey, displayedPosts.size) { feedListState.scrollToItem(0) }
+            LaunchedEffect(scrollToTopRequest) { if (scrollToTopRequest > 0) feedListState.animateScrollToItem(0) }
             androidx.compose.material3.pulltorefresh.PullToRefreshBox(isRefreshing = refreshingFeed, onRefresh = { RemoteUiRefreshSignal.value++; if (!refreshingFeed) { refreshingFeed = true; refreshKey++ } }, modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 state = feedListState,
@@ -2779,9 +2781,11 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
 }
 
 @Composable
-private fun MessagesPage(recipientUsername: String, onSearch: () -> Unit, onOpenConversation: (String) -> Unit, onOpenProfile: (String) -> Unit, onNotice: (String) -> Unit) {
+private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onSearch: () -> Unit, onOpenConversation: (String) -> Unit, onOpenProfile: (String) -> Unit, onNotice: (String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
+    val inboxListState = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(scrollToTopRequest) { if (scrollToTopRequest > 0) inboxListState.animateScrollToItem(0) }
     var draft by remember { mutableStateOf("") }
     var messages by remember { mutableStateOf<List<VyboraApi.MessageSummary>>(emptyList()) }
     var inbox by remember { mutableStateOf<List<VyboraApi.InboxSummary>>(emptyList()) }
@@ -2921,7 +2925,7 @@ private fun MessagesPage(recipientUsername: String, onSearch: () -> Unit, onOpen
                         )
                     }
                 }
-                visibleInbox.isNotEmpty() -> LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(0.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
+                visibleInbox.isNotEmpty() -> LazyColumn(Modifier.fillMaxSize(), state = inboxListState, verticalArrangement = Arrangement.spacedBy(0.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
                     items(visibleInbox, key = { it.username }) { conversation ->
                         Column(Modifier.fillMaxWidth()) {
                         Row(
@@ -3195,7 +3199,9 @@ private fun MessagesPage(recipientUsername: String, onSearch: () -> Unit, onOpen
 }
 
 @Composable
-private fun ProfilePage(username: String, displayName: String, bio: String, photoRefreshKey: Int, onNotice: (String) -> Unit, onStat: (String) -> Unit, onAuth: () -> Unit, onEdit: () -> Unit, onEditProfilePhoto: () -> Unit, onSettings: () -> Unit) {
+private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: String, bio: String, photoRefreshKey: Int, onNotice: (String) -> Unit, onStat: (String) -> Unit, onAuth: () -> Unit, onEdit: () -> Unit, onEditProfilePhoto: () -> Unit, onSettings: () -> Unit) {
+    val profileScrollState = rememberScrollState()
+    LaunchedEffect(scrollToTopRequest) { if (scrollToTopRequest > 0) profileScrollState.animateScrollTo(0) }
     var postsCount by remember { mutableIntStateOf(0) }
     var followersCount by remember { mutableIntStateOf(0) }
     var followingCount by remember { mutableIntStateOf(0) }
@@ -3270,7 +3276,7 @@ private fun ProfilePage(username: String, displayName: String, bio: String, phot
         }
     }
 
-    Column(Modifier.fillMaxSize().background(RemoteAppearance.screenBackgroundColor), verticalArrangement = Arrangement.spacedBy(0.dp)) {
+    Column(Modifier.fillMaxSize().background(RemoteAppearance.screenBackgroundColor).verticalScroll(profileScrollState), verticalArrangement = Arrangement.spacedBy(0.dp)) {
         // Capa do perfil: proporção 16:9, igual à área de enquadramento do editor.
         Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
             // Capa provisória padrão para não deixar o topo do perfil vazio enquanto corrigimos o carregamento da capa salva.
@@ -5723,10 +5729,12 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
 }
 
 @Composable
-private fun LivePage(onNotice: (String) -> Unit) {
+private fun LivePage(scrollToTopRequest: Int, onNotice: (String) -> Unit) {
+    val liveScrollState = rememberScrollState()
+    LaunchedEffect(scrollToTopRequest) { if (scrollToTopRequest > 0) liveScrollState.animateScrollTo(0) }
     var selectedCategory by remember { mutableStateOf("Descobrir") }
     val categories = listOf("Para você", "Em alta", "Jogos", "Música", "Seguindo")
-    Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(liveScrollState).padding(horizontal = 14.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
             categories.forEachIndexed { index, category ->
                 Surface(
