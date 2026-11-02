@@ -577,7 +577,7 @@ private fun VyboraApp() {
                         val raw = connection.inputStream.bufferedReader().use { it.readText() }
                         if (raw.length > 100000) return null
                         if (!githubApi) return JSONObject(raw)
-                        val encoded = JSONObject(raw).optString("content").replace("\\n", "").replace("\\r", "")
+                        val encoded = JSONObject(raw).optString("content").replace("\n", "").replace("\\r", "")
                         val decoded = String(android.util.Base64.decode(encoded, android.util.Base64.DEFAULT), Charsets.UTF_8)
                         return JSONObject(decoded)
                     } finally { connection.disconnect() }
@@ -1620,7 +1620,7 @@ private fun QiblyShareDialog(
     val chosen = remember { mutableStateListOf<String>() }
     val token = prefs.getString("token", null)
     val shareLink = "https://vybora.com/post/${Uri.encode(post.id)}"
-    val message = "Confira esta publicação no QINBLY: " + post.caption.take(160) + "\\n" + shareLink
+    val message = "Confira esta publicação no QINBLY: " + post.caption.take(160) + "\n" + shareLink
     LaunchedEffect(token) {
         if (!token.isNullOrBlank()) {
             try { inbox = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.getInbox(token) } }
@@ -3409,8 +3409,8 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
         Text(if (username.isBlank()) "Entre ou crie sua conta" else "@${username.removePrefix("@")}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
         if (shownBio.startsWith("✦ ")) {
-            Text(shownBio.substringBefore('\\n').removePrefix("✦ "), Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 7.dp), color = RemoteAppearance.screenTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
-            val description = shownBio.substringAfter('\\n', "")
+            Text(shownBio.substringBefore('\n').removePrefix("✦ "), Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 7.dp), color = RemoteAppearance.screenTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
+            val description = shownBio.substringAfter('\n', "")
             if (description.isNotBlank()) Text(description, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 5.dp), color = RemoteAppearance.screenSecondaryTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, maxLines = 4)
         } else if (shownBio.isNotBlank()) Text(shownBio, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 10.dp), color = RemoteAppearance.screenTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
         else Text("Adicione uma descrição ao seu perfil", Modifier.padding(top = 9.dp), color = RemoteAppearance.screenSecondaryTextColor)
@@ -3466,7 +3466,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 }
             }
         } else {
-            LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.fillMaxWidth().heightIn(max = 560.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 items(profilePosts.filter { profileTab != "Vídeos" || it.mediaType == "video" }.filter { profileTab != "Fotos" || it.mediaType == "image" }.size) { index ->
                     val post = profilePosts.filter { profileTab != "Vídeos" || it.mediaType == "video" }.filter { profileTab != "Fotos" || it.mediaType == "image" }[index]
                     Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(8.dp)).background(Brush.linearGradient(listOf(Color(0xFF241047), Color(0xFF9D236E), Color(0xFF071A38)))).clickable { if (post.mediaUrl.isNotBlank()) expandedImage = post.mediaUrl }) {
@@ -3755,7 +3755,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     val initialCategoryLine = initialBio.lineSequence().firstOrNull().orEmpty()
     val storedCategories = if (initialCategoryLine.startsWith(categoryPrefix)) initialCategoryLine.removePrefix(categoryPrefix).split(" • ").filter { it in availableCategories } else emptyList()
     var selectedCategories by remember { mutableStateOf(storedCategories) }
-    var bio by remember { mutableStateOf(if (storedCategories.isNotEmpty()) initialBio.substringAfter('\\n', "") else initialBio) }
+    var bio by remember { mutableStateOf(if (storedCategories.isNotEmpty()) initialBio.substringAfter('\n', "") else initialBio) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var adjustingImage by remember { mutableStateOf("") }
@@ -3783,7 +3783,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                                     }
                                     return@Thread
                                 }
-                                val composedBio = (if (selectedCategories.isNotEmpty()) categoryPrefix + selectedCategories.joinToString(" • ") + "\\n" else "") + bio.trim()
+                                val composedBio = (if (selectedCategories.isNotEmpty()) categoryPrefix + selectedCategories.joinToString(" • ") + "\n" else "") + bio.trim()
                                 VyboraApi.updateProfile(token, username.trim(), name.trim(), composedBio)
                                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                                     loading = false
