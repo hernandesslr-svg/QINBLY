@@ -1,84 +1,42 @@
-name: Prepare transparent QINBLY profile frames
+name: Install QINBLY profile frame PNGs
 on:
   push:
     paths:
       - '.github/workflows/extract-profile-frames.yml'
+      - 'qinbly_android_assets.zip'
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
-  prepare:
+  install:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Pillow
-        run: python -m pip install pillow
-      - name: Extract and remove dark background and captions
+        with:
+          persist-credentials: true
+      - name: Replace old frame PNGs with the ten approved assets
         shell: bash
         run: |
           set -euo pipefail
-          unzip -o qinbly_android_assets.zip 'app/src/main/res/drawable-nodpi/*.png' -d .
+          mkdir -p app/src/main/res/drawable-nodpi
+          rm -f app/src/main/res/drawable-nodpi/qinbly_frame_*.png
+          unzip -o qinbly_android_assets.zip 'app/src/main/res/drawable-nodpi/qinbly_frame_*.png' -d .
+          count=$(find app/src/main/res/drawable-nodpi -maxdepth 1 -name 'qinbly_frame_*.png' | wc -l)
+          test "$count" -eq 10
           python - <<'PY'
           from PIL import Image
           from pathlib import Path
-          import math
-          root = Path("app/src/main/res/drawable-nodpi")
-          names = ["rosa_neon","azul_eletrico","realeza","galaxia","fogo","cristal","romantica","dourada","esmeralda","prateada"]
-          for name in names:
-              path = root / f"qinbly_frame_{name}.png"
-              im = Image.open(path).convert("RGBA")
-              if name in ("esmeralda", "prateada"):
-                  source_center = (122, 178) if name == "esmeralda" else (106, 177)
-                  scale = 0.76
-                  small = im.resize((round(im.width * scale), round(im.height * scale)), Image.Resampling.LANCZOS)
-                  corrected = Image.new("RGBA", im.size, (0,0,0,0))
-                  left = round(im.width/2 - source_center[0]*scale)
-                  top = round(im.height/2 - source_center[1]*scale)
-                  corrected.alpha_composite(small, (left, top))
-                  im = corrected
-              w,h = im.size
-              pix = im.load()
-              # Isolate the actual circular ornament; discard neighboring frames
-              # and the caption. Each source crop has a slightly different center.
-              centers = {
-                  "rosa_neon": (178, 173), "azul_eletrico": (178, 171),
-                  "realeza": (178, 158), "galaxia": (178, 172),
-                  "fogo": (178, 172), "cristal": (178, 172),
-                  "romantica": (178, 171), "dourada": (178, 174),
-                  "esmeralda": (178, 172), "prateada": (178, 172)
-              }
-              cx, cy = centers[name]
-              from PIL import ImageDraw, ImageFilter
-              # Hard outer boundary removes the adjacent pink, blue and gold
-              # strips that were visible on either side of each frame.
-              mask = Image.new("L", (w,h), 0)
-              draw = ImageDraw.Draw(mask)
-              draw.ellipse((cx-157,cy-157,cx+157,cy+157),fill=255)
-              if name == "realeza":
-                  draw.rectangle((cx-85,0,cx+85,cy-112),fill=255)
-              # Central hole: frame is an overlay, never the avatar itself.
-              draw.ellipse((cx-116,cy-116,cx+116,cy+116),fill=0)
-              # Remove dark poster pixels while retaining colorful ornament.
-              mask = mask.filter(ImageFilter.GaussianBlur(1.2))
-              for y in range(h):
-                  for x in range(w):
-                      R,G,B,A = pix[x,y]
-                      brightness=max(R,G,B)
-                      chroma=brightness-min(R,G,B)
-                      # Fade dark poster; preserve colored and metallic filigree.
-                      a=min(255,max(0,int((brightness-27)*255/75)))
-                      if brightness < 105 and chroma < 18:
-                          a=0
-                      pix[x,y]=(R,G,B,A*a*mask.getpixel((x,y))//65025)
-              im.save(path, optimize=True)
-              print("Prepared", path)
+          for p in Path("app/src/main/res/drawable-nodpi").glob("qinbly_frame_*.png"):
+              with Image.open(p) as im:
+                  assert im.mode == "RGBA", f"{p}: expected RGBA"
+                  assert im.getpixel((im.width//2, im.height//2))[3] == 0, f"{p}: center must be transparent"
           PY
-      - name: Commit cleaned PNGs
+      - name: Commit replacements to main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/res/drawable-nodpi/qinbly_frame_*.png
+          git add -A app/src/main/res/drawable-nodpi
           if ! git diff --cached --quiet; then
-            git commit -m "Clean QINBLY frame PNG backgrounds and remove captions"
+            git commit -m "Replace QINBLY profile frame assets with approved transparent PNGs"
             git push origin HEAD:main
           fi
