@@ -3412,13 +3412,9 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 else Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(28.dp))
             }
-            IconButton(onClick = onEditProfilePhoto, modifier = Modifier.align(Alignment.BottomEnd).size(34.dp).background(Color(0xFF1677E8), CircleShape)) {
-                Icon(Icons.Default.CameraAlt, contentDescription = "Alterar foto", tint = Color.White, modifier = Modifier.size(18.dp))
-            }
         }
         Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 1)
-            Icon(Icons.Default.Edit, contentDescription = "Editar nome e bio", tint = Color(0xFF1677E8), modifier = Modifier.size(18.dp))
         }
         Text(if (username.isBlank()) "Entre ou crie sua conta" else "@${username.removePrefix("@")}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
         if (shownBio.startsWith("✦ ")) {
