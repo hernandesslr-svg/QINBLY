@@ -3422,6 +3422,95 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
                 }
             }
         }
+        // Distinctive decorative silhouettes stay outside the circular photograph.
+        val motifCount = when (index) {
+            0, 6 -> 5
+            2 -> 7
+            4 -> 12
+            8 -> 9
+            else -> 8
+        }
+        for (m in 0 until motifCount) {
+            val theta = ((m * 360f / motifCount) - 90f +
+                orbit * (if (index == 2 || index == 7) 0.012f else 0.09f)) *
+                kotlin.math.PI.toFloat() / 180f
+            val d = size.minDimension * 0.465f
+            val px = cx + kotlin.math.cos(theta) * d
+            val py = cy + kotlin.math.sin(theta) * d
+            val u = thick * (if (index == 4) 1.4f else 1.1f)
+            val path = androidx.compose.ui.graphics.Path()
+            when (index) {
+                0, 6 -> {
+                    // Small hearts with rounded lobes.
+                    path.moveTo(px, py + u * 0.8f)
+                    path.cubicTo(px - u * 1.9f, py - u * 0.25f,
+                        px - u * 0.8f, py - u * 1.6f, px, py - u * 0.55f)
+                    path.cubicTo(px + u * 0.8f, py - u * 1.6f,
+                        px + u * 1.9f, py - u * 0.25f, px, py + u * 0.8f)
+                    path.close()
+                    drawPath(path, if (index == 0) Color(0xFFFF3D9C) else Color(0xFFFF7B9D),
+                        alpha = shimmer)
+                    drawCircle(Color.White.copy(alpha = 0.85f), u * 0.13f,
+                        androidx.compose.ui.geometry.Offset(px - u * 0.4f, py - u * 0.6f))
+                }
+                2 -> {
+                    // Golden crown peaks and a gemstone at each base.
+                    path.moveTo(px - u, py + u * 0.65f)
+                    path.lineTo(px - u, py - u * 0.5f)
+                    path.lineTo(px - u * 0.45f, py)
+                    path.lineTo(px, py - u * 1.25f)
+                    path.lineTo(px + u * 0.45f, py)
+                    path.lineTo(px + u, py - u * 0.5f)
+                    path.lineTo(px + u, py + u * 0.65f)
+                    path.close()
+                    drawPath(path, Color(0xFFFFD46A))
+                    drawCircle(Color(0xFFB456F6), u * 0.28f,
+                        androidx.compose.ui.geometry.Offset(px, py + u * 0.36f))
+                }
+                4 -> {
+                    // Flickering flame tongues, with a smaller yellow core.
+                    val rise = u * (1.2f + 0.55f * kotlin.math.sin(
+                        (orbit + m * 47f) * kotlin.math.PI.toFloat() / 180f))
+                    path.moveTo(px - u * 0.65f, py + u * 0.8f)
+                    path.quadraticBezierTo(px - u, py - u * 0.3f, px, py - rise)
+                    path.quadraticBezierTo(px + u * 1.2f, py, px + u * 0.65f, py + u * 0.8f)
+                    path.close()
+                    drawPath(path, if (m % 2 == 0) Color(0xFFFF562A) else Color(0xFFFFAA28))
+                    drawCircle(Color(0xFFFFE36B), u * 0.25f,
+                        androidx.compose.ui.geometry.Offset(px, py + u * 0.32f))
+                }
+                8 -> {
+                    // Emerald leaves with a central vein.
+                    path.moveTo(px, py - u * 1.2f)
+                    path.quadraticBezierTo(px + u * 1.2f, py - u * 0.1f, px, py + u)
+                    path.quadraticBezierTo(px - u * 1.2f, py - u * 0.1f, px, py - u * 1.2f)
+                    path.close()
+                    drawPath(path, Color(0xFF30B979), alpha = shimmer)
+                    drawLine(Color(0xFFC2FFE3),
+                        androidx.compose.ui.geometry.Offset(px, py - u * 0.8f),
+                        androidx.compose.ui.geometry.Offset(px, py + u * 0.65f),
+                        strokeWidth = thick * 0.16f)
+                }
+                else -> {
+                    // Stars, diamond crystals and metallic filigree.
+                    val spikes = if (index == 3 || index == 9) 4 else 6
+                    for (k in 0 until spikes * 2) {
+                        val t = k * kotlin.math.PI.toFloat() / spikes -
+                            kotlin.math.PI.toFloat() / 2f
+                        val rr = if (k % 2 == 0) u * 1.12f else u * 0.33f
+                        val xx = px + kotlin.math.cos(t) * rr
+                        val yy = py + kotlin.math.sin(t) * rr
+                        if (k == 0) path.moveTo(xx, yy) else path.lineTo(xx, yy)
+                    }
+                    path.close()
+                    drawPath(path, if (index == 1 || index == 5) Color(0xFFDCF9FF)
+                        else if (index == 7) Color(0xFFFFE5A1) else Color.White,
+                        alpha = shimmer)
+                    drawCircle(accent.copy(alpha = 0.55f), u * 0.32f,
+                        androidx.compose.ui.geometry.Offset(px, py))
+                }
+            }
+        }
     }
 }
 
