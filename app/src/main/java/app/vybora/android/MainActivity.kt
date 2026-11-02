@@ -999,6 +999,8 @@ private fun VyboraApp() {
                             profileName = name
                             profileBio = bio
                             showEditProfile = false
+                            tab = 0
+                            navTopRequest++
                             notice = "Perfil atualizado e sincronizado."
                         },
                         onNotice = { notice = it }
@@ -3819,10 +3821,10 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                 },
                 enabled = !loading,
                 shape = RoundedCornerShape(24.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Pink, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF168C), contentColor = Color.White),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 9.dp)
             ) {
-                if (loading) CircularProgressIndicator(Modifier.size(18.dp), color = Color.Black, strokeWidth = 2.dp) else Text("Salvar", fontWeight = FontWeight.Bold)
+                if (loading) CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp) else Text("Salvar", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
 
