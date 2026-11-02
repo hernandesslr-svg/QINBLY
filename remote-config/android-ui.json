@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 27,
+  "revision": 28,
   "navigation": {
     "indicatorColor": "#FF2196F3",
     "backgroundColor": "#FFFFFFFF",
@@ -54,6 +54,7 @@
     "commentTextColor": "#FF000000",
     "commentSecondaryTextColor": "#FF555555",
     "commentInputBackgroundColor": "#FFF5F5F5",
-    "commentDividerColor": "#FFE5E5E5"
+    "commentDividerColor": "#FFE5E5E5",
+    "spreadPostActions": true
   }
 }
