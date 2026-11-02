@@ -135,6 +135,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
@@ -142,6 +143,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -3341,7 +3343,19 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(id = frameResource),
             contentDescription = "Moldura decorativa de perfil",
-            modifier = Modifier.size(diameter).graphicsLayer { alpha = glow },
+            modifier = Modifier.size(diameter).graphicsLayer { alpha = glow }
+                .drawWithContent {
+                    // Keep only the outer ornament. The supplied PNGs contain a
+                    // sample portrait and an unwanted inner white circle.
+                    val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+                    val holeRadius = size.minDimension * 0.397f
+                    val hole = androidx.compose.ui.graphics.Path().apply {
+                        addOval(androidx.compose.ui.geometry.Rect(center = center, radius = holeRadius))
+                    }
+                    clipPath(hole, clipOp = androidx.compose.ui.graphics.ClipOp.Difference) {
+                        drawContent()
+                    }
+                },
             contentScale = androidx.compose.ui.layout.ContentScale.Fit
         )
         return
@@ -3656,7 +3670,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
         // The portrait fits INSIDE the ornament; the ornament can overflow freely.
         Box(Modifier.padding(top = 18.dp, bottom = 18.dp).size(156.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(106.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
+            Box(Modifier.size(122.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
                 val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
                 if (image.isNotBlank()) { expandedImage = image; viewingPublication = false } else onEditProfilePhoto()
             }) {
@@ -3892,7 +3906,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Spacer(Modifier.height(12.dp))
                 Box(Modifier.fillMaxWidth().height(158.dp), contentAlignment = Alignment.Center) {
                     Box(Modifier.size(132.dp), contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(90.dp).clip(CircleShape).background(QiblyTheme.card)) {
+                        Box(Modifier.size(100.dp).clip(CircleShape).background(QiblyTheme.card)) {
                             val image = profilePhotoUrl.ifBlank { avatarUrl }
                             if (image.isNotBlank()) AsyncImage(model = image,
                                 contentDescription = "Prévia circular", modifier = Modifier.fillMaxSize(),
@@ -3919,7 +3933,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Box(Modifier.size(76.dp), contentAlignment = Alignment.Center) {
-                                Box(Modifier.size(50.dp).clip(CircleShape).background(QiblyTheme.card)) {
+                                Box(Modifier.size(58.dp).clip(CircleShape).background(QiblyTheme.card)) {
                                     val image = profilePhotoUrl.ifBlank { avatarUrl }
                                     if (image.isNotBlank()) AsyncImage(model = image,
                                         contentDescription = null, modifier = Modifier.fillMaxSize(),
