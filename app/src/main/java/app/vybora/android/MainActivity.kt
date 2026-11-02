@@ -3520,7 +3520,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Box(Modifier.align(Alignment.TopEnd).padding(8.dp)) {
                     IconButton(onClick = { photoMenuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Opções da foto", tint = Color.White) }
                     DropdownMenu(expanded = photoMenuOpen, onDismissRequest = { photoMenuOpen = false }) {
-                        DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = { photoMenuOpen = false; saveProfilePhotoToDevice(context, expandedImage, onNotice) })
+                        DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = { photoMenuOpen = false; saveProfilePhotoToDevice(profileContext, expandedImage, onNotice) })
                         DropdownMenuItem(text = { Text("Apagar foto") }, onClick = { photoMenuOpen = false; onNotice("Exclusão da foto ainda não disponível. Nenhuma foto foi apagada.") })
                     }
                 }
