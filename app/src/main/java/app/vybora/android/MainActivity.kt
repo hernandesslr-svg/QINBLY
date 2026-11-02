@@ -3532,14 +3532,17 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         }
                     }
                 }
-                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                    AsyncImage(
-                        model = expandedImage,
-                        contentDescription = "Imagem da publicação",
-                        modifier = Modifier.fillMaxWidth().fillMaxHeight().clip(RoundedCornerShape(12.dp)),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                    )
-                }
+                Spacer(Modifier.weight(1f))
+                // A foto usa a proporção natural; não esticamos a imagem para preencher a tela.
+                // O limite vertical reserva espaço para legenda e ações, sem barras pretas artificiais.
+                AsyncImage(
+                    model = expandedImage,
+                    contentDescription = "Imagem da publicação",
+                    modifier = Modifier.fillMaxWidth()
+                        .heightIn(max = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp * 0.56f)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                )
                 if (viewingPublication) {
                     if (selectedPublicationCaption.isNotBlank()) {
                         Text(selectedPublicationCaption, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp), color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
@@ -3563,6 +3566,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         }
                     }
                 }
+                Spacer(Modifier.weight(1f))
             }
         }
     }
@@ -4876,14 +4880,17 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                         }
                     }
                 }
-                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                    AsyncImage(
-                        model = expandedImage.orEmpty(),
-                        contentDescription = "Imagem da publicação",
-                        modifier = Modifier.fillMaxWidth().fillMaxHeight().clip(RoundedCornerShape(12.dp)),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                    )
-                }
+                Spacer(Modifier.weight(1f))
+                // A foto usa a proporção natural; não esticamos a imagem para preencher a tela.
+                // O limite vertical reserva espaço para legenda e ações, sem barras pretas artificiais.
+                AsyncImage(
+                    model = expandedImage.orEmpty(),
+                    contentDescription = "Imagem da publicação",
+                    modifier = Modifier.fillMaxWidth()
+                        .heightIn(max = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp * 0.56f)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                )
                 if (viewingPublication) {
                     if (selectedPublicationCaption.isNotBlank()) {
                         Text(selectedPublicationCaption, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp), color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
@@ -4907,6 +4914,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                         }
                     }
                 }
+                Spacer(Modifier.weight(1f))
             }
         }
     }
