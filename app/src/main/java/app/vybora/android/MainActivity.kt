@@ -3630,10 +3630,11 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         ) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
                 Column(
-                    Modifier.fillMaxWidth().fillMaxHeight(0.86f)
+                    Modifier.fillMaxWidth().fillMaxHeight(0.76f)
                         .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                         .background(MaterialTheme.colorScheme.surface)
-                        .imePadding().navigationBarsPadding()
+                        .imePadding()
+                        .padding(bottom = 36.dp)
                 ) {
                     Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
                         Box(Modifier.width(44.dp).height(5.dp).clip(CircleShape).background(Color.Gray))
@@ -5104,10 +5105,11 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
         ) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
                 Column(
-                    Modifier.fillMaxWidth().fillMaxHeight(0.86f)
+                    Modifier.fillMaxWidth().fillMaxHeight(0.76f)
                         .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                         .background(MaterialTheme.colorScheme.surface)
-                        .imePadding().navigationBarsPadding()
+                        .imePadding()
+                        .padding(bottom = 36.dp)
                 ) {
                     Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
                         Box(Modifier.width(44.dp).height(5.dp).clip(CircleShape).background(Color.Gray))
