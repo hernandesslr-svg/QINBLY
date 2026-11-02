@@ -3654,8 +3654,9 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Icon(Icons.Default.Menu, contentDescription = "Configurações do perfil", tint = RemoteAppearance.screenTextColor)
             }
         }
-        Box(Modifier.padding(top = 4.dp).size(132.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(116.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
+        // The portrait fits INSIDE the ornament; the ornament can overflow freely.
+        Box(Modifier.padding(top = 18.dp, bottom = 18.dp).size(156.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(106.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
                 val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
                 if (image.isNotBlank()) { expandedImage = image; viewingPublication = false } else onEditProfilePhoto()
             }) {
@@ -3663,8 +3664,8 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 else Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(28.dp))
             }
-            if (appliedFrame >= 0) QiblyAnimatedFrame(appliedFrame, 132.dp)
-            else Box(Modifier.size(126.dp).border(3.dp, Brush.sweepGradient(listOf(Color(0xFFFF2499), Color(0xFF7B39FF), Color(0xFFFF2499))), CircleShape))
+            if (appliedFrame >= 0) QiblyAnimatedFrame(appliedFrame, 156.dp)
+            else Box(Modifier.size(112.dp).border(2.dp, Brush.sweepGradient(listOf(Color(0xFFFF2499), Color(0xFF7B39FF), Color(0xFFFF2499))), CircleShape))
         }
         Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 1)
@@ -3891,7 +3892,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Spacer(Modifier.height(12.dp))
                 Box(Modifier.fillMaxWidth().height(158.dp), contentAlignment = Alignment.Center) {
                     Box(Modifier.size(132.dp), contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(116.dp).clip(CircleShape).background(QiblyTheme.card)) {
+                        Box(Modifier.size(90.dp).clip(CircleShape).background(QiblyTheme.card)) {
                             val image = profilePhotoUrl.ifBlank { avatarUrl }
                             if (image.isNotBlank()) AsyncImage(model = image,
                                 contentDescription = "Prévia circular", modifier = Modifier.fillMaxSize(),
@@ -3918,7 +3919,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Box(Modifier.size(76.dp), contentAlignment = Alignment.Center) {
-                                Box(Modifier.size(60.dp).clip(CircleShape).background(QiblyTheme.card)) {
+                                Box(Modifier.size(50.dp).clip(CircleShape).background(QiblyTheme.card)) {
                                     val image = profilePhotoUrl.ifBlank { avatarUrl }
                                     if (image.isNotBlank()) AsyncImage(model = image,
                                         contentDescription = null, modifier = Modifier.fillMaxSize(),
