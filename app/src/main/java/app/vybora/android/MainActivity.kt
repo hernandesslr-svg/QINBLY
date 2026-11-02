@@ -3327,6 +3327,14 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     var photoMenuOpen by remember { mutableStateOf(false) }
     var viewingPublication by remember { mutableStateOf(false) }
     var selectedPublicationCaption by remember { mutableStateOf("") }
+    var selectedPublication by remember { mutableStateOf<VyboraApi.PostSummary?>(null) }
+    var postLiked by remember { mutableStateOf(false) }
+    var commentsOpen by remember { mutableStateOf(false) }
+    var commentsLoading by remember { mutableStateOf(false) }
+    var postComments by remember { mutableStateOf<List<VyboraApi.CommentSummary>>(emptyList()) }
+    var commentDraft by remember { mutableStateOf("") }
+    var savedIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+
     var publicationComment by remember { mutableStateOf("") }
     var joinedMonthYear by remember { mutableStateOf("") }
 
@@ -3494,7 +3502,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.fillMaxWidth().heightIn(max = 560.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 items(profilePosts.filter { profileTab != "Vídeos" || it.mediaType == "video" }.filter { profileTab != "Fotos" || it.mediaType == "image" }.size) { index ->
                     val post = profilePosts.filter { profileTab != "Vídeos" || it.mediaType == "video" }.filter { profileTab != "Fotos" || it.mediaType == "image" }[index]
-                    Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(8.dp)).background(Brush.linearGradient(listOf(Color(0xFF241047), Color(0xFF9D236E), Color(0xFF071A38)))).clickable { if (post.mediaUrl.isNotBlank()) { expandedImage = post.mediaUrl; selectedPublicationCaption = post.caption; viewingPublication = true } }) {
+                    Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(8.dp)).background(Brush.linearGradient(listOf(Color(0xFF241047), Color(0xFF9D236E), Color(0xFF071A38)))).clickable { if (post.mediaUrl.isNotBlank()) { expandedImage = post.mediaUrl; selectedPublicationCaption = post.caption; selectedPublication = post; postLiked = false; savedIds = profilePrefs.getStringSet("saved_post_ids", emptySet())?.toSet() ?: emptySet(); viewingPublication = true } }) {
                         if (post.mediaUrl.isNotBlank()) AsyncImage(model = post.mediaUrl, contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                         else Column(Modifier.align(Alignment.Center).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = null, tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(30.dp))
@@ -3552,23 +3560,103 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = { onNotice("Abra a publicação no feed para curtir.") }) {
-                            Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = Color.White)
+                        IconButton(onClick = { val post = selectedPublication
+                            val token = profilePrefs.getString("token", null)
+                            if (post == null) onNotice("Publicação indisponível.")
+                            else if (token.isNullOrBlank()) onNotice("Entre na conta para curtir.")
+                            else Thread {
+                                try {
+                                    val liked = VyboraApi.toggleLike(token, post.id)
+                                    android.os.Handler(android.os.Looper.getMainLooper()).post { postLiked = liked }
+                                } catch (e: Exception) {
+                                    android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Erro ao curtir.") }
+                                }
+                            }.start() }) {
+                            Icon(if (postLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = if (postLiked) Color.Red else Color.White)
                         }
-                        IconButton(onClick = { onNotice("Abra a publicação no feed para ver e enviar comentários.") }) {
+                        IconButton(onClick = { val post = selectedPublication
+                            if (post != null) {
+                                commentsOpen = true
+                                commentsLoading = true
+                                Thread {
+                                    try {
+                                        val loaded = VyboraApi.getComments(post.id)
+                                        android.os.Handler(android.os.Looper.getMainLooper()).post { postComments = loaded; commentsLoading = false }
+                                    } catch (e: Exception) {
+                                        android.os.Handler(android.os.Looper.getMainLooper()).post { commentsLoading = false; onNotice(e.message ?: "Erro ao carregar comentários.") }
+                                    }
+                                }.start()
+                            } }) {
                             Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White)
                         }
-                        IconButton(onClick = { onNotice("Compartilhamento desta publicação em preparação.") }) {
+                        IconButton(onClick = { val post = selectedPublication
+                            if (post != null) {
+                                val share = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(android.content.Intent.EXTRA_TEXT, post.caption + "\\n" + post.mediaUrl)
+                                }
+                                profileContext.startActivity(android.content.Intent.createChooser(share, "Compartilhar publicação"))
+                            } }) {
                             Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = Color.White)
                         }
-                        IconButton(onClick = { onNotice("Abra a publicação no feed para salvar.") }) {
-                            Icon(Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color.White)
+                        IconButton(onClick = { val post = selectedPublication
+                            if (post != null) {
+                                val wasSaved = post.id in savedIds
+                                savedIds = if (wasSaved) savedIds - post.id else savedIds + post.id
+                                profilePrefs.edit().putStringSet("saved_post_ids", savedIds).apply()
+                                onNotice(if (wasSaved) "Publicação removida dos salvos." else "Publicação salva.")
+                            } }) {
+                            Icon(if (selectedPublication?.id in savedIds) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color.White)
                         }
                     }
                 }
                 Spacer(Modifier.weight(1f))
             }
         }
+    }
+    if (commentsOpen) {
+        AlertDialog(
+            onDismissRequest = { commentsOpen = false },
+            title = { Text("Comentários") },
+            text = {
+                Column(Modifier.fillMaxWidth().heightIn(max = 430.dp)) {
+                    if (commentsLoading) CircularProgressIndicator()
+                    else if (postComments.isEmpty()) Text("Nenhum comentário ainda.")
+                    else Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                        postComments.forEach { comment ->
+                            Text(comment.displayName.ifBlank { comment.username }, fontWeight = FontWeight.Bold)
+                            Text(comment.body, modifier = Modifier.padding(bottom = 12.dp))
+                        }
+                    }
+                    OutlinedTextField(value = commentDraft, onValueChange = { commentDraft = it }, label = { Text("Escreva um comentário") }, modifier = Modifier.fillMaxWidth(), maxLines = 3)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val post = selectedPublication
+                    val token = profilePrefs.getString("token", null)
+                    val draft = commentDraft.trim()
+                    if (post == null || token.isNullOrBlank()) onNotice("Entre na conta para comentar.")
+                    else if (draft.isNotBlank()) {
+                        commentsLoading = true
+                        Thread {
+                            try {
+                                VyboraApi.addComment(token, post.id, draft)
+                                val loaded = VyboraApi.getComments(post.id)
+                                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                    postComments = loaded; commentDraft = ""; commentsLoading = false
+                                }
+                            } catch (e: Exception) {
+                                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                    commentsLoading = false; onNotice(e.message ?: "Erro ao comentar.")
+                                }
+                            }
+                        }.start()
+                    }
+                }) { Text("Enviar") }
+            },
+            dismissButton = { TextButton(onClick = { commentsOpen = false }) { Text("Fechar") } }
+        )
     }
 
 }
@@ -4692,6 +4780,14 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
     var photoMenuOpen by remember { mutableStateOf(false) }
     var viewingPublication by remember { mutableStateOf(false) }
     var selectedPublicationCaption by remember { mutableStateOf("") }
+    var selectedPublication by remember { mutableStateOf<VyboraApi.PostSummary?>(null) }
+    var postLiked by remember { mutableStateOf(false) }
+    var commentsOpen by remember { mutableStateOf(false) }
+    var commentsLoading by remember { mutableStateOf(false) }
+    var postComments by remember { mutableStateOf<List<VyboraApi.CommentSummary>>(emptyList()) }
+    var commentDraft by remember { mutableStateOf("") }
+    var savedIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+
     var publicationComment by remember { mutableStateOf("") }
     var showMoreOptions by remember { mutableStateOf(false) }
     var profilePosts by remember(username) { mutableStateOf<List<VyboraApi.PostSummary>>(emptyList()) }
@@ -4838,7 +4934,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                 profilePosts.chunked(3).forEach { rowPosts ->                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         rowPosts.forEach { post ->
                             Box(Modifier.weight(1f).height(145.dp).clip(RoundedCornerShape(7.dp)).background(Color(0xFF111426)).clickable {
-                                if (post.mediaUrl.isNotBlank()) expandedImage = post.mediaUrl; selectedPublicationCaption = post.caption; viewingPublication = true
+                                if (post.mediaUrl.isNotBlank()) expandedImage = post.mediaUrl; selectedPublicationCaption = post.caption; selectedPublication = post; postLiked = false; savedIds = prefs.getStringSet("saved_post_ids", emptySet())?.toSet() ?: emptySet(); viewingPublication = true
                             }) {
                                 if (post.mediaUrl.isNotBlank()) {
                                     AsyncImage(model = post.mediaUrl, contentDescription = "Publicação de $displayName", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
@@ -4900,23 +4996,103 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = { onNotice("Abra a publicação no feed para curtir.") }) {
-                            Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = Color.White)
+                        IconButton(onClick = { val post = selectedPublication
+                            val token = prefs.getString("token", null)
+                            if (post == null) onNotice("Publicação indisponível.")
+                            else if (token.isNullOrBlank()) onNotice("Entre na conta para curtir.")
+                            else Thread {
+                                try {
+                                    val liked = VyboraApi.toggleLike(token, post.id)
+                                    android.os.Handler(android.os.Looper.getMainLooper()).post { postLiked = liked }
+                                } catch (e: Exception) {
+                                    android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Erro ao curtir.") }
+                                }
+                            }.start() }) {
+                            Icon(if (postLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = if (postLiked) Color.Red else Color.White)
                         }
-                        IconButton(onClick = { onNotice("Abra a publicação no feed para ver e enviar comentários.") }) {
+                        IconButton(onClick = { val post = selectedPublication
+                            if (post != null) {
+                                commentsOpen = true
+                                commentsLoading = true
+                                Thread {
+                                    try {
+                                        val loaded = VyboraApi.getComments(post.id)
+                                        android.os.Handler(android.os.Looper.getMainLooper()).post { postComments = loaded; commentsLoading = false }
+                                    } catch (e: Exception) {
+                                        android.os.Handler(android.os.Looper.getMainLooper()).post { commentsLoading = false; onNotice(e.message ?: "Erro ao carregar comentários.") }
+                                    }
+                                }.start()
+                            } }) {
                             Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White)
                         }
-                        IconButton(onClick = { onNotice("Compartilhamento desta publicação em preparação.") }) {
+                        IconButton(onClick = { val post = selectedPublication
+                            if (post != null) {
+                                val share = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(android.content.Intent.EXTRA_TEXT, post.caption + "\\n" + post.mediaUrl)
+                                }
+                                context.startActivity(android.content.Intent.createChooser(share, "Compartilhar publicação"))
+                            } }) {
                             Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = Color.White)
                         }
-                        IconButton(onClick = { onNotice("Abra a publicação no feed para salvar.") }) {
-                            Icon(Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color.White)
+                        IconButton(onClick = { val post = selectedPublication
+                            if (post != null) {
+                                val wasSaved = post.id in savedIds
+                                savedIds = if (wasSaved) savedIds - post.id else savedIds + post.id
+                                prefs.edit().putStringSet("saved_post_ids", savedIds).apply()
+                                onNotice(if (wasSaved) "Publicação removida dos salvos." else "Publicação salva.")
+                            } }) {
+                            Icon(if (selectedPublication?.id in savedIds) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color.White)
                         }
                     }
                 }
                 Spacer(Modifier.weight(1f))
             }
         }
+    }
+    if (commentsOpen) {
+        AlertDialog(
+            onDismissRequest = { commentsOpen = false },
+            title = { Text("Comentários") },
+            text = {
+                Column(Modifier.fillMaxWidth().heightIn(max = 430.dp)) {
+                    if (commentsLoading) CircularProgressIndicator()
+                    else if (postComments.isEmpty()) Text("Nenhum comentário ainda.")
+                    else Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                        postComments.forEach { comment ->
+                            Text(comment.displayName.ifBlank { comment.username }, fontWeight = FontWeight.Bold)
+                            Text(comment.body, modifier = Modifier.padding(bottom = 12.dp))
+                        }
+                    }
+                    OutlinedTextField(value = commentDraft, onValueChange = { commentDraft = it }, label = { Text("Escreva um comentário") }, modifier = Modifier.fillMaxWidth(), maxLines = 3)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val post = selectedPublication
+                    val token = prefs.getString("token", null)
+                    val draft = commentDraft.trim()
+                    if (post == null || token.isNullOrBlank()) onNotice("Entre na conta para comentar.")
+                    else if (draft.isNotBlank()) {
+                        commentsLoading = true
+                        Thread {
+                            try {
+                                VyboraApi.addComment(token, post.id, draft)
+                                val loaded = VyboraApi.getComments(post.id)
+                                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                    postComments = loaded; commentDraft = ""; commentsLoading = false
+                                }
+                            } catch (e: Exception) {
+                                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                    commentsLoading = false; onNotice(e.message ?: "Erro ao comentar.")
+                                }
+                            }
+                        }.start()
+                    }
+                }) { Text("Enviar") }
+            },
+            dismissButton = { TextButton(onClick = { commentsOpen = false }) { Text("Fechar") } }
+        )
     }
     if (showMoreOptions) {
         AlertDialog(
