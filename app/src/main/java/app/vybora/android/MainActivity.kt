@@ -3337,7 +3337,7 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
                 drawContent()
                 drawCircle(
                     color = Color.Transparent,
-                    radius = size.minDimension * 0.405f,
+                    radius = size.minDimension * 0.435f,
                     center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f),
                     blendMode = androidx.compose.ui.graphics.BlendMode.Clear
                 )
@@ -3455,7 +3455,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
         // The portrait fits INSIDE the ornament; the ornament can overflow freely.
         Box(Modifier.padding(top = 18.dp, bottom = 18.dp).size(156.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(124.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
+            Box(Modifier.size(136.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
                 val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
                 if (image.isNotBlank()) { expandedImage = image; viewingPublication = false } else onEditProfilePhoto()
             }) {
@@ -3691,7 +3691,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Spacer(Modifier.height(12.dp))
                 Box(Modifier.fillMaxWidth().height(158.dp), contentAlignment = Alignment.Center) {
                     Box(Modifier.size(132.dp), contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(104.dp).clip(CircleShape).background(QiblyTheme.card)) {
+                        Box(Modifier.size(116.dp).clip(CircleShape).background(QiblyTheme.card)) {
                             val image = profilePhotoUrl.ifBlank { avatarUrl }
                             if (image.isNotBlank()) AsyncImage(model = image,
                                 contentDescription = "Prévia circular", modifier = Modifier.fillMaxSize(),
@@ -3718,7 +3718,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Box(Modifier.size(76.dp), contentAlignment = Alignment.Center) {
-                                Box(Modifier.size(60.dp).clip(CircleShape).background(QiblyTheme.card)) {
+                                Box(Modifier.size(68.dp).clip(CircleShape).background(QiblyTheme.card)) {
                                     val image = profilePhotoUrl.ifBlank { avatarUrl }
                                     if (image.isNotBlank()) AsyncImage(model = image,
                                         contentDescription = null, modifier = Modifier.fillMaxSize(),
