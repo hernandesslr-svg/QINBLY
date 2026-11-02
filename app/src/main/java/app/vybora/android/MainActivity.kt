@@ -3325,6 +3325,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     var originalCoverUrl by remember { mutableStateOf("") }
     var expandedImage by remember { mutableStateOf("") }
     var photoMenuOpen by remember { mutableStateOf(false) }
+    var viewingPublication by remember { mutableStateOf(false) }
     var joinedMonthYear by remember { mutableStateOf("") }
 
     val shownName = displayName.ifBlank { username }
@@ -3407,7 +3408,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         Box(Modifier.padding(top = 4.dp).size(132.dp), contentAlignment = Alignment.Center) {
             Box(Modifier.size(126.dp).border(3.dp, Brush.sweepGradient(listOf(Color(0xFFFF2499), Color(0xFF7B39FF), Color(0xFFFF2499))), CircleShape).padding(5.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
                 val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
-                if (image.isNotBlank()) expandedImage = image else onEditProfilePhoto()
+                if (image.isNotBlank()) expandedImage = image; viewingPublication = false } else onEditProfilePhoto()
             }) {
                 val image = profilePhotoUrl.ifBlank { avatarUrl }
                 if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
@@ -3491,7 +3492,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.fillMaxWidth().heightIn(max = 560.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 items(profilePosts.filter { profileTab != "Vídeos" || it.mediaType == "video" }.filter { profileTab != "Fotos" || it.mediaType == "image" }.size) { index ->
                     val post = profilePosts.filter { profileTab != "Vídeos" || it.mediaType == "video" }.filter { profileTab != "Fotos" || it.mediaType == "image" }[index]
-                    Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(8.dp)).background(Brush.linearGradient(listOf(Color(0xFF241047), Color(0xFF9D236E), Color(0xFF071A38)))).clickable { if (post.mediaUrl.isNotBlank()) expandedImage = post.mediaUrl }) {
+                    Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(8.dp)).background(Brush.linearGradient(listOf(Color(0xFF241047), Color(0xFF9D236E), Color(0xFF071A38)))).clickable { if (post.mediaUrl.isNotBlank()) { expandedImage = post.mediaUrl; viewingPublication = true } }) {
                         if (post.mediaUrl.isNotBlank()) AsyncImage(model = post.mediaUrl, contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                         else Column(Modifier.align(Alignment.Center).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = null, tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(30.dp))
@@ -3521,7 +3522,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     IconButton(onClick = { photoMenuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Opções da foto", tint = Color.White) }
                     DropdownMenu(expanded = photoMenuOpen, onDismissRequest = { photoMenuOpen = false }) {
                         DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = { photoMenuOpen = false; saveProfilePhotoToDevice(profileContext, expandedImage, onNotice) })
-                        DropdownMenuItem(text = { Text("Apagar foto") }, onClick = { photoMenuOpen = false; onNotice("Exclusão da foto ainda não disponível. Nenhuma foto foi apagada.") })
+                        DropdownMenuItem(text = { Text(if (viewingPublication) "Apagar publicação" else "Apagar foto") }, onClick = { photoMenuOpen = false; onNotice(if (viewingPublication) "Exclusão da publicação ainda não disponível. Nenhuma publicação foi apagada." else "Exclusão da foto ainda não disponível. Nenhuma foto foi apagada.") })
                     }
                 }
                 IconButton(
@@ -4650,6 +4651,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
     var selectedTab by remember(username) { mutableStateOf("Publicações") }
     var expandedImage by remember { mutableStateOf<String?>(null) }
     var photoMenuOpen by remember { mutableStateOf(false) }
+    var viewingPublication by remember { mutableStateOf(false) }
     var showMoreOptions by remember { mutableStateOf(false) }
     var profilePosts by remember(username) { mutableStateOf<List<VyboraApi.PostSummary>>(emptyList()) }
     val displayName = user.optString("display_name").ifBlank { user.optString("displayName").ifBlank { username.removePrefix("@") } }
@@ -4692,7 +4694,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
         }
         Box(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
             Box(Modifier.size(156.dp).border(3.dp, Brush.sweepGradient(listOf(Color(0xFFFF2499), Color(0xFF7B39FF), Color(0xFFFF2499))), CircleShape).padding(5.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
-                if (profilePhotoUrl.isNotBlank()) expandedImage = profilePhotoUrl
+                if (profilePhotoUrl.isNotBlank()) expandedImage = profilePhotoUrl; viewingPublication = false
             }) {
                 if (profilePhotoUrl.isNotBlank()) AsyncImage(model = profilePhotoUrl, contentDescription = "Foto de $displayName", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 else Icon(Icons.Default.Person, contentDescription = "Sem foto", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(34.dp))
@@ -4795,7 +4797,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                 profilePosts.chunked(3).forEach { rowPosts ->                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         rowPosts.forEach { post ->
                             Box(Modifier.weight(1f).height(145.dp).clip(RoundedCornerShape(7.dp)).background(Color(0xFF111426)).clickable {
-                                if (post.mediaUrl.isNotBlank()) expandedImage = post.mediaUrl
+                                if (post.mediaUrl.isNotBlank()) expandedImage = post.mediaUrl; viewingPublication = true
                             }) {
                                 if (post.mediaUrl.isNotBlank()) {
                                     AsyncImage(model = post.mediaUrl, contentDescription = "Publicação de $displayName", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
@@ -4820,7 +4822,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                     IconButton(onClick = { photoMenuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Opções da foto", tint = Color.White) }
                     DropdownMenu(expanded = photoMenuOpen, onDismissRequest = { photoMenuOpen = false }) {
                         DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = { photoMenuOpen = false; expandedImage?.let { saveProfilePhotoToDevice(context, it, onNotice) } })
-                        DropdownMenuItem(text = { Text("Denunciar foto") }, onClick = { photoMenuOpen = false; onNotice("Denúncias ainda não estão conectadas. Nenhuma denúncia foi enviada.") })
+                        DropdownMenuItem(text = { Text(if (viewingPublication) "Denunciar publicação" else "Denunciar foto") }, onClick = { photoMenuOpen = false; onNotice("Denúncias ainda não estão conectadas. Nenhuma denúncia foi enviada.") })
                     }
                 }
                 IconButton(onClick = { expandedImage = null }, modifier = Modifier.align(Alignment.TopStart).padding(8.dp).background(Color.Black.copy(alpha = 0.65f), CircleShape)) {
