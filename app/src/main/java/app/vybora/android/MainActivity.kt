@@ -1870,8 +1870,8 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                     Surface(
                         color = Color.White,
                         shape = RoundedCornerShape(24.dp),
-                        shadowElevation = 1.dp,
-                        border = BorderStroke(1.dp, Color(0xFFF0F0F0)),
+                        shadowElevation = 2.dp,
+                        border = BorderStroke(1.dp, Color(0xFFEAEAEA)),
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 3.dp)
                     ) {
                         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
@@ -2164,7 +2164,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         Icon(
                                             if (likedByCurrentUser) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                             contentDescription = if (likedByCurrentUser) "Descurtir" else "Curtir",
-                                            tint = if (likedByCurrentUser) Color(0xFFFF3045) else RemoteAppearance.actionIconColor,
+                                            tint = RemoteAppearance.actionIconColor,
                                             modifier = Modifier.size(24.dp)
                                         )
                                         Text(
@@ -2233,7 +2233,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         Icon(
                                             if (post.id in savedPostIds) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                                             contentDescription = if (post.id in savedPostIds) "Remover dos salvos" else "Salvar publicação",
-                                            tint = if (post.id in savedPostIds) Color(0xFFFFD54F) else RemoteAppearance.actionIconColor,
+                                            tint = RemoteAppearance.actionIconColor,
                                             modifier = Modifier.size(24.dp)
                                         )
                                     }
