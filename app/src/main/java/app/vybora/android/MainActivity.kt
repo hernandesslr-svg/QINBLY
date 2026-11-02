@@ -3448,7 +3448,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             }
         }
         if (profileTab == "Salvos" || profileTab == "Sobre") {
-            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Text(when (profileTab) {
                     "Sobre" -> shownBio.ifBlank { "Sem informações adicionais." }
                     "Salvos" -> "Publicações que você salvou"
@@ -3456,9 +3456,9 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 }, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
             }
         } else if (loadingPosts) {
-            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Pink) }
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Pink) }
         } else if (profilePosts.isEmpty()) {
-            Box(Modifier.fillMaxWidth().weight(1f).padding(22.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().padding(22.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Default.GridView, contentDescription = null, tint = Violet, modifier = Modifier.size(38.dp))
                     Text("Você ainda não publicou nada", fontWeight = FontWeight.Bold, color = RemoteAppearance.screenTextColor)
@@ -3851,8 +3851,10 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
             editCard(Icons.Default.AlternateEmail, "Nome de usuário", username, "seuusuario", { username = it.lowercase().filter { ch -> ch.isLetterOrDigit() || ch == '_' || ch == '.' }.take(24) }, max = 24, centered = true)
             Text("CATEGORIAS DO PERFIL", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
             Text("Escolha até 5 categorias para aparecerem abaixo do seu nome.", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
-            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                availableCategories.forEach { category ->
+            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                availableCategories.chunked(2).forEach { categoryRow ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    categoryRow.forEach { category ->
                     val selected = category in selectedCategories
                     androidx.compose.material3.FilterChip(
                         selected = selected,
@@ -3860,6 +3862,8 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                         label = { Text(category, color = if (selected) Color.White else RemoteAppearance.screenTextColor) },
                         colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFFFF168C), containerColor = QiblyTheme.card)
                     )
+                    }
+                    }
                 }
             }
             editCard(Icons.Default.Description, "Biografia", bio, "Escreva uma breve descrição sobre você", { bio = it }, singleLine = false, max = 300)
