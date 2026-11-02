@@ -3314,6 +3314,29 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
 
 @Composable
 private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
+    val frameNames = listOf(
+        "qinbly_frame_rosa_neon", "qinbly_frame_azul_eletrico",
+        "qinbly_frame_realeza", "qinbly_frame_galaxia",
+        "qinbly_frame_fogo", "qinbly_frame_cristal",
+        "qinbly_frame_romantica", "qinbly_frame_dourada",
+        "qinbly_frame_esmeralda", "qinbly_frame_prateada"
+    )
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val frameResource = remember(style, context) {
+        context.resources.getIdentifier(
+            frameNames[style.coerceIn(0, 9)], "drawable", context.packageName
+        )
+    }
+    if (frameResource != 0) {
+        // PNG is a transparent overlay: the profile photo remains visible underneath.
+        coil.compose.AsyncImage(
+            model = frameResource,
+            contentDescription = "Moldura decorativa de perfil",
+            modifier = Modifier.size(diameter),
+            contentScale = androidx.compose.ui.layout.ContentScale.FillBounds
+        )
+        return
+    }
     val palette = listOf(
         Color(0xFFFF329A), Color(0xFF239BFF), Color(0xFFFFCB55),
         Color(0xFF9874FF), Color(0xFFFF6328), Color(0xFF80E5FF),
