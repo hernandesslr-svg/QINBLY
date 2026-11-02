@@ -24,7 +24,7 @@ jobs:
           from pathlib import Path
           from zipfile import ZipFile
           from io import BytesIO
-          from PIL import Image
+          from PIL import Image, ImageDraw, ImageFilter, ImageChops
           import re
 
           archive = Path("qinbly_android_assets.zip")
@@ -43,7 +43,20 @@ jobs:
                       assert im.format == "PNG", f"{name}: not PNG"
                       assert im.mode == "RGBA", f"{name}: expected RGBA"
                       assert im.getpixel((im.width // 2, im.height // 2))[3] == 0, f"{name}: center not transparent"
-                  frames[name] = data
+                  # Cut out the embedded demo portrait, preserving the decorative ring.
+                  with Image.open(BytesIO(data)) as source:
+                      frame = source.convert("RGBA")
+                  width, height = frame.size
+                  cx, cy = width / 2, height / 2
+                  radius = min(width, height) * 0.365
+                  hole = Image.new("L", frame.size, 0)
+                  draw = ImageDraw.Draw(hole)
+                  draw.ellipse((cx-radius, cy-radius, cx+radius, cy+radius), fill=255)
+                  hole = hole.filter(ImageFilter.GaussianBlur(max(1.0, min(width, height)*0.008)))
+                  frame.putalpha(ImageChops.subtract(frame.getchannel("A"), hole))
+                  output = BytesIO()
+                  frame.save(output, format="PNG", optimize=True)
+                  frames[name] = output.getvalue()
           assert len(frames) == 10, f"Expected 10 frames, found {len(frames)}: {sorted(frames)}"
           target.mkdir(parents=True, exist_ok=True)
           for old in target.glob("qinbly_frame_*.png"):
