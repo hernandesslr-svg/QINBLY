@@ -3316,19 +3316,9 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
 
 @Composable
 private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
-    // Render ornaments natively. Never draw the old PNG assets: they contain
-    // embedded sample portraits and white rings that cannot be safely masked.
-    val palette = listOf(
-        Color(0xFFFF329A), Color(0xFF239BFF), Color(0xFFFFCB55),
-        Color(0xFF9874FF), Color(0xFFFF6328), Color(0xFF80E5FF),
-        Color(0xFFFF7DB8), Color(0xFFEFC15A), Color(0xFF37C992), Color(0xFFC9D7ED)
-    )
-    val index = style.coerceIn(0, 9)
-    // The bundled PNG set is intentionally disabled: its cramped ornamental
-    // silhouettes were visually rejected. Keep the real photo unobstructed.
-    // Prefer the actual transparent artwork assets. Their centers are cut out
-    // by the image-processing workflow, so the live profile photo shows through.
-    val art = intArrayOf(
+    // The decoration is an independent bundled resource, layered ABOVE the avatar.
+    // Clip only the decoration's inner opening, never the profile photograph.
+    val frames = intArrayOf(
         R.drawable.qinbly_frame_rosa_neon, R.drawable.qinbly_frame_azul_eletrico,
         R.drawable.qinbly_frame_realeza, R.drawable.qinbly_frame_galaxia,
         R.drawable.qinbly_frame_fogo, R.drawable.qinbly_frame_cristal,
@@ -3336,18 +3326,15 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
         R.drawable.qinbly_frame_esmeralda, R.drawable.qinbly_frame_prateada
     )
     androidx.compose.foundation.Image(
-        painter = androidx.compose.ui.res.painterResource(art[index]),
-        contentDescription = null,
-        contentScale = androidx.compose.ui.layout.ContentScale.FillBounds,
-        modifier = Modifier
-            .size(diameter)
+        painter = androidx.compose.ui.res.painterResource(frames[style.coerceIn(0, frames.lastIndex)]),
+        contentDescription = "Moldura decorativa do perfil",
+        contentScale = ContentScale.FillBounds,
+        modifier = Modifier.size(diameter)
             .graphicsLayer {
                 compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
             }
             .drawWithContent {
                 drawContent()
-                // Punch out the portrait area at render time, regardless of
-                // how the source PNG was exported. The frame stays outside.
                 drawCircle(
                     color = Color.Transparent,
                     radius = size.minDimension * 0.405f,
@@ -3356,202 +3343,6 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
                 )
             }
     )
-    return
-    val accent = palette[index]
-    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "ornate-frame")
-    val orbit by transition.animateFloat(
-        initialValue = 0f, targetValue = 360f,
-        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-            androidx.compose.animation.core.tween(
-                if (index == 4) 2600 else 7400,
-                easing = androidx.compose.animation.core.LinearEasing
-            )
-        ), label = "ornament-orbit"
-    )
-    val shimmer by transition.animateFloat(
-        initialValue = 0.55f, targetValue = 1f,
-        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-            androidx.compose.animation.core.tween(1050),
-            androidx.compose.animation.core.RepeatMode.Reverse
-        ), label = "ornament-shimmer"
-    )
-    androidx.compose.foundation.Canvas(Modifier.size(diameter)) {
-        val cx = size.width / 2f
-        val cy = size.height / 2f
-        val r = size.minDimension * 0.438f
-        val thick = size.minDimension * 0.044f
-        val outer = size.minDimension * 0.482f
-        drawCircle(accent.copy(alpha = 0.28f), radius = r + thick * 0.95f,
-            center = androidx.compose.ui.geometry.Offset(cx, cy),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick * 1.9f))
-        drawCircle(
-            brush = Brush.sweepGradient(
-                listOf(accent, Color.White.copy(alpha = 0.95f), accent,
-                    accent.copy(alpha = 0.65f), Color.White, accent)
-            ),
-            radius = r, center = androidx.compose.ui.geometry.Offset(cx, cy),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick)
-        )
-        drawCircle(accent.copy(alpha = 0.8f), radius = r - thick * 0.72f,
-            center = androidx.compose.ui.geometry.Offset(cx, cy),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick * 0.23f))
-        // Layered materials: shaded metal, reflected light and inset enamel.
-        // All rendering stays outside the real avatar photo.
-        val metal = when (index) {
-            2, 7 -> listOf(Color(0xFF6C3A0B), Color(0xFFFFE69B), Color(0xFFAF6A1C), Color(0xFFFFF4C9), Color(0xFF6C3A0B))
-            8 -> listOf(Color(0xFF06452E), Color(0xFF5DFFD0), Color(0xFF086D4E), Color(0xFFCAFFEA), Color(0xFF06452E))
-            9 -> listOf(Color(0xFF425064), Color(0xFFFFFFFF), Color(0xFF8496B0), Color(0xFFE5F1FF), Color(0xFF425064))
-            4 -> listOf(Color(0xFF701506), Color(0xFFFFB126), Color(0xFFFF4214), Color(0xFFFFE48A), Color(0xFF701506))
-            5 -> listOf(Color(0xFF174A8A), Color(0xFFB8F9FF), Color(0xFF218ACB), Color(0xFFFFFFFF), Color(0xFF174A8A))
-            else -> listOf(accent.copy(alpha = .7f), Color.White, accent, accent.copy(alpha = .9f), Color.White)
-        }
-        val ringCenter = androidx.compose.ui.geometry.Offset(cx, cy)
-        drawCircle(
-            brush = Brush.sweepGradient(metal),
-            radius = r + thick * .62f, center = ringCenter,
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick * .42f)
-        )
-        drawCircle(
-            brush = Brush.sweepGradient(metal.reversed()),
-            radius = r - thick * .54f, center = ringCenter,
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick * .24f)
-        )
-        drawCircle(
-            color = Color.White.copy(alpha = .23f + shimmer * .22f),
-            radius = r + thick * .32f, center = ringCenter,
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick * .09f)
-        )
-        // Individually shaded gems with highlight and a dark setting.
-        if (index == 2 || index == 5 || index == 7 || index == 8 || index == 9) {
-            val gems = if (index == 2) 7 else 12
-            for (g in 0 until gems) {
-                val a = (g * 2f * kotlin.math.PI.toFloat() / gems)
-                val gr = r + thick * .36f
-                val gx = cx + kotlin.math.cos(a) * gr
-                val gy = cy + kotlin.math.sin(a) * gr
-                val centerGem = androidx.compose.ui.geometry.Offset(gx, gy)
-                val gemSize = thick * .72f
-                drawCircle(Color(0xAA182034), gemSize * 1.2f, centerGem)
-                val facet = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(gx, gy - gemSize)
-                    lineTo(gx + gemSize * .8f, gy)
-                    lineTo(gx, gy + gemSize)
-                    lineTo(gx - gemSize * .8f, gy)
-                    close()
-                }
-                val gemColor = when (index) {
-                    2 -> Color(0xFFB948EF)
-                    5 -> Color(0xFF5EE9FF)
-                    8 -> Color(0xFF16D38A)
-                    9 -> Color(0xFFDAF0FF)
-                    else -> Color(0xFFFFE48C)
-                }
-                drawPath(facet, brush = Brush.linearGradient(listOf(Color.White, gemColor, gemColor.copy(alpha = .75f))))
-                drawLine(Color.White.copy(alpha = .8f), centerGem,
-                    androidx.compose.ui.geometry.Offset(gx, gy - gemSize), thick * .075f)
-                drawCircle(Color.White.copy(alpha = shimmer * .9f), gemSize * .17f,
-                    androidx.compose.ui.geometry.Offset(gx - gemSize * .25f, gy - gemSize * .35f))
-            }
-        }
-        // No generic dotted halo: reserve the silhouette for each material's
-        // own artwork. Tiny repeated beads made every theme look identical.
-        // Material-specific shapes replace the previous one-size-fits-all rings.
-        // These are separate from the portrait and preserve its center.
-        if (index == 3) {
-            // A tilted Saturn-like planet with orbital dust for Galaxia.
-            val planet = androidx.compose.ui.geometry.Offset(cx + outer * .69f, cy - outer * .68f)
-            val pr = thick * 1.22f
-            drawCircle(brush = Brush.radialGradient(listOf(Color(0xFFE8C7FF), Color(0xFF7443C8), Color(0xFF1C1248)),
-                center = androidx.compose.ui.geometry.Offset(planet.x-pr*.35f, planet.y-pr*.4f), radius = pr*2f),
-                radius = pr, center = planet)
-            drawOval(brush = Brush.linearGradient(listOf(Color(0x00C2A2FF), Color(0xFFE8C5FF), Color(0xFF7040D5))),
-                topLeft = androidx.compose.ui.geometry.Offset(planet.x-pr*1.9f, planet.y-pr*.48f),
-                size = androidx.compose.ui.geometry.Size(pr*3.8f, pr*.95f),
-                style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick*.23f))
-            for (k in 0 until 32) {
-                val theta = k * 2f * kotlin.math.PI.toFloat()/32f + orbit*.002f
-                val dist = outer + thick*(.1f + .55f*(k%4)/4f)
-                val dot = androidx.compose.ui.geometry.Offset(cx+kotlin.math.cos(theta)*dist,cy+kotlin.math.sin(theta)*dist)
-                drawCircle(if(k%3==0) Color(0xFFD5B8FF) else Color(0xFF8F69FF),
-                    thick*(if(k%5==0) .19f else .075f),dot,alpha=.45f+shimmer*.45f)
-            }
-        }
-        if (index == 5) {
-            // Tall angular crystal clusters, faceted rather than round beads.
-            for (k in 0 until 9) {
-                val angle = (k*2f*kotlin.math.PI.toFloat()/9f)-kotlin.math.PI.toFloat()/2f
-                val px = cx+kotlin.math.cos(angle)*outer
-                val py = cy+kotlin.math.sin(angle)*outer
-                val ux = kotlin.math.cos(angle)
-                val uy = kotlin.math.sin(angle)
-                val vx = -uy
-                val vy = ux
-                val height = thick*(1.5f+(k%3)*.45f)
-                val width = thick*.72f
-                val gem = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(px+ux*height,py+uy*height)
-                    lineTo(px+vx*width,py+vy*width)
-                    lineTo(px-ux*thick*.65f,py-uy*thick*.65f)
-                    lineTo(px-vx*width,py-vy*width)
-                    close()
-                }
-                drawPath(gem,brush=Brush.linearGradient(listOf(Color.White,Color(0xFF62D8FF),Color(0xFF1763C7))))
-                drawLine(Color.White.copy(alpha=.8f),
-                    androidx.compose.ui.geometry.Offset(px,py),
-                    androidx.compose.ui.geometry.Offset(px+ux*height,py+uy*height),thick*.1f)
-            }
-        }
-        if (index == 4) {
-            // Layered flame tongues with dark red bases and yellow cores.
-            for (k in 0 until 20) {
-                val angle = k*2f*kotlin.math.PI.toFloat()/20f
-                val ux=kotlin.math.cos(angle)
-                val uy=kotlin.math.sin(angle)
-                val vx=-uy
-                val vy=ux
-                val base=outer-thick*.5f
-                val length=thick*(1.4f+.55f*kotlin.math.sin(orbit*.035f+k))
-                val px=cx+ux*base
-                val py=cy+uy*base
-                val flame=androidx.compose.ui.graphics.Path().apply {
-                    moveTo(px+vx*thick*.5f,py+vy*thick*.5f)
-                    quadraticBezierTo(px+ux*length*.45f+vx*thick*.55f,py+uy*length*.45f+vy*thick*.55f,
-                        px+ux*length,py+uy*length)
-                    quadraticBezierTo(px+ux*length*.6f-vx*thick*.55f,py+uy*length*.6f-vy*thick*.55f,
-                        px-vx*thick*.5f,py-vy*thick*.5f)
-                    close()
-                }
-                drawPath(flame,brush=Brush.linearGradient(listOf(Color(0xFF9E1907),Color(0xFFFF5D10),Color(0xFFFFDB54))))
-            }
-        }
-        // Individual ornaments below are deliberately not shared between
-        // themes: generic crowns/hearts/stars were cluttering the tiny previews.
-        if (index == 2 || index == 7 || index == 8 || index == 9) {
-            val pieces = if (index == 2) 5 else 9
-            for (k in 0 until pieces) {
-                val angle = (k + .5f) * kotlin.math.PI.toFloat() / pieces
-                for (side in listOf(-1f, 1f)) {
-                    val x = cx + side * kotlin.math.cos(angle) * outer
-                    val y = cy + kotlin.math.sin(angle) * outer
-                    val tipX = x + side * thick * (if (index == 2) 1.7f else 1.05f)
-                    val tipY = y - thick * .55f
-                    val leaf = androidx.compose.ui.graphics.Path().apply {
-                        moveTo(x, y + thick * .45f)
-                        quadraticBezierTo(tipX, tipY + thick, tipX, tipY)
-                        quadraticBezierTo(x, y - thick * .65f, x, y + thick * .45f)
-                        close()
-                    }
-                    val fill = when (index) {
-                        8 -> listOf(Color(0xFF064E36), Color(0xFF5AF0B2), Color(0xFF0A7851))
-                        9 -> listOf(Color(0xFF435169), Color.White, Color(0xFF778CA8))
-                        else -> listOf(Color(0xFF8C4A09), Color(0xFFFFE5A0), Color(0xFFD38B24))
-                    }
-                    drawPath(leaf, brush = Brush.linearGradient(fill))
-                }
-            }
-        }
-
-    }
 }
 
 @Composable
