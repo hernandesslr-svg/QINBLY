@@ -1000,7 +1000,8 @@ private fun VyboraApp() {
                             profileName = name
                             profileBio = bio
                             showEditProfile = false
-                            tab = 0
+                            publicProfileUsername = ""
+                            tab = 4
                             navTopRequest++
                             notice = "Perfil atualizado e sincronizado."
                         },
