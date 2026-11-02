@@ -3324,6 +3324,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     var profilePhotoUrl by remember { mutableStateOf("") }
     var originalCoverUrl by remember { mutableStateOf("") }
     var expandedImage by remember { mutableStateOf("") }
+    var photoMenuOpen by remember { mutableStateOf(false) }
     var joinedMonthYear by remember { mutableStateOf("") }
 
     val shownName = displayName.ifBlank { username }
@@ -3516,6 +3517,13 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(horizontal = 8.dp, vertical = 24.dp).clickable { expandedImage = "" },
                     contentScale = androidx.compose.ui.layout.ContentScale.Fit
                 )
+                Box(Modifier.align(Alignment.TopEnd).padding(8.dp)) {
+                    IconButton(onClick = { photoMenuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Opções da foto", tint = Color.White) }
+                    DropdownMenu(expanded = photoMenuOpen, onDismissRequest = { photoMenuOpen = false }) {
+                        DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = { photoMenuOpen = false; saveProfilePhotoToDevice(context, expandedImage, onNotice) })
+                        DropdownMenuItem(text = { Text("Apagar foto") }, onClick = { photoMenuOpen = false; onNotice("Exclusão da foto ainda não disponível. Nenhuma foto foi apagada.") })
+                    }
+                }
                 IconButton(
                     onClick = { expandedImage = "" },
                     modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).background(Color.Black.copy(alpha = 0.65f), CircleShape)
@@ -4618,6 +4626,20 @@ private fun SettingSwitch(title: String, description: String, checked: Boolean, 
     }
 }
 
+private fun saveProfilePhotoToDevice(context: android.content.Context, imageUrl: String, onResult: (String) -> Unit) {
+    Thread {
+        val message = try {
+            val request = android.app.DownloadManager.Request(android.net.Uri.parse(imageUrl))
+                .setTitle("Foto do perfil QINBLY")
+                .setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, "QINBLY-perfil-" + System.currentTimeMillis() + ".jpg")
+            (context.getSystemService(android.content.Context.DOWNLOAD_SERVICE) as android.app.DownloadManager).enqueue(request)
+            "Download da foto iniciado."
+        } catch (e: Exception) { e.message ?: "Não foi possível salvar a foto." }
+        android.os.Handler(android.os.Looper.getMainLooper()).post { onResult(message) }
+    }.start()
+}
+
 @Composable
 private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -4627,6 +4649,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
     var isFollowing by remember(username) { mutableStateOf(false) }
     var selectedTab by remember(username) { mutableStateOf("Publicações") }
     var expandedImage by remember { mutableStateOf<String?>(null) }
+    var photoMenuOpen by remember { mutableStateOf(false) }
     var showMoreOptions by remember { mutableStateOf(false) }
     var profilePosts by remember(username) { mutableStateOf<List<VyboraApi.PostSummary>>(emptyList()) }
     val displayName = user.optString("display_name").ifBlank { user.optString("displayName").ifBlank { username.removePrefix("@") } }
@@ -4793,6 +4816,13 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
         androidx.compose.ui.window.Dialog(onDismissRequest = { expandedImage = null }) {
             Box(Modifier.fillMaxWidth().heightIn(max = 650.dp).clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
                 AsyncImage(model = expandedImage, contentDescription = "Imagem ampliada de $displayName", modifier = Modifier.fillMaxWidth().heightIn(min = 280.dp, max = 650.dp).clickable { expandedImage = null }, contentScale = androidx.compose.ui.layout.ContentScale.Fit)
+                Box(Modifier.align(Alignment.TopEnd).padding(8.dp)) {
+                    IconButton(onClick = { photoMenuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Opções da foto", tint = Color.White) }
+                    DropdownMenu(expanded = photoMenuOpen, onDismissRequest = { photoMenuOpen = false }) {
+                        DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = { photoMenuOpen = false; expandedImage?.let { saveProfilePhotoToDevice(context, it, onNotice) } })
+                        DropdownMenuItem(text = { Text("Denunciar foto") }, onClick = { photoMenuOpen = false; onNotice("Denúncias ainda não estão conectadas. Nenhuma denúncia foi enviada.") })
+                    }
+                }
                 IconButton(onClick = { expandedImage = null }, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).background(Color.Black.copy(alpha = 0.65f), CircleShape)) {
                     Icon(Icons.Default.Close, contentDescription = "Fechar imagem", tint = RemoteAppearance.screenTextColor)
                 }
