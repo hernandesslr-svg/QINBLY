@@ -1865,7 +1865,13 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                     var likedByCurrentUser by remember(post.id, demoLikes, post.likedByMe) {
                         mutableStateOf(if (post.id.startsWith("demo-post-")) post.id in demoLikes else post.likedByMe)
                     }
-                    Surface(color = Color.Transparent, shape = RoundedCornerShape(0.dp), modifier = Modifier.fillMaxWidth()) {
+                    Surface(
+                        color = Color.White,
+                        shape = RoundedCornerShape(22.dp),
+                        shadowElevation = 3.dp,
+                        border = BorderStroke(1.dp, Color(0xFFEAEAEA)),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 3.dp)
+                    ) {
                         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
                             val followingPrefKey = "following_${post.username.lowercase()}"
                             var isFollowingPost by remember(post.id, post.isFollowing) {
