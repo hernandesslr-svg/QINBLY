@@ -27,6 +27,15 @@ jobs:
           for name in names:
               path = root / f"qinbly_frame_{name}.png"
               im = Image.open(path).convert("RGBA")
+              if name in ("esmeralda", "prateada"):
+                  source_center = (122, 178) if name == "esmeralda" else (106, 177)
+                  scale = 0.76
+                  small = im.resize((round(im.width * scale), round(im.height * scale)), Image.Resampling.LANCZOS)
+                  corrected = Image.new("RGBA", im.size, (0,0,0,0))
+                  left = round(im.width/2 - source_center[0]*scale)
+                  top = round(im.height/2 - source_center[1]*scale)
+                  corrected.alpha_composite(small, (left, top))
+                  im = corrected
               w,h = im.size
               pix = im.load()
               # Preserve luminous ornaments; clear the black poster and embedded labels.
@@ -47,7 +56,7 @@ jobs:
                       # Existing central opening must remain completely transparent.
                       cx,cy=w*0.5,h*0.48
                       dist=math.hypot(x-cx,y-cy)
-                      if dist < w*0.345:
+                      if dist < w*(0.255 if name in ("esmeralda", "prateada") else 0.345):
                           strength = 0
                       pix[x,y]=(R,G,B, A*strength//255)
               im.save(path, optimize=True)
