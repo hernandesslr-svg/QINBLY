@@ -3328,11 +3328,20 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
         )
     }
     if (frameResource != 0) {
-        // PNG is a transparent overlay: the profile photo remains visible underneath.
+        val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "frame-glow")
+        val glow by transition.animateFloat(
+            initialValue = 0.78f, targetValue = 1f,
+            animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                animation = androidx.compose.animation.core.tween(1400),
+                repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+            ),
+            label = "frame-pulse"
+        )
+        // Decorative PNG overlays the photo; only the ornament gently pulses.
         coil.compose.AsyncImage(
             model = frameResource,
             contentDescription = "Moldura decorativa de perfil",
-            modifier = Modifier.size(diameter),
+            modifier = Modifier.size(diameter).graphicsLayer { alpha = glow },
             contentScale = androidx.compose.ui.layout.ContentScale.FillBounds
         )
         return
