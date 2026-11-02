@@ -1869,10 +1869,10 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                     }
                     Surface(
                         color = Color.White,
-                        shape = RoundedCornerShape(24.dp),
-                        shadowElevation = 2.dp,
-                        border = BorderStroke(1.dp, Color(0xFFEAEAEA)),
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 3.dp)
+                        shape = RoundedCornerShape(22.dp),
+                        shadowElevation = 5.dp,
+                        border = BorderStroke(1.dp, Color(0xFFE4E4E4)),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
                             val followingPrefKey = "following_${post.username.lowercase()}"
@@ -1966,7 +1966,9 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                                         AsyncImage(
                                             model = post.avatarUrl, contentDescription = "Foto de perfil do autor",
-                                            modifier = Modifier.size(38.dp).clip(CircleShape)
+                                            modifier = Modifier.size(40.dp)
+                                                .border(2.dp, Color(0xFF2196F3), CircleShape)
+                                                .padding(2.dp).clip(CircleShape)
                                                 .clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) },
                                             contentScale = ContentScale.Crop
                                         )
@@ -2164,7 +2166,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         Icon(
                                             if (likedByCurrentUser) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                             contentDescription = if (likedByCurrentUser) "Descurtir" else "Curtir",
-                                            tint = RemoteAppearance.actionIconColor,
+                                            tint = if (likedByCurrentUser) Color(0xFFFF3045) else RemoteAppearance.actionIconColor,
                                             modifier = Modifier.size(24.dp)
                                         )
                                         Text(
@@ -2233,7 +2235,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         Icon(
                                             if (post.id in savedPostIds) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                                             contentDescription = if (post.id in savedPostIds) "Remover dos salvos" else "Salvar publicação",
-                                            tint = RemoteAppearance.actionIconColor,
+                                            tint = if (post.id in savedPostIds) Color(0xFFFFD54F) else RemoteAppearance.actionIconColor,
                                             modifier = Modifier.size(24.dp)
                                         )
                                     }
