@@ -3316,50 +3316,8 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
 
 @Composable
 private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
-    val frameNames = listOf(
-        "qinbly_frame_rosa_neon", "qinbly_frame_azul_eletrico",
-        "qinbly_frame_realeza", "qinbly_frame_galaxia",
-        "qinbly_frame_fogo", "qinbly_frame_cristal",
-        "qinbly_frame_romantica", "qinbly_frame_dourada",
-        "qinbly_frame_esmeralda", "qinbly_frame_prateada"
-    )
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val frameResource = remember(style, context) {
-        context.resources.getIdentifier(
-            frameNames[style.coerceIn(0, 9)], "drawable", context.packageName
-        )
-    }
-    if (frameResource != 0) {
-        val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "frame-glow")
-        val glow by transition.animateFloat(
-            initialValue = 0.78f, targetValue = 1f,
-            animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-                animation = androidx.compose.animation.core.tween(1400),
-                repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
-            ),
-            label = "frame-pulse"
-        )
-        // Decorative PNG overlays the photo; only the ornament gently pulses.
-        androidx.compose.foundation.Image(
-            painter = androidx.compose.ui.res.painterResource(id = frameResource),
-            contentDescription = "Moldura decorativa de perfil",
-            modifier = Modifier.size(diameter).graphicsLayer { alpha = glow }
-                .drawWithContent {
-                    // Keep only the outer ornament. The supplied PNGs contain a
-                    // sample portrait and an unwanted inner white circle.
-                    val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
-                    val holeRadius = size.minDimension * 0.397f
-                    val hole = androidx.compose.ui.graphics.Path().apply {
-                        addOval(androidx.compose.ui.geometry.Rect(center = center, radius = holeRadius))
-                    }
-                    clipPath(hole, clipOp = androidx.compose.ui.graphics.ClipOp.Difference) {
-                        drawContent()
-                    }
-                },
-            contentScale = androidx.compose.ui.layout.ContentScale.Fit
-        )
-        return
-    }
+    // Render ornaments natively. Never draw the old PNG assets: they contain
+    // embedded sample portraits and white rings that cannot be safely masked.
     val palette = listOf(
         Color(0xFFFF329A), Color(0xFF239BFF), Color(0xFFFFCB55),
         Color(0xFF9874FF), Color(0xFFFF6328), Color(0xFF80E5FF),
@@ -3670,7 +3628,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
         // The portrait fits INSIDE the ornament; the ornament can overflow freely.
         Box(Modifier.padding(top = 18.dp, bottom = 18.dp).size(156.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(122.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
+            Box(Modifier.size(134.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
                 val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
                 if (image.isNotBlank()) { expandedImage = image; viewingPublication = false } else onEditProfilePhoto()
             }) {
@@ -3906,7 +3864,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Spacer(Modifier.height(12.dp))
                 Box(Modifier.fillMaxWidth().height(158.dp), contentAlignment = Alignment.Center) {
                     Box(Modifier.size(132.dp), contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(100.dp).clip(CircleShape).background(QiblyTheme.card)) {
+                        Box(Modifier.size(114.dp).clip(CircleShape).background(QiblyTheme.card)) {
                             val image = profilePhotoUrl.ifBlank { avatarUrl }
                             if (image.isNotBlank()) AsyncImage(model = image,
                                 contentDescription = "Prévia circular", modifier = Modifier.fillMaxSize(),
@@ -3933,7 +3891,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Box(Modifier.size(76.dp), contentAlignment = Alignment.Center) {
-                                Box(Modifier.size(58.dp).clip(CircleShape).background(QiblyTheme.card)) {
+                                Box(Modifier.size(66.dp).clip(CircleShape).background(QiblyTheme.card)) {
                                     val image = profilePhotoUrl.ifBlank { avatarUrl }
                                     if (image.isNotBlank()) AsyncImage(model = image,
                                         contentDescription = null, modifier = Modifier.fillMaxSize(),
