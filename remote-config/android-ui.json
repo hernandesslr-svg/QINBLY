@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 28,
+  "revision": 29,
   "navigation": {
     "indicatorColor": "#FF2196F3",
     "backgroundColor": "#FFFFFFFF",
@@ -23,14 +23,14 @@
       "Perfil"
     ],
     "feedLabels": [
-      "Para você",
-      "Amigos",
-      "Em alta"
+      "Descobrir",
+      "Seguindo",
+      "Comunidade"
     ],
     "headerBackgroundColor": "#FFFFFFFF",
     "headerHorizontalPadding": 24,
     "headerVerticalPadding": 10,
-    "feedSpacing": 0,
+    "feedSpacing": 12,
     "badgeColor": "#FFFF3045",
     "likedColor": "#FFFF3045",
     "profileAccentColor": "#FF000000",
