@@ -973,6 +973,8 @@ private fun VyboraApp() {
                     )
                 } else if (showEditProfile) {
                     EditProfilePage(
+                        photoRefreshKey = profilePhotoRefreshKey,
+                        onEditProfilePhoto = { showEditProfile = false; showEditProfilePhoto = true },
                         initialUsername = loggedInUser,
                         initialName = profileName,
                         initialBio = profileBio,
@@ -3745,9 +3747,28 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
 }
 
 @Composable
-private fun EditProfilePage(initialUsername: String, initialName: String, initialBio: String, onBack: () -> Unit, onSaved: (String, String, String) -> Unit, onNotice: (String) -> Unit) {
+private fun EditProfilePage(initialUsername: String, initialName: String, initialBio: String, photoRefreshKey: Int, onEditProfilePhoto: () -> Unit, onBack: () -> Unit, onSaved: (String, String, String) -> Unit, onNotice: (String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
+    var editPhotoUrl by remember { mutableStateOf("") }
+    LaunchedEffect(initialUsername, photoRefreshKey) {
+        if (initialUsername.isNotBlank()) {
+            Thread {
+                try {
+                    val response = VyboraApi.getPublicProfile(initialUsername)
+                    val user = response.optJSONObject("user") ?: response.optJSONObject("profile") ?: response
+                    val path = user.optString("cover_path").takeIf { it.isNotBlank() && it != "null" }.orEmpty()
+                    val image = user.optString("coverUrl").takeIf { it.startsWith("http") }
+                        ?: user.optString("cover_url").takeIf { it.startsWith("http") }
+                        ?: if (path.startsWith("http")) path else if (path.isNotBlank()) "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/$path" else ""
+                    val avatar = user.optString("avatarUrl").takeIf { it.startsWith("http") }
+                        ?: user.optString("avatar_url").takeIf { it.startsWith("http") }
+                        ?: ""
+                    android.os.Handler(android.os.Looper.getMainLooper()).post { editPhotoUrl = image.ifBlank { avatar } }
+                } catch (_: Exception) { }
+            }.start()
+        }
+    }
     var username by remember { mutableStateOf(initialUsername) }
     var name by remember { mutableStateOf(initialName) }
     val availableCategories = listOf("Criador de conteúdo", "Lifestyle", "Viagens 🌎", "Games 🎮", "Beleza 💄", "Moda", "Fitness", "Música", "Arte", "Fotografia", "Tecnologia", "Gastronomia", "Humor", "Educação", "Esportes", "Natureza")
@@ -3806,6 +3827,18 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
         }
 
         Column(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(116.dp).clip(CircleShape).background(QiblyTheme.card).clickable { onEditProfilePhoto() }, contentAlignment = Alignment.Center) {
+                    if (editPhotoUrl.isNotBlank()) {
+                        AsyncImage(model = editPhotoUrl, contentDescription = "Alterar foto de perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    } else {
+                        Icon(Icons.Default.Person, contentDescription = "Foto de perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(54.dp))
+                    }
+                    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = "Trocar foto de perfil", tint = Color.White.copy(alpha = 0.58f), modifier = Modifier.size(27.dp))
+                    }
+                }
+            }
             Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(name.ifBlank { "Seu nome" }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 Text("@${username.ifBlank { "seuusuario" }}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
