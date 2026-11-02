@@ -604,7 +604,7 @@ private fun VyboraApp() {
                         RemoteAppearance.headerHorizontalPadding = appearance.optInt("headerHorizontalPadding", RemoteAppearance.headerHorizontalPadding).coerceIn(0, 40)
                         RemoteAppearance.headerVerticalPadding = appearance.optInt("headerVerticalPadding", RemoteAppearance.headerVerticalPadding).coerceIn(0, 32)
                         RemoteAppearance.feedSpacing = appearance.optInt("feedSpacing", RemoteAppearance.feedSpacing)
-                        RemoteAppearance.spreadPostActions = appearance.optBoolean("spreadPostActions", RemoteAppearance.spreadPostActions).coerceIn(0, 32)
+                        RemoteAppearance.spreadPostActions = appearance.optBoolean("spreadPostActions", RemoteAppearance.spreadPostActions)
                         RemoteAppearance.showFeedHeader = appearance.optBoolean("showFeedHeader", RemoteAppearance.showFeedHeader)
                         RemoteAppearance.headerTextSize = appearance.optInt("headerTextSize", RemoteAppearance.headerTextSize).coerceIn(12, 24)
                         RemoteAppearance.actionIconSize = appearance.optInt("actionIconSize", RemoteAppearance.actionIconSize).coerceIn(16, 36)
