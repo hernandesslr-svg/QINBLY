@@ -92,6 +92,7 @@ import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Radio
+import androidx.compose.material.icons.filled.SettingsInputAntenna
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.TextFields
@@ -1815,10 +1816,16 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        if (filter == "Lives") {
+                        if (filter == "Novidades" || filter == "Vídeos" || filter == "Fotos" || filter == "Lives") {
+                            val filterIcon = when (filter) {
+                                "Novidades" -> Icons.Default.AutoAwesome
+                                "Vídeos" -> Icons.Default.PlayArrow
+                                "Fotos" -> Icons.Default.Image
+                                else -> Icons.Default.SettingsInputAntenna
+                            }
                             Icon(
-                                Icons.Default.Radio,
-                                contentDescription = "Sinal ao vivo",
+                                imageVector = filterIcon,
+                                contentDescription = filter,
                                 tint = if (active) Color.White else Color(0xFF1677F2),
                                 modifier = Modifier.size(18.dp)
                             )
