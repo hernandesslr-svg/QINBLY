@@ -3628,13 +3628,16 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             onDismissRequest = { commentsOpen = false },
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
         ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            BoxWithConstraints(
+                Modifier.fillMaxSize().imePadding(),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                // Mesma altura e medição do painel de comentários do feed.
+                val panelHeight = maxHeight * 0.90f
                 Column(
-                    Modifier.fillMaxWidth().fillMaxHeight(0.76f)
-                        .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    Modifier.fillMaxWidth().height(panelHeight)
+                        .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                         .background(MaterialTheme.colorScheme.surface)
-                        .imePadding()
-                        .padding(bottom = 36.dp)
                 ) {
                     Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
                         Box(Modifier.width(44.dp).height(5.dp).clip(CircleShape).background(Color.Gray))
@@ -5103,13 +5106,16 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
             onDismissRequest = { commentsOpen = false },
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
         ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            BoxWithConstraints(
+                Modifier.fillMaxSize().imePadding(),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                // Mesma altura e medição do painel de comentários do feed.
+                val panelHeight = maxHeight * 0.90f
                 Column(
-                    Modifier.fillMaxWidth().fillMaxHeight(0.76f)
-                        .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    Modifier.fillMaxWidth().height(panelHeight)
+                        .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                         .background(MaterialTheme.colorScheme.surface)
-                        .imePadding()
-                        .padding(bottom = 36.dp)
                 ) {
                     Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
                         Box(Modifier.width(44.dp).height(5.dp).clip(CircleShape).background(Color.Gray))
