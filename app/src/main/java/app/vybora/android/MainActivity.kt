@@ -3822,7 +3822,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                 onClick = saveProfile,
                 enabled = !loading,
                 shape = RoundedCornerShape(24.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF168C), contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1677E8), contentColor = Color.White),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 9.dp)
             ) {
                 if (loading) CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp) else Text("Salvar", color = Color.White, fontWeight = FontWeight.Bold)
@@ -3896,7 +3896,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                         selected = selected,
                         onClick = { selectedCategories = if (selected) selectedCategories - category else if (selectedCategories.size < 5) selectedCategories + category else selectedCategories },
                         label = { Text(category, color = if (selected) Color.White else RemoteAppearance.screenTextColor) },
-                        colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFFFF168C), containerColor = QiblyTheme.card)
+                        colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF1677E8), containerColor = QiblyTheme.card)
                     )
                     }
                     }
@@ -3904,16 +3904,6 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
             }
             editCard(Icons.Default.Description, "Biografia", bio, "Escreva uma breve descrição sobre você", { bio = it }, singleLine = false, max = 300)
             if (error.isNotBlank()) Text(error, color = Pink, style = MaterialTheme.typography.bodySmall)
-        }
-        Button(
-            onClick = saveProfile,
-            enabled = !loading,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).height(52.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1677E8), contentColor = Color.White),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            if (loading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
-            else { Icon(Icons.Default.CheckCircle, contentDescription = null); Spacer(Modifier.width(8.dp)); Text("Salvar alterações", fontWeight = FontWeight.Bold) }
         }
     }
 }
