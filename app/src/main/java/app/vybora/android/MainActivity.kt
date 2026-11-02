@@ -3757,17 +3757,31 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
         if (initialUsername.isNotBlank()) {
             Thread {
                 try {
-                    val response = VyboraApi.getPublicProfile(initialUsername)
+                    val token = prefs.getString("token", "").orEmpty()
+                    val response = if (token.isNotBlank()) {
+                        try { VyboraApi.getMyProfile(token) } catch (_: Exception) { VyboraApi.getPublicProfile(initialUsername) }
+                    } else VyboraApi.getPublicProfile(initialUsername)
                     val user = response.optJSONObject("user") ?: response.optJSONObject("profile") ?: response
-                    val path = user.optString("cover_path").takeIf { it.isNotBlank() && it != "null" }.orEmpty()
-                    val image = user.optString("coverUrl").takeIf { it.startsWith("http") }
-                        ?: user.optString("cover_url").takeIf { it.startsWith("http") }
-                        ?: if (path.startsWith("http")) path else if (path.isNotBlank()) "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/$path" else ""
-                    val avatar = user.optString("avatarUrl").takeIf { it.startsWith("http") }
-                        ?: user.optString("avatar_url").takeIf { it.startsWith("http") }
-                        ?: ""
-                    android.os.Handler(android.os.Looper.getMainLooper()).post { editPhotoUrl = image.ifBlank { avatar } }
-                } catch (_: Exception) { }
+                    fun clean(value: String): String = value.trim().takeUnless { it.isBlank() || it.equals("null", true) || it.equals("undefined", true) }.orEmpty()
+                    fun resolve(value: String): String {
+                        val v = clean(value)
+                        return if (v.startsWith("http")) v else if (v.isNotBlank()) "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/${v.removePrefix("post-media/")}" else ""
+                    }
+                    val photo = listOf(
+                        clean(user.optString("coverUrl")), clean(user.optString("cover_url")),
+                        clean(user.optString("profilePhotoUrl")), clean(user.optString("profile_photo_url")),
+                        resolve(user.optString("cover_path")),
+                        clean(user.optString("avatarUrl")), clean(user.optString("avatar_url")),
+                        resolve(user.optString("avatar_path"))
+                    ).firstOrNull { it.startsWith("http") }.orEmpty()
+                    android.os.Handler(android.os.Looper.getMainLooper()).post { editPhotoUrl = photo }
+                } catch (_: Exception) {
+                    try {
+                        val user = VyboraApi.getPublicProfile(initialUsername).let { it.optJSONObject("user") ?: it.optJSONObject("profile") ?: it }
+                        val image = listOf("coverUrl", "cover_url", "avatarUrl", "avatar_url").map { user.optString(it) }.firstOrNull { it.startsWith("http") }.orEmpty()
+                        android.os.Handler(android.os.Looper.getMainLooper()).post { editPhotoUrl = image }
+                    } catch (_: Exception) { }
+                }
             }.start()
         }
     }
