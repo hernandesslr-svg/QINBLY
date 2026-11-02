@@ -3459,13 +3459,12 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             }
         }
         Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-            listOf("Publicações", "Vídeos", "Fotos", "Salvos", "Sobre").forEach { item ->
+            listOf("Publicações", "Vídeos", "Fotos", "Salvos").forEach { item ->
                 Column(Modifier.weight(1f).clickable { profileTab = item }.padding(vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(when(item) {
                         "Vídeos" -> Icons.Default.PlayCircle
                         "Fotos" -> Icons.Default.Image
                         "Salvos" -> Icons.Default.BookmarkBorder
-                        "Sobre" -> Icons.Default.Info
                         else -> Icons.Outlined.GridView
                     }, contentDescription = item, tint = if (profileTab == item) Color(0xFF1677E8) else RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(23.dp))
                     Text(item, color = if (profileTab == item) Color(0xFF1677E8) else RemoteAppearance.screenTextColor, style = MaterialTheme.typography.labelSmall, maxLines = 1)
@@ -3474,10 +3473,9 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 }
             }
         }
-        if (profileTab == "Salvos" || profileTab == "Sobre") {
+        if (profileTab == "Salvos") {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Text(when (profileTab) {
-                    "Sobre" -> shownBio.ifBlank { "Sem informações adicionais." }
                     "Salvos" -> "Publicações que você salvou"
                     else -> "Publicações que você salvou"
                 }, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
