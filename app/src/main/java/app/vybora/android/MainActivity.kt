@@ -479,6 +479,7 @@ private object RemoteAppearance {
     var headerHorizontalPadding by androidx.compose.runtime.mutableIntStateOf(24)
     var headerVerticalPadding by androidx.compose.runtime.mutableIntStateOf(10)
     var feedSpacing by androidx.compose.runtime.mutableIntStateOf(0)
+    var spreadPostActions by androidx.compose.runtime.mutableStateOf(false)
     var badgeColor by androidx.compose.runtime.mutableStateOf(Color(0xFFFF3045))
     var likedColor by androidx.compose.runtime.mutableStateOf(Color(0xFFFF3045))
     var profileAccentColor by androidx.compose.runtime.mutableStateOf(Color.White)
@@ -602,7 +603,8 @@ private fun VyboraApp() {
                         RemoteAppearance.playerProgressColor = color("playerProgressColor", RemoteAppearance.playerProgressColor)
                         RemoteAppearance.headerHorizontalPadding = appearance.optInt("headerHorizontalPadding", RemoteAppearance.headerHorizontalPadding).coerceIn(0, 40)
                         RemoteAppearance.headerVerticalPadding = appearance.optInt("headerVerticalPadding", RemoteAppearance.headerVerticalPadding).coerceIn(0, 32)
-                        RemoteAppearance.feedSpacing = appearance.optInt("feedSpacing", RemoteAppearance.feedSpacing).coerceIn(0, 32)
+                        RemoteAppearance.feedSpacing = appearance.optInt("feedSpacing", RemoteAppearance.feedSpacing)
+                        RemoteAppearance.spreadPostActions = appearance.optBoolean("spreadPostActions", RemoteAppearance.spreadPostActions).coerceIn(0, 32)
                         RemoteAppearance.showFeedHeader = appearance.optBoolean("showFeedHeader", RemoteAppearance.showFeedHeader)
                         RemoteAppearance.headerTextSize = appearance.optInt("headerTextSize", RemoteAppearance.headerTextSize).coerceIn(12, 24)
                         RemoteAppearance.actionIconSize = appearance.optInt("actionIconSize", RemoteAppearance.actionIconSize).coerceIn(16, 36)
@@ -2130,7 +2132,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         .heightIn(min = 56.dp)
                                         .padding(horizontal = 16.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.Start)
+                                    horizontalArrangement = if (RemoteAppearance.spreadPostActions) Arrangement.SpaceBetween else Arrangement.spacedBy(12.dp, Alignment.Start)
                                 ) {
                                     Row(
                                         modifier = Modifier.clickable {
