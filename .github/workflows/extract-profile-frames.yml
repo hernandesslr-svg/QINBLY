@@ -1,4 +1,4 @@
-name: Extract profile frames
+name: Prepare transparent QINBLY profile frames
 on:
   push:
     paths:
@@ -7,14 +7,58 @@ on:
 permissions:
   contents: write
 jobs:
-  extract:
+  prepare:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: unzip -o qinbly_android_assets.zip -d .
-      - name: Save extracted PNGs
+      - name: Install Pillow
+        run: python -m pip install pillow
+      - name: Extract and remove dark background and captions
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -o qinbly_android_assets.zip 'app/src/main/res/drawable-nodpi/*.png' -d .
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          import math
+          root = Path("app/src/main/res/drawable-nodpi")
+          names = ["rosa_neon","azul_eletrico","realeza","galaxia","fogo","cristal","romantica","dourada","esmeralda","prateada"]
+          for name in names:
+              path = root / f"qinbly_frame_{name}.png"
+              im = Image.open(path).convert("RGBA")
+              w,h = im.size
+              pix = im.load()
+              # Preserve luminous ornaments; clear the black poster and embedded labels.
+              for y in range(h):
+                  for x in range(w):
+                      R,G,B,A = pix[x,y]
+                      value = max(R,G,B)
+                      minimum = min(R,G,B)
+                      chroma = value - minimum
+                      # The label sits below the ornate circular frame.
+                      if y >= int(h * 0.905):
+                          pix[x,y] = (R,G,B,0)
+                          continue
+                      # Dark poster backdrop becomes transparent.
+                      strength = max(0, min(255, int((value - 36) * 255 / 72)))
+                      if chroma < 22 and value < 110:
+                          strength = 0
+                      # Existing central opening must remain completely transparent.
+                      cx,cy=w*0.5,h*0.48
+                      dist=math.hypot(x-cx,y-cy)
+                      if dist < w*0.345:
+                          strength = 0
+                      pix[x,y]=(R,G,B, A*strength//255)
+              im.save(path, optimize=True)
+              print("Prepared", path)
+          PY
+      - name: Commit cleaned PNGs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/res/drawable-nodpi/*.png
-          git diff --cached --quiet || (git commit -m "Add QINBLY frame images" && git push)
+          git add app/src/main/res/drawable-nodpi/qinbly_frame_*.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Clean QINBLY frame PNG backgrounds and remove captions"
+            git push origin HEAD:main
+          fi
