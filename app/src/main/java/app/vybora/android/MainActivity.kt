@@ -95,6 +95,7 @@ import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.SettingsInputAntenna
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.TextFields
@@ -1825,7 +1826,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     "Novidades" -> Icons.Default.AutoAwesome
                                     "Vídeos" -> Icons.Default.PlayCircle
                                     "Fotos" -> Icons.Default.Image
-                                    "Perto de mim" -> Icons.Default.MyLocation
+                                    "Perto de mim" -> Icons.Default.LocationOn
                                     else -> Icons.Default.LocalFireDepartment
                                 }
                                 Icon(
