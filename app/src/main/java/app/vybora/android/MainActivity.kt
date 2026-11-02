@@ -3615,7 +3615,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 profilePrefs.edit().putStringSet("saved_post_ids", savedIds).apply()
                                 onNotice(if (wasSaved) "Publicação removida dos salvos." else "Publicação salva.")
                             } }) {
-                            Icon(if ((selectedPublication?.id?.let { it in savedIds } == true)) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color.White)
+                            Icon(if ((selectedPublication?.id?.let { it in savedIds } == true)) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color(0xFFFFD54F))
                         }
                     }
                 }
@@ -3624,48 +3624,78 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
     }
     if (commentsOpen) {
-        AlertDialog(
+        androidx.compose.ui.window.Dialog(
             onDismissRequest = { commentsOpen = false },
-            title = { Text("Comentários") },
-            text = {
-                Column(Modifier.fillMaxWidth().heightIn(max = 430.dp)) {
-                    if (commentsLoading) CircularProgressIndicator()
-                    else if (postComments.isEmpty()) Text("Nenhum comentário ainda.")
-                    else Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-                        postComments.forEach { comment ->
-                            Text(comment.displayName.ifBlank { comment.username }, fontWeight = FontWeight.Bold)
-                            Text(comment.body, modifier = Modifier.padding(bottom = 12.dp))
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+                Column(
+                    Modifier.fillMaxWidth().fillMaxHeight(0.86f)
+                        .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .imePadding().navigationBarsPadding()
+                ) {
+                    Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
+                        Box(Modifier.width(44.dp).height(5.dp).clip(CircleShape).background(Color.Gray))
+                    }
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Comentários", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                        TextButton(onClick = { commentsOpen = false }) { Text("Fechar") }
+                    }
+                    HorizontalDivider()
+                    if (commentsLoading) {
+                        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                    } else {
+                        LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                            if (postComments.isEmpty()) item {
+                                Text("Seja a primeira pessoa a comentar.", modifier = Modifier.padding(vertical = 24.dp))
+                            }
+                            items(postComments) { comment ->
+                                Column(Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+                                    Text(comment.displayName.ifBlank { comment.username }, fontWeight = FontWeight.Bold)
+                                    Text(comment.body, modifier = Modifier.padding(top = 5.dp))
+                                }
+                                HorizontalDivider()
+                            }
                         }
                     }
-                    OutlinedTextField(value = commentDraft, onValueChange = { commentDraft = it }, label = { Text("Escreva um comentário") }, modifier = Modifier.fillMaxWidth(), maxLines = 3)
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    val post = selectedPublication
-                    val token = profilePrefs.getString("token", null)
-                    val draft = commentDraft.trim()
-                    if (post == null || token.isNullOrBlank()) onNotice("Entre na conta para comentar.")
-                    else if (draft.isNotBlank()) {
-                        commentsLoading = true
-                        Thread {
-                            try {
-                                VyboraApi.addComment(token, post.id, draft)
-                                val loaded = VyboraApi.getComments(post.id)
-                                android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                    postComments = loaded; commentDraft = ""; commentsLoading = false
-                                }
-                            } catch (e: Exception) {
-                                android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                    commentsLoading = false; onNotice(e.message ?: "Erro ao comentar.")
-                                }
+                    Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = commentDraft,
+                            onValueChange = { commentDraft = it },
+                            placeholder = { Text("Escreva um comentário") },
+                            modifier = Modifier.weight(1f),
+                            maxLines = 3
+                        )
+                        TextButton(onClick = {
+                            val post = selectedPublication
+                            val token = profilePrefs.getString("token", null)
+                            val draft = commentDraft.trim()
+                            if (post == null || token.isNullOrBlank()) onNotice("Entre na conta para comentar.")
+                            else if (draft.isNotBlank() && !commentsLoading) {
+                                commentsLoading = true
+                                Thread {
+                                    try {
+                                        VyboraApi.addComment(token, post.id, draft)
+                                        val loaded = VyboraApi.getComments(post.id)
+                                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                            postComments = loaded
+                                            commentDraft = ""
+                                            commentsLoading = false
+                                        }
+                                    } catch (e: Exception) {
+                                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                            commentsLoading = false
+                                            onNotice(e.message ?: "Erro ao comentar.")
+                                        }
+                                    }
+                                }.start()
                             }
-                        }.start()
+                        }, enabled = commentDraft.isNotBlank() && !commentsLoading) { Text("Enviar") }
                     }
-                }) { Text("Enviar") }
-            },
-            dismissButton = { TextButton(onClick = { commentsOpen = false }) { Text("Fechar") } }
-        )
+                }
+            }
+        }
     }
 
 }
@@ -5059,7 +5089,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                                 prefs.edit().putStringSet("saved_post_ids", savedIds).apply()
                                 onNotice(if (wasSaved) "Publicação removida dos salvos." else "Publicação salva.")
                             } }) {
-                            Icon(if ((selectedPublication?.id?.let { it in savedIds } == true)) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color.White)
+                            Icon(if ((selectedPublication?.id?.let { it in savedIds } == true)) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color(0xFFFFD54F))
                         }
                     }
                 }
@@ -5068,48 +5098,78 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
         }
     }
     if (commentsOpen) {
-        AlertDialog(
+        androidx.compose.ui.window.Dialog(
             onDismissRequest = { commentsOpen = false },
-            title = { Text("Comentários") },
-            text = {
-                Column(Modifier.fillMaxWidth().heightIn(max = 430.dp)) {
-                    if (commentsLoading) CircularProgressIndicator()
-                    else if (postComments.isEmpty()) Text("Nenhum comentário ainda.")
-                    else Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-                        postComments.forEach { comment ->
-                            Text(comment.displayName.ifBlank { comment.username }, fontWeight = FontWeight.Bold)
-                            Text(comment.body, modifier = Modifier.padding(bottom = 12.dp))
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+                Column(
+                    Modifier.fillMaxWidth().fillMaxHeight(0.86f)
+                        .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .imePadding().navigationBarsPadding()
+                ) {
+                    Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
+                        Box(Modifier.width(44.dp).height(5.dp).clip(CircleShape).background(Color.Gray))
+                    }
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Comentários", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                        TextButton(onClick = { commentsOpen = false }) { Text("Fechar") }
+                    }
+                    HorizontalDivider()
+                    if (commentsLoading) {
+                        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                    } else {
+                        LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                            if (postComments.isEmpty()) item {
+                                Text("Seja a primeira pessoa a comentar.", modifier = Modifier.padding(vertical = 24.dp))
+                            }
+                            items(postComments) { comment ->
+                                Column(Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+                                    Text(comment.displayName.ifBlank { comment.username }, fontWeight = FontWeight.Bold)
+                                    Text(comment.body, modifier = Modifier.padding(top = 5.dp))
+                                }
+                                HorizontalDivider()
+                            }
                         }
                     }
-                    OutlinedTextField(value = commentDraft, onValueChange = { commentDraft = it }, label = { Text("Escreva um comentário") }, modifier = Modifier.fillMaxWidth(), maxLines = 3)
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    val post = selectedPublication
-                    val token = prefs.getString("token", null)
-                    val draft = commentDraft.trim()
-                    if (post == null || token.isNullOrBlank()) onNotice("Entre na conta para comentar.")
-                    else if (draft.isNotBlank()) {
-                        commentsLoading = true
-                        Thread {
-                            try {
-                                VyboraApi.addComment(token, post.id, draft)
-                                val loaded = VyboraApi.getComments(post.id)
-                                android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                    postComments = loaded; commentDraft = ""; commentsLoading = false
-                                }
-                            } catch (e: Exception) {
-                                android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                    commentsLoading = false; onNotice(e.message ?: "Erro ao comentar.")
-                                }
+                    Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = commentDraft,
+                            onValueChange = { commentDraft = it },
+                            placeholder = { Text("Escreva um comentário") },
+                            modifier = Modifier.weight(1f),
+                            maxLines = 3
+                        )
+                        TextButton(onClick = {
+                            val post = selectedPublication
+                            val token = prefs.getString("token", null)
+                            val draft = commentDraft.trim()
+                            if (post == null || token.isNullOrBlank()) onNotice("Entre na conta para comentar.")
+                            else if (draft.isNotBlank() && !commentsLoading) {
+                                commentsLoading = true
+                                Thread {
+                                    try {
+                                        VyboraApi.addComment(token, post.id, draft)
+                                        val loaded = VyboraApi.getComments(post.id)
+                                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                            postComments = loaded
+                                            commentDraft = ""
+                                            commentsLoading = false
+                                        }
+                                    } catch (e: Exception) {
+                                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                            commentsLoading = false
+                                            onNotice(e.message ?: "Erro ao comentar.")
+                                        }
+                                    }
+                                }.start()
                             }
-                        }.start()
+                        }, enabled = commentDraft.isNotBlank() && !commentsLoading) { Text("Enviar") }
                     }
-                }) { Text("Enviar") }
-            },
-            dismissButton = { TextButton(onClick = { commentsOpen = false }) { Text("Fechar") } }
-        )
+                }
+            }
+        }
     }
     if (showMoreOptions) {
         AlertDialog(
