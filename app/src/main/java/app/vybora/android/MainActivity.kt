@@ -3629,11 +3629,13 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
         ) {
             BoxWithConstraints(
-                Modifier.fillMaxSize().imePadding().navigationBarsPadding().background(Color.Black.copy(alpha = 0.58f)),
+                Modifier.imePadding().fillMaxSize().background(Color.Black.copy(alpha = 0.58f)),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 // Mesma altura e medição do painel de comentários do feed.
-                val panelHeight = maxHeight * 0.90f
+                val dialogKeyboardInset = with(androidx.compose.ui.platform.LocalDensity.current) { WindowInsets.ime.getBottom(this).toDp() }
+                val dialogKeyboardVisible = dialogKeyboardInset > 120.dp
+                val panelHeight = maxHeight * if (dialogKeyboardVisible) 0.90f else 0.90f
                 Column(
                     Modifier.fillMaxWidth().height(panelHeight).offset(y = (-5).dp)
                         .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
@@ -3663,7 +3665,8 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             }
                         }
                     }
-                    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 14.dp, vertical = 10.dp).padding(bottom = if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 120) 0.dp else 72.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.fillMaxWidth().padding(bottom = if (dialogKeyboardVisible) 0.dp else 80.dp)) {
+                    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("😊", fontSize = 28.sp, modifier = Modifier.padding(end = 10.dp).clickable { commentDraft += "😊" })
                         OutlinedTextField(
                             value = commentDraft,
@@ -3698,6 +3701,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 }.start()
                             }
                         }, enabled = commentDraft.isNotBlank() && !commentsLoading) { Icon(Icons.Default.Send, contentDescription = "Enviar comentário") }
+                    }
                     }
                 }
             }
@@ -5109,11 +5113,13 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
         ) {
             BoxWithConstraints(
-                Modifier.fillMaxSize().imePadding().navigationBarsPadding().background(Color.Black.copy(alpha = 0.58f)),
+                Modifier.imePadding().fillMaxSize().background(Color.Black.copy(alpha = 0.58f)),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 // Mesma altura e medição do painel de comentários do feed.
-                val panelHeight = maxHeight * 0.90f
+                val dialogKeyboardInset = with(androidx.compose.ui.platform.LocalDensity.current) { WindowInsets.ime.getBottom(this).toDp() }
+                val dialogKeyboardVisible = dialogKeyboardInset > 120.dp
+                val panelHeight = maxHeight * if (dialogKeyboardVisible) 0.90f else 0.90f
                 Column(
                     Modifier.fillMaxWidth().height(panelHeight).offset(y = (-5).dp)
                         .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
@@ -5143,7 +5149,8 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                             }
                         }
                     }
-                    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 14.dp, vertical = 10.dp).padding(bottom = if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 120) 0.dp else 72.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.fillMaxWidth().padding(bottom = if (dialogKeyboardVisible) 0.dp else 80.dp)) {
+                    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("😊", fontSize = 28.sp, modifier = Modifier.padding(end = 10.dp).clickable { commentDraft += "😊" })
                         OutlinedTextField(
                             value = commentDraft,
@@ -5178,6 +5185,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                                 }.start()
                             }
                         }, enabled = commentDraft.isNotBlank() && !commentsLoading) { Icon(Icons.Default.Send, contentDescription = "Enviar comentário") }
+                    }
                     }
                 }
             }
