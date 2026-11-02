@@ -48,13 +48,17 @@ jobs:
                       frame = source.convert("RGBA")
                   width, height = frame.size
                   cx, cy = width / 2, height / 2
-                  radius = min(width, height) * 0.397
+                  radius = min(width, height) * 0.415
                   hole = Image.new("L", frame.size, 0)
                   draw = ImageDraw.Draw(hole)
                   draw.ellipse((cx-radius, cy-radius, cx+radius, cy+radius), fill=255)
-                  hole = hole.filter(ImageFilter.GaussianBlur(max(0.5, min(width, height)*0.002)))
+                  hole = hole.filter(ImageFilter.GaussianBlur(max(0.5, min(width, height)*0.001)))
                   frame.putalpha(ImageChops.subtract(frame.getchannel("A"), hole))
                   assert frame.getpixel((width // 2, height // 2))[3] == 0, f"{name}: center not cleared"
+                  for fx, fy in ((0, 0), (.2, 0), (-.2, 0), (0, .2), (0, -.2), (.27, .27), (-.27, -.27)):
+                      px = int(cx + fx * min(width, height))
+                      py = int(cy + fy * min(width, height))
+                      assert frame.getpixel((px, py))[3] == 0, f"{name}: embedded portrait remains"
                   output = BytesIO()
                   frame.save(output, format="PNG", optimize=True)
                   frames[name] = output.getvalue()
