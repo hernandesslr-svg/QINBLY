@@ -151,8 +151,8 @@ import androidx.media3.ui.PlayerView
 
 private val Night = Color.White
 private val Panel = Color.White
-private val Violet = Color(0xFFFFFFFF)
-private val Pink = Color(0xFFFFFFFF)
+private val Violet = Color(0xFF1677E8)
+private val Pink = Color(0xFF1677E8)
 private val Muted = Color(0xFF333333)
 
 
@@ -3403,13 +3403,13 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 else Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(28.dp))
             }
-            IconButton(onClick = onEditProfilePhoto, modifier = Modifier.align(Alignment.BottomEnd).size(34.dp).background(Color(0xFFFF168C), CircleShape)) {
+            IconButton(onClick = onEditProfilePhoto, modifier = Modifier.align(Alignment.BottomEnd).size(34.dp).background(Color(0xFF1677E8), CircleShape)) {
                 Icon(Icons.Default.CameraAlt, contentDescription = "Alterar foto", tint = Color.White, modifier = Modifier.size(18.dp))
             }
         }
         Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 1)
-            Icon(Icons.Default.Edit, contentDescription = "Editar nome e bio", tint = Color(0xFFFF168C), modifier = Modifier.size(18.dp))
+            Icon(Icons.Default.Edit, contentDescription = "Editar nome e bio", tint = Color(0xFF1677E8), modifier = Modifier.size(18.dp))
         }
         Text(if (username.isBlank()) "Entre ou crie sua conta" else "@${username.removePrefix("@")}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
         if (shownBio.startsWith("✦ ")) {
@@ -3444,10 +3444,10 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         "Salvos" -> Icons.Default.BookmarkBorder
                         "Sobre" -> Icons.Default.Info
                         else -> Icons.Outlined.GridView
-                    }, contentDescription = item, tint = if (profileTab == item) Color(0xFFFF168C) else RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(23.dp))
-                    Text(item, color = if (profileTab == item) Color(0xFFFF168C) else RemoteAppearance.screenTextColor, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                    }, contentDescription = item, tint = if (profileTab == item) Color(0xFF1677E8) else RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(23.dp))
+                    Text(item, color = if (profileTab == item) Color(0xFF1677E8) else RemoteAppearance.screenTextColor, style = MaterialTheme.typography.labelSmall, maxLines = 1)
                     Spacer(Modifier.height(5.dp))
-                    Box(Modifier.fillMaxWidth(0.8f).height(2.dp).background(if (profileTab == item) Color(0xFFFF168C) else Color.Transparent))
+                    Box(Modifier.fillMaxWidth(0.8f).height(2.dp).background(if (profileTab == item) Color(0xFF1677E8) else Color.Transparent))
                 }
             }
         }
