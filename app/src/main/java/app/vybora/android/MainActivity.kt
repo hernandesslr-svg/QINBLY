@@ -3606,7 +3606,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 profilePrefs.edit().putStringSet("saved_post_ids", savedIds).apply()
                                 onNotice(if (wasSaved) "Publicação removida dos salvos." else "Publicação salva.")
                             } }) {
-                            Icon(if (selectedPublication?.id in savedIds) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color.White)
+                            Icon(if ((selectedPublication?.id?.let { it in savedIds } == true)) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color.White)
                         }
                     }
                 }
@@ -5042,7 +5042,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                                 prefs.edit().putStringSet("saved_post_ids", savedIds).apply()
                                 onNotice(if (wasSaved) "Publicação removida dos salvos." else "Publicação salva.")
                             } }) {
-                            Icon(if (selectedPublication?.id in savedIds) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color.White)
+                            Icon(if ((selectedPublication?.id?.let { it in savedIds } == true)) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color.White)
                         }
                     }
                 }
