@@ -1950,6 +1950,32 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     }
                                         
                             }
+                            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(7.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                                        AsyncImage(
+                                            model = post.avatarUrl, contentDescription = "Foto de perfil do autor",
+                                            modifier = Modifier.size(40.dp).clip(CircleShape)
+                                                .clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) },
+                                            contentScale = ContentScale.Crop
+                                        )
+                                        Column {
+                                            Text(
+                                                post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" },
+                                                color = RemoteAppearance.feedTextColor, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }
+                                            )
+                                            Text("Há 2 min", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
+                                        }
+                                    }
+                                    if (post.caption.isNotBlank()) {
+                                        Text(post.caption, color = RemoteAppearance.feedTextColor, fontSize = 15.sp, lineHeight = 20.sp)
+                                    }
+                                }
+                            }
                             if (post.mediaUrl.isNotBlank() && post.mediaType == "image") {
                                 val demoGallery = remember(post.id) {
                                     when (post.id) {
@@ -2014,24 +2040,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     )
 
                                     
-                                    Column(
-                                        modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth()
-                                            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.58f))))
-                                            .padding(start = 13.dp, end = 68.dp, top = 34.dp, bottom = 25.dp),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                                            AsyncImage(model = post.avatarUrl, contentDescription = "Perfil do autor",
-                                                modifier = Modifier.size(38.dp).clip(CircleShape)
-                                                    .clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) },
-                                                contentScale = ContentScale.Crop)
-                                            Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" },
-                                                color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) })
-                                            Text("· Há 2 min", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
-                                        }
-                                        if (post.caption.isNotBlank()) Text(post.caption, color = Color.White, fontSize = 15.sp, maxLines = 2, lineHeight = 20.sp)
-                                    }
+                                    
                                     if (demoGallery.size > 1) {
                                         Box(Modifier.align(Alignment.TopEnd).padding(10.dp).clip(CircleShape)
                                             .background(Color(0x99030711)).padding(horizontal = 10.dp, vertical = 5.dp)) {
@@ -2065,24 +2074,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     }
                                     
 
-                                    Column(
-                                        modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth()
-                                            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.58f))))
-                                            .padding(start = 13.dp, end = 68.dp, top = 34.dp, bottom = 25.dp),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                                            AsyncImage(model = post.avatarUrl, contentDescription = "Perfil do autor",
-                                                modifier = Modifier.size(38.dp).clip(CircleShape)
-                                                    .clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) },
-                                                contentScale = ContentScale.Crop)
-                                            Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" },
-                                                color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) })
-                                            Text("· Há 2 min", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
-                                        }
-                                        if (post.caption.isNotBlank()) Text(post.caption, color = Color.White, fontSize = 15.sp, maxLines = 2)
-                                    }
+                                    
                                 }
                             }
                             if (post.mediaType != "image" && post.mediaType != "video" && post.caption.isNotBlank()) {
