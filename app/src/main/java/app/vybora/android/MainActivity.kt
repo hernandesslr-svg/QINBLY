@@ -3312,6 +3312,49 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
 }
 
 @Composable
+@Composable
+private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
+    val colors = listOf(
+        Color(0xFFFF3399), Color(0xFF268BFF), Color(0xFFFFC247),
+        Color(0xFF7856E8), Color(0xFFFF692E), Color(0xFF80D9ED),
+        Color(0xFFFF7799), Color(0xFFFFC247), Color(0xFF35C78A), Color(0xFFBBC3D2)
+    )
+    val symbols = listOf("♥", "ϟ", "♛", "✦", "🔥", "◆", "♥", "✧", "❧", "❄")
+    val index = style.coerceIn(0, 9)
+    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "frame-motion")
+    val rotation by transition.animateFloat(
+        initialValue = 0f, targetValue = 360f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(
+                durationMillis = if (index == 4) 2800 else 6200,
+                easing = androidx.compose.animation.core.LinearEasing
+            )
+        ), label = "ring-rotation"
+    )
+    val pulse by transition.animateFloat(
+        initialValue = 0.78f, targetValue = 1f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(900),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+        ), label = "frame-pulse"
+    )
+    Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier.fillMaxSize().graphicsLayer { rotationZ = rotation }
+                .border(4.dp, Brush.sweepGradient(
+                    listOf(colors[index], Color.White.copy(alpha = 0.85f),
+                        colors[index].copy(alpha = 0.55f), colors[index])
+                ), CircleShape)
+        )
+        Text(symbols[index], color = colors[index], fontSize = (diameter.value * 0.19f).sp,
+            modifier = Modifier.align(Alignment.TopCenter)
+                .graphicsLayer { alpha = pulse; scaleX = pulse; scaleY = pulse })
+        Text(symbols[index], color = colors[index], fontSize = (diameter.value * 0.15f).sp,
+            modifier = Modifier.align(Alignment.BottomCenter)
+                .graphicsLayer { alpha = pulse })
+    }
+}
+
 private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: String, bio: String, photoRefreshKey: Int, onNotice: (String) -> Unit, onStat: (String) -> Unit, onAuth: () -> Unit, onEdit: () -> Unit, onEditProfilePhoto: () -> Unit, onSettings: () -> Unit) {
     val profileScrollState = rememberScrollState()
     LaunchedEffect(scrollToTopRequest) { if (scrollToTopRequest > 0) profileScrollState.animateScrollTo(0) }
@@ -3346,6 +3389,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     val shownCountry = bio.lineSequence().firstOrNull { it.startsWith("🌍 ") }?.removePrefix("🌍 ").orEmpty()
     val profileContext = androidx.compose.ui.platform.LocalContext.current
     val profilePrefs = remember { profileContext.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
+    var appliedFrame by remember { mutableIntStateOf(profilePrefs.getInt("qinbly_profile_frame", -1)) }
 
     LaunchedEffect(username, photoRefreshKey) {
         loadingPosts = true
@@ -3419,7 +3463,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             }
         }
         Box(Modifier.padding(top = 4.dp).size(132.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(126.dp).border(3.dp, Brush.sweepGradient(listOf(Color(0xFFFF2499), Color(0xFF7B39FF), Color(0xFFFF2499))), CircleShape).padding(5.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
+            Box(Modifier.size(126.dp).padding(5.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
                 val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
                 if (image.isNotBlank()) { expandedImage = image; viewingPublication = false } else onEditProfilePhoto()
             }) {
@@ -3653,22 +3697,14 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Spacer(Modifier.height(12.dp))
                 Box(Modifier.fillMaxWidth().height(158.dp), contentAlignment = Alignment.Center) {
                     Box(Modifier.size(132.dp), contentAlignment = Alignment.Center) {
-                        Box(
-                            Modifier.size(126.dp)
-                                .border(4.dp, frameColors[selectedFramePreview], CircleShape)
-                                .padding(5.dp).clip(CircleShape).background(QiblyTheme.card),
-                            contentAlignment = Alignment.Center
-                        ) {
+                        Box(Modifier.size(116.dp).clip(CircleShape).background(QiblyTheme.card)) {
                             val image = profilePhotoUrl.ifBlank { avatarUrl }
-                            if (image.isNotBlank()) {
-                                AsyncImage(model = image, contentDescription = "Prévia da foto circular",
-                                    modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                            } else Icon(Icons.Default.Person, contentDescription = null)
+                            if (image.isNotBlank()) AsyncImage(model = image,
+                                contentDescription = "Prévia circular", modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop)
+                            else Icon(Icons.Default.Person, contentDescription = null)
                         }
-                        Text(frameDecorations[selectedFramePreview], fontSize = 22.sp,
-                            modifier = Modifier.align(Alignment.TopCenter).offset(y = (-7).dp))
-                        Text(frameDecorations[selectedFramePreview], fontSize = 18.sp,
-                            modifier = Modifier.align(Alignment.BottomCenter).offset(y = 7.dp))
+                        QiblyAnimatedFrame(selectedFramePreview, 132.dp)
                     }
                 }
                 Text(frameNames[selectedFramePreview], modifier = Modifier.fillMaxWidth().padding(10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold)
@@ -3688,28 +3724,31 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Box(Modifier.size(76.dp), contentAlignment = Alignment.Center) {
-                                Box(Modifier.size(68.dp).border(3.dp, frameColors[index], CircleShape)
-                                    .padding(3.dp).clip(CircleShape).background(QiblyTheme.card),
-                                    contentAlignment = Alignment.Center) {
+                                Box(Modifier.size(60.dp).clip(CircleShape).background(QiblyTheme.card)) {
                                     val image = profilePhotoUrl.ifBlank { avatarUrl }
                                     if (image.isNotBlank()) AsyncImage(model = image,
                                         contentDescription = null, modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop)
                                     else Icon(Icons.Default.Person, contentDescription = null)
                                 }
-                                Text(frameDecorations[index], fontSize = 16.sp,
-                                    modifier = Modifier.align(Alignment.TopCenter).offset(y = (-4).dp))
+                                QiblyAnimatedFrame(index, 76.dp)
                             }
                             Text(frameNames[index], modifier = Modifier.padding(top = 8.dp), fontSize = 13.sp)
                         }
                     }
                 }
-                Text(
-                    "Prévia de teste: as molduras ainda não são aplicadas permanentemente.",
-                    modifier = Modifier.padding(top = 12.dp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp
-                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedButton(onClick = {
+                        appliedFrame = -1
+                        profilePrefs.edit().putInt("qinbly_profile_frame", -1).apply()
+                        framesOpen = false
+                    }, modifier = Modifier.weight(1f)) { Text("Sem moldura") }
+                    Button(onClick = {
+                        appliedFrame = selectedFramePreview
+                        profilePrefs.edit().putInt("qinbly_profile_frame", selectedFramePreview).apply()
+                        framesOpen = false
+                    }, modifier = Modifier.weight(1f)) { Text("Aplicar") }
+                }
             }
         }
     }
