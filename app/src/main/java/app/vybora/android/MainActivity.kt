@@ -3806,15 +3806,15 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
         }
 
         Column(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(name.ifBlank { "Seu nome" }, color = Color.Black, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("@${username.ifBlank { "seuusuario" }}", color = Muted, style = MaterialTheme.typography.bodyLarge)
+            Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(name.ifBlank { "Seu nome" }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Text("@${username.ifBlank { "seuusuario" }}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
 
             Text("INFORMAÇÕES DO PERFIL", color = Muted, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
 
             @Composable
-            fun editCard(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String, hint: String, onValue: (String) -> Unit, singleLine: Boolean = true, max: Int = 80) {
+            fun editCard(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String, hint: String, onValue: (String) -> Unit, singleLine: Boolean = true, max: Int = 80, centered: Boolean = false) {
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
                         .background(Brush.linearGradient(listOf(Color(0xAA17162B), Color(0xAA0A1325), Color(0xAA171126))))
@@ -3831,7 +3831,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                             onValueChange = { onValue(it.take(max)) },
                             enabled = !loading,
                             singleLine = singleLine,
-                            textStyle = androidx.compose.ui.text.TextStyle(color = Color.Black, fontSize = 16.sp),
+                            textStyle = androidx.compose.ui.text.TextStyle(color = RemoteAppearance.screenTextColor, fontSize = 16.sp, textAlign = if (centered) androidx.compose.ui.text.style.TextAlign.Center else androidx.compose.ui.text.style.TextAlign.Start),
                             cursorBrush = Brush.linearGradient(listOf(Pink, Violet)),
                             modifier = Modifier.fillMaxWidth(),
                             decorationBox = { inner ->
@@ -3847,8 +3847,8 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                 }
             }
 
-            editCard(Icons.Default.Person, "Nome", name, "Seu nome", { name = it }, max = 80)
-            editCard(Icons.Default.AlternateEmail, "Nome de usuário", username, "seuusuario", { username = it.lowercase().filter { ch -> ch.isLetterOrDigit() || ch == '_' || ch == '.' }.take(24) }, max = 24)
+            editCard(Icons.Default.Person, "Nome", name, "Seu nome", { name = it }, max = 80, centered = true)
+            editCard(Icons.Default.AlternateEmail, "Nome de usuário", username, "seuusuario", { username = it.lowercase().filter { ch -> ch.isLetterOrDigit() || ch == '_' || ch == '.' }.take(24) }, max = 24, centered = true)
             Text("CATEGORIAS DO PERFIL", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
             Text("Escolha até 5 categorias para aparecerem abaixo do seu nome.", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
             androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
