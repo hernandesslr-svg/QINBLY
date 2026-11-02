@@ -38,27 +38,38 @@ jobs:
                   im = corrected
               w,h = im.size
               pix = im.load()
-              # Preserve luminous ornaments; clear the black poster and embedded labels.
+              # Isolate the actual circular ornament; discard neighboring frames
+              # and the caption. Each source crop has a slightly different center.
+              centers = {
+                  "rosa_neon": (178, 173), "azul_eletrico": (178, 171),
+                  "realeza": (178, 158), "galaxia": (178, 172),
+                  "fogo": (178, 172), "cristal": (178, 172),
+                  "romantica": (178, 171), "dourada": (178, 174),
+                  "esmeralda": (178, 172), "prateada": (178, 172)
+              }
+              cx, cy = centers[name]
+              from PIL import ImageDraw, ImageFilter
+              # Hard outer boundary removes the adjacent pink, blue and gold
+              # strips that were visible on either side of each frame.
+              mask = Image.new("L", (w,h), 0)
+              draw = ImageDraw.Draw(mask)
+              draw.ellipse((cx-157,cy-157,cx+157,cy+157),fill=255)
+              if name == "realeza":
+                  draw.rectangle((cx-85,0,cx+85,cy-112),fill=255)
+              # Central hole: frame is an overlay, never the avatar itself.
+              draw.ellipse((cx-116,cy-116,cx+116,cy+116),fill=0)
+              # Remove dark poster pixels while retaining colorful ornament.
+              mask = mask.filter(ImageFilter.GaussianBlur(1.2))
               for y in range(h):
                   for x in range(w):
                       R,G,B,A = pix[x,y]
-                      value = max(R,G,B)
-                      minimum = min(R,G,B)
-                      chroma = value - minimum
-                      # The label sits below the ornate circular frame.
-                      if y >= int(h * 0.905):
-                          pix[x,y] = (R,G,B,0)
-                          continue
-                      # Dark poster backdrop becomes transparent.
-                      strength = max(0, min(255, int((value - 36) * 255 / 72)))
-                      if chroma < 22 and value < 110:
-                          strength = 0
-                      # Existing central opening must remain completely transparent.
-                      cx,cy=w*0.5,h*0.48
-                      dist=math.hypot(x-cx,y-cy)
-                      if dist < w*(0.255 if name in ("esmeralda", "prateada") else 0.345):
-                          strength = 0
-                      pix[x,y]=(R,G,B, A*strength//255)
+                      brightness=max(R,G,B)
+                      chroma=brightness-min(R,G,B)
+                      # Fade dark poster; preserve colored and metallic filigree.
+                      a=min(255,max(0,int((brightness-27)*255/75)))
+                      if brightness < 105 and chroma < 18:
+                          a=0
+                      pix[x,y]=(R,G,B,A*a*mask.getpixel((x,y))//65025)
               im.save(path, optimize=True)
               print("Prepared", path)
           PY
