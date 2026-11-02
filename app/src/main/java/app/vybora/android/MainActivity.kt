@@ -3427,22 +3427,24 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             if (description.isNotBlank()) Text(description, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 5.dp), color = RemoteAppearance.screenSecondaryTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, maxLines = 4)
         } else if (shownBio.isNotBlank()) Text(shownBio, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 10.dp), color = RemoteAppearance.screenTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
         else Text("Adicione uma descrição ao seu perfil", Modifier.padding(top = 9.dp), color = RemoteAppearance.screenSecondaryTextColor)
-        if (shownCountry.isNotBlank()) {
-            Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                Icon(Icons.Default.Language, contentDescription = null, tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(16.dp))
-                Text(shownCountry, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
+        Row(Modifier.fillMaxWidth().padding(top = 9.dp, start = 12.dp, end = 12.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            if (shownCountry.isNotBlank()) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Icon(Icons.Default.LocationOn, contentDescription = "País", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(16.dp))
+                    Text(shownCountry, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
+                }
             }
-        }
-        if (joinedMonthYear.isNotBlank()) {
-            Row(Modifier.padding(top = 5.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                Icon(Icons.Default.CalendarToday, contentDescription = null, tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(16.dp))
-                Text("Entrou em $joinedMonthYear", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
+            if (shownCountry.isNotBlank() && joinedMonthYear.isNotBlank()) Spacer(Modifier.width(20.dp))
+            if (joinedMonthYear.isNotBlank()) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Icon(Icons.Default.CalendarToday, contentDescription = "Data de entrada", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(16.dp))
+                    Text("Entrou em $joinedMonthYear", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
+                }
             }
         }
         Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 10.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-            ProfileStat("Publicações", postsCount.toString(), Icons.Outlined.GridView) { onStat("Publicações") }
-            ProfileStat("Seguidores", followersCount.toString(), Icons.Default.Groups) { onStat("Seguidores") }
             ProfileStat("Seguindo", followingCount.toString(), Icons.Default.PersonAddAlt1) { onStat("Seguindo") }
+            ProfileStat("Seguidores", followersCount.toString(), Icons.Default.Groups) { onStat("Seguidores") }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedButton(onClick = onEdit, modifier = Modifier.weight(1f)) {
