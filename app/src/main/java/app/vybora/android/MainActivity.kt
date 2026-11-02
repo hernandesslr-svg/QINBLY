@@ -3313,7 +3313,6 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
 }
 
 @Composable
-@Composable
 private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
     val colors = listOf(
         Color(0xFFFF3399), Color(0xFF268BFF), Color(0xFFFFC247),
@@ -3356,6 +3355,7 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
     }
 }
 
+@Composable
 private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: String, bio: String, photoRefreshKey: Int, onNotice: (String) -> Unit, onStat: (String) -> Unit, onAuth: () -> Unit, onEdit: () -> Unit, onEditProfilePhoto: () -> Unit, onSettings: () -> Unit) {
     val profileScrollState = rememberScrollState()
     LaunchedEffect(scrollToTopRequest) { if (scrollToTopRequest > 0) profileScrollState.animateScrollTo(0) }
