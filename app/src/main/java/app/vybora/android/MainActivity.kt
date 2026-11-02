@@ -3326,6 +3326,22 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
     val index = style.coerceIn(0, 9)
     // The bundled PNG set is intentionally disabled: its cramped ornamental
     // silhouettes were visually rejected. Keep the real photo unobstructed.
+    // Prefer the actual transparent artwork assets. Their centers are cut out
+    // by the image-processing workflow, so the live profile photo shows through.
+    val art = intArrayOf(
+        R.drawable.qinbly_frame_rosa_neon, R.drawable.qinbly_frame_azul_eletrico,
+        R.drawable.qinbly_frame_realeza, R.drawable.qinbly_frame_galaxia,
+        R.drawable.qinbly_frame_fogo, R.drawable.qinbly_frame_cristal,
+        R.drawable.qinbly_frame_romantica, R.drawable.qinbly_frame_dourada,
+        R.drawable.qinbly_frame_esmeralda, R.drawable.qinbly_frame_prateada
+    )
+    androidx.compose.foundation.Image(
+        painter = androidx.compose.ui.res.painterResource(art[index]),
+        contentDescription = null,
+        contentScale = androidx.compose.ui.layout.ContentScale.FillBounds,
+        modifier = Modifier.size(diameter)
+    )
+    return
     val accent = palette[index]
     val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "ornate-frame")
     val orbit by transition.animateFloat(
