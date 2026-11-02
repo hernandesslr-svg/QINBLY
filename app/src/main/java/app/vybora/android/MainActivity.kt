@@ -3627,6 +3627,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     }
     if (framesOpen) {
         val frameNames = listOf("Rosa Neon", "Azul Elétrico", "Realeza", "Galáxia", "Fogo", "Cristal", "Romântica", "Dourada", "Esmeralda", "Prateada")
+        val frameDecorations = listOf("🌸", "⚡", "👑", "✨", "🔥", "💎", "💕", "🌟", "🍃", "❄️")
         val frameColors = listOf(
             Color(0xFFFF3399), Color(0xFF268BFF), Color(0xFFAF72F5), Color(0xFF7856E8),
             Color(0xFFFF692E), Color(0xFF80D9ED), Color(0xFFFF7799), Color(0xFFFFC247),
@@ -3648,24 +3649,19 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         Icon(Icons.Default.Close, contentDescription = "Fechar molduras")
                     }
                 }
-                Text("10 modelos de demonstração", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("10 molduras decorativas para a foto grande do perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
-                Box(
-                    Modifier.fillMaxWidth().height(160.dp)
-                        .border(5.dp, frameColors[selectedFramePreview], RoundedCornerShape(18.dp))
-                        .clip(RoundedCornerShape(18.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (profilePhotoUrl.isNotBlank()) {
-                        AsyncImage(
-                            model = profilePhotoUrl,
-                            contentDescription = "Prévia da capa com moldura",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                        )
-                    } else {
-                        Text("Prévia da capa do perfil")
+                Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.fillMaxWidth(0.94f).height(148.dp).border(4.dp, frameColors[selectedFramePreview], RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp))) {
+                        if (profilePhotoUrl.isNotBlank()) {
+                            AsyncImage(model = profilePhotoUrl, contentDescription = "Foto do perfil com moldura",
+                                modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                        }
                     }
+                    Text(frameDecorations[selectedFramePreview], fontSize = 34.sp, modifier = Modifier.align(Alignment.TopStart))
+                    Text(frameDecorations[selectedFramePreview], fontSize = 34.sp, modifier = Modifier.align(Alignment.TopEnd))
+                    Text(frameDecorations[selectedFramePreview], fontSize = 34.sp, modifier = Modifier.align(Alignment.BottomStart))
+                    Text(frameDecorations[selectedFramePreview], fontSize = 34.sp, modifier = Modifier.align(Alignment.BottomEnd))
                 }
                 Text(frameNames[selectedFramePreview], modifier = Modifier.fillMaxWidth().padding(10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold)
                 LazyVerticalGrid(
@@ -3688,7 +3684,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                     .border(5.dp, frameColors[index], RoundedCornerShape(12.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("QB", fontWeight = FontWeight.Bold, color = frameColors[index])
+                                Text(frameDecorations[index], fontSize = 29.sp)
                             }
                             Text(frameNames[index], modifier = Modifier.padding(top = 8.dp), fontSize = 13.sp)
                         }
