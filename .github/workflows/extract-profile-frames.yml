@@ -1,82 +1,52 @@
-name: Install QINBLY profile frame PNGs
+name: Replace profile frame artwork
 on:
   push:
-    paths:
-      - '.github/workflows/extract-profile-frames.yml'
-      - 'qinbly_android_assets.zip'
+    paths: ['.github/workflows/extract-profile-frames.yml']
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
-  install:
+  replace:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-      - name: Install image validation dependency
-        run: python -m pip install Pillow
-      - name: Validate and replace ten frame PNGs
-        shell: bash
+      - run: pip install pillow
+      - name: Generate independent transparent decorations
         run: |
-          set -euo pipefail
           python - <<'PY'
+          from PIL import Image,ImageDraw
+          import math
           from pathlib import Path
-          from zipfile import ZipFile
-          from io import BytesIO
-          from PIL import Image, ImageDraw, ImageFilter, ImageChops
-          import re
-
-          archive = Path("qinbly_android_assets.zip")
-          target = Path("app/src/main/res/drawable-nodpi")
-          assert archive.is_file(), f"Missing archive: {archive}"
-          frames = {}
-          with ZipFile(archive) as z:
-              for member in z.infolist():
-                  name = Path(member.filename).name
-                  if not re.fullmatch(r"qinbly_frame_[a-z0-9_]+\.png", name):
-                      continue
-                  assert name not in frames, f"Duplicate frame: {name}"
-                  data = z.read(member)
-                  with Image.open(BytesIO(data)) as im:
-                      im.load()
-                      assert im.format == "PNG", f"{name}: not PNG"
-                      assert im.mode == "RGBA", f"{name}: expected RGBA"
-                      assert im.width >= 128 and im.height >= 128, f"{name}: resolution too small"
-                  # Produce a real transparent-center decorative asset from the source artwork.
-                  with Image.open(BytesIO(data)) as source:
-                      frame = source.convert("RGBA")
-                  width, height = frame.size
-                  cx, cy = width / 2, height / 2
-                  radius = min(width, height) * 0.462
-                  hole = Image.new("L", frame.size, 0)
-                  draw = ImageDraw.Draw(hole)
-                  draw.ellipse((cx-radius, cy-radius, cx+radius, cy+radius), fill=255)
-                  hole = hole.filter(ImageFilter.GaussianBlur(max(0.5, min(width, height)*0.0006)))
-                  frame.putalpha(ImageChops.subtract(frame.getchannel("A"), hole))
-                  assert frame.getpixel((width // 2, height // 2))[3] == 0, f"{name}: center not cleared"
-                  assert frame.getpixel((int(cx + radius * .8), int(cy)))[3] == 0, f"{name}: portrait still visible near rim"
-                  for fx, fy in ((0, 0), (.2, 0), (-.2, 0), (0, .2), (0, -.2), (.27, .27), (-.27, -.27)):
-                      px = int(cx + fx * min(width, height))
-                      py = int(cy + fy * min(width, height))
-                      assert frame.getpixel((px, py))[3] == 0, f"{name}: embedded portrait remains"
-                  output = BytesIO()
-                  frame.save(output, format="PNG", optimize=True)
-                  frames[name] = output.getvalue()
-          assert len(frames) == 10, f"Expected 10 frames, found {len(frames)}: {sorted(frames)}"
-          target.mkdir(parents=True, exist_ok=True)
-          for old in target.glob("qinbly_frame_*.png"):
-              old.unlink()
-          for name, data in frames.items():
-              (target / name).write_bytes(data)
-          print("Installed 10 validated transparent frames:", ", ".join(sorted(frames)))
+          root=Path('app/src/main/res/drawable-nodpi')
+          names=['rosa_neon','azul_eletrico','realeza','galaxia','fogo','cristal','romantica','dourada','esmeralda','prateada']
+          colors=['#ff279d','#22bfff','#e9b24b','#a65dff','#ff6321','#7ceaff','#ff79b9','#ffd465','#34d79d','#c4d4ec']
+          for idx,(name,color) in enumerate(zip(names,colors)):
+            im=Image.new('RGBA',(768,768))
+            d=ImageDraw.Draw(im)
+            for r,w in [(327,17),(308,8)]:
+              d.ellipse((384-r,384-r,384+r,384+r),outline=color,width=w)
+            for k in range(16):
+              a=k*math.tau/16
+              def pt(rad,angle=a): return (384+math.cos(angle)*rad,384+math.sin(angle)*rad)
+              if idx==4:
+                d.polygon([pt(303,a-.07),pt(369,a+.01),pt(307,a+.08)],fill=color)
+              elif idx in (2,5,7,9):
+                d.polygon([pt(300),pt(347,a+.07),pt(368),pt(347,a-.07)],fill=color)
+              elif idx==8:
+                d.ellipse((*[v-19 for v in pt(345)],*[v+19 for v in pt(345)]),fill=color)
+              else:
+                x,y=pt(343)
+                d.ellipse((x-12,y-12,x+12,y+12),fill=color)
+            if idx==2:
+              d.polygon([(278,104),(301,34),(352,85),(384,14),(416,85),(467,34),(490,104)],fill='#ffd56e')
+            if idx==3:
+              for x,y,r in [(111,117,32),(648,109,25)]:
+                d.ellipse((x-r,y-r,x+r,y+r),fill='#7c4bff',outline='#e5baff',width=6)
+            im.save(root/('qinbly_frame_'+name+'.png'))
           PY
-      - name: Commit replacements to main
+      - name: Commit replacement assets
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A app/src/main/res/drawable-nodpi
-          if ! git diff --cached --quiet; then
-            git commit -m "Replace QINBLY profile frames with validated PNGs"
-            git push origin HEAD:main
-          fi
+          git config user.name github-actions
+          git config user.email actions@users.noreply.github.com
+          git add app/src/main/res/drawable-nodpi/qinbly_frame_*.png
+          git diff --cached --quiet || (git commit -m "Replace old frames with independent transparent PNG art" && git push origin HEAD:main)
