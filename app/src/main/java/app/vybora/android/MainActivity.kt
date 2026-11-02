@@ -3408,7 +3408,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         Box(Modifier.padding(top = 4.dp).size(132.dp), contentAlignment = Alignment.Center) {
             Box(Modifier.size(126.dp).border(3.dp, Brush.sweepGradient(listOf(Color(0xFFFF2499), Color(0xFF7B39FF), Color(0xFFFF2499))), CircleShape).padding(5.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
                 val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
-                if (image.isNotBlank()) expandedImage = image; viewingPublication = false } else onEditProfilePhoto()
+                if (image.isNotBlank()) { expandedImage = image; viewingPublication = false } else onEditProfilePhoto()
             }) {
                 val image = profilePhotoUrl.ifBlank { avatarUrl }
                 if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
