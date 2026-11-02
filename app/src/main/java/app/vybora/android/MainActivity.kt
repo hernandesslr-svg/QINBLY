@@ -1815,9 +1815,18 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Text(feedFilterIcons[index],
-                            color = if (active) Color.White else feedFilterAccent[index],
-                            fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        if (filter == "Lives") {
+                            Icon(
+                                Icons.Default.Radio,
+                                contentDescription = "Sinal ao vivo",
+                                tint = if (active) Color.White else Color(0xFF1677F2),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        } else {
+                            Text(feedFilterIcons[index],
+                                color = if (active) Color.White else feedFilterAccent[index],
+                                fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
                         Text(filter,
                             color = if (active) Color.White else Color(0xFF20202B),
                             fontSize = 13.sp,
