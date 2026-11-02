@@ -3422,70 +3422,8 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
                     androidx.compose.ui.geometry.Offset(gx - gemSize * .25f, gy - gemSize * .35f))
             }
         }
-        val count = when (index) { 4 -> 18; 2, 7, 8, 9 -> 14; else -> 12 }
-        for (n in 0 until count) {
-            val angle = (n * 360f / count + orbit * (if (index == 2 || index == 7) 0.035f else 0.14f)) *
-                kotlin.math.PI.toFloat() / 180f
-            val wave = kotlin.math.sin((orbit * 0.065f + n * 43f) *
-                kotlin.math.PI.toFloat() / 180f)
-            val distance = outer - thick * 0.32f + wave * thick * 0.24f
-            val x = cx + kotlin.math.cos(angle) * distance
-            val y = cy + kotlin.math.sin(angle) * distance
-            val dot = androidx.compose.ui.geometry.Offset(x, y)
-            val radius = thick * when (index) {
-                4 -> 0.7f + (wave + 1f) * 0.28f
-                5, 9 -> 0.44f + shimmer * 0.25f
-                else -> 0.48f + shimmer * 0.24f
-            }
-            when (index) {
-                0, 6 -> {
-                    drawCircle(accent.copy(alpha = 0.35f), radius * 1.7f, dot)
-                    drawCircle(if (n % 3 == 0) Color.White else accent, radius, dot)
-                    drawCircle(Color.White.copy(alpha = shimmer), radius * 0.34f,
-                        androidx.compose.ui.geometry.Offset(x - radius * 0.25f, y - radius * 0.25f))
-                }
-                1 -> {
-                    val next = angle + 0.14f
-                    drawLine(Color(0xFFB8EEFF), dot,
-                        androidx.compose.ui.geometry.Offset(
-                            cx + kotlin.math.cos(next) * (distance - thick * 1.3f),
-                            cy + kotlin.math.sin(next) * (distance - thick * 1.3f)),
-                        strokeWidth = thick * 0.5f)
-                    drawCircle(Color.White.copy(alpha = shimmer), radius, dot)
-                }
-                4 -> {
-                    drawLine(accent.copy(alpha = 0.9f), dot,
-                        androidx.compose.ui.geometry.Offset(
-                            cx + kotlin.math.cos(angle) * (distance + thick * (1.2f + wave)),
-                            cy + kotlin.math.sin(angle) * (distance + thick * (1.2f + wave))),
-                        strokeWidth = thick * (0.65f + shimmer * 0.3f),
-                        cap = androidx.compose.ui.graphics.StrokeCap.Round)
-                    drawCircle(Color(0xFFFFDA55), radius * 0.62f, dot)
-                }
-                2, 7 -> {
-                    drawCircle(Color(0xFFFFEBA2).copy(alpha = 0.4f), radius * 1.6f, dot)
-                    drawCircle(if (n % 2 == 0) Color.White else accent, radius, dot)
-                }
-                8 -> {
-                    drawOval(accent.copy(alpha = shimmer),
-                        topLeft = androidx.compose.ui.geometry.Offset(x - radius, y - radius * 1.7f),
-                        size = androidx.compose.ui.geometry.Size(radius * 2f, radius * 3.4f))
-                    drawCircle(Color(0xFFCBFFE8), radius * 0.4f, dot)
-                }
-                else -> {
-                    drawCircle(accent.copy(alpha = 0.35f), radius * 1.7f, dot)
-                    drawLine(Color.White.copy(alpha = shimmer),
-                        androidx.compose.ui.geometry.Offset(x - radius, y),
-                        androidx.compose.ui.geometry.Offset(x + radius, y),
-                        strokeWidth = thick * 0.2f)
-                    drawLine(Color.White.copy(alpha = shimmer),
-                        androidx.compose.ui.geometry.Offset(x, y - radius),
-                        androidx.compose.ui.geometry.Offset(x, y + radius),
-                        strokeWidth = thick * 0.2f)
-                    drawCircle(Color.White, radius * 0.38f, dot)
-                }
-            }
-        }
+        // No generic dotted halo: reserve the silhouette for each material's
+        // own artwork. Tiny repeated beads made every theme look identical.
         // Material-specific shapes replace the previous one-size-fits-all rings.
         // These are separate from the portrait and preserve its center.
         if (index == 3) {
@@ -3555,95 +3493,33 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
                 drawPath(flame,brush=Brush.linearGradient(listOf(Color(0xFF9E1907),Color(0xFFFF5D10),Color(0xFFFFDB54))))
             }
         }
-        // Distinctive decorative silhouettes stay outside the circular photograph.
-        val motifCount = when (index) {
-            0, 6 -> 5
-            2 -> 7
-            4 -> 12
-            8 -> 9
-            else -> 8
-        }
-        for (m in 0 until motifCount) {
-            val theta = ((m * 360f / motifCount) - 90f +
-                orbit * (if (index == 2 || index == 7) 0.012f else 0.09f)) *
-                kotlin.math.PI.toFloat() / 180f
-            val d = size.minDimension * 0.465f
-            val px = cx + kotlin.math.cos(theta) * d
-            val py = cy + kotlin.math.sin(theta) * d
-            val u = thick * (if (index == 4) 1.4f else 1.1f)
-            val path = androidx.compose.ui.graphics.Path()
-            when (index) {
-                0, 6 -> {
-                    // Small hearts with rounded lobes.
-                    path.moveTo(px, py + u * 0.8f)
-                    path.cubicTo(px - u * 1.9f, py - u * 0.25f,
-                        px - u * 0.8f, py - u * 1.6f, px, py - u * 0.55f)
-                    path.cubicTo(px + u * 0.8f, py - u * 1.6f,
-                        px + u * 1.9f, py - u * 0.25f, px, py + u * 0.8f)
-                    path.close()
-                    drawPath(path, if (index == 0) Color(0xFFFF3D9C) else Color(0xFFFF7B9D),
-                        alpha = shimmer)
-                    drawCircle(Color.White.copy(alpha = 0.85f), u * 0.13f,
-                        androidx.compose.ui.geometry.Offset(px - u * 0.4f, py - u * 0.6f))
-                }
-                2 -> {
-                    // Golden crown peaks and a gemstone at each base.
-                    path.moveTo(px - u, py + u * 0.65f)
-                    path.lineTo(px - u, py - u * 0.5f)
-                    path.lineTo(px - u * 0.45f, py)
-                    path.lineTo(px, py - u * 1.25f)
-                    path.lineTo(px + u * 0.45f, py)
-                    path.lineTo(px + u, py - u * 0.5f)
-                    path.lineTo(px + u, py + u * 0.65f)
-                    path.close()
-                    drawPath(path, Color(0xFFFFD46A))
-                    drawCircle(Color(0xFFB456F6), u * 0.28f,
-                        androidx.compose.ui.geometry.Offset(px, py + u * 0.36f))
-                }
-                4 -> {
-                    // Flickering flame tongues, with a smaller yellow core.
-                    val rise = u * (1.2f + 0.55f * kotlin.math.sin(
-                        (orbit + m * 47f) * kotlin.math.PI.toFloat() / 180f))
-                    path.moveTo(px - u * 0.65f, py + u * 0.8f)
-                    path.quadraticBezierTo(px - u, py - u * 0.3f, px, py - rise)
-                    path.quadraticBezierTo(px + u * 1.2f, py, px + u * 0.65f, py + u * 0.8f)
-                    path.close()
-                    drawPath(path, if (m % 2 == 0) Color(0xFFFF562A) else Color(0xFFFFAA28))
-                    drawCircle(Color(0xFFFFE36B), u * 0.25f,
-                        androidx.compose.ui.geometry.Offset(px, py + u * 0.32f))
-                }
-                8 -> {
-                    // Emerald leaves with a central vein.
-                    path.moveTo(px, py - u * 1.2f)
-                    path.quadraticBezierTo(px + u * 1.2f, py - u * 0.1f, px, py + u)
-                    path.quadraticBezierTo(px - u * 1.2f, py - u * 0.1f, px, py - u * 1.2f)
-                    path.close()
-                    drawPath(path, Color(0xFF30B979), alpha = shimmer)
-                    drawLine(Color(0xFFC2FFE3),
-                        androidx.compose.ui.geometry.Offset(px, py - u * 0.8f),
-                        androidx.compose.ui.geometry.Offset(px, py + u * 0.65f),
-                        strokeWidth = thick * 0.16f)
-                }
-                else -> {
-                    // Stars, diamond crystals and metallic filigree.
-                    val spikes = if (index == 3 || index == 9) 4 else 6
-                    for (k in 0 until spikes * 2) {
-                        val t = k * kotlin.math.PI.toFloat() / spikes -
-                            kotlin.math.PI.toFloat() / 2f
-                        val rr = if (k % 2 == 0) u * 1.12f else u * 0.33f
-                        val xx = px + kotlin.math.cos(t) * rr
-                        val yy = py + kotlin.math.sin(t) * rr
-                        if (k == 0) path.moveTo(xx, yy) else path.lineTo(xx, yy)
+        // Individual ornaments below are deliberately not shared between
+        // themes: generic crowns/hearts/stars were cluttering the tiny previews.
+        if (index == 2 || index == 7 || index == 8 || index == 9) {
+            val pieces = if (index == 2) 5 else 9
+            for (k in 0 until pieces) {
+                val angle = (k + .5f) * kotlin.math.PI.toFloat() / pieces
+                for (side in listOf(-1f, 1f)) {
+                    val x = cx + side * kotlin.math.cos(angle) * outer
+                    val y = cy + kotlin.math.sin(angle) * outer
+                    val tipX = x + side * thick * (if (index == 2) 1.7f else 1.05f)
+                    val tipY = y - thick * .55f
+                    val leaf = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(x, y + thick * .45f)
+                        quadraticBezierTo(tipX, tipY + thick, tipX, tipY)
+                        quadraticBezierTo(x, y - thick * .65f, x, y + thick * .45f)
+                        close()
                     }
-                    path.close()
-                    drawPath(path, if (index == 1 || index == 5) Color(0xFFDCF9FF)
-                        else if (index == 7) Color(0xFFFFE5A1) else Color.White,
-                        alpha = shimmer)
-                    drawCircle(accent.copy(alpha = 0.55f), u * 0.32f,
-                        androidx.compose.ui.geometry.Offset(px, py))
+                    val fill = when (index) {
+                        8 -> listOf(Color(0xFF064E36), Color(0xFF5AF0B2), Color(0xFF0A7851))
+                        9 -> listOf(Color(0xFF435169), Color.White, Color(0xFF778CA8))
+                        else -> listOf(Color(0xFF8C4A09), Color(0xFFFFE5A0), Color(0xFFD38B24))
+                    }
+                    drawPath(leaf, brush = Brush.linearGradient(fill))
                 }
             }
         }
+
     }
 }
 
