@@ -3526,7 +3526,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 }
                 IconButton(
                     onClick = { expandedImage = "" },
-                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).background(Color.Black.copy(alpha = 0.65f), CircleShape)
+                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp).background(Color.Black.copy(alpha = 0.65f), CircleShape)
                 ) { Icon(Icons.Default.ArrowBack, contentDescription = "Fechar imagem", tint = RemoteAppearance.screenTextColor) }
             }
         }
@@ -4823,7 +4823,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                         DropdownMenuItem(text = { Text("Denunciar foto") }, onClick = { photoMenuOpen = false; onNotice("Denúncias ainda não estão conectadas. Nenhuma denúncia foi enviada.") })
                     }
                 }
-                IconButton(onClick = { expandedImage = null }, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).background(Color.Black.copy(alpha = 0.65f), CircleShape)) {
+                IconButton(onClick = { expandedImage = null }, modifier = Modifier.align(Alignment.TopStart).padding(8.dp).background(Color.Black.copy(alpha = 0.65f), CircleShape)) {
                     Icon(Icons.Default.Close, contentDescription = "Fechar imagem", tint = RemoteAppearance.screenTextColor)
                 }
             }
