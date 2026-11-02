@@ -42,18 +42,19 @@ jobs:
                       im.load()
                       assert im.format == "PNG", f"{name}: not PNG"
                       assert im.mode == "RGBA", f"{name}: expected RGBA"
-                      assert im.getpixel((im.width // 2, im.height // 2))[3] == 0, f"{name}: center not transparent"
-                  # Cut out the embedded demo portrait, preserving the decorative ring.
+                      assert im.width >= 128 and im.height >= 128, f"{name}: resolution too small"
+                  # Produce a real transparent-center decorative asset from the source artwork.
                   with Image.open(BytesIO(data)) as source:
                       frame = source.convert("RGBA")
                   width, height = frame.size
                   cx, cy = width / 2, height / 2
-                  radius = min(width, height) * 0.365
+                  radius = min(width, height) * 0.397
                   hole = Image.new("L", frame.size, 0)
                   draw = ImageDraw.Draw(hole)
                   draw.ellipse((cx-radius, cy-radius, cx+radius, cy+radius), fill=255)
-                  hole = hole.filter(ImageFilter.GaussianBlur(max(1.0, min(width, height)*0.008)))
+                  hole = hole.filter(ImageFilter.GaussianBlur(max(0.5, min(width, height)*0.002)))
                   frame.putalpha(ImageChops.subtract(frame.getchannel("A"), hole))
+                  assert frame.getpixel((width // 2, height // 2))[3] == 0, f"{name}: center not cleared"
                   output = BytesIO()
                   frame.save(output, format="PNG", optimize=True)
                   frames[name] = output.getvalue()
