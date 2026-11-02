@@ -3362,6 +3362,64 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
         drawCircle(accent.copy(alpha = 0.8f), radius = r - thick * 0.72f,
             center = androidx.compose.ui.geometry.Offset(cx, cy),
             style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick * 0.23f))
+        // Layered materials: shaded metal, reflected light and inset enamel.
+        // All rendering stays outside the real avatar photo.
+        val metal = when (index) {
+            2, 7 -> listOf(Color(0xFF6C3A0B), Color(0xFFFFE69B), Color(0xFFAF6A1C), Color(0xFFFFF4C9), Color(0xFF6C3A0B))
+            8 -> listOf(Color(0xFF06452E), Color(0xFF5DFFD0), Color(0xFF086D4E), Color(0xFFCAFFEA), Color(0xFF06452E))
+            9 -> listOf(Color(0xFF425064), Color(0xFFFFFFFF), Color(0xFF8496B0), Color(0xFFE5F1FF), Color(0xFF425064))
+            4 -> listOf(Color(0xFF701506), Color(0xFFFFB126), Color(0xFFFF4214), Color(0xFFFFE48A), Color(0xFF701506))
+            5 -> listOf(Color(0xFF174A8A), Color(0xFFB8F9FF), Color(0xFF218ACB), Color(0xFFFFFFFF), Color(0xFF174A8A))
+            else -> listOf(accent.copy(alpha = .7f), Color.White, accent, accent.copy(alpha = .9f), Color.White)
+        }
+        val ringCenter = androidx.compose.ui.geometry.Offset(cx, cy)
+        drawCircle(
+            brush = Brush.sweepGradient(metal),
+            radius = r + thick * .62f, center = ringCenter,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick * .42f)
+        )
+        drawCircle(
+            brush = Brush.sweepGradient(metal.reversed()),
+            radius = r - thick * .54f, center = ringCenter,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick * .24f)
+        )
+        drawCircle(
+            color = Color.White.copy(alpha = .23f + shimmer * .22f),
+            radius = r + thick * .32f, center = ringCenter,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick * .09f)
+        )
+        // Individually shaded gems with highlight and a dark setting.
+        if (index == 2 || index == 5 || index == 7 || index == 8 || index == 9) {
+            val gems = if (index == 2) 7 else 12
+            for (g in 0 until gems) {
+                val a = (g * 2f * kotlin.math.PI.toFloat() / gems)
+                val gr = r + thick * .36f
+                val gx = cx + kotlin.math.cos(a) * gr
+                val gy = cy + kotlin.math.sin(a) * gr
+                val centerGem = androidx.compose.ui.geometry.Offset(gx, gy)
+                val gemSize = thick * .72f
+                drawCircle(Color(0xAA182034), gemSize * 1.2f, centerGem)
+                val facet = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(gx, gy - gemSize)
+                    lineTo(gx + gemSize * .8f, gy)
+                    lineTo(gx, gy + gemSize)
+                    lineTo(gx - gemSize * .8f, gy)
+                    close()
+                }
+                val gemColor = when (index) {
+                    2 -> Color(0xFFB948EF)
+                    5 -> Color(0xFF5EE9FF)
+                    8 -> Color(0xFF16D38A)
+                    9 -> Color(0xFFDAF0FF)
+                    else -> Color(0xFFFFE48C)
+                }
+                drawPath(facet, brush = Brush.linearGradient(listOf(Color.White, gemColor, gemColor.copy(alpha = .75f))))
+                drawLine(Color.White.copy(alpha = .8f), centerGem,
+                    androidx.compose.ui.geometry.Offset(gx, gy - gemSize), thick * .075f)
+                drawCircle(Color.White.copy(alpha = shimmer * .9f), gemSize * .17f,
+                    androidx.compose.ui.geometry.Offset(gx - gemSize * .25f, gy - gemSize * .35f))
+            }
+        }
         val count = when (index) { 4 -> 18; 2, 7, 8, 9 -> 14; else -> 12 }
         for (n in 0 until count) {
             val angle = (n * 360f / count + orbit * (if (index == 2 || index == 7) 0.035f else 0.14f)) *
