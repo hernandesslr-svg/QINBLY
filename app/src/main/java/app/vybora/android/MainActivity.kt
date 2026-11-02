@@ -1962,7 +1962,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                                 .clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) },
                                             contentScale = ContentScale.Crop
                                         )
-                                        Column {
+                                        Column(Modifier.weight(1f)) {
                                             Text(
                                                 post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" },
                                                 color = RemoteAppearance.feedTextColor, fontSize = 15.sp, fontWeight = FontWeight.Bold,
@@ -1970,10 +1970,37 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                             )
                                             Text("Há 2 min", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
                                         }
+                                        Box {
+                                            IconButton(onClick = { postMenuExpanded = true }) {
+                                                Icon(Icons.Default.MoreVert, contentDescription = "Opções da publicação", tint = RemoteAppearance.feedTextColor)
+                                            }
+                                            DropdownMenu(expanded = postMenuExpanded, onDismissRequest = { postMenuExpanded = false }) {
+                                                DropdownMenuItem(
+                                                    text = { Text("Excluir publicação") },
+                                                    onClick = {
+                                                        postMenuExpanded = false
+                                                        val token = prefs.getString("token", null)
+                                                        if (token.isNullOrBlank()) onNotice("Entre na sua conta para excluir publicações.")
+                                                        else Thread {
+                                                            try {
+                                                                VyboraApi.deletePost(token, post.id)
+                                                                val refreshed = VyboraApi.getPosts()
+                                                                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                                                    posts = refreshed
+                                                                    onNotice("Publicação excluída.")
+                                                                }
+                                                            } catch (e: Exception) {
+                                                                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                                                    onNotice(e.message ?: "Não foi possível excluir a publicação.")
+                                                                }
+                                                            }
+                                                        }.start()
+                                                    }
+                                                )
+                                            }
+                                        }
                                     }
-                                    if (post.caption.isNotBlank()) {
-                                        Text(post.caption, color = RemoteAppearance.feedTextColor, fontSize = 15.sp, lineHeight = 20.sp)
-                                    }
+
                                 }
                             }
                             if (post.mediaUrl.isNotBlank() && post.mediaType == "image") {
@@ -2076,6 +2103,13 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
 
                                     
                                 }
+                            }
+                            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video") && post.caption.isNotBlank()) {
+                                Text(
+                                    post.caption, color = RemoteAppearance.feedTextColor,
+                                    fontSize = 15.sp, lineHeight = 20.sp,
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)
+                                )
                             }
                             if (post.mediaType != "image" && post.mediaType != "video" && post.caption.isNotBlank()) {
                                 Text(post.caption, color = RemoteAppearance.feedTextColor, fontSize = 15.sp,
