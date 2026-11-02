@@ -1869,9 +1869,9 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                     }
                     Surface(
                         color = Color.White,
-                        shape = RoundedCornerShape(22.dp),
-                        shadowElevation = 3.dp,
-                        border = BorderStroke(1.dp, Color(0xFFEAEAEA)),
+                        shape = RoundedCornerShape(24.dp),
+                        shadowElevation = 1.dp,
+                        border = BorderStroke(1.dp, Color(0xFFF0F0F0)),
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 3.dp)
                     ) {
                         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
@@ -1960,13 +1960,13 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                             }
                             if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) {
                                 Column(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-                                    verticalArrangement = Arrangement.spacedBy(7.dp)
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
+                                    verticalArrangement = Arrangement.spacedBy(5.dp)
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                                         AsyncImage(
                                             model = post.avatarUrl, contentDescription = "Foto de perfil do autor",
-                                            modifier = Modifier.size(40.dp).clip(CircleShape)
+                                            modifier = Modifier.size(38.dp).clip(CircleShape)
                                                 .clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) },
                                             contentScale = ContentScale.Crop
                                         )
@@ -2129,10 +2129,10 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .background(RemoteAppearance.feedActionBackgroundColor)
-                                        .heightIn(min = 56.dp)
-                                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                                        .heightIn(min = 52.dp)
+                                        .padding(horizontal = 12.dp, vertical = 5.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = if (RemoteAppearance.spreadPostActions) Arrangement.SpaceBetween else Arrangement.spacedBy(12.dp, Alignment.Start)
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Row(
                                         modifier = Modifier.clickable {
@@ -2159,7 +2159,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                             }
                                         },
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(7.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         Icon(
                                             if (likedByCurrentUser) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -2170,7 +2170,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         Text(
                                             if (post.likes >= 1000) String.format(java.util.Locale("pt", "BR"), "%.1f mil", post.likes / 1000.0) else post.likes.toString(),
                                             color = RemoteAppearance.feedSecondaryTextColor,
-                                            fontSize = 14.sp
+                                            fontSize = 12.sp
                                         )
                                     }
                                     Row(
@@ -2194,13 +2194,13 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                             }.start()
                                         },
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(7.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = RemoteAppearance.actionIconColor, modifier = Modifier.size(24.dp))
                                         Text(
                                             if (post.comments >= 1000) String.format(java.util.Locale("pt", "BR"), "%.1f mil", post.comments / 1000.0) else post.comments.toString(),
                                             color = RemoteAppearance.feedSecondaryTextColor,
-                                            fontSize = 14.sp
+                                            fontSize = 12.sp
                                         )
                                     }
                                     Row(
@@ -2211,12 +2211,12 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                             onNotice(if (alreadyReposted) "Marcação de repost removida deste aparelho." else "Repost marcado neste aparelho. Publicação no servidor ainda não disponível.")
                                         },
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(7.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         RepostVerifiedIcon(post.id in repostedPostIds, tint = RemoteAppearance.actionIconColor)
                                         if (post.id.startsWith("demo-post-")) {
                                             val repostCount = 10000 + (post.id.removePrefix("demo-post-").toIntOrNull() ?: 1) * 613
-                                            Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", repostCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
+                                            Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", repostCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
                                         }
                                     }
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -2239,7 +2239,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     }
                                         if (post.id.startsWith("demo-post-")) {
                                                 val saveCount = 11000 + (post.id.removePrefix("demo-post-").toIntOrNull() ?: 1) * 721
-                                                Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", saveCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
+                                                Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", saveCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
                                         }
                                     }
 
@@ -2304,12 +2304,12 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                             }
                                         },
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(7.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         RoundedPaperPlaneIcon(tint = RemoteAppearance.actionIconColor)
                                         if (post.id.startsWith("demo-post-")) {
                                         val shareCount = 12000 + (post.id.removePrefix("demo-post-").toIntOrNull() ?: 1) * 987
-                                        Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", shareCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
+                                        Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", shareCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
                                     }
                                     }
                                 }
