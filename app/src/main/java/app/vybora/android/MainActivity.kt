@@ -4659,7 +4659,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
     val avatarUrl = user.optString("avatar_url").ifBlank { user.optString("avatarUrl") }
     val profilePhotoUrl = avatarUrl.ifBlank {
         user.optString("profilePhotoUrl").ifBlank {
-            user.optString("cover_url").ifBlank { "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1200&q=85" }
+            user.optString("cover_url")
         }
     }
     val bio = user.optString("bio")
@@ -4685,43 +4685,48 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
         }.start()
     }
     Column(Modifier.fillMaxSize().background(RemoteAppearance.screenBackgroundColor).verticalScroll(rememberScrollState())) {
-        Box(Modifier.fillMaxWidth().height(300.dp).clickable {
-            val image = profilePhotoUrl.ifBlank { avatarUrl }
-            if (image.isNotBlank()) expandedImage = image
-        }) {
-            if (profilePhotoUrl.isNotBlank()) {
-                AsyncImage(model = profilePhotoUrl, contentDescription = "Foto do perfil de $displayName", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-            } else {
-                Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF251039), Color(0xFF070914), Violet.copy(alpha = 0.75f)))))
-            }
-            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.25f), Color.Transparent, Night))))
-            Row(Modifier.fillMaxWidth().align(Alignment.TopStart).padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.screenTextColor) }
-                Spacer(Modifier.weight(1f))
-                IconButton(onClick = { showMoreOptions = true }) { Icon(Icons.Default.MoreHoriz, contentDescription = "Opções deste perfil", tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(25.dp)) }
-            }
-            Row(
-                Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(start = 18.dp, end = 12.dp, bottom = 12.dp),
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Column(Modifier.weight(1.05f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Text(displayName, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 1)
-                        Icon(Icons.Default.CheckCircle, contentDescription = "Perfil", tint = Pink, modifier = Modifier.size(19.dp))
-                    }
-                    Text("@$publicUsername", color = Color.White.copy(alpha = 0.9f), maxLines = 1)
-                }
-                Row(Modifier.weight(1.7f), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                    ProfileStat("Publicações", user.optInt("posts_count").toString(), Icons.Outlined.GridView) { selectedTab = "Publicações" }
-                    ProfileStat("Seguidores", user.optInt("followers").toString(), Icons.Default.Groups) { onNotice("A lista de seguidores será aberta quando a tela de conexões estiver disponível.") }
-                    ProfileStat("Seguindo", user.optInt("following").toString(), Icons.Default.PersonAddAlt1) { onNotice("A lista de contas seguidas será aberta quando a tela de conexões estiver disponível.") }
-                }
-            }
-
-
+        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.screenTextColor) }
+            Spacer(Modifier.weight(1f))
+            Text("QINBLY", color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick = { showMoreOptions = true }) { Icon(Icons.Default.MoreHoriz, contentDescription = "Opções deste perfil", tint = RemoteAppearance.screenTextColor) }
         }
-        if (bio.isNotBlank()) Text(bio, Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp), color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.bodyMedium)
-        else Text("Ainda não adicionou uma descrição.", Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp), color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
+        Box(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(156.dp).border(3.dp, Brush.sweepGradient(listOf(Color(0xFFFF2499), Color(0xFF7B39FF), Color(0xFFFF2499))), CircleShape).padding(5.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
+                if (profilePhotoUrl.isNotBlank()) expandedImage = profilePhotoUrl
+            }) {
+                if (profilePhotoUrl.isNotBlank()) AsyncImage(model = profilePhotoUrl, contentDescription = "Foto de $displayName", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                else Icon(Icons.Default.Person, contentDescription = "Sem foto", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(34.dp))
+            }
+        }
+        Text(displayName, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text("@$publicUsername", modifier = Modifier.fillMaxWidth().padding(top = 2.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
+        val publicCategories = bio.lineSequence().firstOrNull { it.startsWith("✦ ") }?.removePrefix("✦ ").orEmpty()
+        val publicCountry = bio.lineSequence().firstOrNull { it.startsWith("🌍 ") }?.removePrefix("🌍 ").orEmpty()
+        val publicDescription = bio.lineSequence().filterNot { it.startsWith("✦ ") || it.startsWith("🌍 ") }.joinToString("\n").trim()
+        if (publicCategories.isNotBlank()) Text(publicCategories, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenTextColor)
+        if (publicDescription.isNotBlank()) Text(publicDescription, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenTextColor)
+        val joinedDate = listOf("created_at", "createdAt", "joined_at").map { user.optString(it) }.firstOrNull { it.matches(Regex("\\d{4}-\\d{2}.*")) }.orEmpty()
+        val joinMonth = joinedDate.drop(5).take(2).toIntOrNull() ?: 0
+        val monthNames = listOf("jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez")
+        Row(Modifier.fillMaxWidth().padding(top = 9.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            if (publicCountry.isNotBlank()) {
+                Icon(Icons.Default.LocationOn, contentDescription = "País", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(5.dp))
+                Text(publicCountry, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
+            }
+            if (publicCountry.isNotBlank() && joinMonth in 1..12) Spacer(Modifier.width(18.dp))
+            if (joinMonth in 1..12) {
+                Icon(Icons.Default.CalendarToday, contentDescription = "Data de entrada", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(5.dp))
+                Text("Entrou em ${monthNames[joinMonth - 1]} ${joinedDate.take(4)}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+            ProfileStat("Seguindo", user.optInt("following").toString(), Icons.Default.PersonAddAlt1) { onNotice("Lista de seguindo em preparação.") }
+            ProfileStat("Seguidores", user.optInt("followers").toString(), Icons.Default.Groups) { onNotice("Lista de seguidores em preparação.") }
+        }
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = {
                 val token = prefs.getString("token", null)
