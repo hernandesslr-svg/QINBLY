@@ -3626,25 +3626,25 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     if (commentsOpen) {
         androidx.compose.ui.window.Dialog(
             onDismissRequest = { commentsOpen = false },
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
         ) {
             BoxWithConstraints(
-                Modifier.fillMaxSize().imePadding(),
+                Modifier.fillMaxSize().imePadding().background(Color.Black.copy(alpha = 0.58f)),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 // Mesma altura e medição do painel de comentários do feed.
                 val panelHeight = maxHeight * 0.90f
                 Column(
-                    Modifier.fillMaxWidth().height(panelHeight)
+                    Modifier.fillMaxWidth().height(panelHeight).offset(y = (-5).dp)
                         .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                         .background(MaterialTheme.colorScheme.surface)
                 ) {
                     Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
-                        Box(Modifier.width(44.dp).height(5.dp).clip(CircleShape).background(Color.Gray))
+                        Box(Modifier.width(48.dp).height(5.dp).clip(CircleShape).background(Color(0xFF777887)))
                     }
                     Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Comentários", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                        TextButton(onClick = { commentsOpen = false }) { Text("Fechar") }
+                        Text("Comentários", fontSize = 25.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { commentsOpen = false }) { Icon(Icons.Default.Close, contentDescription = "Fechar comentários") }
                     }
                     HorizontalDivider()
                     if (commentsLoading) {
@@ -3663,13 +3663,15 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             }
                         }
                     }
-                    Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("😊", fontSize = 28.sp, modifier = Modifier.padding(end = 10.dp).clickable { commentDraft += "😊" })
                         OutlinedTextField(
                             value = commentDraft,
                             onValueChange = { commentDraft = it },
-                            placeholder = { Text("Escreva um comentário") },
+                            placeholder = { Text("Adicione um comentário...") },
+                            shape = RoundedCornerShape(28.dp),
                             modifier = Modifier.weight(1f),
-                            maxLines = 3
+                            singleLine = true
                         )
                         TextButton(onClick = {
                             val post = selectedPublication
@@ -3695,7 +3697,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                     }
                                 }.start()
                             }
-                        }, enabled = commentDraft.isNotBlank() && !commentsLoading) { Text("Enviar") }
+                        }, enabled = commentDraft.isNotBlank() && !commentsLoading) { Icon(Icons.Default.Send, contentDescription = "Enviar comentário") }
                     }
                 }
             }
@@ -5104,25 +5106,25 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
     if (commentsOpen) {
         androidx.compose.ui.window.Dialog(
             onDismissRequest = { commentsOpen = false },
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
         ) {
             BoxWithConstraints(
-                Modifier.fillMaxSize().imePadding(),
+                Modifier.fillMaxSize().imePadding().background(Color.Black.copy(alpha = 0.58f)),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 // Mesma altura e medição do painel de comentários do feed.
                 val panelHeight = maxHeight * 0.90f
                 Column(
-                    Modifier.fillMaxWidth().height(panelHeight)
+                    Modifier.fillMaxWidth().height(panelHeight).offset(y = (-5).dp)
                         .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                         .background(MaterialTheme.colorScheme.surface)
                 ) {
                     Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
-                        Box(Modifier.width(44.dp).height(5.dp).clip(CircleShape).background(Color.Gray))
+                        Box(Modifier.width(48.dp).height(5.dp).clip(CircleShape).background(Color(0xFF777887)))
                     }
                     Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Comentários", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                        TextButton(onClick = { commentsOpen = false }) { Text("Fechar") }
+                        Text("Comentários", fontSize = 25.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { commentsOpen = false }) { Icon(Icons.Default.Close, contentDescription = "Fechar comentários") }
                     }
                     HorizontalDivider()
                     if (commentsLoading) {
@@ -5141,13 +5143,15 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                             }
                         }
                     }
-                    Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("😊", fontSize = 28.sp, modifier = Modifier.padding(end = 10.dp).clickable { commentDraft += "😊" })
                         OutlinedTextField(
                             value = commentDraft,
                             onValueChange = { commentDraft = it },
-                            placeholder = { Text("Escreva um comentário") },
+                            placeholder = { Text("Adicione um comentário...") },
+                            shape = RoundedCornerShape(28.dp),
                             modifier = Modifier.weight(1f),
-                            maxLines = 3
+                            singleLine = true
                         )
                         TextButton(onClick = {
                             val post = selectedPublication
@@ -5173,7 +5177,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                                     }
                                 }.start()
                             }
-                        }, enabled = commentDraft.isNotBlank() && !commentsLoading) { Text("Enviar") }
+                        }, enabled = commentDraft.isNotBlank() && !commentsLoading) { Icon(Icons.Default.Send, contentDescription = "Enviar comentário") }
                     }
                 }
             }
