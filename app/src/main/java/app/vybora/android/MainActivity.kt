@@ -3314,44 +3314,114 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
 
 @Composable
 private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
-    val colors = listOf(
-        Color(0xFFFF3399), Color(0xFF268BFF), Color(0xFFFFC247),
-        Color(0xFF7856E8), Color(0xFFFF692E), Color(0xFF80D9ED),
-        Color(0xFFFF7799), Color(0xFFFFC247), Color(0xFF35C78A), Color(0xFFBBC3D2)
+    val palette = listOf(
+        Color(0xFFFF329A), Color(0xFF239BFF), Color(0xFFFFCB55),
+        Color(0xFF9874FF), Color(0xFFFF6328), Color(0xFF80E5FF),
+        Color(0xFFFF7DB8), Color(0xFFEFC15A), Color(0xFF37C992), Color(0xFFC9D7ED)
     )
-    val symbols = listOf("♥", "ϟ", "♛", "✦", "🔥", "◆", "♥", "✧", "❧", "❄")
     val index = style.coerceIn(0, 9)
-    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "frame-motion")
-    val rotation by transition.animateFloat(
+    val accent = palette[index]
+    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "ornate-frame")
+    val orbit by transition.animateFloat(
         initialValue = 0f, targetValue = 360f,
         animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-            animation = androidx.compose.animation.core.tween(
-                durationMillis = if (index == 4) 2800 else 6200,
+            androidx.compose.animation.core.tween(
+                if (index == 4) 2600 else 7400,
                 easing = androidx.compose.animation.core.LinearEasing
             )
-        ), label = "ring-rotation"
+        ), label = "ornament-orbit"
     )
-    val pulse by transition.animateFloat(
-        initialValue = 0.78f, targetValue = 1f,
+    val shimmer by transition.animateFloat(
+        initialValue = 0.55f, targetValue = 1f,
         animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-            animation = androidx.compose.animation.core.tween(900),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
-        ), label = "frame-pulse"
+            androidx.compose.animation.core.tween(1050),
+            androidx.compose.animation.core.RepeatMode.Reverse
+        ), label = "ornament-shimmer"
     )
-    Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
-        Box(
-            Modifier.fillMaxSize().graphicsLayer { rotationZ = rotation }
-                .border(4.dp, Brush.sweepGradient(
-                    listOf(colors[index], Color.White.copy(alpha = 0.85f),
-                        colors[index].copy(alpha = 0.55f), colors[index])
-                ), CircleShape)
+    androidx.compose.foundation.Canvas(Modifier.size(diameter)) {
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        val r = size.minDimension * 0.438f
+        val thick = size.minDimension * 0.044f
+        val outer = size.minDimension * 0.482f
+        drawCircle(accent.copy(alpha = 0.28f), radius = r + thick * 0.95f,
+            center = androidx.compose.ui.geometry.Offset(cx, cy),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick * 1.9f))
+        drawCircle(
+            brush = Brush.sweepGradient(
+                listOf(accent, Color.White.copy(alpha = 0.95f), accent,
+                    accent.copy(alpha = 0.65f), Color.White, accent)
+            ),
+            radius = r, center = androidx.compose.ui.geometry.Offset(cx, cy),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick)
         )
-        Text(symbols[index], color = colors[index], fontSize = (diameter.value * 0.19f).sp,
-            modifier = Modifier.align(Alignment.TopCenter)
-                .graphicsLayer { alpha = pulse; scaleX = pulse; scaleY = pulse })
-        Text(symbols[index], color = colors[index], fontSize = (diameter.value * 0.15f).sp,
-            modifier = Modifier.align(Alignment.BottomCenter)
-                .graphicsLayer { alpha = pulse })
+        drawCircle(accent.copy(alpha = 0.8f), radius = r - thick * 0.72f,
+            center = androidx.compose.ui.geometry.Offset(cx, cy),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick * 0.23f))
+        val count = when (index) { 4 -> 18; 2, 7, 8, 9 -> 14; else -> 12 }
+        for (n in 0 until count) {
+            val angle = (n * 360f / count + orbit * (if (index == 2 || index == 7) 0.035f else 0.14f)) *
+                kotlin.math.PI.toFloat() / 180f
+            val wave = kotlin.math.sin((orbit * 0.065f + n * 43f) *
+                kotlin.math.PI.toFloat() / 180f)
+            val distance = outer - thick * 0.32f + wave * thick * 0.24f
+            val x = cx + kotlin.math.cos(angle) * distance
+            val y = cy + kotlin.math.sin(angle) * distance
+            val dot = androidx.compose.ui.geometry.Offset(x, y)
+            val radius = thick * when (index) {
+                4 -> 0.7f + (wave + 1f) * 0.28f
+                5, 9 -> 0.44f + shimmer * 0.25f
+                else -> 0.48f + shimmer * 0.24f
+            }
+            when (index) {
+                0, 6 -> {
+                    drawCircle(accent.copy(alpha = 0.35f), radius * 1.7f, dot)
+                    drawCircle(if (n % 3 == 0) Color.White else accent, radius, dot)
+                    drawCircle(Color.White.copy(alpha = shimmer), radius * 0.34f,
+                        androidx.compose.ui.geometry.Offset(x - radius * 0.25f, y - radius * 0.25f))
+                }
+                1 -> {
+                    val next = angle + 0.14f
+                    drawLine(Color(0xFFB8EEFF), dot,
+                        androidx.compose.ui.geometry.Offset(
+                            cx + kotlin.math.cos(next) * (distance - thick * 1.3f),
+                            cy + kotlin.math.sin(next) * (distance - thick * 1.3f)),
+                        strokeWidth = thick * 0.5f)
+                    drawCircle(Color.White.copy(alpha = shimmer), radius, dot)
+                }
+                4 -> {
+                    drawLine(accent.copy(alpha = 0.9f), dot,
+                        androidx.compose.ui.geometry.Offset(
+                            cx + kotlin.math.cos(angle) * (distance + thick * (1.2f + wave)),
+                            cy + kotlin.math.sin(angle) * (distance + thick * (1.2f + wave))),
+                        strokeWidth = thick * (0.65f + shimmer * 0.3f),
+                        cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                    drawCircle(Color(0xFFFFDA55), radius * 0.62f, dot)
+                }
+                2, 7 -> {
+                    drawCircle(Color(0xFFFFEBA2).copy(alpha = 0.4f), radius * 1.6f, dot)
+                    drawCircle(if (n % 2 == 0) Color.White else accent, radius, dot)
+                }
+                8 -> {
+                    drawOval(accent.copy(alpha = shimmer),
+                        topLeft = androidx.compose.ui.geometry.Offset(x - radius, y - radius * 1.7f),
+                        size = androidx.compose.ui.geometry.Size(radius * 2f, radius * 3.4f))
+                    drawCircle(Color(0xFFCBFFE8), radius * 0.4f, dot)
+                }
+                else -> {
+                    drawCircle(accent.copy(alpha = 0.35f), radius * 1.7f, dot)
+                    drawLine(Color.White.copy(alpha = shimmer),
+                        androidx.compose.ui.geometry.Offset(x - radius, y),
+                        androidx.compose.ui.geometry.Offset(x + radius, y),
+                        strokeWidth = thick * 0.2f)
+                    drawLine(Color.White.copy(alpha = shimmer),
+                        androidx.compose.ui.geometry.Offset(x, y - radius),
+                        androidx.compose.ui.geometry.Offset(x, y + radius),
+                        strokeWidth = thick * 0.2f)
+                    drawCircle(Color.White, radius * 0.38f, dot)
+                }
+            }
+        }
     }
 }
 
