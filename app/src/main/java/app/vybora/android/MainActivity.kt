@@ -3973,7 +3973,7 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
     val density = androidx.compose.ui.platform.LocalDensity.current
     val screenWidthDp = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp
     val previewWidthPx = with(density) { (screenWidthDp - 16).coerceAtLeast(1).dp.toPx() }
-    val previewHeightPx = previewWidthPx * 9f / 16f
+    val previewHeightPx = previewWidthPx
     val profilePhotoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             selectedProfilePhoto = uri
@@ -4019,8 +4019,8 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
         ) {
             if (selectedProfilePhoto != null) {
                 Box(
-                    Modifier.fillMaxWidth().padding(horizontal = 8.dp).aspectRatio(16f / 9f)
-                        .clip(RoundedCornerShape(2.dp))
+                    Modifier.fillMaxWidth().padding(horizontal = 8.dp).aspectRatio(1f)
+                        .clip(CircleShape)
                         .background(Color(0xFF101010))
                         .pointerInput(selectedProfilePhoto) {
                             detectTransformGestures { centroid, pan, zoom, _ ->
@@ -4052,26 +4052,7 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
                         },
                         contentScale = ContentScale.Fit
                     )
-                    // Grade de referência na mesma proporção 16:9 da foto do perfil.
-                    Row(Modifier.fillMaxSize()) {
-                        Box(Modifier.weight(1f).fillMaxHeight().border(width = 0.5.dp, color = Color.White.copy(alpha = 0.45f)))
-                        Box(Modifier.weight(1f).fillMaxHeight().border(width = 0.5.dp, color = Color.White.copy(alpha = 0.45f)))
-                        Box(Modifier.weight(1f).fillMaxHeight().border(width = 0.5.dp, color = Color.White.copy(alpha = 0.45f)))
-                    }
-                    Column(Modifier.fillMaxSize()) {
-                        Box(Modifier.weight(1f).fillMaxWidth().border(width = 0.5.dp, color = Color.White.copy(alpha = 0.45f)))
-                        Box(Modifier.weight(1f).fillMaxWidth().border(width = 0.5.dp, color = Color.White.copy(alpha = 0.45f)))
-                        Box(Modifier.weight(1f).fillMaxWidth().border(width = 0.5.dp, color = Color.White.copy(alpha = 0.45f)))
-                    }
-                    // Cantos brancos da moldura de ajuste.
-                    Box(Modifier.align(Alignment.TopStart).size(width = 22.dp, height = 4.dp).background(Color.White))
-                    Box(Modifier.align(Alignment.TopStart).size(width = 4.dp, height = 22.dp).background(Color.White))
-                    Box(Modifier.align(Alignment.TopEnd).size(width = 22.dp, height = 4.dp).background(Color.White))
-                    Box(Modifier.align(Alignment.TopEnd).size(width = 4.dp, height = 22.dp).background(Color.White))
-                    Box(Modifier.align(Alignment.BottomStart).size(width = 22.dp, height = 4.dp).background(Color.White))
-                    Box(Modifier.align(Alignment.BottomStart).size(width = 4.dp, height = 22.dp).background(Color.White))
-                    Box(Modifier.align(Alignment.BottomEnd).size(width = 22.dp, height = 4.dp).background(Color.White))
-                    Box(Modifier.align(Alignment.BottomEnd).size(width = 4.dp, height = 22.dp).background(Color.White))
+                    Box(Modifier.fillMaxSize().border(2.dp, Color.White.copy(alpha = 0.75f), CircleShape))
                 }
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -4125,8 +4106,8 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
                                 // Salva exatamente o enquadramento mostrado no editor, na mesma proporção 16:9 da capa.
                                 source = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
                                     ?: throw IllegalStateException("Não foi possível abrir a imagem.")
-                                val outW = 1600
-                                val outH = 900
+                                val outW = 1080
+                                val outH = 1080
                                 output = Bitmap.createBitmap(outW, outH, Bitmap.Config.ARGB_8888)
                                 val canvas = Canvas(output!!)
                                 val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
@@ -4143,7 +4124,7 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
                                 val left = (outW - fgW) / 2f + x * outW / previewW
                                 val top = (outH - fgH) / 2f + y * outH / previewH
                                 canvas.drawBitmap(source!!, null, android.graphics.RectF(left, top, left + fgW, top + fgH), paint)
-                                val outFile = File(context.cacheDir, "vybora-cover-framing.jpg")
+                                val outFile = File(context.cacheDir, "qinbly-profile-square.jpg")
                                 FileOutputStream(outFile).use { stream -> output!!.compress(Bitmap.CompressFormat.JPEG, 94, stream) }
                                 // Guarda a foto original separadamente para que tocar na capa abra a imagem completa.
                                 VyboraApi.uploadProfileImage(context, token, uri, "cover_original")
@@ -4169,7 +4150,7 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
                 enabled = !loading && selectedProfilePhoto != null,
                 modifier = Modifier.weight(1f).height(54.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Pink, contentColor = Color.White)
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1677E8), contentColor = Color.White)
             ) {
                 if (loading) CircularProgressIndicator(Modifier.size(18.dp), color = Color.Black, strokeWidth = 2.dp)
                 else Text("Salvar", fontWeight = FontWeight.Bold)
