@@ -1,0 +1,8 @@
+name: Extract profile frames
+on: workflow_dispatch
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: unzip -o qinbly_android_assets.zip -d .
