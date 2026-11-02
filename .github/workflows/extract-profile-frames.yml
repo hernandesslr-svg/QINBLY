@@ -1,8 +1,20 @@
 name: Extract profile frames
-on: workflow_dispatch
+on:
+  push:
+    paths:
+      - '.github/workflows/extract-profile-frames.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   extract:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: unzip -o qinbly_android_assets.zip -d .
+      - name: Save extracted PNGs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/res/drawable-nodpi/*.png
+          git diff --cached --quiet || (git commit -m "Add QINBLY frame images" && git push)
