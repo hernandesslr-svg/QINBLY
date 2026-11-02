@@ -154,7 +154,6 @@ class RemoteUiActivity : ComponentActivity() {
      * Assim, a atualização do APK não depende da disponibilidade do backend Railway.
      */
     private fun showReleaseFallback() {
-        val apkUrl = "https://github.com/hernandesslr-svg/VYBORA/releases/latest/download/vybora-release.apk"
         val html = """
             <!doctype html><html lang="pt-BR"><meta name="viewport" content="width=device-width,initial-scale=1">
             <meta charset="utf-8"><title>Atualizações do QINBLY</title>
@@ -163,10 +162,9 @@ class RemoteUiActivity : ComponentActivity() {
             button{background:#8b35ff;color:white;border:0;border-radius:12px;padding:16px;font-weight:bold}
             p{line-height:1.5;color:#c8ccdb}</style>
             <h1>Atualizações do QINBLY</h1><section class="card">
-            <h3>Download disponível</h3>
-            <p>O GitHub limitou temporariamente a consulta de versões. Você ainda pode baixar a versão publicada mais recente sem sair do aplicativo.</p>
-            <p>Confirme a instalação somente se a versão oferecida for mais recente que a instalada.</p>
-            <button onclick="VyboraNative.downloadAndInstall('https://github.com/hernandesslr-svg/VYBORA/releases/latest/download/vybora-release.apk')">Baixar atualização</button>
+            <h3>Não foi possível verificar atualizações</h3>
+            <p>A consulta ao GitHub está temporariamente indisponível. Nenhuma atualização nova foi confirmada.</p>
+            <button onclick="VyboraNative.retryUpdateCheck()">Tentar novamente</button>
             </section></html>
         """.trimIndent()
         runOnUiThread { webView.loadDataWithBaseURL("https://github.com/", html, "text/html", "UTF-8", null) }
@@ -269,6 +267,9 @@ class RemoteUiActivity : ComponentActivity() {
     }
 
     private inner class SessionBridge {
+        @JavascriptInterface
+        fun retryUpdateCheck() { runOnUiThread { loadLatestReleasePage() } }
+
         @JavascriptInterface
         fun saveSession(token: String?, username: String?) {
             val safeToken = token?.trim().orEmpty()
