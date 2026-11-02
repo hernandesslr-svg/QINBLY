@@ -2322,7 +2322,7 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
                                         .fillMaxWidth()
                                         .background(RemoteAppearance.feedActionBackgroundColor)
                                         .heightIn(min = 52.dp)
-                                        .padding(horizontal = 12.dp, vertical = 5.dp),
+                                        .padding(horizontal = 16.dp, vertical = 5.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
@@ -2408,13 +2408,10 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         RepostVerifiedIcon(post.id in repostedPostIds, tint = RemoteAppearance.actionIconColor)
-                                        if (post.id.startsWith("demo-post-")) {
-                                            val repostCount = 10000 + (post.id.removePrefix("demo-post-").toIntOrNull() ?: 1) * 613
-                                            Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", repostCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
-                                        }
+                                        Text("0", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
                                     }
                                     Box(Modifier.width(1.dp).height(18.dp).background(Color(0xFFE1E4E9)))
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     IconButton(
                                                                                 onClick = {
                                             val wasSaved = post.id in savedPostIds
@@ -2432,10 +2429,7 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
                                             modifier = Modifier.size(24.dp)
                                         )
                                     }
-                                        if (post.id.startsWith("demo-post-")) {
-                                                val saveCount = 11000 + (post.id.removePrefix("demo-post-").toIntOrNull() ?: 1) * 721
-                                                Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", saveCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
-                                        }
+                                        Text("0", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
                                     }
 
                                         Box(Modifier.width(1.dp).height(18.dp).background(Color(0xFFE1E4E9)))
@@ -2448,10 +2442,7 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         RoundedPaperPlaneIcon(tint = RemoteAppearance.actionIconColor)
-                                        if (post.id.startsWith("demo-post-")) {
-                                        val shareCount = 12000 + (post.id.removePrefix("demo-post-").toIntOrNull() ?: 1) * 987
-                                        Text(String.format(java.util.Locale("pt", "BR"), "%.1f mil", shareCount / 1000.0), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
-                                    }
+                                        Text("0", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
                                     }
                                 }
                             }
