@@ -94,6 +94,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.SettingsInputAntenna
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.TextFields
@@ -1819,11 +1820,12 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                     ) {
                         val filterTint = if (active) Color.White else if (filter == "Tendências") Color(0xFFFF663C) else Color(0xFF1677F2)
                         when (filter) {
-                            "Novidades", "Vídeos", "Fotos", "Tendências" -> {
+                            "Novidades", "Vídeos", "Fotos", "Tendências", "Perto de mim" -> {
                                 val filterIcon = when (filter) {
                                     "Novidades" -> Icons.Default.AutoAwesome
                                     "Vídeos" -> Icons.Default.PlayCircle
                                     "Fotos" -> Icons.Default.Image
+                                    "Perto de mim" -> Icons.Default.MyLocation
                                     else -> Icons.Default.LocalFireDepartment
                                 }
                                 Icon(
