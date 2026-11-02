@@ -3326,6 +3326,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     var expandedImage by remember { mutableStateOf("") }
     var photoMenuOpen by remember { mutableStateOf(false) }
     var viewingPublication by remember { mutableStateOf(false) }
+    var selectedPublicationCaption by remember { mutableStateOf("") }
     var publicationComment by remember { mutableStateOf("") }
     var joinedMonthYear by remember { mutableStateOf("") }
 
@@ -3493,7 +3494,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.fillMaxWidth().heightIn(max = 560.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 items(profilePosts.filter { profileTab != "Vídeos" || it.mediaType == "video" }.filter { profileTab != "Fotos" || it.mediaType == "image" }.size) { index ->
                     val post = profilePosts.filter { profileTab != "Vídeos" || it.mediaType == "video" }.filter { profileTab != "Fotos" || it.mediaType == "image" }[index]
-                    Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(8.dp)).background(Brush.linearGradient(listOf(Color(0xFF241047), Color(0xFF9D236E), Color(0xFF071A38)))).clickable { if (post.mediaUrl.isNotBlank()) { expandedImage = post.mediaUrl; viewingPublication = true } }) {
+                    Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(8.dp)).background(Brush.linearGradient(listOf(Color(0xFF241047), Color(0xFF9D236E), Color(0xFF071A38)))).clickable { if (post.mediaUrl.isNotBlank()) { expandedImage = post.mediaUrl; selectedPublicationCaption = post.caption; viewingPublication = true } }) {
                         if (post.mediaUrl.isNotBlank()) AsyncImage(model = post.mediaUrl, contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                         else Column(Modifier.align(Alignment.Center).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = null, tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(30.dp))
@@ -3511,57 +3512,61 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             onDismissRequest = { expandedImage = "" },
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
         ) {
-            // Visualização em tela cheia usando FIT: mostra a imagem inteira, sem recortar as bordas.
-            Box(Modifier.fillMaxSize().background(Color.Black)) {
-                AsyncImage(
-                    model = expandedImage,
-                    contentDescription = "Foto de capa completa",
-                    modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(horizontal = 8.dp, vertical = 24.dp).clickable { expandedImage = "" },
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                )
-                Box(Modifier.align(Alignment.TopEnd).padding(8.dp)) {
-                    IconButton(onClick = { photoMenuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Opções da foto", tint = Color.White) }
-                    DropdownMenu(expanded = photoMenuOpen, onDismissRequest = { photoMenuOpen = false }) {
-                        DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = { photoMenuOpen = false; saveProfilePhotoToDevice(profileContext, expandedImage, onNotice) })
-                        DropdownMenuItem(text = { Text(if (viewingPublication) "Apagar publicação" else "Apagar foto") }, onClick = { photoMenuOpen = false; onNotice(if (viewingPublication) "Exclusão da publicação ainda não disponível. Nenhuma publicação foi apagada." else "Exclusão da foto ainda não disponível. Nenhuma foto foi apagada.") })
-                    }
-                }
-                if (viewingPublication) {
-                    Row(
-                        Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                            .background(Color.Black.copy(alpha = 0.88f))
-                            .padding(horizontal = 12.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = publicationComment,
-                            onValueChange = { publicationComment = it },
-                            modifier = Modifier.weight(1f),
-                            placeholder = { Text("Adicionar um comentário...", color = Color.LightGray) },
-                            singleLine = true,
-                            shape = RoundedCornerShape(26.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = Color(0xFF1677E8),
-                                unfocusedBorderColor = Color.Gray
-                            )
-                        )
-                        IconButton(onClick = {
-                            if (publicationComment.isNotBlank()) onNotice("Comentários desta publicação: abra a publicação no feed para enviar.")
-                        }, enabled = publicationComment.isNotBlank()) {
-                            Icon(Icons.Default.Send, contentDescription = "Enviar comentário", tint = if (publicationComment.isNotBlank()) Color(0xFF1677E8) else Color.Gray)
+            Column(Modifier.fillMaxSize().background(Color(0xFF101014)).padding(horizontal = 12.dp, vertical = 10.dp)) {
+                Row(Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { expandedImage = "" }) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White) }
+                    Spacer(Modifier.weight(1f))
+                    if (viewingPublication) Text("Publicação", color = Color.White, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.weight(1f))
+                    Box {
+                        IconButton(onClick = { photoMenuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Opções", tint = Color.White) }
+                        DropdownMenu(expanded = photoMenuOpen, onDismissRequest = { photoMenuOpen = false }) {
+                            DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = {
+                                photoMenuOpen = false
+                                saveProfilePhotoToDevice(profileContext, expandedImage, onNotice)
+                            })
+                            DropdownMenuItem(text = { Text(if (viewingPublication) "Apagar publicação" else "Apagar foto") }, onClick = {
+                                photoMenuOpen = false
+                                onNotice("Exclusão ainda não conectada. Nenhuma publicação foi apagada.")
+                            })
                         }
                     }
                 }
-                IconButton(
-                    onClick = { expandedImage = "" },
-                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp).background(Color.Black.copy(alpha = 0.65f), CircleShape)
-                ) { Icon(Icons.Default.ArrowBack, contentDescription = "Fechar imagem", tint = RemoteAppearance.screenTextColor) }
+                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                    AsyncImage(
+                        model = expandedImage,
+                        contentDescription = "Imagem da publicação",
+                        modifier = Modifier.fillMaxWidth().fillMaxHeight().clip(RoundedCornerShape(12.dp)),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                    )
+                }
+                if (viewingPublication) {
+                    if (selectedPublicationCaption.isNotBlank()) {
+                        Text(selectedPublicationCaption, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp), color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().padding(bottom = 10.dp).border(1.dp, Color.DarkGray, RoundedCornerShape(28.dp)).padding(horizontal = 8.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { onNotice("Abra a publicação no feed para curtir.") }) {
+                            Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = Color.White)
+                        }
+                        IconButton(onClick = { onNotice("Abra a publicação no feed para ver e enviar comentários.") }) {
+                            Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White)
+                        }
+                        IconButton(onClick = { onNotice("Compartilhamento desta publicação em preparação.") }) {
+                            Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = Color.White)
+                        }
+                        IconButton(onClick = { onNotice("Abra a publicação no feed para salvar.") }) {
+                            Icon(Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color.White)
+                        }
+                    }
+                }
             }
         }
     }
+
 }
 @Composable
 private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
@@ -4682,6 +4687,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
     var expandedImage by remember { mutableStateOf<String?>(null) }
     var photoMenuOpen by remember { mutableStateOf(false) }
     var viewingPublication by remember { mutableStateOf(false) }
+    var selectedPublicationCaption by remember { mutableStateOf("") }
     var publicationComment by remember { mutableStateOf("") }
     var showMoreOptions by remember { mutableStateOf(false) }
     var profilePosts by remember(username) { mutableStateOf<List<VyboraApi.PostSummary>>(emptyList()) }
@@ -4828,7 +4834,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                 profilePosts.chunked(3).forEach { rowPosts ->                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         rowPosts.forEach { post ->
                             Box(Modifier.weight(1f).height(145.dp).clip(RoundedCornerShape(7.dp)).background(Color(0xFF111426)).clickable {
-                                if (post.mediaUrl.isNotBlank()) expandedImage = post.mediaUrl; viewingPublication = true
+                                if (post.mediaUrl.isNotBlank()) expandedImage = post.mediaUrl; selectedPublicationCaption = post.caption; viewingPublication = true
                             }) {
                                 if (post.mediaUrl.isNotBlank()) {
                                     AsyncImage(model = post.mediaUrl, contentDescription = "Publicação de $displayName", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
@@ -4846,47 +4852,60 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
         Spacer(Modifier.height(24.dp))
     }
     if (expandedImage != null) {
-        androidx.compose.ui.window.Dialog(onDismissRequest = { expandedImage = null }) {
-            Box(Modifier.fillMaxWidth().heightIn(max = 650.dp).clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
-                AsyncImage(model = expandedImage, contentDescription = "Imagem ampliada de $displayName", modifier = Modifier.fillMaxWidth().heightIn(min = 280.dp, max = 650.dp).clickable { expandedImage = null }, contentScale = androidx.compose.ui.layout.ContentScale.Fit)
-                Box(Modifier.align(Alignment.TopEnd).padding(8.dp)) {
-                    IconButton(onClick = { photoMenuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Opções da foto", tint = Color.White) }
-                    DropdownMenu(expanded = photoMenuOpen, onDismissRequest = { photoMenuOpen = false }) {
-                        DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = { photoMenuOpen = false; expandedImage?.let { saveProfilePhotoToDevice(context, it, onNotice) } })
-                        DropdownMenuItem(text = { Text(if (viewingPublication) "Denunciar publicação" else "Denunciar foto") }, onClick = { photoMenuOpen = false; onNotice("Denúncias ainda não estão conectadas. Nenhuma denúncia foi enviada.") })
-                    }
-                }
-                if (viewingPublication) {
-                    Row(
-                        Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                            .background(Color.Black.copy(alpha = 0.88f))
-                            .padding(horizontal = 12.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = publicationComment,
-                            onValueChange = { publicationComment = it },
-                            modifier = Modifier.weight(1f),
-                            placeholder = { Text("Adicionar um comentário...", color = Color.LightGray) },
-                            singleLine = true,
-                            shape = RoundedCornerShape(26.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = Color(0xFF1677E8),
-                                unfocusedBorderColor = Color.Gray
-                            )
-                        )
-                        IconButton(onClick = {
-                            if (publicationComment.isNotBlank()) onNotice("Comentários desta publicação: abra a publicação no feed para enviar.")
-                        }, enabled = publicationComment.isNotBlank()) {
-                            Icon(Icons.Default.Send, contentDescription = "Enviar comentário", tint = if (publicationComment.isNotBlank()) Color(0xFF1677E8) else Color.Gray)
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { expandedImage = null },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Column(Modifier.fillMaxSize().background(Color(0xFF101014)).padding(horizontal = 12.dp, vertical = 10.dp)) {
+                Row(Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { expandedImage = null }) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White) }
+                    Spacer(Modifier.weight(1f))
+                    if (viewingPublication) Text("Publicação", color = Color.White, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.weight(1f))
+                    Box {
+                        IconButton(onClick = { photoMenuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Opções", tint = Color.White) }
+                        DropdownMenu(expanded = photoMenuOpen, onDismissRequest = { photoMenuOpen = false }) {
+                            DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = {
+                                photoMenuOpen = false
+                                saveProfilePhotoToDevice(context, expandedImage.orEmpty(), onNotice)
+                            })
+                            DropdownMenuItem(text = { Text(if (viewingPublication) "Denunciar publicação" else "Denunciar foto") }, onClick = {
+                                photoMenuOpen = false
+                                onNotice("Denúncia ainda não conectada. Nenhuma denúncia foi enviada.")
+                            })
                         }
                     }
                 }
-                IconButton(onClick = { expandedImage = null }, modifier = Modifier.align(Alignment.TopStart).padding(8.dp).background(Color.Black.copy(alpha = 0.65f), CircleShape)) {
-                    Icon(Icons.Default.Close, contentDescription = "Fechar imagem", tint = RemoteAppearance.screenTextColor)
+                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                    AsyncImage(
+                        model = expandedImage.orEmpty(),
+                        contentDescription = "Imagem da publicação",
+                        modifier = Modifier.fillMaxWidth().fillMaxHeight().clip(RoundedCornerShape(12.dp)),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                    )
+                }
+                if (viewingPublication) {
+                    if (selectedPublicationCaption.isNotBlank()) {
+                        Text(selectedPublicationCaption, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp), color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().padding(bottom = 10.dp).border(1.dp, Color.DarkGray, RoundedCornerShape(28.dp)).padding(horizontal = 8.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { onNotice("Abra a publicação no feed para curtir.") }) {
+                            Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = Color.White)
+                        }
+                        IconButton(onClick = { onNotice("Abra a publicação no feed para ver e enviar comentários.") }) {
+                            Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White)
+                        }
+                        IconButton(onClick = { onNotice("Compartilhamento desta publicação em preparação.") }) {
+                            Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = Color.White)
+                        }
+                        IconButton(onClick = { onNotice("Abra a publicação no feed para salvar.") }) {
+                            Icon(Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color.White)
+                        }
+                    }
                 }
             }
         }
