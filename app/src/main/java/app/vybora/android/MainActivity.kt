@@ -459,15 +459,18 @@ private fun AccountSwitcherDialog(
 
 private object QiblyTheme {
     var dark by androidx.compose.runtime.mutableStateOf(false)
-    val background: Color get() = if (dark) Color(0xFF171B24) else Color.White
-    val card: Color get() = if (dark) Color(0xFF242B36) else Color.White
+    val background: Color get() = if (dark) Color.Black else Color.White
+    val card: Color get() = if (dark) Color.Black else Color.White
     val text: Color get() = if (dark) Color(0xFFF5F7FA) else Color.Black
     val secondary: Color get() = if (dark) Color(0xFFB4BDCA) else Color(0xFF555555)
     val border: Color get() = if (dark) Color(0xFF303B4C) else Color(0xFFE4E4E4)
 }
 
 private object RemoteAppearance {
-    var feedTextColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    private var feedTextColorBase by androidx.compose.runtime.mutableStateOf(Color.White)
+    var feedTextColor: Color
+        get() = if (QiblyTheme.dark) Color.White else feedTextColorBase
+        set(value) { feedTextColorBase = value }
     private var feedSecondaryTextColorBase by androidx.compose.runtime.mutableStateOf(Color(0xFFADB2CB))
     var feedSecondaryTextColor: Color
         get() = if (QiblyTheme.dark) Color(0xFFB4BDCA) else feedSecondaryTextColorBase
@@ -496,7 +499,10 @@ private object RemoteAppearance {
     var screenSecondaryTextColor: Color
         get() = if (QiblyTheme.dark) Color(0xFFB4BDCA) else screenSecondaryTextColorBase
         set(value) { screenSecondaryTextColorBase = value }
-    var headerTextColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    private var headerTextColorBase by androidx.compose.runtime.mutableStateOf(Color.White)
+    var headerTextColor: Color
+        get() = if (QiblyTheme.dark) Color.White else headerTextColorBase
+        set(value) { headerTextColorBase = value }
     var headerUnderlineColor by androidx.compose.runtime.mutableStateOf(Color.White)
     var headerTextSize by androidx.compose.runtime.mutableIntStateOf(17)
     var headerVisible by androidx.compose.runtime.mutableStateOf(true)
@@ -509,7 +515,10 @@ private object RemoteAppearance {
     var navigationLabels by androidx.compose.runtime.mutableStateOf(listOf("Início", "Lives", "Criar", "Mensagens", "Perfil"))
     var feedLabels by androidx.compose.runtime.mutableStateOf(listOf("Descobrir", "Seguindo", "Comunidade"))
     var navigationLabelSize by androidx.compose.runtime.mutableIntStateOf(14)
-    var headerBackgroundColor by androidx.compose.runtime.mutableStateOf(Color.Black)
+    private var headerBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color.Black)
+    var headerBackgroundColor: Color
+        get() = if (QiblyTheme.dark) Color.Black else headerBackgroundColorBase
+        set(value) { headerBackgroundColorBase = value }
     var headerHorizontalPadding by androidx.compose.runtime.mutableIntStateOf(24)
     var headerVerticalPadding by androidx.compose.runtime.mutableIntStateOf(10)
     var feedSpacing by androidx.compose.runtime.mutableIntStateOf(0)
@@ -779,16 +788,16 @@ private fun VyboraApp() {
                     }
                 }
                 NavigationBar(
-                    containerColor = navigationBackgroundColor,
-                    contentColor = Color.White,
+                    containerColor = if (QiblyTheme.dark) Color.Black else navigationBackgroundColor,
+                    contentColor = if (QiblyTheme.dark) Color.White else Color.Black,
                     tonalElevation = 0.dp
                 ) {
                     val navColors = NavigationBarItemDefaults.colors(
                         selectedIconColor = Color(0xFF1677F2),
                         selectedTextColor = Color(0xFF1677F2),
                         indicatorColor = Color.Transparent,
-                        unselectedIconColor = navigationUnselectedColor,
-                        unselectedTextColor = navigationUnselectedColor
+                        unselectedIconColor = if (QiblyTheme.dark) Color.White else navigationUnselectedColor,
+                        unselectedTextColor = if (QiblyTheme.dark) Color.White else navigationUnselectedColor
                     )
                     NavigationBarItem(selected = tab == 0 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; messageRecipient = ""; showAuth = false; if (tab == 0) navTopRequest++; tab = 0 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Home, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 0 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text(RemoteAppearance.navigationLabels[0], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                     NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 3) navTopRequest++; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Radio, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text(RemoteAppearance.navigationLabels[1], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
@@ -1938,11 +1947,11 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
                 }
             }
             IconButton(onClick = onSearch, modifier = Modifier.size(40.dp)) {
-                Icon(Icons.Default.Search, contentDescription = "Buscar", tint = Color.Black, modifier = Modifier.size(26.dp))
+                Icon(Icons.Default.Search, contentDescription = "Buscar", tint = if (QiblyTheme.dark) Color.White else Color.Black, modifier = Modifier.size(26.dp))
             }
             Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
                 IconButton(onClick = onNotifications, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.Default.Notifications, contentDescription = "Notificações", tint = Color.Black, modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.Notifications, contentDescription = "Notificações", tint = if (QiblyTheme.dark) Color.White else Color.Black, modifier = Modifier.size(28.dp))
                 }
                 if (unreadNotifications > 0) {
                     Box(Modifier.align(Alignment.TopEnd).offset(x = (-1).dp, y = 1.dp).clip(CircleShape)
@@ -1977,7 +1986,7 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
                             if (active) Brush.horizontalGradient(
                                 listOf(Color(0xFF244BFF), Color(0xFF006BEB))
                             ) else Brush.horizontalGradient(
-                                listOf(Color(0xFFF3F7FF), Color(0xFFEAF2FF))
+                                if (QiblyTheme.dark) listOf(Color(0xFF151515), Color(0xFF151515)) else listOf(Color(0xFFF3F7FF), Color(0xFFEAF2FF))
                             )
                         )
                         .clickable { selectedFeedFilter = filter }
@@ -2029,7 +2038,7 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
                             }
                         }
                         Text(filter,
-                            color = if (active) Color.White else Color(0xFF20202B),
+                            color = if (active || QiblyTheme.dark) Color.White else Color(0xFF20202B),
                             fontSize = 13.sp,
                             fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
                             maxLines = 1)
