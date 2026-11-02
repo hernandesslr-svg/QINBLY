@@ -3515,6 +3515,20 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
     }
 
+    val likeSelectedPublication: () -> Unit = {
+        val post = selectedPublication
+        val token = profilePrefs.getString("token", null)
+        if (post == null) onNotice("Publicação indisponível.")
+        else if (token.isNullOrBlank()) onNotice("Entre na conta para curtir.")
+        else if (!postLiked) Thread {
+            try {
+                val liked = VyboraApi.toggleLike(token, post.id)
+                android.os.Handler(android.os.Looper.getMainLooper()).post { postLiked = liked }
+            } catch (e: Exception) {
+                android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Erro ao curtir.") }
+            }
+        }.start()
+    }
     if (expandedImage.isNotBlank()) {
         androidx.compose.ui.window.Dialog(
             onDismissRequest = { expandedImage = "" },
@@ -3548,7 +3562,12 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     contentDescription = "Imagem da publicação",
                     modifier = Modifier.fillMaxWidth()
                         .heightIn(max = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp * 0.56f)
-                        .clip(RoundedCornerShape(12.dp)),
+                        .clip(RoundedCornerShape(12.dp))
+                        .pointerInput(viewingPublication, selectedPublication?.id, postLiked) {
+                            detectTapGestures(onDoubleTap = {
+                                if (viewingPublication) likeSelectedPublication()
+                            })
+                        },
                     contentScale = androidx.compose.ui.layout.ContentScale.Fit
                 )
                 if (viewingPublication) {
@@ -3560,18 +3579,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = { val post = selectedPublication
-                            val token = profilePrefs.getString("token", null)
-                            if (post == null) onNotice("Publicação indisponível.")
-                            else if (token.isNullOrBlank()) onNotice("Entre na conta para curtir.")
-                            else Thread {
-                                try {
-                                    val liked = VyboraApi.toggleLike(token, post.id)
-                                    android.os.Handler(android.os.Looper.getMainLooper()).post { postLiked = liked }
-                                } catch (e: Exception) {
-                                    android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Erro ao curtir.") }
-                                }
-                            }.start() }) {
+                        IconButton(onClick = likeSelectedPublication) {
                             Icon(if (postLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = if (postLiked) Color.Red else Color.White)
                         }
                         IconButton(onClick = { val post = selectedPublication
@@ -4951,6 +4959,20 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
         }
         Spacer(Modifier.height(24.dp))
     }
+    val likeSelectedPublication: () -> Unit = {
+        val post = selectedPublication
+        val token = prefs.getString("token", null)
+        if (post == null) onNotice("Publicação indisponível.")
+        else if (token.isNullOrBlank()) onNotice("Entre na conta para curtir.")
+        else if (!postLiked) Thread {
+            try {
+                val liked = VyboraApi.toggleLike(token, post.id)
+                android.os.Handler(android.os.Looper.getMainLooper()).post { postLiked = liked }
+            } catch (e: Exception) {
+                android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Erro ao curtir.") }
+            }
+        }.start()
+    }
     if (expandedImage != null) {
         androidx.compose.ui.window.Dialog(
             onDismissRequest = { expandedImage = null },
@@ -4984,7 +5006,12 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                     contentDescription = "Imagem da publicação",
                     modifier = Modifier.fillMaxWidth()
                         .heightIn(max = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp * 0.56f)
-                        .clip(RoundedCornerShape(12.dp)),
+                        .clip(RoundedCornerShape(12.dp))
+                        .pointerInput(viewingPublication, selectedPublication?.id, postLiked) {
+                            detectTapGestures(onDoubleTap = {
+                                if (viewingPublication) likeSelectedPublication()
+                            })
+                        },
                     contentScale = androidx.compose.ui.layout.ContentScale.Fit
                 )
                 if (viewingPublication) {
@@ -4996,18 +5023,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = { val post = selectedPublication
-                            val token = prefs.getString("token", null)
-                            if (post == null) onNotice("Publicação indisponível.")
-                            else if (token.isNullOrBlank()) onNotice("Entre na conta para curtir.")
-                            else Thread {
-                                try {
-                                    val liked = VyboraApi.toggleLike(token, post.id)
-                                    android.os.Handler(android.os.Looper.getMainLooper()).post { postLiked = liked }
-                                } catch (e: Exception) {
-                                    android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Erro ao curtir.") }
-                                }
-                            }.start() }) {
+                        IconButton(onClick = likeSelectedPublication) {
                             Icon(if (postLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = if (postLiked) Color.Red else Color.White)
                         }
                         IconButton(onClick = { val post = selectedPublication
