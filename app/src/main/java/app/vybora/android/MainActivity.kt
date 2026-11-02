@@ -3629,7 +3629,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
         ) {
             BoxWithConstraints(
-                Modifier.fillMaxSize().imePadding().background(Color.Black.copy(alpha = 0.58f)),
+                Modifier.fillMaxSize().imePadding().navigationBarsPadding().background(Color.Black.copy(alpha = 0.58f)),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 // Mesma altura e medição do painel de comentários do feed.
@@ -5109,7 +5109,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
         ) {
             BoxWithConstraints(
-                Modifier.fillMaxSize().imePadding().background(Color.Black.copy(alpha = 0.58f)),
+                Modifier.fillMaxSize().imePadding().navigationBarsPadding().background(Color.Black.copy(alpha = 0.58f)),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 // Mesma altura e medição do painel de comentários do feed.
