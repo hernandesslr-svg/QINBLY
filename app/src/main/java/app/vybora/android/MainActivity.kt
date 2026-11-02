@@ -3324,6 +3324,54 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
         Color(0xFFFF7DB8), Color(0xFFEFC15A), Color(0xFF37C992), Color(0xFFC9D7ED)
     )
     val index = style.coerceIn(0, 9)
+    // Prefer a separately authored transparent overlay when its central pixels
+    // are genuinely transparent. Old portrait-containing assets are rejected.
+    val frameResources = intArrayOf(
+        R.drawable.qinbly_frame_rosa_neon, R.drawable.qinbly_frame_azul_eletrico,
+        R.drawable.qinbly_frame_realeza, R.drawable.qinbly_frame_galaxia,
+        R.drawable.qinbly_frame_fogo, R.drawable.qinbly_frame_cristal,
+        R.drawable.qinbly_frame_romantica, R.drawable.qinbly_frame_dourada,
+        R.drawable.qinbly_frame_esmeralda, R.drawable.qinbly_frame_prateada
+    )
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val overlayId = frameResources[index]
+    val validOverlay = remember(context, overlayId) {
+        runCatching {
+            val opts = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            context.resources.openRawResource(overlayId).use {
+                android.graphics.BitmapFactory.decodeStream(it, null, opts)
+            }
+            if (opts.outWidth <= 0 || opts.outHeight <= 0) false
+            else {
+                val sample = android.graphics.BitmapFactory.Options().apply {
+                    inSampleSize = (opts.outWidth / 128).coerceAtLeast(1)
+                }
+                val bitmap = context.resources.openRawResource(overlayId).use {
+                    android.graphics.BitmapFactory.decodeStream(it, null, sample)
+                }
+                if (bitmap == null) false else {
+                    val cx = bitmap.width / 2
+                    val cy = bitmap.height / 2
+                    val clear = listOf(
+                        bitmap.getPixel(cx, cy),
+                        bitmap.getPixel((cx - bitmap.width / 10).coerceAtLeast(0), cy),
+                        bitmap.getPixel(cx, (cy - bitmap.height / 10).coerceAtLeast(0))
+                    ).all { android.graphics.Color.alpha(it) <= 12 }
+                    bitmap.recycle()
+                    clear
+                }
+            }
+        }.getOrDefault(false)
+    }
+    if (validOverlay) {
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(overlayId),
+            contentDescription = null,
+            contentScale = androidx.compose.ui.layout.ContentScale.FillBounds,
+            modifier = Modifier.size(diameter)
+        )
+        return
+    }
     val accent = palette[index]
     val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "ornate-frame")
     val orbit by transition.animateFloat(
