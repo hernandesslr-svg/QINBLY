@@ -3326,6 +3326,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     var expandedImage by remember { mutableStateOf("") }
     var photoMenuOpen by remember { mutableStateOf(false) }
     var viewingPublication by remember { mutableStateOf(false) }
+    var publicationComment by remember { mutableStateOf("") }
     var joinedMonthYear by remember { mutableStateOf("") }
 
     val shownName = displayName.ifBlank { username }
@@ -3523,6 +3524,35 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     DropdownMenu(expanded = photoMenuOpen, onDismissRequest = { photoMenuOpen = false }) {
                         DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = { photoMenuOpen = false; saveProfilePhotoToDevice(profileContext, expandedImage, onNotice) })
                         DropdownMenuItem(text = { Text(if (viewingPublication) "Apagar publicação" else "Apagar foto") }, onClick = { photoMenuOpen = false; onNotice(if (viewingPublication) "Exclusão da publicação ainda não disponível. Nenhuma publicação foi apagada." else "Exclusão da foto ainda não disponível. Nenhuma foto foi apagada.") })
+                    }
+                }
+                if (viewingPublication) {
+                    Row(
+                        Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.88f))
+                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = publicationComment,
+                            onValueChange = { publicationComment = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text("Adicionar um comentário...", color = Color.LightGray) },
+                            singleLine = true,
+                            shape = RoundedCornerShape(26.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color(0xFF1677E8),
+                                unfocusedBorderColor = Color.Gray
+                            )
+                        )
+                        IconButton(onClick = {
+                            if (publicationComment.isNotBlank()) onNotice("Comentários desta publicação: abra a publicação no feed para enviar.")
+                        }, enabled = publicationComment.isNotBlank()) {
+                            Icon(Icons.Default.Send, contentDescription = "Enviar comentário", tint = if (publicationComment.isNotBlank()) Color(0xFF1677E8) else Color.Gray)
+                        }
                     }
                 }
                 IconButton(
@@ -4652,6 +4682,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
     var expandedImage by remember { mutableStateOf<String?>(null) }
     var photoMenuOpen by remember { mutableStateOf(false) }
     var viewingPublication by remember { mutableStateOf(false) }
+    var publicationComment by remember { mutableStateOf("") }
     var showMoreOptions by remember { mutableStateOf(false) }
     var profilePosts by remember(username) { mutableStateOf<List<VyboraApi.PostSummary>>(emptyList()) }
     val displayName = user.optString("display_name").ifBlank { user.optString("displayName").ifBlank { username.removePrefix("@") } }
@@ -4823,6 +4854,35 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                     DropdownMenu(expanded = photoMenuOpen, onDismissRequest = { photoMenuOpen = false }) {
                         DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = { photoMenuOpen = false; expandedImage?.let { saveProfilePhotoToDevice(context, it, onNotice) } })
                         DropdownMenuItem(text = { Text(if (viewingPublication) "Denunciar publicação" else "Denunciar foto") }, onClick = { photoMenuOpen = false; onNotice("Denúncias ainda não estão conectadas. Nenhuma denúncia foi enviada.") })
+                    }
+                }
+                if (viewingPublication) {
+                    Row(
+                        Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.88f))
+                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = publicationComment,
+                            onValueChange = { publicationComment = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text("Adicionar um comentário...", color = Color.LightGray) },
+                            singleLine = true,
+                            shape = RoundedCornerShape(26.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color(0xFF1677E8),
+                                unfocusedBorderColor = Color.Gray
+                            )
+                        )
+                        IconButton(onClick = {
+                            if (publicationComment.isNotBlank()) onNotice("Comentários desta publicação: abra a publicação no feed para enviar.")
+                        }, enabled = publicationComment.isNotBlank()) {
+                            Icon(Icons.Default.Send, contentDescription = "Enviar comentário", tint = if (publicationComment.isNotBlank()) Color(0xFF1677E8) else Color.Gray)
+                        }
                     }
                 }
                 IconButton(onClick = { expandedImage = null }, modifier = Modifier.align(Alignment.TopStart).padding(8.dp).background(Color.Black.copy(alpha = 0.65f), CircleShape)) {
