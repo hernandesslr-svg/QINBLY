@@ -1574,6 +1574,138 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
 }
 
 @Composable
+private fun QiblyShareDialog(
+    post: VyboraApi.PostSummary,
+    prefs: android.content.SharedPreferences,
+    onDismiss: () -> Unit,
+    onNotice: (String) -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var query by remember { mutableStateOf("") }
+    var inbox by remember { mutableStateOf<List<VyboraApi.InboxSummary>>(emptyList()) }
+    var users by remember { mutableStateOf<List<VyboraApi.UserSummary>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var sendingTo by remember { mutableStateOf("") }
+    val chosen = remember { mutableStateListOf<String>() }
+    val token = prefs.getString("token", null)
+    val shareLink = "https://vybora.com/post/${Uri.encode(post.id)}"
+    val message = "Confira esta publicação no QINBLY: " + post.caption.take(160) + "\\n" + shareLink
+    LaunchedEffect(token) {
+        if (!token.isNullOrBlank()) {
+            try { inbox = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.getInbox(token) } }
+            catch (_: Exception) { }
+        }
+        loading = false
+    }
+    LaunchedEffect(query, token) {
+        users = emptyList()
+        if (query.trim().length >= 2) {
+            kotlinx.coroutines.delay(300)
+            try {
+                users = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    VyboraApi.searchUsers(query.trim().removePrefix("@"), token)
+                }
+            } catch (_: Exception) { }
+        }
+    }
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Column(
+            Modifier.fillMaxWidth().fillMaxHeight(0.82f)
+                .background(QiblyTheme.card, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .padding(18.dp)
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Compartilhar", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = QiblyTheme.text)
+                IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = "Fechar", tint = QiblyTheme.text) }
+            }
+            Text(post.caption.ifBlank { "Publicação do QINBLY" }.take(120), maxLines = 2, color = QiblyTheme.secondary)
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = query, onValueChange = { query = it.take(50) },
+                modifier = Modifier.fillMaxWidth(), singleLine = true,
+                label = { Text("Buscar pessoas pelo nome ou @") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
+            )
+            Spacer(Modifier.height(12.dp))
+            Text(if (query.isBlank()) "Conversas recentes" else "Pessoas encontradas", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold)
+            if (loading) CircularProgressIndicator(Modifier.padding(12.dp))
+            val recipients = if (query.isBlank()) inbox.map { it.username to it.displayName }
+                else users.map { it.username to it.displayName }
+            androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f)) {
+                items(recipients.distinctBy { it.first }) { (username, name) ->
+                    Row(
+                        Modifier.fillMaxWidth().clickable {
+                            if (username in chosen) chosen.remove(username) else chosen.add(username)
+                        }.padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF1677F2))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(name.ifBlank { username }, color = QiblyTheme.text, fontWeight = FontWeight.Medium)
+                            Text("@$username", color = QiblyTheme.secondary, fontSize = 12.sp)
+                        }
+                        androidx.compose.material3.Checkbox(
+                            checked = username in chosen,
+                            onCheckedChange = { if (it) { if (username !in chosen) chosen.add(username) } else chosen.remove(username) }
+                        )
+                    }
+                }
+                if (!loading && recipients.isEmpty()) item {
+                    Text(if (query.isBlank()) "Nenhuma conversa recente. Pesquise uma pessoa para enviar." else "Nenhuma pessoa encontrada.", modifier = Modifier.padding(14.dp), color = QiblyTheme.secondary)
+                }
+            }
+            Button(
+                onClick = {
+                    if (token.isNullOrBlank()) {
+                        onNotice("Entre na sua conta para enviar publicações por mensagem.")
+                    } else if (chosen.isNotEmpty() && sendingTo.isBlank()) {
+                        val targets = chosen.toList()
+                        sendingTo = "Enviando"
+                        scope.launch {
+                            var sent = 0
+                            for (username in targets) {
+                                try {
+                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                        VyboraApi.sendMessage(token, username, message)
+                                    }
+                                    sent++
+                                } catch (_: Exception) { }
+                            }
+                            sendingTo = ""
+                            onNotice(if (sent == targets.size) "Publicação enviada para $sent pessoa(s)." else "Enviado para $sent de ${targets.size} pessoa(s).")
+                            if (sent > 0) onDismiss()
+                        }
+                    }
+                },
+                enabled = chosen.isNotEmpty() && sendingTo.isBlank(),
+                modifier = Modifier.fillMaxWidth()
+            ) { Text(if (sendingTo.isNotBlank()) "Enviando..." else "Enviar para ${chosen.size} pessoa(s)") }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                TextButton(onClick = {
+                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Publicação QINBLY", shareLink))
+                    onNotice("Link copiado.")
+                }) { Text("Copiar link") }
+                TextButton(onClick = {
+                    try {
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, message)
+                        }
+                        context.startActivity(Intent.createChooser(intent, "Compartilhar em outro aplicativo"))
+                    } catch (_: Exception) { onNotice("Não foi possível abrir o compartilhamento.") }
+                }) { Text("Outros aplicativos") }
+            }
+        }
+    }
+}
+
+@Composable
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontStyle: String, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onAddStory: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -1583,6 +1715,7 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
     var refreshKey by remember { mutableIntStateOf(0) }
     var refreshingFeed by remember { mutableStateOf(false) }
     var commentPost by remember { mutableStateOf<VyboraApi.PostSummary?>(null) }
+    var sharePost by remember { mutableStateOf<VyboraApi.PostSummary?>(null) }
     var comments by remember { mutableStateOf<List<VyboraApi.CommentSummary>>(emptyList()) }
     var commentDraft by remember { mutableStateOf("") }
     var commentsLoading by remember { mutableStateOf(false) }
@@ -2308,63 +2441,8 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
                                         Box(Modifier.width(1.dp).height(18.dp).background(Color(0xFFE1E4E9)))
                                         Row(
                                             modifier = Modifier.clickable {
-                                            val postLink = "https://vybora.com/post/${Uri.encode(post.id)}"
-                                            val shareText = buildString {
-                                                append("Confira esta publicação no QINBLY")
-                                                if (post.caption.isNotBlank()) append(": ${post.caption}")
-                                                append("\\n")
-                                                append(postLink)
-                                            }
-                                            val mediaUrl = post.mediaUrl
-                                            if (mediaUrl.isBlank()) {
-                                                try {
-                                                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                                                        type = "text/plain"
-                                                        putExtra(Intent.EXTRA_SUBJECT, "Publicação no QINBLY")
-                                                        putExtra(Intent.EXTRA_TEXT, shareText)
-                                                    }
-                                                    context.startActivity(Intent.createChooser(sendIntent, "Compartilhar publicação"))
-                                                } catch (_: Exception) {
-                                                    onNotice("Não foi possível abrir as opções de compartilhamento neste aparelho.")
-                                                }
-                                            } else {
-                                                onNotice("Preparando a mídia para compartilhar…")
-                                                Thread {
-                                                    try {
-                                                        val connection = java.net.URL(mediaUrl).openConnection().apply {
-                                                            connectTimeout = 15000
-                                                            readTimeout = 30000
-                                                        }
-                                                        connection.getInputStream().use { input ->
-                                                            val shareDir = File(context.cacheDir, "shared_media").apply { mkdirs() }
-                                                            val extension = if (post.mediaType.equals("video", true)) ".mp4" else ".jpg"
-                                                            val file = File(shareDir, "vybora_${post.id.hashCode().toUInt().toString(16)}$extension")
-                                                            file.outputStream().use { output -> input.copyTo(output) }
-                                                            val contentUri = FileProvider.getUriForFile(context, "${BuildConfig.APPLICATION_ID}.fileprovider", file)
-                                                            val mime = if (post.mediaType.equals("video", true)) "video/*" else "image/*"
-                                                            val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                                                                type = mime
-                                                                putExtra(Intent.EXTRA_SUBJECT, "Publicação no QINBLY")
-                                                                putExtra(Intent.EXTRA_TEXT, shareText)
-                                                                putExtra(Intent.EXTRA_STREAM, contentUri)
-                                                                clipData = android.content.ClipData.newUri(context.contentResolver, "Mídia da publicação QINBLY", contentUri)
-                                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                                            }
-                                                            android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                                                try {
-                                                                    context.startActivity(Intent.createChooser(sendIntent, "Compartilhar publicação"))
-                                                                } catch (_: Exception) {
-                                                                    onNotice("Não foi possível abrir o compartilhamento neste aparelho.")
-                                                                }
-                                                            }
-                                                        }
-                                                    } catch (_: Exception) {
-                                                        android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                                            onNotice("Não foi possível preparar a mídia para compartilhar.")
-                                                        }
-                                                    }
-                                                }.start()
-                                            }
+                                            sharePost = post
+
                                         },
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -2383,6 +2461,14 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
             }
             }
         }
+    sharePost?.let { selectedPost ->
+        QiblyShareDialog(
+            post = selectedPost,
+            prefs = prefs,
+            onDismiss = { sharePost = null },
+            onNotice = onNotice
+        )
+    }
     val fullscreenVideos = displayedPosts.filter { it.mediaType == "video" && it.mediaUrl.isNotBlank() }
     val initialFullscreenIndex = fullscreenVideos.indexOfFirst { it.id == fullscreenVideoId }
     if (fullscreenVideoId != null && initialFullscreenIndex >= 0) {
