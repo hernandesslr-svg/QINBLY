@@ -3408,7 +3408,11 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             Icon(Icons.Default.Edit, contentDescription = "Editar nome e bio", tint = Color(0xFFFF168C), modifier = Modifier.size(18.dp))
         }
         Text(if (username.isBlank()) "Entre ou crie sua conta" else "@${username.removePrefix("@")}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
-        if (shownBio.isNotBlank()) Text(shownBio, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 10.dp), color = RemoteAppearance.screenTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
+        if (shownBio.startsWith("✦ ")) {
+            Text(shownBio.substringBefore('\\n').removePrefix("✦ "), Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 7.dp), color = RemoteAppearance.screenTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
+            val description = shownBio.substringAfter('\\n', "")
+            if (description.isNotBlank()) Text(description, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 5.dp), color = RemoteAppearance.screenSecondaryTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, maxLines = 4)
+        } else if (shownBio.isNotBlank()) Text(shownBio, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 10.dp), color = RemoteAppearance.screenTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
         else Text("Adicione uma descrição ao seu perfil", Modifier.padding(top = 9.dp), color = RemoteAppearance.screenSecondaryTextColor)
         Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 10.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
             ProfileStat("Publicações", postsCount.toString(), Icons.Outlined.GridView) { onStat("Publicações") }
@@ -3746,7 +3750,12 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     val prefs = remember { context.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
     var username by remember { mutableStateOf(initialUsername) }
     var name by remember { mutableStateOf(initialName) }
-    var bio by remember { mutableStateOf(initialBio) }
+    val availableCategories = listOf("Criador de conteúdo", "Lifestyle", "Viagens 🌎", "Games 🎮", "Beleza 💄", "Moda", "Fitness", "Música", "Arte", "Fotografia", "Tecnologia", "Gastronomia", "Humor", "Educação", "Esportes", "Natureza")
+    val categoryPrefix = "✦ "
+    val initialCategoryLine = initialBio.lineSequence().firstOrNull().orEmpty()
+    val storedCategories = if (initialCategoryLine.startsWith(categoryPrefix)) initialCategoryLine.removePrefix(categoryPrefix).split(" • ").filter { it in availableCategories } else emptyList()
+    var selectedCategories by remember { mutableStateOf(storedCategories) }
+    var bio by remember { mutableStateOf(if (storedCategories.isNotEmpty()) initialBio.substringAfter('\\n', "") else initialBio) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var adjustingImage by remember { mutableStateOf("") }
@@ -3774,10 +3783,11 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                                     }
                                     return@Thread
                                 }
-                                VyboraApi.updateProfile(token, username.trim(), name.trim(), bio.trim())
+                                val composedBio = (if (selectedCategories.isNotEmpty()) categoryPrefix + selectedCategories.joinToString(" • ") + "\\n" else "") + bio.trim()
+                                VyboraApi.updateProfile(token, username.trim(), name.trim(), composedBio)
                                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                                     loading = false
-                                    onSaved(username.trim(), name.trim(), bio.trim())
+                                    onSaved(username.trim(), name.trim(), composedBio)
                                     onNotice("Informações do perfil atualizadas.")
                                 }
                             } catch (e: Exception) {
@@ -3839,6 +3849,19 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
 
             editCard(Icons.Default.Person, "Nome", name, "Seu nome", { name = it }, max = 80)
             editCard(Icons.Default.AlternateEmail, "Nome de usuário", username, "seuusuario", { username = it.lowercase().filter { ch -> ch.isLetterOrDigit() || ch == '_' || ch == '.' }.take(24) }, max = 24)
+            Text("CATEGORIAS DO PERFIL", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+            Text("Escolha até 5 categorias para aparecerem abaixo do seu nome.", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
+            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                availableCategories.forEach { category ->
+                    val selected = category in selectedCategories
+                    androidx.compose.material3.FilterChip(
+                        selected = selected,
+                        onClick = { selectedCategories = if (selected) selectedCategories - category else if (selectedCategories.size < 5) selectedCategories + category else selectedCategories },
+                        label = { Text(category, color = if (selected) Color.White else RemoteAppearance.screenTextColor) },
+                        colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFFFF168C), containerColor = QiblyTheme.card)
+                    )
+                }
+            }
             editCard(Icons.Default.Description, "Biografia", bio, "Escreva uma breve descrição sobre você", { bio = it }, singleLine = false, max = 300)
             if (error.isNotBlank()) Text(error, color = Pink, style = MaterialTheme.typography.bodySmall)
         }
