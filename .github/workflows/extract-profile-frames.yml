@@ -11,38 +11,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: pip install pillow
-      - name: Generate independent transparent decorations
+      - name: Extract ten supplied transparent frames from archive
         run: |
           python - <<'PY'
-          from PIL import Image,ImageDraw
-          import math
           from pathlib import Path
-          root=Path('app/src/main/res/drawable-nodpi')
-          names=['rosa_neon','azul_eletrico','realeza','galaxia','fogo','cristal','romantica','dourada','esmeralda','prateada']
-          colors=['#ff279d','#22bfff','#e9b24b','#a65dff','#ff6321','#7ceaff','#ff79b9','#ffd465','#34d79d','#c4d4ec']
-          for idx,(name,color) in enumerate(zip(names,colors)):
-            im=Image.new('RGBA',(768,768))
-            d=ImageDraw.Draw(im)
-            for r,w in [(327,17),(308,8)]:
-              d.ellipse((384-r,384-r,384+r,384+r),outline=color,width=w)
-            for k in range(16):
-              a=k*math.tau/16
-              def pt(rad,angle=a): return (384+math.cos(angle)*rad,384+math.sin(angle)*rad)
-              if idx==4:
-                d.polygon([pt(303,a-.07),pt(369,a+.01),pt(307,a+.08)],fill=color)
-              elif idx in (2,5,7,9):
-                d.polygon([pt(300),pt(347,a+.07),pt(368),pt(347,a-.07)],fill=color)
-              elif idx==8:
-                d.ellipse((*[v-19 for v in pt(345)],*[v+19 for v in pt(345)]),fill=color)
-              else:
-                x,y=pt(343)
-                d.ellipse((x-12,y-12,x+12,y+12),fill=color)
-            if idx==2:
-              d.polygon([(278,104),(301,34),(352,85),(384,14),(416,85),(467,34),(490,104)],fill='#ffd56e')
-            if idx==3:
-              for x,y,r in [(111,117,32),(648,109,25)]:
-                d.ellipse((x-r,y-r,x+r,y+r),fill='#7c4bff',outline='#e5baff',width=6)
-            im.save(root/('qinbly_frame_'+name+'.png'))
+          from zipfile import ZipFile
+          from io import BytesIO
+          from PIL import Image
+          import re
+          archive=Path('qinbly_android_assets.zip')
+          assert archive.exists(), 'Missing supplied frame archive'
+          target=Path('app/src/main/res/drawable-nodpi')
+          target.mkdir(parents=True,exist_ok=True)
+          found={}
+          with ZipFile(archive) as z:
+            for entry in z.namelist():
+              name=Path(entry).name
+              if re.fullmatch(r'qinbly_frame_[a-z0-9_]+\\.png',name):
+                assert name not in found, 'Duplicate frame '+name
+                data=z.read(entry)
+                im=Image.open(BytesIO(data)).convert('RGBA')
+                assert min(im.size)>=128, 'Frame too small '+name
+                assert im.getpixel((im.width//2,im.height//2))[3]==0, 'Frame has opaque center '+name
+                found[name]=data
+          assert len(found)==10, 'Expected 10 PNGs, got '+str(sorted(found))
+          for name,data in found.items():
+            (target/name).write_bytes(data)
+          print('Installed:',', '.join(sorted(found)))
           PY
       - name: Commit replacement assets
         run: |
