@@ -3649,19 +3649,27 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         Icon(Icons.Default.Close, contentDescription = "Fechar molduras")
                     }
                 }
-                Text("10 molduras decorativas para a foto grande do perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("10 molduras circulares para a foto de perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
-                Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
-                    Box(Modifier.fillMaxWidth(0.94f).height(148.dp).border(4.dp, frameColors[selectedFramePreview], RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp))) {
-                        if (profilePhotoUrl.isNotBlank()) {
-                            AsyncImage(model = profilePhotoUrl, contentDescription = "Foto do perfil com moldura",
-                                modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                Box(Modifier.fillMaxWidth().height(158.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(132.dp), contentAlignment = Alignment.Center) {
+                        Box(
+                            Modifier.size(126.dp)
+                                .border(4.dp, frameColors[selectedFramePreview], CircleShape)
+                                .padding(5.dp).clip(CircleShape).background(QiblyTheme.card),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val image = profilePhotoUrl.ifBlank { avatarUrl }
+                            if (image.isNotBlank()) {
+                                AsyncImage(model = image, contentDescription = "Prévia da foto circular",
+                                    modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                            } else Icon(Icons.Default.Person, contentDescription = null)
                         }
+                        Text(frameDecorations[selectedFramePreview], fontSize = 22.sp,
+                            modifier = Modifier.align(Alignment.TopCenter).offset(y = (-7).dp))
+                        Text(frameDecorations[selectedFramePreview], fontSize = 18.sp,
+                            modifier = Modifier.align(Alignment.BottomCenter).offset(y = 7.dp))
                     }
-                    Text(frameDecorations[selectedFramePreview], fontSize = 34.sp, modifier = Modifier.align(Alignment.TopStart))
-                    Text(frameDecorations[selectedFramePreview], fontSize = 34.sp, modifier = Modifier.align(Alignment.TopEnd))
-                    Text(frameDecorations[selectedFramePreview], fontSize = 34.sp, modifier = Modifier.align(Alignment.BottomStart))
-                    Text(frameDecorations[selectedFramePreview], fontSize = 34.sp, modifier = Modifier.align(Alignment.BottomEnd))
                 }
                 Text(frameNames[selectedFramePreview], modifier = Modifier.fillMaxWidth().padding(10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold)
                 LazyVerticalGrid(
@@ -3679,12 +3687,18 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 .padding(12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Box(
-                                Modifier.fillMaxWidth().height(60.dp)
-                                    .border(5.dp, frameColors[index], RoundedCornerShape(12.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(frameDecorations[index], fontSize = 29.sp)
+                            Box(Modifier.size(76.dp), contentAlignment = Alignment.Center) {
+                                Box(Modifier.size(68.dp).border(3.dp, frameColors[index], CircleShape)
+                                    .padding(3.dp).clip(CircleShape).background(QiblyTheme.card),
+                                    contentAlignment = Alignment.Center) {
+                                    val image = profilePhotoUrl.ifBlank { avatarUrl }
+                                    if (image.isNotBlank()) AsyncImage(model = image,
+                                        contentDescription = null, modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop)
+                                    else Icon(Icons.Default.Person, contentDescription = null)
+                                }
+                                Text(frameDecorations[index], fontSize = 16.sp,
+                                    modifier = Modifier.align(Alignment.TopCenter).offset(y = (-4).dp))
                             }
                             Text(frameNames[index], modifier = Modifier.padding(top = 8.dp), fontSize = 13.sp)
                         }
