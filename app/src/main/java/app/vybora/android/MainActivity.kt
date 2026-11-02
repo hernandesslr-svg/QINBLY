@@ -107,6 +107,7 @@ import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.EmojiEmotions
@@ -3323,9 +3324,11 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     var profilePhotoUrl by remember { mutableStateOf("") }
     var originalCoverUrl by remember { mutableStateOf("") }
     var expandedImage by remember { mutableStateOf("") }
+    var joinedMonthYear by remember { mutableStateOf("") }
 
     val shownName = displayName.ifBlank { username }
-    val shownBio = bio
+    val shownBio = bio.lineSequence().filterNot { it.startsWith("🌍 ") }.joinToString("\n").trim()
+    val shownCountry = bio.lineSequence().firstOrNull { it.startsWith("🌍 ") }?.removePrefix("🌍 ").orEmpty()
     val profileContext = androidx.compose.ui.platform.LocalContext.current
     val profilePrefs = remember { profileContext.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
 
@@ -3345,6 +3348,12 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     } catch (_: Exception) { emptyList() }
                     android.os.Handler(android.os.Looper.getMainLooper()).post {
                         if (user != null) {
+                            val created = listOf("created_at", "createdAt", "joined_at").map { user.optString(it) }.firstOrNull { it.matches(Regex("\\d{4}-\\d{2}.*")) }.orEmpty()
+                            joinedMonthYear = if (created.length >= 7) {
+                                val month = created.substring(5, 7).toIntOrNull() ?: 0
+                                val months = listOf("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro")
+                                if (month in 1..12) "${months[month - 1]} de ${created.substring(0, 4)}" else ""
+                            } else ""
                             postsCount = user.optInt("posts_count")
                             followersCount = user.optInt("followers")
                             followingCount = user.optInt("following")
@@ -3418,6 +3427,18 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             if (description.isNotBlank()) Text(description, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 5.dp), color = RemoteAppearance.screenSecondaryTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, maxLines = 4)
         } else if (shownBio.isNotBlank()) Text(shownBio, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 10.dp), color = RemoteAppearance.screenTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
         else Text("Adicione uma descrição ao seu perfil", Modifier.padding(top = 9.dp), color = RemoteAppearance.screenSecondaryTextColor)
+        if (shownCountry.isNotBlank()) {
+            Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Icon(Icons.Default.Language, contentDescription = null, tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(16.dp))
+                Text(shownCountry, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        if (joinedMonthYear.isNotBlank()) {
+            Row(Modifier.padding(top = 5.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Icon(Icons.Default.CalendarToday, contentDescription = null, tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(16.dp))
+                Text("Entrou em $joinedMonthYear", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
+            }
+        }
         Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 10.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
             ProfileStat("Publicações", postsCount.toString(), Icons.Outlined.GridView) { onStat("Publicações") }
             ProfileStat("Seguidores", followersCount.toString(), Icons.Default.Groups) { onStat("Seguidores") }
@@ -3785,6 +3806,11 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
             }.start()
         }
     }
+    val countryPrefix = "🌍 "
+    val countryOptions = listOf("Brasil", "Portugal", "Estados Unidos", "Argentina", "Chile", "Colômbia", "México", "Espanha", "França", "Alemanha", "Itália", "Reino Unido", "Canadá", "Japão", "Angola", "Moçambique", "Outro")
+    val initialCountry = initialBio.lineSequence().firstOrNull { it.startsWith(countryPrefix) }?.removePrefix(countryPrefix).orEmpty()
+    var selectedCountry by remember { mutableStateOf(initialCountry) }
+    var countryMenuExpanded by remember { mutableStateOf(false) }
     var username by remember { mutableStateOf(initialUsername) }
     var name by remember { mutableStateOf(initialName) }
     val availableCategories = listOf("Criador de conteúdo", "Lifestyle", "Viagens 🌎", "Games 🎮", "Beleza 💄", "Moda", "Fitness", "Música", "Arte", "Fotografia", "Tecnologia", "Gastronomia", "Humor", "Educação", "Esportes", "Natureza", "Academia 🏋️", "Musculação 💪", "Corrida 🏃", "Dança 💃", "Saúde e bem-estar", "Nutrição 🥗", "Yoga 🧘", "Pets 🐾", "Família", "Maternidade", "Empreendedorismo", "Negócios", "Finanças", "Carros 🚗", "Motos 🏍️", "Cinema 🎬", "Livros 📚", "DIY e artesanato", "Decoração", "Jardinagem 🌱", "Ciência", "Comédia", "Futebol ⚽", "Culinária 🍳")
@@ -3792,7 +3818,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     val initialCategoryLine = initialBio.lineSequence().firstOrNull().orEmpty()
     val storedCategories = if (initialCategoryLine.startsWith(categoryPrefix)) initialCategoryLine.removePrefix(categoryPrefix).split(" • ").filter { it in availableCategories } else emptyList()
     var selectedCategories by remember { mutableStateOf(storedCategories) }
-    var bio by remember { mutableStateOf(if (storedCategories.isNotEmpty()) initialBio.substringAfter('\n', "") else initialBio) }
+    var bio by remember { mutableStateOf((if (storedCategories.isNotEmpty()) initialBio.substringAfter('\n', "") else initialBio).lineSequence().filterNot { it.startsWith(countryPrefix) }.joinToString("\n").trim()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var adjustingImage by remember { mutableStateOf("") }
@@ -3815,7 +3841,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                                     }
                                     return@Thread
                                 }
-                                val composedBio = (if (selectedCategories.isNotEmpty()) categoryPrefix + selectedCategories.joinToString(" • ") + "\n" else "") + bio.trim()
+                                val composedBio = (if (selectedCategories.isNotEmpty()) categoryPrefix + selectedCategories.joinToString(" • ") + "\n" else "") + (if (selectedCountry.isNotBlank()) countryPrefix + selectedCountry + "\n" else "") + bio.trim()
                                 VyboraApi.updateProfile(token, username.trim(), name.trim(), composedBio)
                                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                                     loading = false
@@ -3899,6 +3925,22 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
 
             editCard(Icons.Default.Person, "Nome", name, "Seu nome", { name = it }, max = 80, centered = true)
             editCard(Icons.Default.AlternateEmail, "Nome de usuário", username, "seuusuario", { username = it.lowercase().filter { ch -> ch.isLetterOrDigit() || ch == '_' || ch == '.' }.take(24) }, max = 24, centered = true)
+            Text("PAÍS", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+            Box {
+                OutlinedButton(onClick = { countryMenuExpanded = true }, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.Language, contentDescription = null, tint = Color(0xFF1677E8))
+                    Spacer(Modifier.width(8.dp))
+                    Text(selectedCountry.ifBlank { "Selecionar meu país" }, color = RemoteAppearance.screenTextColor)
+                    Spacer(Modifier.weight(1f))
+                    Icon(Icons.Default.ExpandMore, contentDescription = null, tint = RemoteAppearance.screenTextColor)
+                }
+                DropdownMenu(expanded = countryMenuExpanded, onDismissRequest = { countryMenuExpanded = false }) {
+                    DropdownMenuItem(text = { Text("Não informar") }, onClick = { selectedCountry = ""; countryMenuExpanded = false })
+                    countryOptions.forEach { country ->
+                        DropdownMenuItem(text = { Text(country) }, onClick = { selectedCountry = country; countryMenuExpanded = false })
+                    }
+                }
+            }
             Text("CATEGORIAS DO PERFIL", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
             Text("Escolha até 5 categorias para aparecerem abaixo do seu nome.", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
