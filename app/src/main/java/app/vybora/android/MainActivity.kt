@@ -3484,6 +3484,75 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
                 }
             }
         }
+        // Material-specific shapes replace the previous one-size-fits-all rings.
+        // These are separate from the portrait and preserve its center.
+        if (index == 3) {
+            // A tilted Saturn-like planet with orbital dust for Galaxia.
+            val planet = androidx.compose.ui.geometry.Offset(cx + outer * .69f, cy - outer * .68f)
+            val pr = thick * 1.22f
+            drawCircle(brush = Brush.radialGradient(listOf(Color(0xFFE8C7FF), Color(0xFF7443C8), Color(0xFF1C1248)),
+                center = androidx.compose.ui.geometry.Offset(planet.x-pr*.35f, planet.y-pr*.4f), radius = pr*2f),
+                radius = pr, center = planet)
+            drawOval(brush = Brush.linearGradient(listOf(Color(0x00C2A2FF), Color(0xFFE8C5FF), Color(0xFF7040D5))),
+                topLeft = androidx.compose.ui.geometry.Offset(planet.x-pr*1.9f, planet.y-pr*.48f),
+                size = androidx.compose.ui.geometry.Size(pr*3.8f, pr*.95f),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = thick*.23f))
+            for (k in 0 until 32) {
+                val theta = k * 2f * kotlin.math.PI.toFloat()/32f + orbit*.002f
+                val dist = outer + thick*(.1f + .55f*(k%4)/4f)
+                val dot = androidx.compose.ui.geometry.Offset(cx+kotlin.math.cos(theta)*dist,cy+kotlin.math.sin(theta)*dist)
+                drawCircle(if(k%3==0) Color(0xFFD5B8FF) else Color(0xFF8F69FF),
+                    thick*(if(k%5==0) .19f else .075f),dot,alpha=.45f+shimmer*.45f)
+            }
+        }
+        if (index == 5) {
+            // Tall angular crystal clusters, faceted rather than round beads.
+            for (k in 0 until 9) {
+                val angle = (k*2f*kotlin.math.PI.toFloat()/9f)-kotlin.math.PI.toFloat()/2f
+                val px = cx+kotlin.math.cos(angle)*outer
+                val py = cy+kotlin.math.sin(angle)*outer
+                val ux = kotlin.math.cos(angle)
+                val uy = kotlin.math.sin(angle)
+                val vx = -uy
+                val vy = ux
+                val height = thick*(1.5f+(k%3)*.45f)
+                val width = thick*.72f
+                val gem = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(px+ux*height,py+uy*height)
+                    lineTo(px+vx*width,py+vy*width)
+                    lineTo(px-ux*thick*.65f,py-uy*thick*.65f)
+                    lineTo(px-vx*width,py-vy*width)
+                    close()
+                }
+                drawPath(gem,brush=Brush.linearGradient(listOf(Color.White,Color(0xFF62D8FF),Color(0xFF1763C7))))
+                drawLine(Color.White.copy(alpha=.8f),
+                    androidx.compose.ui.geometry.Offset(px,py),
+                    androidx.compose.ui.geometry.Offset(px+ux*height,py+uy*height),thick*.1f)
+            }
+        }
+        if (index == 4) {
+            // Layered flame tongues with dark red bases and yellow cores.
+            for (k in 0 until 20) {
+                val angle = k*2f*kotlin.math.PI.toFloat()/20f
+                val ux=kotlin.math.cos(angle)
+                val uy=kotlin.math.sin(angle)
+                val vx=-uy
+                val vy=ux
+                val base=outer-thick*.5f
+                val length=thick*(1.4f+.55f*kotlin.math.sin(orbit*.035f+k))
+                val px=cx+ux*base
+                val py=cy+uy*base
+                val flame=androidx.compose.ui.graphics.Path().apply {
+                    moveTo(px+vx*thick*.5f,py+vy*thick*.5f)
+                    quadraticBezierTo(px+ux*length*.45f+vx*thick*.55f,py+uy*length*.45f+vy*thick*.55f,
+                        px+ux*length,py+uy*length)
+                    quadraticBezierTo(px+ux*length*.6f-vx*thick*.55f,py+uy*length*.6f-vy*thick*.55f,
+                        px-vx*thick*.5f,py-vy*thick*.5f)
+                    close()
+                }
+                drawPath(flame,brush=Brush.linearGradient(listOf(Color(0xFF9E1907),Color(0xFFFF5D10),Color(0xFFFFDB54))))
+            }
+        }
         // Distinctive decorative silhouettes stay outside the circular photograph.
         val motifCount = when (index) {
             0, 6 -> 5
