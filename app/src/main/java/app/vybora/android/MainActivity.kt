@@ -457,6 +457,15 @@ private fun AccountSwitcherDialog(
  }
 }
 
+private object QiblyTheme {
+    var dark by androidx.compose.runtime.mutableStateOf(false)
+    val background: Color get() = if (dark) Color(0xFF0E1118) else Color.White
+    val card: Color get() = if (dark) Color(0xFF1A202B) else Color.White
+    val text: Color get() = if (dark) Color(0xFFF5F7FA) else Color.Black
+    val secondary: Color get() = if (dark) Color(0xFFB4BDCA) else Color(0xFF555555)
+    val border: Color get() = if (dark) Color(0xFF303B4C) else Color(0xFFE4E4E4)
+}
+
 private object RemoteAppearance {
     var feedTextColor by androidx.compose.runtime.mutableStateOf(Color.White)
     var feedSecondaryTextColor by androidx.compose.runtime.mutableStateOf(Color(0xFFADB2CB))
@@ -509,6 +518,8 @@ private fun VyboraApp() {
     // GitHub-hosted, data-only UI configuration. No executable code is downloaded.
     val appContext = androidx.compose.ui.platform.LocalContext.current
     val uiPreferences = remember { appContext.getSharedPreferences("vybora_remote_ui", android.content.Context.MODE_PRIVATE) }
+    val themePrefs = remember { appContext.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
+    LaunchedEffect(Unit) { QiblyTheme.dark = themePrefs.getString("setting_theme", "light") == "dark" }
     fun readUiColor(key: String, fallback: Long): Color {
         val saved = uiPreferences.getString(key, null) ?: return Color(fallback)
         return try { Color(android.graphics.Color.parseColor(saved)) } catch (_: Exception) { Color(fallback) }
@@ -716,7 +727,9 @@ private fun VyboraApp() {
         }
     }
     MaterialTheme(
-        colorScheme = darkColorScheme(primary = Violet, secondary = Pink, background = Night, surface = Panel, onBackground = Color.White, onSurface = Color.White),
+        colorScheme = if (QiblyTheme.dark)
+            darkColorScheme(primary = Color(0xFF70A9FF), secondary = Color(0xFF70A9FF), background = QiblyTheme.background, surface = QiblyTheme.card, onBackground = QiblyTheme.text, onSurface = QiblyTheme.text)
+        else androidx.compose.material3.lightColorScheme(primary = Color(0xFF1677F2), secondary = Color(0xFF1677F2), background = Color.White, surface = Color.White, onBackground = Color.Black, onSurface = Color.Black),
         // Padrão de legibilidade para todas as telas e abas.
         typography = Typography(
             bodyLarge = androidx.compose.ui.text.TextStyle(fontFamily = nameFontFamily(appFontStyle), fontSize = 18.sp, lineHeight = 26.sp),
@@ -730,7 +743,7 @@ private fun VyboraApp() {
             labelSmall = androidx.compose.ui.text.TextStyle(fontFamily = nameFontFamily(appFontStyle), fontSize = 12.sp, lineHeight = 17.sp)
         )
     ) {
-        Scaffold(containerColor = Night, bottomBar = {
+        Scaffold(containerColor = QiblyTheme.background, bottomBar = {
             if (tab != 2) {
             Column {
                 if (tab == 3) {
@@ -1910,10 +1923,10 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                         mutableStateOf(if (post.id.startsWith("demo-post-")) post.id in demoLikes else post.likedByMe)
                     }
                     Surface(
-                        color = Color.White,
+                        color = QiblyTheme.card,
                         shape = RoundedCornerShape(22.dp),
                         shadowElevation = 5.dp,
-                        border = BorderStroke(1.dp, Color(0xFFE4E4E4)),
+                        border = BorderStroke(1.dp, QiblyTheme.border),
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
@@ -4019,7 +4032,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
         "account_management" -> "Gerenciamento de contas"
         else -> "Configurações"
     }
-    Column(Modifier.fillMaxSize().background(Color(0xFF080B10)).padding(horizontal = 12.dp, vertical = 8.dp)) {
+    Column(Modifier.fillMaxSize().background(QiblyTheme.background).padding(horizontal = 12.dp, vertical = 8.dp)) {
         Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { if (section == "font_names" || section == "font_app") section = "appearance" else if (section == "home") onBack() else section = "home" }) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.screenTextColor)
@@ -4151,7 +4164,20 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                     item { SettingsLink("Fonte do aplicativo", "Personalize os menus, títulos e botões", Icons.Default.TextFields) { section = "font_app" } }
                     item { Spacer(Modifier.height(12.dp)) }
                     item { Text("VISUAL", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium) }
-                    item { SettingsLink("Tema escuro", "O QINBLY usa tema escuro nesta versão", Icons.Default.DarkMode) { onNotice("O tema escuro está ativo. Alternância de tema ainda não foi implementada.") } }
+                    item {
+                        Text("TEMA DO APLICATIVO", color = QiblyTheme.secondary, style = MaterialTheme.typography.labelMedium)
+                    }
+                    item {
+                        SettingSwitch(
+                            "Modo escuro",
+                            if (QiblyTheme.dark) "Tema escuro ativado" else "Tema claro ativado",
+                            QiblyTheme.dark,
+                            Icons.Default.DarkMode
+                        ) { enabled ->
+                            QiblyTheme.dark = enabled
+                            prefs.edit().putString("setting_theme", if (enabled) "dark" else "light").apply()
+                        }
+                    }
                     item { Spacer(Modifier.height(12.dp)) }
                     item { Text("CONTEÚDO E MÍDIA", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium) }
                     item { SettingsLink("Qualidade de vídeo", "Automática", Icons.Default.VideoLibrary) { onNotice("A seleção de qualidade será conectada ao reprodutor.") } }
