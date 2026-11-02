@@ -3786,12 +3786,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     var imageFilter by remember { mutableStateOf("Original") }
 
     val effectOptions = listOf("Original", "Vivo", "Neon", "Quente", "Frio", "Preto e branco", "Cinema", "Retrô", "Brilho", "Contraste", "Saturação", "Fade", "Glow", "Desfoque", "VHS", "Granulado", "Vinheta")
-    Column(Modifier.fillMaxSize().background(Night).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack, enabled = !loading) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.Black) }
-            Text("Editar perfil", modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.Black)
-            Button(
-                onClick = {
+    val saveProfile: () -> Unit = {
                     if (name.isBlank()) error = "Informe seu nome."
                     else if (!username.matches(Regex("[a-z0-9_.]{3,24}"))) error = "O @usuário precisa ter de 3 a 24 caracteres."
                     else {
@@ -3818,7 +3813,13 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                             }
                         }.start()
                     }
-                },
+    }
+    Column(Modifier.fillMaxSize().background(Night).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack, enabled = !loading) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.Black) }
+            Text("Editar perfil", modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.Black)
+            Button(
+                onClick = saveProfile,
                 enabled = !loading,
                 shape = RoundedCornerShape(24.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF168C), contentColor = Color.White),
@@ -3903,6 +3904,16 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
             }
             editCard(Icons.Default.Description, "Biografia", bio, "Escreva uma breve descrição sobre você", { bio = it }, singleLine = false, max = 300)
             if (error.isNotBlank()) Text(error, color = Pink, style = MaterialTheme.typography.bodySmall)
+        }
+        Button(
+            onClick = saveProfile,
+            enabled = !loading,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).height(52.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1677E8), contentColor = Color.White),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            if (loading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+            else { Icon(Icons.Default.CheckCircle, contentDescription = null); Spacer(Modifier.width(8.dp)); Text("Salvar alterações", fontWeight = FontWeight.Bold) }
         }
     }
 }
