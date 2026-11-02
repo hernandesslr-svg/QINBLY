@@ -3326,6 +3326,8 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     var originalCoverUrl by remember { mutableStateOf("") }
     var expandedImage by remember { mutableStateOf("") }
     var photoMenuOpen by remember { mutableStateOf(false) }
+    var framesOpen by remember { mutableStateOf(false) }
+    var selectedFramePreview by remember { mutableIntStateOf(0) }
     var viewingPublication by remember { mutableStateOf(false) }
     var selectedPublicationCaption by remember { mutableStateOf("") }
     var selectedPublication by remember { mutableStateOf<VyboraApi.PostSummary?>(null) }
@@ -3461,7 +3463,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Spacer(Modifier.width(6.dp))
                 Text("Editar perfil")
             }
-            OutlinedButton(onClick = { onNotice("Loja de molduras: em preparação.") }, modifier = Modifier.weight(1f)) {
+            OutlinedButton(onClick = { framesOpen = true }, modifier = Modifier.weight(1f)) {
                 Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(17.dp))
                 Spacer(Modifier.width(6.dp))
                 Text("Molduras")
@@ -3620,6 +3622,84 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     }
                 }
                 Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+    if (framesOpen) {
+        val frameNames = listOf("Rosa Neon", "Azul Elétrico", "Realeza", "Galáxia", "Fogo", "Cristal", "Romântica", "Dourada", "Esmeralda", "Prateada")
+        val frameColors = listOf(
+            Color(0xFFFF3399), Color(0xFF268BFF), Color(0xFFAF72F5), Color(0xFF7856E8),
+            Color(0xFFFF692E), Color(0xFF80D9ED), Color(0xFFFF7799), Color(0xFFFFC247),
+            Color(0xFF35C78A), Color(0xFFBBC3D2)
+        )
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { framesOpen = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Column(
+                Modifier.fillMaxWidth().fillMaxHeight(0.87f)
+                    .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(16.dp)
+            ) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Molduras", fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    IconButton(onClick = { framesOpen = false }) {
+                        Icon(Icons.Default.Close, contentDescription = "Fechar molduras")
+                    }
+                }
+                Text("10 modelos de demonstração", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(12.dp))
+                Box(
+                    Modifier.fillMaxWidth().height(160.dp)
+                        .border(5.dp, frameColors[selectedFramePreview], RoundedCornerShape(18.dp))
+                        .clip(RoundedCornerShape(18.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (profilePhotoUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = profilePhotoUrl,
+                            contentDescription = "Prévia da capa com moldura",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        )
+                    } else {
+                        Text("Prévia da capa do perfil")
+                    }
+                }
+                Text(frameNames[selectedFramePreview], modifier = Modifier.fillMaxWidth().padding(10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold)
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(frameNames.size) { index ->
+                        Column(
+                            Modifier.fillMaxWidth()
+                                .border(if (selectedFramePreview == index) 3.dp else 1.dp, frameColors[index], RoundedCornerShape(14.dp))
+                                .clip(RoundedCornerShape(14.dp))
+                                .clickable { selectedFramePreview = index }
+                                .padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                Modifier.fillMaxWidth().height(60.dp)
+                                    .border(5.dp, frameColors[index], RoundedCornerShape(12.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("QB", fontWeight = FontWeight.Bold, color = frameColors[index])
+                            }
+                            Text(frameNames[index], modifier = Modifier.padding(top = 8.dp), fontSize = 13.sp)
+                        }
+                    }
+                }
+                Text(
+                    "Prévia de teste: as molduras ainda não são aplicadas permanentemente.",
+                    modifier = Modifier.padding(top = 12.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
             }
         }
     }
