@@ -1783,15 +1783,15 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
 
 
         val feedFilters = listOf("Novidades", "Tendências", "Vídeos", "Fotos", "Lives", "Perto de mim")
-        val feedFilterIcons = listOf("✦", "🔥", "▶", "▣", "◉", "⌖")
+        val feedFilterIcons = listOf("✨", "🔥", "▶️", "🖼️", "🔴", "📍")
         val feedFilterAccent = listOf(
             Color(0xFF1655E8), Color(0xFFFF663C), Color(0xFF111827),
             Color(0xFF1655E8), Color(0xFF1655E8), Color(0xFF1655E8)
         )
         androidx.compose.foundation.lazy.LazyRow(
-            modifier = Modifier.fillMaxWidth().padding(top = 9.dp, bottom = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 11.dp, bottom = 15.dp),
             contentPadding = PaddingValues(horizontal = 14.dp),
-            horizontalArrangement = Arrangement.spacedBy(7.dp)
+            horizontalArrangement = Arrangement.spacedBy(9.dp)
         ) {
             items(feedFilters.size) { index ->
                 val filter = feedFilters[index]
@@ -1811,16 +1811,16 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                         .clickable { selectedFeedFilter = filter }
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(feedFilterIcons[index],
                             color = if (active) Color.White else feedFilterAccent[index],
-                            fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         Text(filter,
                             color = if (active) Color.White else Color(0xFF20202B),
-                            fontSize = 11.sp,
+                            fontSize = 13.sp,
                             fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
                             maxLines = 1)
                     }
@@ -1883,7 +1883,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         if (post.mediaUrl.isBlank() || (post.mediaType != "image" && post.mediaType != "video")) {
                                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().background(Color.Transparent).padding(horizontal = 14.dp, vertical = 7.dp)) {
                                     val avatarUrl = post.avatarUrl.ifBlank { "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=240&auto=format&fit=crop&q=80" }
-                                    AsyncImage(model = avatarUrl, contentDescription = "Abrir perfil de @${post.username}", modifier = Modifier.size(40.dp).clip(CircleShape).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }, contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                                    AsyncImage(model = avatarUrl, contentDescription = "Abrir perfil de @${post.username}", modifier = Modifier.size(52.dp).clip(CircleShape).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }, contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                                     Spacer(Modifier.width(10.dp))
                                     Column(Modifier.weight(1f).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }) {
                                         Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" }, color = RemoteAppearance.feedTextColor, fontSize = 17.sp, fontWeight = if (nameFontStyle == "Elegante") FontWeight.Medium else FontWeight.Bold, fontFamily = nameFontFamily(nameFontStyle))
@@ -1966,7 +1966,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                                         AsyncImage(
                                             model = post.avatarUrl, contentDescription = "Foto de perfil do autor",
-                                            modifier = Modifier.size(40.dp)
+                                            modifier = Modifier.size(52.dp)
                                                 .border(2.dp, Color(0xFF2196F3), CircleShape)
                                                 .padding(2.dp).clip(CircleShape)
                                                 .clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) },
