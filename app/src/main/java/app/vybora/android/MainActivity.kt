@@ -459,8 +459,8 @@ private fun AccountSwitcherDialog(
 
 private object QiblyTheme {
     var dark by androidx.compose.runtime.mutableStateOf(false)
-    val background: Color get() = if (dark) Color(0xFF0E1118) else Color.White
-    val card: Color get() = if (dark) Color(0xFF1A202B) else Color.White
+    val background: Color get() = if (dark) Color(0xFF171B24) else Color.White
+    val card: Color get() = if (dark) Color(0xFF242B36) else Color.White
     val text: Color get() = if (dark) Color(0xFFF5F7FA) else Color.Black
     val secondary: Color get() = if (dark) Color(0xFFB4BDCA) else Color(0xFF555555)
     val border: Color get() = if (dark) Color(0xFF303B4C) else Color(0xFFE4E4E4)
@@ -474,7 +474,7 @@ private object RemoteAppearance {
         set(value) { feedSecondaryTextColorBase = value }
     private var feedActionBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color(0x66030711))
     var feedActionBackgroundColor: Color
-        get() = if (QiblyTheme.dark) Color(0xFF1A202B) else feedActionBackgroundColorBase
+        get() = if (QiblyTheme.dark) QiblyTheme.card else feedActionBackgroundColorBase
         set(value) { feedActionBackgroundColorBase = value }
     private var feedDividerColorBase by androidx.compose.runtime.mutableStateOf(Color(0xFF252525))
     var feedDividerColor: Color
@@ -486,7 +486,7 @@ private object RemoteAppearance {
     var navigationUnderlineVisible by androidx.compose.runtime.mutableStateOf(true)
     private var screenBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color.White)
     var screenBackgroundColor: Color
-        get() = if (QiblyTheme.dark) Color(0xFF0E1118) else screenBackgroundColorBase
+        get() = if (QiblyTheme.dark) QiblyTheme.background else screenBackgroundColorBase
         set(value) { screenBackgroundColorBase = value }
     private var screenTextColorBase by androidx.compose.runtime.mutableStateOf(Color.Black)
     var screenTextColor: Color
@@ -4147,7 +4147,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
             }
         }
         if (section == "home") {
-            Surface(color = Color(0xFF171B22), shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(16.dp))) {
+            Surface(color = QiblyTheme.card, shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).border(1.dp, QiblyTheme.border, RoundedCornerShape(16.dp))) {
                 Row(Modifier.padding(horizontal = 13.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF2196F3))
                     Spacer(Modifier.width(10.dp))
