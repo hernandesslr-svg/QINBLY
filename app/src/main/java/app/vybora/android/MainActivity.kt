@@ -3512,7 +3512,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             onDismissRequest = { expandedImage = "" },
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
         ) {
-            Column(Modifier.fillMaxSize().background(Color(0xFF101014)).padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Column(Modifier.fillMaxSize().background(Color(0xFF101014)).navigationBarsPadding().padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 24.dp)) {
                 Row(Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { expandedImage = "" }) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White) }
                     Spacer(Modifier.weight(1f))
@@ -3545,7 +3545,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         Text(selectedPublicationCaption, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp), color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
                     }
                     Row(
-                        Modifier.fillMaxWidth().padding(bottom = 10.dp).border(1.dp, Color.DarkGray, RoundedCornerShape(28.dp)).padding(horizontal = 8.dp, vertical = 4.dp),
+                        Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp).border(1.dp, Color.DarkGray, RoundedCornerShape(28.dp)).padding(horizontal = 8.dp, vertical = 4.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -4856,7 +4856,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
             onDismissRequest = { expandedImage = null },
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
         ) {
-            Column(Modifier.fillMaxSize().background(Color(0xFF101014)).padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Column(Modifier.fillMaxSize().background(Color(0xFF101014)).navigationBarsPadding().padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 24.dp)) {
                 Row(Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { expandedImage = null }) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White) }
                     Spacer(Modifier.weight(1f))
@@ -4889,7 +4889,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                         Text(selectedPublicationCaption, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp), color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
                     }
                     Row(
-                        Modifier.fillMaxWidth().padding(bottom = 10.dp).border(1.dp, Color.DarkGray, RoundedCornerShape(28.dp)).padding(horizontal = 8.dp, vertical = 4.dp),
+                        Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp).border(1.dp, Color.DarkGray, RoundedCornerShape(28.dp)).padding(horizontal = 8.dp, vertical = 4.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
