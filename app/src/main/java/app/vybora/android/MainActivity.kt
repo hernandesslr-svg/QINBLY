@@ -3663,7 +3663,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             }
                         }
                     }
-                    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 14.dp, vertical = 10.dp).padding(bottom = if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 120) 0.dp else 48.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 14.dp, vertical = 10.dp).padding(bottom = if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 120) 0.dp else 72.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("😊", fontSize = 28.sp, modifier = Modifier.padding(end = 10.dp).clickable { commentDraft += "😊" })
                         OutlinedTextField(
                             value = commentDraft,
@@ -5143,7 +5143,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                             }
                         }
                     }
-                    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 14.dp, vertical = 10.dp).padding(bottom = if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 120) 0.dp else 48.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 14.dp, vertical = 10.dp).padding(bottom = if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 120) 0.dp else 72.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("😊", fontSize = 28.sp, modifier = Modifier.padding(end = 10.dp).clickable { commentDraft += "😊" })
                         OutlinedTextField(
                             value = commentDraft,
