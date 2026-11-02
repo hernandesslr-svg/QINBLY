@@ -3338,11 +3338,11 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
             label = "frame-pulse"
         )
         // Decorative PNG overlays the photo; only the ornament gently pulses.
-        coil.compose.AsyncImage(
-            model = frameResource,
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(id = frameResource),
             contentDescription = "Moldura decorativa de perfil",
             modifier = Modifier.size(diameter).graphicsLayer { alpha = glow },
-            contentScale = androidx.compose.ui.layout.ContentScale.FillBounds
+            contentScale = androidx.compose.ui.layout.ContentScale.Fit
         )
         return
     }
