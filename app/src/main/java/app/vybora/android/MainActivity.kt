@@ -3383,61 +3383,71 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
     }
 
-    Column(Modifier.fillMaxSize().background(RemoteAppearance.screenBackgroundColor).verticalScroll(profileScrollState), verticalArrangement = Arrangement.spacedBy(0.dp)) {
-        // Capa do perfil: proporção 16:9, igual à área de enquadramento do editor.
-        Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
-            // Capa provisória padrão para não deixar o topo do perfil vazio enquanto corrigimos o carregamento da capa salva.
-            val coverImage = profilePhotoUrl.ifBlank { avatarUrl }.ifBlank { "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&h=900&q=85" }
-            AsyncImage(model = coverImage, contentDescription = "Foto de capa do perfil", modifier = Modifier.fillMaxSize().clickable { expandedImage = originalCoverUrl.ifBlank { coverImage } }, contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(colorStops = arrayOf(0.0f to Color.Black.copy(alpha = 0.10f), 0.48f to Color.Transparent, 0.76f to Night.copy(alpha = 0.68f), 1.0f to Night))))
-            IconButton(onClick = onSettings, modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 10.dp).size(38.dp)) {
-                Icon(Icons.Default.Menu, contentDescription = "Configurações do perfil", tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(25.dp))
-            }
-            IconButton(onClick = onEditProfilePhoto, modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp).size(36.dp).background(Color.Black.copy(alpha = 0.32f), CircleShape)) {
-                Icon(Icons.Default.CameraAlt, contentDescription = "Editar foto do perfil", tint = Color.White.copy(alpha = 0.88f), modifier = Modifier.size(20.dp))
-            }
-
-
-        }
-        Row(Modifier.fillMaxWidth().padding(start = 18.dp, end = 14.dp, top = 12.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Column(Modifier.clickable { onEdit() }.padding(horizontal = 2.dp, vertical = 3.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Icon(Icons.Default.Edit, contentDescription = "Editar informações do perfil", tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(18.dp))
-                        Box(Modifier.width(18.dp).height(2.dp).background(Brush.horizontalGradient(listOf(Pink, Violet)), RoundedCornerShape(2.dp)))
-                    }
-                }
-                Text(if (username.isBlank()) "Entre ou crie sua conta" else "@${username.removePrefix("@")}", color = Color.White.copy(alpha = 0.82f), maxLines = 1)
-            }
-            Row(Modifier.weight(1.65f), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                ProfileStat("Publicações", postsCount.toString(), Icons.Outlined.GridView) { onStat("Publicações") }
-                ProfileStat("Seguidores", followersCount.toString(), Icons.Default.Groups) { onStat("Seguidores") }
-                ProfileStat("Seguindo", followingCount.toString(), Icons.Default.PersonAddAlt1) { onStat("Seguindo") }
+    Column(Modifier.fillMaxSize().background(RemoteAppearance.screenBackgroundColor).verticalScroll(profileScrollState), horizontalAlignment = Alignment.CenterHorizontally) {
+        // Perfil QINBLY: sem capa; foto, nome e informações centralizados.
+        Box(Modifier.fillMaxWidth().padding(top = 10.dp, end = 12.dp), contentAlignment = Alignment.TopEnd) {
+            IconButton(onClick = onSettings) {
+                Icon(Icons.Default.Menu, contentDescription = "Configurações do perfil", tint = RemoteAppearance.screenTextColor)
             }
         }
-        if (shownBio.isNotBlank()) Text(shownBio, Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 5.dp), color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.bodyMedium, maxLines = 3)
-        else Text("Ainda não adicionou uma descrição.", Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 5.dp), color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
-        Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-            listOf("Publicações", "Vídeos", "Republicações", "Curtidas", "Salvos").forEach { item ->
-                Column(Modifier.weight(1f).clickable { profileTab = item }.padding(vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(imageVector = when (item) {
+        Box(Modifier.padding(top = 4.dp).size(132.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(126.dp).border(3.dp, Brush.sweepGradient(listOf(Color(0xFFFF2499), Color(0xFF7B39FF), Color(0xFFFF2499))), CircleShape).padding(5.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
+                val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
+                if (image.isNotBlank()) expandedImage = image else onEditProfilePhoto()
+            }) {
+                val image = profilePhotoUrl.ifBlank { avatarUrl }
+                if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                else Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(28.dp))
+            }
+            IconButton(onClick = onEditProfilePhoto, modifier = Modifier.align(Alignment.BottomEnd).size(34.dp).background(Color(0xFFFF168C), CircleShape)) {
+                Icon(Icons.Default.CameraAlt, contentDescription = "Alterar foto", tint = Color.White, modifier = Modifier.size(18.dp))
+            }
+        }
+        Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+            Icon(Icons.Default.Edit, contentDescription = "Editar nome e bio", tint = Color(0xFFFF168C), modifier = Modifier.size(18.dp))
+        }
+        Text(if (username.isBlank()) "Entre ou crie sua conta" else "@${username.removePrefix("@")}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
+        if (shownBio.isNotBlank()) Text(shownBio, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 10.dp), color = RemoteAppearance.screenTextColor, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
+        else Text("Adicione uma descrição ao seu perfil", Modifier.padding(top = 9.dp), color = RemoteAppearance.screenSecondaryTextColor)
+        Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 10.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+            ProfileStat("Publicações", postsCount.toString(), Icons.Outlined.GridView) { onStat("Publicações") }
+            ProfileStat("Seguidores", followersCount.toString(), Icons.Default.Groups) { onStat("Seguidores") }
+            ProfileStat("Seguindo", followingCount.toString(), Icons.Default.PersonAddAlt1) { onStat("Seguindo") }
+        }
+        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedButton(onClick = onEdit, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(17.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Editar perfil")
+            }
+            OutlinedButton(onClick = { onNotice("Loja de molduras: em preparação.") }, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(17.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Molduras")
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+            listOf("Publicações", "Vídeos", "Fotos", "Salvos", "Sobre").forEach { item ->
+                Column(Modifier.weight(1f).clickable { profileTab = item }.padding(vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(when(item) {
                         "Vídeos" -> Icons.Default.PlayCircle
-                        "Republicações" -> Icons.Default.Repeat
-                        "Curtidas" -> Icons.Default.FavoriteBorder
+                        "Fotos" -> Icons.Default.Image
                         "Salvos" -> Icons.Default.BookmarkBorder
+                        "Sobre" -> Icons.Default.Info
                         else -> Icons.Outlined.GridView
-                    }, contentDescription = item, tint = if (profileTab == item) Pink else Muted, modifier = Modifier.size(25.dp))
-                    Text(item, color = if (profileTab == item) Color.White else Muted, fontWeight = if (profileTab == item) FontWeight.Bold else FontWeight.Normal, style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                    Box(Modifier.fillMaxWidth().height(3.dp).background(if (profileTab == item) Brush.horizontalGradient(listOf(Pink, Violet)) else Brush.horizontalGradient(listOf(Night, Night))))
+                    }, contentDescription = item, tint = if (profileTab == item) Color(0xFFFF168C) else RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(23.dp))
+                    Text(item, color = if (profileTab == item) Color(0xFFFF168C) else RemoteAppearance.screenTextColor, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                    Spacer(Modifier.height(5.dp))
+                    Box(Modifier.fillMaxWidth(0.8f).height(2.dp).background(if (profileTab == item) Color(0xFFFF168C) else Color.Transparent))
                 }
             }
         }
-        if (profileTab != "Publicações" && profileTab != "Vídeos") {
+        if (profileTab == "Salvos" || profileTab == "Sobre") {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text(when (profileTab) {
-                    "Republicações" -> "Suas republicações aparecerão aqui"
-                    "Curtidas" -> "Publicações que você curtiu"
+                    "Sobre" -> shownBio.ifBlank { "Sem informações adicionais." }
+                    "Salvos" -> "Publicações que você salvou"
                     else -> "Publicações que você salvou"
                 }, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
             }
@@ -3453,8 +3463,8 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             }
         } else {
             LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                items(profilePosts.size) { index ->
-                    val post = profilePosts[index]
+                items(profilePosts.filter { profileTab != "Vídeos" || it.mediaType == "video" }.filter { profileTab != "Fotos" || it.mediaType == "image" }.size) { index ->
+                    val post = profilePosts.filter { profileTab != "Vídeos" || it.mediaType == "video" }.filter { profileTab != "Fotos" || it.mediaType == "image" }[index]
                     Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(8.dp)).background(Brush.linearGradient(listOf(Color(0xFF241047), Color(0xFF9D236E), Color(0xFF071A38)))).clickable { if (post.mediaUrl.isNotBlank()) expandedImage = post.mediaUrl }) {
                         if (post.mediaUrl.isNotBlank()) AsyncImage(model = post.mediaUrl, contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                         else Column(Modifier.align(Alignment.Center).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -3467,6 +3477,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             }
         }
     }
+
     if (expandedImage.isNotBlank()) {
         androidx.compose.ui.window.Dialog(
             onDismissRequest = { expandedImage = "" },
@@ -4739,8 +4750,8 @@ private fun ProfileStat(label: String, count: String, icon: ImageVector, onClick
     Column(Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(icon, contentDescription = label, tint = if (label == "Publicações") Pink else Color.White, modifier = Modifier.size(22.dp))
         Spacer(Modifier.height(3.dp))
-        Text(count, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.Black)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = Color.Black)
+        Text(count, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = RemoteAppearance.screenTextColor)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = RemoteAppearance.screenSecondaryTextColor)
     }
 }
 
