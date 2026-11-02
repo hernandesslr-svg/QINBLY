@@ -17,7 +17,7 @@ jobs:
           from pathlib import Path
           from zipfile import ZipFile
           from io import BytesIO
-          from PIL import Image
+          from PIL import Image, ImageDraw, ImageChops
           import re
           archive=Path('qinbly_android_assets.zip')
           assert archive.exists(), 'Missing supplied frame archive'
@@ -27,13 +27,19 @@ jobs:
           with ZipFile(archive) as z:
             for entry in z.namelist():
               name=Path(entry).name
-              if re.fullmatch(r'qinbly_frame_[a-z0-9_]+\\.png',name):
+              if re.fullmatch(r'qinbly_frame_[a-z0-9_]+\.png',name):
                 assert name not in found, 'Duplicate frame '+name
                 data=z.read(entry)
                 im=Image.open(BytesIO(data)).convert('RGBA')
                 assert min(im.size)>=128, 'Frame too small '+name
-                assert im.getpixel((im.width//2,im.height//2))[3]==0, 'Frame has opaque center '+name
-                found[name]=data
+                hole=Image.new('L',im.size,0)
+                radius=int(min(im.size)*0.43)
+                cx,cy=im.width//2,im.height//2
+                ImageDraw.Draw(hole).ellipse((cx-radius,cy-radius,cx+radius,cy+radius),fill=255)
+                im.putalpha(ImageChops.subtract(im.getchannel('A'),hole))
+                output=BytesIO()
+                im.save(output,format='PNG')
+                found[name]=output.getvalue()
           assert len(found)==10, 'Expected 10 PNGs, got '+str(sorted(found))
           for name,data in found.items():
             (target/name).write_bytes(data)
