@@ -3471,6 +3471,8 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 else Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(28.dp))
             }
+            if (appliedFrame >= 0) QiblyAnimatedFrame(appliedFrame, 132.dp)
+            else Box(Modifier.size(126.dp).border(3.dp, Brush.sweepGradient(listOf(Color(0xFFFF2499), Color(0xFF7B39FF), Color(0xFFFF2499))), CircleShape))
         }
         Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 1)
