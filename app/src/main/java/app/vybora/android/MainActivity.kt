@@ -2287,6 +2287,7 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                                         }
                                     }
 
+                                        Box(Modifier.width(1.dp).height(18.dp).background(Color(0xFFE1E4E9)))
                                         Row(
                                             modifier = Modifier.clickable {
                                             val postLink = "https://vybora.com/post/${Uri.encode(post.id)}"
