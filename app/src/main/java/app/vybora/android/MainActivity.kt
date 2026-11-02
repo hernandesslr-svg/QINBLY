@@ -93,6 +93,7 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.SettingsInputAntenna
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.TextFields
@@ -1816,23 +1817,45 @@ private fun FeedPage(currentUsername: String, nameFontStyle: String, onNotice: (
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        if (filter == "Novidades" || filter == "Vídeos" || filter == "Fotos" || filter == "Lives") {
-                            val filterIcon = when (filter) {
-                                "Novidades" -> Icons.Default.AutoAwesome
-                                "Vídeos" -> Icons.Default.PlayArrow
-                                "Fotos" -> Icons.Default.Image
-                                else -> Icons.Default.SettingsInputAntenna
+                        val filterTint = if (active) Color.White else if (filter == "Tendências") Color(0xFFFF663C) else Color(0xFF1677F2)
+                        when (filter) {
+                            "Novidades", "Vídeos", "Fotos", "Tendências" -> {
+                                val filterIcon = when (filter) {
+                                    "Novidades" -> Icons.Default.AutoAwesome
+                                    "Vídeos" -> Icons.Default.PlayCircle
+                                    "Fotos" -> Icons.Default.Image
+                                    else -> Icons.Default.LocalFireDepartment
+                                }
+                                Icon(
+                                    imageVector = filterIcon,
+                                    contentDescription = filter,
+                                    tint = filterTint,
+                                    modifier = Modifier.size(18.dp)
+                                )
                             }
-                            Icon(
-                                imageVector = filterIcon,
-                                contentDescription = filter,
-                                tint = if (active) Color.White else Color(0xFF1677F2),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        } else {
-                            Text(feedFilterIcons[index],
-                                color = if (active) Color.White else feedFilterAccent[index],
-                                fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            "Lives" -> {
+                                androidx.compose.foundation.Canvas(modifier = Modifier.size(18.dp)) {
+                                    val stroke = androidx.compose.ui.graphics.drawscope.Stroke(
+                                        width = 1.9.dp.toPx(),
+                                        cap = androidx.compose.ui.graphics.StrokeCap.Round
+                                    )
+                                    val c = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+                                    drawCircle(color = filterTint, radius = 2.dp.toPx(), center = c)
+                                    val small = 6.dp.toPx()
+                                    val large = 10.dp.toPx()
+                                    for (radius in listOf(small, large)) {
+                                        val corner = androidx.compose.ui.geometry.Offset(c.x - radius, c.y - radius)
+                                        val arcSize = androidx.compose.ui.geometry.Size(radius * 2f, radius * 2f)
+                                        drawArc(color = filterTint, startAngle = 120f, sweepAngle = 120f, useCenter = false, topLeft = corner, size = arcSize, style = stroke)
+                                        drawArc(color = filterTint, startAngle = 300f, sweepAngle = 120f, useCenter = false, topLeft = corner, size = arcSize, style = stroke)
+                                    }
+                                }
+                            }
+                            else -> {
+                                Text(feedFilterIcons[index],
+                                    color = if (active) Color.White else feedFilterAccent[index],
+                                    fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                         Text(filter,
                             color = if (active) Color.White else Color(0xFF20202B),
