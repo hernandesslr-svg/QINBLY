@@ -3452,7 +3452,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 else Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(28.dp))
             }
-            if (appliedFrame >= 0) QiblyAnimatedFrame(appliedFrame, 156.dp)
+            if (appliedFrame >= 0) QiblyAnimatedFrame(appliedFrame, 174.dp)
             else Box(Modifier.size(112.dp).border(2.dp, Brush.sweepGradient(listOf(Color(0xFFFF2499), Color(0xFF7B39FF), Color(0xFFFF2499))), CircleShape))
         }
         Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -3678,16 +3678,16 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 }
                 Text("10 molduras circulares para a foto de perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
-                Box(Modifier.fillMaxWidth().height(158.dp), contentAlignment = Alignment.Center) {
-                    Box(Modifier.size(132.dp), contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(116.dp).clip(CircleShape).background(QiblyTheme.card)) {
+                Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(156.dp), contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(124.dp).clip(CircleShape).background(QiblyTheme.card)) {
                             val image = profilePhotoUrl.ifBlank { avatarUrl }
                             if (image.isNotBlank()) AsyncImage(model = image,
                                 contentDescription = "Prévia circular", modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop)
                             else Icon(Icons.Default.Person, contentDescription = null)
                         }
-                        QiblyAnimatedFrame(selectedFramePreview, 132.dp)
+                        QiblyAnimatedFrame(selectedFramePreview, 156.dp)
                     }
                 }
                 Text(frameNames[selectedFramePreview], modifier = Modifier.fillMaxWidth().padding(10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold)
@@ -3706,15 +3706,15 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 .padding(12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Box(Modifier.size(76.dp), contentAlignment = Alignment.Center) {
-                                Box(Modifier.size(68.dp).clip(CircleShape).background(QiblyTheme.card)) {
+                            Box(Modifier.size(96.dp), contentAlignment = Alignment.Center) {
+                                Box(Modifier.size(76.dp).clip(CircleShape).background(QiblyTheme.card)) {
                                     val image = profilePhotoUrl.ifBlank { avatarUrl }
                                     if (image.isNotBlank()) AsyncImage(model = image,
                                         contentDescription = null, modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop)
                                     else Icon(Icons.Default.Person, contentDescription = null)
                                 }
-                                QiblyAnimatedFrame(index, 76.dp)
+                                QiblyAnimatedFrame(index, 96.dp)
                             }
                             Text(frameNames[index], modifier = Modifier.padding(top = 8.dp), fontSize = 13.sp)
                         }
