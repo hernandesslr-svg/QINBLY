@@ -3385,7 +3385,7 @@ private fun qinblyFrameWithoutWhiteSquare(source: Bitmap): Bitmap {
 }
 
 @Composable
-private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
+private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.dp) {
     val frames = intArrayOf(
         R.drawable.qinbly_frame_8778,
         R.drawable.qinbly_frame_8779,
@@ -3434,7 +3434,7 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
         label = "qinbly_frame_alpha"
     )
     // Área externa sem recorte; a arte fica com folga em todos os lados.
-    Box(Modifier.requiredSize(diameter).graphicsLayer { clip = false }, contentAlignment = Alignment.Center) {
+    Box(Modifier.requiredSize(diameter).offset(y = verticalOffset).graphicsLayer { clip = false }, contentAlignment = Alignment.Center) {
     androidx.compose.foundation.Image(
         bitmap = frameBitmap,
         contentDescription = "Moldura decorativa do perfil",
@@ -3571,7 +3571,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 else Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(28.dp))
             }
-            if (appliedFrame >= 0) QiblyAnimatedFrame(appliedFrame, 200.dp)
+            if (appliedFrame >= 0) QiblyAnimatedFrame(appliedFrame, 216.dp, verticalOffset = (-9).dp)
         }
         Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 1)
@@ -3801,7 +3801,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 contentScale = ContentScale.Crop)
                             else Icon(Icons.Default.Person, contentDescription = null)
                         }
-                        QiblyAnimatedFrame(selectedFramePreview, 200.dp)
+                        QiblyAnimatedFrame(selectedFramePreview, 216.dp, verticalOffset = (-9).dp)
                     }
                 }
                 Text(frameNames[selectedFramePreview], modifier = Modifier.fillMaxWidth().padding(10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold)
@@ -3828,7 +3828,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                         contentScale = ContentScale.Crop)
                                     else Icon(Icons.Default.Person, contentDescription = null)
                                 }
-                                QiblyAnimatedFrame(index, 150.dp)
+                                QiblyAnimatedFrame(index, 162.dp, verticalOffset = (-6).dp)
                             }
                             Text(frameNames[index], modifier = Modifier.padding(top = 8.dp), fontSize = 13.sp)
                         }
