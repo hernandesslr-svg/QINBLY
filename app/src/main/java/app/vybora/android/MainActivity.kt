@@ -3677,7 +3677,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 }
                 Text("10 molduras circulares para a foto de perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
-                Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxWidth().height(240.dp), contentAlignment = Alignment.Center) {
                     Box(Modifier.size(156.dp), contentAlignment = Alignment.Center) {
                         Box(Modifier.size(150.dp).zIndex(0f).clip(CircleShape).background(QiblyTheme.card)) {
                             val image = profilePhotoUrl.ifBlank { avatarUrl }
@@ -3705,7 +3705,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 .padding(12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Box(Modifier.size(134.dp), contentAlignment = Alignment.Center) {
+                            Box(Modifier.size(110.dp), contentAlignment = Alignment.Center) {
                                 Box(Modifier.size(86.dp).zIndex(0f).clip(CircleShape).background(QiblyTheme.card)) {
                                     val image = profilePhotoUrl.ifBlank { avatarUrl }
                                     if (image.isNotBlank()) AsyncImage(model = image,
@@ -3713,7 +3713,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                         contentScale = ContentScale.Crop)
                                     else Icon(Icons.Default.Person, contentDescription = null)
                                 }
-                                QiblyAnimatedFrame(index, 154.dp)
+                                QiblyAnimatedFrame(index, 166.dp)
                             }
                             Text(frameNames[index], modifier = Modifier.padding(top = 8.dp), fontSize = 13.sp)
                         }
