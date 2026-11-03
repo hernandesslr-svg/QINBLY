@@ -3398,6 +3398,20 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
         val bitmap = BitmapFactory.decodeResource(context.resources, resourceId)
         qinblyFrameWithoutWhiteSquare(bitmap).asImageBitmap()
     }
+    // Animação nativa da decoração, independente da foto do usuário.
+    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "qinbly_frame_glow")
+    val glowAlpha by transition.animateFloat(
+        initialValue = 0.78f,
+        targetValue = 1f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(
+                durationMillis = 1700,
+                easing = androidx.compose.animation.core.FastOutSlowInEasing
+            ),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+        ),
+        label = "qinbly_frame_alpha"
+    )
     androidx.compose.foundation.Image(
         bitmap = frameBitmap,
         contentDescription = "Moldura decorativa do perfil",
@@ -3405,11 +3419,8 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
         modifier = Modifier
             .requiredSize(diameter)
             .graphicsLayer {
-                shadowElevation = 10.dp.toPx()
-                ambientShadowColor = Color.Black.copy(alpha = 0.30f)
-                spotShadowColor = Color.Black.copy(alpha = 0.42f)
-                rotationX = 2f
-                rotationY = -2f
+                // Sem rotação 3D: evita recorte dos detalhes da coroa nas bordas.
+                alpha = glowAlpha
                 clip = false
             }
             .zIndex(100f)
