@@ -3384,6 +3384,48 @@ private fun qinblyFrameWithoutWhiteSquare(source: Bitmap): Bitmap {
     return Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
 }
 
+// Normaliza cada moldura individualmente: remove somente a margem transparente
+// externa, preservando todos os ornamentos e uma folga para o brilho.
+private fun qinblyNormalizedFrame(bitmap: Bitmap): Bitmap {
+    val width = bitmap.width
+    val height = bitmap.height
+    if (width <= 0 || height <= 0) return bitmap
+    val pixels = IntArray(width * height)
+    bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+    var left = width
+    var top = height
+    var right = -1
+    var bottom = -1
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            if (android.graphics.Color.alpha(pixels[y * width + x]) > 8) {
+                if (x < left) left = x
+                if (x > right) right = x
+                if (y < top) top = y
+                if (y > bottom) bottom = y
+            }
+        }
+    }
+    if (right < left || bottom < top) return bitmap
+    val margin = (maxOf(width, height) * 0.025f).toInt().coerceAtLeast(2)
+    left = (left - margin).coerceAtLeast(0)
+    top = (top - margin).coerceAtLeast(0)
+    right = (right + margin).coerceAtMost(width - 1)
+    bottom = (bottom + margin).coerceAtMost(height - 1)
+    val cropWidth = right - left + 1
+    val cropHeight = bottom - top + 1
+    // Quadrado transparente para não distorcer o círculo ao exibir.
+    val side = maxOf(cropWidth, cropHeight)
+    val result = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(result)
+    val src = android.graphics.Rect(left, top, right + 1, bottom + 1)
+    val offsetX = (side - cropWidth) / 2
+    val offsetY = (side - cropHeight) / 2
+    val dst = android.graphics.Rect(offsetX, offsetY, offsetX + cropWidth, offsetY + cropHeight)
+    canvas.drawBitmap(bitmap, src, dst, null)
+    return result
+}
+
 @Composable
 private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.dp) {
     val frames = intArrayOf(
@@ -3417,7 +3459,7 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
     val resourceId = frames[style.coerceIn(0, frames.lastIndex)]
     val frameBitmap = androidx.compose.runtime.remember(resourceId) {
         val bitmap = BitmapFactory.decodeResource(context.resources, resourceId)
-        qinblyFrameWithoutWhiteSquare(bitmap).asImageBitmap()
+        qinblyNormalizedFrame(qinblyFrameWithoutWhiteSquare(bitmap)).asImageBitmap()
     }
     // Animação nativa da decoração, independente da foto do usuário.
     val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "qinbly_frame_glow")
@@ -3440,7 +3482,7 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
         contentDescription = "Moldura decorativa do perfil",
         contentScale = ContentScale.FillBounds,
         modifier = Modifier
-            .requiredSize(diameter * 0.92f)
+            .requiredSize(diameter * 0.98f)
             .graphicsLayer {
                 // Sem rotação 3D: evita recorte dos detalhes da coroa nas bordas.
                 alpha = glowAlpha
