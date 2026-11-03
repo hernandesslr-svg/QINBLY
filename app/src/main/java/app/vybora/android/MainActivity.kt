@@ -3507,7 +3507,9 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
             .then(Modifier.drawBehind {
                 // Sombra recortada pelo alfa da propria arte: segue flores,
                 // lacos, coracoes e coroas, sem formar aro cinza artificial.
-                withTransform({ translate(left = 1.5.dp.toPx(), top = 3.dp.toPx()) }) {
+                val shadowX = 1.5.dp.toPx()
+                val shadowY = 3.dp.toPx()
+                withTransform({ translate(left = shadowX, top = shadowY) }) {
                     drawImage(
                         image = frameBitmap,
                         dstSize = androidx.compose.ui.unit.IntSize(size.width.toInt(), size.height.toInt()),
