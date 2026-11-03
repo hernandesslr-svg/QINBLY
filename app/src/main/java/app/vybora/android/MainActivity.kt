@@ -3317,8 +3317,8 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
 
 @Composable
 private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
-    // The decoration is an independent bundled resource, layered ABOVE the avatar.
-    // Clip only the decoration's inner opening, never the profile photograph.
+    // Render the installed transparent PNG over the circular avatar.
+    // Preserve its transparent center and decorative edges without additional clipping.
     val frames = intArrayOf(
         R.drawable.qinbly_frame_rosa_neon, R.drawable.qinbly_frame_azul_eletrico,
         R.drawable.qinbly_frame_realeza, R.drawable.qinbly_frame_galaxia,
