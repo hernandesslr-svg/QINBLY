@@ -3330,7 +3330,7 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
         painter = androidx.compose.ui.res.painterResource(frames[style.coerceIn(0, frames.lastIndex)]),
         contentDescription = "Moldura decorativa do perfil",
         contentScale = ContentScale.FillBounds,
-        modifier = Modifier.size(diameter).zIndex(100f)
+        modifier = Modifier.requiredSize(diameter).zIndex(100f)
     )
 }
 
