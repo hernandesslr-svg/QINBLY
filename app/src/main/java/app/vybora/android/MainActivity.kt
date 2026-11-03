@@ -31,6 +31,7 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.input.pointer.pointerInput
@@ -3504,23 +3505,16 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
         modifier = Modifier
             .requiredSize(diameter * frameScale)
             .then(Modifier.drawBehind {
-                val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
-                val radius = size.minDimension * 0.405f
-                // Sombra apenas circular, nunca quadrada.
-                drawCircle(Color.Black.copy(alpha = 0.07f), radius + 13.dp.toPx(), center,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 14.dp.toPx()))
-                drawCircle(Color.Black.copy(alpha = 0.14f), radius + 7.dp.toPx(),
-                    center.copy(y = center.y + 3.dp.toPx()),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 7.dp.toPx()))
-                // Aro interno metálico: borda escura, luz superior e reflexo.
-                drawCircle(Color(0xFF343A48).copy(alpha = 0.58f), radius, center,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 5.dp.toPx()))
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.sweepGradient(
-                        listOf(Color(0xFF424B5A), Color(0xFFE9F3FF), Color(0xFF717A8A),
-                            Color(0xFFFFFFFF), Color(0xFF343A48), Color(0xFFE9F3FF), Color(0xFF424B5A))
-                    ), radius = radius + 2.dp.toPx(), center = center,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx()))
+                // Sombra recortada pelo alfa da propria arte: segue flores,
+                // lacos, coracoes e coroas, sem formar aro cinza artificial.
+                withTransform({ translate(left = 1.5.dp.toPx(), top = 3.dp.toPx()) }) {
+                    drawImage(
+                        image = frameBitmap,
+                        dstSize = androidx.compose.ui.unit.IntSize(size.width.toInt(), size.height.toInt()),
+                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.Black),
+                        alpha = 0.20f
+                    )
+                }
             })
             .graphicsLayer {
                 // A sombra antiga do graphicsLayer formava um quadrado no fundo.
