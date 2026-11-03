@@ -3678,52 +3678,68 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
     }
 
-    // O tema acompanha a moldura aplicada, sem alterar o tema global do aplicativo.
+    // Tema visual exclusivo da moldura, sem alterar a aparência global.
     val frameAccent = when (appliedFrame) {
-        6, 7, 9 -> Color(0xFFE91E91) // coração, pet e laço
-        10, 12 -> Color(0xFF1677E8) // azul e celeste
-        11 -> Color(0xFF8796AF) // prata
-        13 -> Color(0xFFFFA000) // dourado
-        14 -> Color(0xFF8E44D9) // violeta
+        6 -> Color(0xFFED3698) // coração neon
+        7 -> Color(0xFFE67AAE) // amor pet
+        9 -> Color(0xFFD9509D) // laço rosa
+        10 -> Color(0xFF1687F4) // brilho azul
+        11 -> Color(0xFF8999B0) // prata
+        12 -> Color(0xFF45B5DF) // celeste
+        13 -> Color(0xFFE4A32C) // dourado
+        14 -> Color(0xFF8E5BDC) // violeta
         else -> Color(0xFF1677E8)
     }
-    val frameTint = if (appliedFrame >= 0) frameAccent.copy(alpha = 0.09f) else RemoteAppearance.screenBackgroundColor
-    val frameBorder = if (appliedFrame >= 0) frameAccent.copy(alpha = 0.58f) else Color.Transparent
     val profileAccent = if (appliedFrame >= 0) frameAccent else Color(0xFF1677E8)
+    val frameTint = if (appliedFrame >= 0) frameAccent.copy(alpha = 0.11f) else RemoteAppearance.screenBackgroundColor
     Column(Modifier.fillMaxSize().background(RemoteAppearance.screenBackgroundColor).verticalScroll(profileScrollState), horizontalAlignment = Alignment.CenterHorizontally) {
-        // Cabeçalho próprio do QINBLY, colorido conforme a moldura.
+        // Capa real e independente: sem retângulo em volta dos dados do perfil.
         Box(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 5.dp)
+            Modifier.fillMaxWidth().height(if (appliedFrame >= 0) 265.dp else 252.dp)
                 .background(
-                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                        listOf(frameTint, RemoteAppearance.screenBackgroundColor)
-                    ),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        if (appliedFrame >= 0) listOf(frameAccent.copy(alpha = 0.30f), frameTint, RemoteAppearance.screenBackgroundColor)
+                        else listOf(RemoteAppearance.screenBackgroundColor, RemoteAppearance.screenBackgroundColor)
+                    )
                 )
-                .then(if (appliedFrame >= 0) Modifier.border(1.dp, frameBorder, androidx.compose.foundation.shape.RoundedCornerShape(22.dp)) else Modifier),
-            contentAlignment = Alignment.Center
         ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        // Perfil QINBLY: sem capa; foto, nome e informações centralizados.
-        Box(Modifier.align(Alignment.End).padding(top = 10.dp, end = 12.dp).size(48.dp), contentAlignment = Alignment.Center) {
-            IconButton(onClick = onSettings) {
+            if (appliedFrame >= 0) {
+                // Ornamentos discretos exclusivos por estilo, sem cobrir a foto.
+                Text(
+                    when (appliedFrame) {
+                        6 -> "♡  ✦  ♡"
+                        7 -> "♡  🐾  ♡"
+                        9 -> "✿  ♡  ✿"
+                        10 -> "✧  ❄  ✧"
+                        11 -> "✦  ◇  ✦"
+                        12 -> "☁  ✧  ☁"
+                        13 -> "✦  ♛  ✦"
+                        14 -> "✧  ✦  ✧"
+                        else -> "✦  ✧  ✦"
+                    },
+                    modifier = Modifier.align(Alignment.TopCenter).padding(top = 17.dp),
+                    color = frameAccent.copy(alpha = 0.70f),
+                    fontSize = 21.sp,
+                    letterSpacing = 7.sp
+                )
+            }
+            IconButton(onClick = onSettings, modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 12.dp)) {
                 Icon(Icons.Default.Menu, contentDescription = "Configurações do perfil", tint = RemoteAppearance.screenTextColor)
             }
-        }
-        // The portrait fits INSIDE the ornament; the ornament can overflow freely.
-        // A foto define o espaço no layout; a moldura de 200 dp flutua sobre ela.
-        // O padding inferior protege o nome da coroa e dos ornamentos.
-        Box(Modifier.padding(top = 28.dp, bottom = 30.dp).size(225.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(185.dp).zIndex(0f).clip(CircleShape).background(QiblyTheme.card).clickable {
-                val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
-                if (image.isNotBlank()) { expandedImage = image; viewingPublication = false } else onEditProfilePhoto()
-            }) {
-                val image = profilePhotoUrl.ifBlank { avatarUrl }
-                if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                else Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(28.dp))
+            // Moldura e retrato centralizados na capa, preservando a arte integral.
+            Box(Modifier.align(Alignment.BottomCenter).size(225.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(185.dp).zIndex(0f).clip(CircleShape).background(QiblyTheme.card).clickable {
+                    val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
+                    if (image.isNotBlank()) { expandedImage = image; viewingPublication = false } else onEditProfilePhoto()
+                }) {
+                    val image = profilePhotoUrl.ifBlank { avatarUrl }
+                    if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    else Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(28.dp))
+                }
+                if (appliedFrame >= 0) QiblyAnimatedFrame(appliedFrame, 225.dp)
             }
-            if (appliedFrame >= 0) QiblyAnimatedFrame(appliedFrame, 225.dp)
         }
+        Spacer(Modifier.height(18.dp))
         Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 1)
         }
@@ -3765,13 +3781,11 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Text("Molduras")
             }
         }
-        } // conteúdo do cabeçalho
-        } // painel temático
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(18.dp))
+        // Abas em superfície limpa, separadas por um divisor sutil.
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp)
-                .background(frameTint, androidx.compose.foundation.shape.RoundedCornerShape(18.dp))
-                .then(if (appliedFrame >= 0) Modifier.border(1.dp, frameBorder, androidx.compose.foundation.shape.RoundedCornerShape(18.dp)) else Modifier)
+            Modifier.fillMaxWidth()
+                .background(RemoteAppearance.screenBackgroundColor)
                 .padding(top = 10.dp, bottom = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
