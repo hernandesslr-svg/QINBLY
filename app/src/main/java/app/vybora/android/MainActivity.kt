@@ -4069,11 +4069,17 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     OutlinedButton(onClick = {
                         appliedFrame = -1
                         profilePrefs.edit().putInt("qinbly_profile_frame", -1).apply()
+                        profilePrefs.getString("token", null)?.takeIf { it.isNotBlank() }?.let { token ->
+                            Thread { try { VyboraApi.setProfileFrame(token, -1) } catch (_: Exception) { } }.start()
+                        }
                         framesOpen = false
                     }, modifier = Modifier.weight(1f)) { Text("Sem moldura") }
                     Button(onClick = {
                         appliedFrame = selectedFramePreview
                         profilePrefs.edit().putInt("qinbly_profile_frame", selectedFramePreview).apply()
+                        profilePrefs.getString("token", null)?.takeIf { it.isNotBlank() }?.let { token ->
+                            Thread { try { VyboraApi.setProfileFrame(token, selectedFramePreview) } catch (_: Exception) { } }.start()
+                        }
                         framesOpen = false
                     }, modifier = Modifier.weight(1f)) { Text("Aplicar") }
                 }
@@ -5280,6 +5286,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
     val prefs = remember { context.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
     var user by remember(username) { mutableStateOf(org.json.JSONObject()) }
     var loading by remember(username) { mutableStateOf(true) }
+    var publicFrame by remember(username) { mutableIntStateOf(-1) }
     var isFollowing by remember(username) { mutableStateOf(false) }
     var selectedTab by remember(username) { mutableStateOf("Publicações") }
     var expandedImage by remember { mutableStateOf<String?>(null) }
@@ -5327,6 +5334,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                 }
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                     user = found
+                    publicFrame = found.optInt("profileFrame", -1)
                     isFollowing = found.optBoolean("isFollowing")
                     profilePosts = posts
                     loading = false
@@ -5348,11 +5356,14 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
             IconButton(onClick = { showMoreOptions = true }) { Icon(Icons.Default.MoreHoriz, contentDescription = "Opções deste perfil", tint = RemoteAppearance.screenTextColor) }
         }
         Box(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(225.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
-                if (profilePhotoUrl.isNotBlank()) expandedImage = profilePhotoUrl; viewingPublication = false
-            }) {
-                if (profilePhotoUrl.isNotBlank()) AsyncImage(model = profilePhotoUrl, contentDescription = "Foto de $displayName", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                else Icon(Icons.Default.Person, contentDescription = "Sem foto", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(34.dp))
+            Box(Modifier.size(225.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(if (publicFrame >= 0) 185.dp else 205.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
+                    if (profilePhotoUrl.isNotBlank()) { expandedImage = profilePhotoUrl; viewingPublication = false }
+                }) {
+                    if (profilePhotoUrl.isNotBlank()) AsyncImage(model = profilePhotoUrl, contentDescription = "Foto de $displayName", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    else Icon(Icons.Default.Person, contentDescription = "Sem foto", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(34.dp))
+                }
+                if (publicFrame in 6..14 && publicFrame != 8) QiblyAnimatedFrame(publicFrame, 225.dp)
             }
         }
         Text(displayName, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
