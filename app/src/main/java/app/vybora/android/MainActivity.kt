@@ -3464,7 +3464,7 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
     // Animação nativa da decoração, independente da foto do usuário.
     val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "qinbly_frame_glow")
     val glowAlpha by transition.animateFloat(
-        initialValue = 0.78f,
+        initialValue = 0.92f,
         targetValue = 1f,
         animationSpec = androidx.compose.animation.core.infiniteRepeatable(
             animation = androidx.compose.animation.core.tween(
@@ -3505,7 +3505,12 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
             .graphicsLayer {
                 // Sem rotação 3D: evita recorte dos detalhes da coroa nas bordas.
                 alpha = if (style == 0) 0.88f + (testShimmer * 0.12f) else glowAlpha
-                rotationZ = if (style == 0) (testShimmer - 0.5f) * 0.8f else 0f
+                // Relevo e profundidade na arte, sem alterar a escala ou o enquadramento.
+                shadowElevation = 8.dp.toPx()
+                ambientShadowColor = Color.Black.copy(alpha = 0.28f)
+                spotShadowColor = Color.Black.copy(alpha = 0.40f)
+                rotationX = 1.5f
+                rotationY = -1.5f
                 clip = false
             }
             .zIndex(100f)
@@ -3548,7 +3553,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     val shownCountry = bio.lineSequence().firstOrNull { it.startsWith("🌍 ") }?.removePrefix("🌍 ").orEmpty()
     val profileContext = androidx.compose.ui.platform.LocalContext.current
     val profilePrefs = remember { profileContext.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
-    var appliedFrame by remember { mutableIntStateOf(profilePrefs.getInt("qinbly_profile_frame", -1).takeIf { it in 6..14 } ?: -1) }
+    var appliedFrame by remember { mutableIntStateOf(profilePrefs.getInt("qinbly_profile_frame", -1).takeIf { it in 6..14 && it != 8 } ?: -1) }
 
     LaunchedEffect(username, photoRefreshKey) {
         loadingPosts = true
@@ -3835,8 +3840,18 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     if (framesOpen) {
         // Mantém apenas as nove molduras simples (IDs originais 7 a 15).
         // IDs originais preservados para compatibilidade com perfis já salvos.
-        val simpleFrameIds = (6..14).toList()
-        val frameNames = simpleFrameIds.map { "Moldura ${it + 1}" }
+        val simpleFrameIds = (6..14).filter { it != 8 }
+        val frameNamesById = mapOf(
+            6 to "Coração Neon",
+            7 to "Amor Pet",
+            9 to "Laço Rosa",
+            10 to "Brilho Azul",
+            11 to "Aura Prateada",
+            12 to "Luz Celeste",
+            13 to "Rosa Radiante",
+            14 to "Estrela Neon"
+        )
+        val frameNames = simpleFrameIds.map { frameNamesById[it] ?: "Moldura" }
         val frameColors = List(simpleFrameIds.size) { Color(0xFF268BFF) }
         if (selectedFramePreview !in simpleFrameIds) selectedFramePreview = simpleFrameIds.first()
         androidx.compose.ui.window.Dialog(
@@ -3855,7 +3870,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         Icon(Icons.Default.Close, contentDescription = "Fechar molduras")
                     }
                 }
-                Text("9 molduras simples para a foto de perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("8 molduras para a foto de perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
                 Box(Modifier.fillMaxWidth().height(290.dp), contentAlignment = Alignment.Center) {
                     Box(Modifier.size(225.dp), contentAlignment = Alignment.Center) {
@@ -3869,7 +3884,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         QiblyAnimatedFrame(selectedFramePreview, 225.dp)
                     }
                 }
-                Text("Moldura ${selectedFramePreview + 1}", modifier = Modifier.fillMaxWidth().padding(10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold)
+                Text(frameNamesById[selectedFramePreview] ?: "Moldura", modifier = Modifier.fillMaxWidth().padding(10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold)
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     modifier = Modifier.weight(1f),
