@@ -3695,14 +3695,47 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     Column(Modifier.fillMaxSize().background(RemoteAppearance.screenBackgroundColor).verticalScroll(profileScrollState), horizontalAlignment = Alignment.CenterHorizontally) {
         // Capa real e independente: sem retângulo em volta dos dados do perfil.
         Box(
-            Modifier.fillMaxWidth().height(if (appliedFrame >= 0) 265.dp else 252.dp)
+            Modifier.fillMaxWidth().height(if (appliedFrame >= 0) 295.dp else 252.dp)
                 .background(
                     androidx.compose.ui.graphics.Brush.verticalGradient(
-                        if (appliedFrame >= 0) listOf(frameAccent.copy(alpha = 0.30f), frameTint, RemoteAppearance.screenBackgroundColor)
+                        if (appliedFrame >= 0) listOf(frameAccent.copy(alpha = 0.48f), frameAccent.copy(alpha = 0.18f), RemoteAppearance.screenBackgroundColor)
                         else listOf(RemoteAppearance.screenBackgroundColor, RemoteAppearance.screenBackgroundColor)
                     )
                 )
         ) {
+            if (appliedFrame >= 0) {
+                // Faixas ornamentais laterais fazem parte da capa, não são bordas de cartão.
+                Text(
+                    when (appliedFrame) {
+                        6 -> "♡\n✿\n♡\n✧"
+                        7 -> "🐾\n♡\n🐾"
+                        9 -> "✿\n❀\n✿"
+                        10 -> "❄\n✧\n❄"
+                        11 -> "◇\n✦\n◇"
+                        12 -> "☁\n✧\n☁"
+                        13 -> "♛\n✦\n♛"
+                        else -> "✦\n✧\n✦"
+                    },
+                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 15.dp),
+                    color = frameAccent.copy(alpha = 0.68f), fontSize = 24.sp,
+                    lineHeight = 44.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+                Text(
+                    when (appliedFrame) {
+                        6 -> "✧\n♡\n✿\n♡"
+                        7 -> "♡\n🐾\n♡"
+                        9 -> "❀\n✿\n❀"
+                        10 -> "✧\n❄\n✧"
+                        11 -> "✦\n◇\n✦"
+                        12 -> "✧\n☁\n✧"
+                        13 -> "✦\n♛\n✦"
+                        else -> "✧\n✦\n✧"
+                    },
+                    modifier = Modifier.align(Alignment.CenterEnd).padding(end = 15.dp),
+                    color = frameAccent.copy(alpha = 0.68f), fontSize = 24.sp,
+                    lineHeight = 44.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
             if (appliedFrame >= 0) {
                 // Ornamentos discretos exclusivos por estilo, sem cobrir a foto.
                 Text(
@@ -3739,7 +3772,30 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 if (appliedFrame >= 0) QiblyAnimatedFrame(appliedFrame, 225.dp)
             }
         }
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(6.dp))
+        // Cartão de identidade separado da capa e decorado segundo a moldura.
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = if (appliedFrame >= 0) 14.dp else 0.dp)
+                .then(if (appliedFrame >= 0) Modifier.background(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(listOf(frameAccent.copy(alpha = 0.14f), frameAccent.copy(alpha = 0.035f), RemoteAppearance.screenBackgroundColor)),
+                    androidx.compose.foundation.shape.RoundedCornerShape(26.dp)
+                ) else Modifier)
+                .padding(top = 15.dp, bottom = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (appliedFrame >= 0) {
+                Text(when (appliedFrame) {
+                    6 -> "✦  AMOR NEON  ✦"
+                    7 -> "♡  AMOR PET  ♡"
+                    9 -> "✿  LAÇO ROSA  ✿"
+                    10 -> "❄  BRILHO AZUL  ❄"
+                    11 -> "◇  AURA PRATEADA  ◇"
+                    12 -> "✧  LUZ CELESTE  ✧"
+                    13 -> "♛  AURA DOURADA  ♛"
+                    else -> "✦  AURA MÁGICA  ✦"
+                }, color = frameAccent, fontSize = 11.sp, letterSpacing = 2.sp)
+                Spacer(Modifier.height(5.dp))
+            }
         Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 1)
         }
@@ -3781,6 +3837,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Text("Molduras")
             }
         }
+        } // cartão de identidade temático
         Spacer(Modifier.height(18.dp))
         // Abas em superfície limpa, separadas por um divisor sutil.
         Row(
