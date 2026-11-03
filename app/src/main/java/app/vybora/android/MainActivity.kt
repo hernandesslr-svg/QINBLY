@@ -5286,6 +5286,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
     val prefs = remember { context.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
     var user by remember(username) { mutableStateOf(org.json.JSONObject()) }
     var loading by remember(username) { mutableStateOf(true) }
+    var profileLoadError by remember(username) { mutableStateOf<String?>(null) }
     var publicFrame by remember(username) { mutableIntStateOf(-1) }
     var isFollowing by remember(username) { mutableStateOf(false) }
     var selectedTab by remember(username) { mutableStateOf("Publicações") }
@@ -5311,6 +5312,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
     val bio = user.optString("bio")
     LaunchedEffect(username) {
         loading = true
+        profileLoadError = null
         Thread {
             try {
                 val response = VyboraApi.getPublicProfile(username, prefs.getString("token", null))
@@ -5334,6 +5336,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                 }
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                     user = found
+                    profileLoadError = null
                     publicFrame = found.optInt("profileFrame", -1)
                     isFollowing = found.optBoolean("isFollowing")
                     profilePosts = posts
@@ -5342,7 +5345,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
             } catch (e: Exception) {
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                     loading = false
-                    onNotice(e.message ?: "Não foi possível abrir este perfil.")
+                    profileLoadError = e.message ?: "Não foi possível carregar os dados do perfil."
                 }
             }
         }.start()
@@ -5441,6 +5444,8 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
         }
         if (loading) {
             Box(Modifier.fillMaxWidth().padding(30.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Pink) }
+        } else if (profileLoadError != null) {
+            Text("Não foi possível carregar o perfil: ${profileLoadError}", modifier = Modifier.fillMaxWidth().padding(24.dp), color = RemoteAppearance.screenTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         } else if (selectedTab !in listOf("Publicações", "Vídeos", "Fotos")) {
             Box(Modifier.fillMaxWidth().padding(28.dp), contentAlignment = Alignment.Center) {
                 Text(when (selectedTab) {
@@ -5456,7 +5461,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.GridView, contentDescription = null, tint = Violet, modifier = Modifier.size(34.dp))
                     Spacer(Modifier.height(8.dp))
-                    Text("Nenhuma publicação ainda", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold)
+                    Text("Nenhuma publicação pública encontrada nesta conta", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold)
                 }
             }
         } else {
