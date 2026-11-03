@@ -3677,16 +3677,16 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 }
                 Text("10 molduras circulares para a foto de perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
-                Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxWidth().height(240.dp), contentAlignment = Alignment.Center) {
                     Box(Modifier.size(156.dp), contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(140.dp).zIndex(0f).clip(CircleShape).background(QiblyTheme.card)) {
+                        Box(Modifier.size(150.dp).zIndex(0f).clip(CircleShape).background(QiblyTheme.card)) {
                             val image = profilePhotoUrl.ifBlank { avatarUrl }
                             if (image.isNotBlank()) AsyncImage(model = image,
                                 contentDescription = "Prévia circular", modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop)
                             else Icon(Icons.Default.Person, contentDescription = null)
                         }
-                        QiblyAnimatedFrame(selectedFramePreview, 194.dp)
+                        QiblyAnimatedFrame(selectedFramePreview, 218.dp)
                     }
                 }
                 Text(frameNames[selectedFramePreview], modifier = Modifier.fillMaxWidth().padding(10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold)
