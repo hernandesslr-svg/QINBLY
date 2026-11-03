@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.net.Uri
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.asImageBitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.ColorMatrix
@@ -3315,10 +3316,52 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     }
 }
 
+// Remove o fundo branco ligado às bordas dos PNGs sem apagar os ornamentos internos.
+private fun qinblyFrameWithoutWhiteSquare(source: Bitmap): Bitmap {
+    val width = source.width
+    val height = source.height
+    val pixels = IntArray(width * height)
+    source.getPixels(pixels, 0, width, 0, 0, width, height)
+    val visited = BooleanArray(pixels.size)
+    val queue = IntArray(pixels.size)
+    var head = 0
+    var tail = 0
+    fun isWhite(index: Int): Boolean {
+        val color = pixels[index]
+        return android.graphics.Color.alpha(color) > 0 &&
+            android.graphics.Color.red(color) >= 235 &&
+            android.graphics.Color.green(color) >= 235 &&
+            android.graphics.Color.blue(color) >= 235
+    }
+    fun enqueue(index: Int) {
+        if (!visited[index] && isWhite(index)) {
+            visited[index] = true
+            queue[tail++] = index
+        }
+    }
+    for (x in 0 until width) {
+        enqueue(x)
+        enqueue((height - 1) * width + x)
+    }
+    for (y in 0 until height) {
+        enqueue(y * width)
+        enqueue(y * width + width - 1)
+    }
+    while (head < tail) {
+        val index = queue[head++]
+        val x = index % width
+        val y = index / width
+        if (x > 0) enqueue(index - 1)
+        if (x + 1 < width) enqueue(index + 1)
+        if (y > 0) enqueue(index - width)
+        if (y + 1 < height) enqueue(index + width)
+    }
+    for (i in 0 until tail) pixels[queue[i]] = android.graphics.Color.TRANSPARENT
+    return Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
+}
+
 @Composable
 private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
-    // Final enhanced frame assets (normalized artwork, no transparent outer padding) overlay the avatar.
-    // Preserve its transparent center and decorative edges without additional clipping.
     val frames = intArrayOf(
         R.drawable.qinbly_frame_rosa_neon, R.drawable.qinbly_frame_azul_eletrico,
         R.drawable.qinbly_frame_realeza, R.drawable.qinbly_frame_galaxia,
@@ -3326,14 +3369,19 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
         R.drawable.qinbly_frame_romantica, R.drawable.qinbly_frame_dourada,
         R.drawable.qinbly_frame_esmeralda, R.drawable.qinbly_frame_prateada
     )
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val resourceId = frames[style.coerceIn(0, frames.lastIndex)]
+    val frameBitmap = androidx.compose.runtime.remember(resourceId) {
+        val bitmap = BitmapFactory.decodeResource(context.resources, resourceId)
+        qinblyFrameWithoutWhiteSquare(bitmap).asImageBitmap()
+    }
     androidx.compose.foundation.Image(
-        painter = androidx.compose.ui.res.painterResource(frames[style.coerceIn(0, frames.lastIndex)]),
+        bitmap = frameBitmap,
         contentDescription = "Moldura decorativa do perfil",
         contentScale = ContentScale.FillBounds,
         modifier = Modifier
             .requiredSize(diameter)
             .graphicsLayer {
-                // Relevo sutil na arte original, sem alterar a escala nem recortar a coroa.
                 shadowElevation = 10.dp.toPx()
                 ambientShadowColor = Color.Black.copy(alpha = 0.30f)
                 spotShadowColor = Color.Black.copy(alpha = 0.42f)
