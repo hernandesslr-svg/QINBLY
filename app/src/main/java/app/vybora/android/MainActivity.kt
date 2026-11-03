@@ -5299,7 +5299,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
     var profilePosts by remember(username) { mutableStateOf<List<VyboraApi.PostSummary>>(emptyList()) }
     val displayName = user.optString("display_name").ifBlank { user.optString("displayName").ifBlank { username.removePrefix("@") } }
     val publicUsername = user.optString("username").ifBlank { username.removePrefix("@") }
-    val avatarUrl = user.optString("avatar_url").ifBlank { user.optString("avatarUrl") }
+    val avatarUrl = user.optString("avatar_url").ifBlank { user.optString("avatarUrl").ifBlank { user.optString("profile_photo_url").ifBlank { user.optString("profilePhotoUrl") } } }
     val profilePhotoUrl = avatarUrl.ifBlank {
         user.optString("profilePhotoUrl").ifBlank {
             user.optString("cover_url")
@@ -5311,8 +5311,9 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
         Thread {
             try {
                 val response = VyboraApi.getPublicProfile(username, prefs.getString("token", null))
-                val found = response.optJSONObject("user") ?: org.json.JSONObject()
-                val posts = VyboraApi.getPosts(prefs.getString("token", null)).filter { it.username.equals(username.removePrefix("@"), ignoreCase = true) }
+                val found = response.optJSONObject("user") ?: response.optJSONObject("profile") ?: response
+                val resolvedUsername = found.optString("username").ifBlank { username.removePrefix("@") }
+                val posts = VyboraApi.getPosts(prefs.getString("token", null)).filter { it.username.removePrefix("@").equals(resolvedUsername.removePrefix("@"), ignoreCase = true) || it.username.removePrefix("@").equals(username.removePrefix("@"), ignoreCase = true) }
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                     user = found
                     isFollowing = found.optBoolean("isFollowing")
@@ -5387,37 +5388,38 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                         android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível atualizar o seguimento.") }
                     }
                 }.start()
-            }, modifier = Modifier.weight(1f).height(46.dp), colors = ButtonDefaults.buttonColors(containerColor = if (isFollowing) Color.White else Color.Transparent, contentColor = if (isFollowing) Color.Black else Color.White)) {
-                Icon(if (isFollowing) Icons.Default.CheckCircle else Icons.Default.PersonAddAlt1, contentDescription = null, tint = if (isFollowing) Color.Black else Color.White, modifier = Modifier.size(18.dp))
+            }, modifier = Modifier.weight(1f).height(46.dp), colors = ButtonDefaults.buttonColors(containerColor = if (isFollowing) Color(0xFFF1F5F9) else Color(0xFF1677E8), contentColor = if (isFollowing) Color(0xFF1677E8) else Color.White)) {
+                Icon(if (isFollowing) Icons.Default.CheckCircle else Icons.Default.PersonAddAlt1, contentDescription = null, tint = if (isFollowing) Color(0xFF1677E8) else Color.White, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text(if (isFollowing) "Seguindo" else "Seguir", color = if (isFollowing) Color.Black else Color.White, fontWeight = FontWeight.Bold)
+                Text(if (isFollowing) "Seguindo" else "Seguir", color = if (isFollowing) Color(0xFF1677E8) else Color.White, fontWeight = FontWeight.Bold)
             }
             OutlinedButton(onClick = {
                 onNotice("A conversa com @$publicUsername será aberta quando a tela de mensagens estiver conectada.")
-            }, modifier = Modifier.weight(0.88f).height(46.dp), border = BorderStroke(1.dp, Violet.copy(alpha = 0.9f))) {
-                Icon(Icons.Default.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(17.dp), tint = Pink)
+            }, modifier = Modifier.weight(0.88f).height(46.dp), border = BorderStroke(1.dp, Color(0xFF1677E8))) {
+                Icon(Icons.Default.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(17.dp), tint = Color(0xFF1677E8))
                 Spacer(Modifier.width(6.dp))
-                Text("Mensagem", color = Pink)
+                Text("Mensagem", color = Color(0xFF1677E8))
             }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-            listOf("Publicações", "Vídeos", "Republicações", "Curtidas", "Salvos").forEach { section ->
+            listOf("Publicações", "Vídeos", "Fotos", "Republicações", "Curtidas").forEach { section ->
                 Column(Modifier.weight(1f).clickable { selectedTab = section }.padding(vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(imageVector = when (section) {
                         "Vídeos" -> Icons.Default.PlayCircle
+                        "Fotos" -> Icons.Default.Image
                         "Republicações" -> Icons.Default.Repeat
                         "Curtidas" -> Icons.Default.FavoriteBorder
                         "Salvos" -> Icons.Default.BookmarkBorder
                         else -> Icons.Default.GridView
-                    }, contentDescription = section, tint = if (selectedTab == section) Pink else Muted, modifier = Modifier.size(25.dp))
-                    Text(section, color = if (selectedTab == section) Color.White else Muted, fontWeight = if (selectedTab == section) FontWeight.Bold else FontWeight.Normal, style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                    Box(Modifier.fillMaxWidth().height(3.dp).background(if (selectedTab == section) Brush.horizontalGradient(listOf(Pink, Violet)) else Brush.horizontalGradient(listOf(Night, Night))))
+                    }, contentDescription = section, tint = if (selectedTab == section) Color(0xFF1677E8) else RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(25.dp))
+                    Text(section, color = if (selectedTab == section) Color(0xFF1677E8) else RemoteAppearance.screenTextColor, fontWeight = if (selectedTab == section) FontWeight.Bold else FontWeight.Normal, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                    Box(Modifier.fillMaxWidth().height(3.dp).background(if (selectedTab == section) Brush.horizontalGradient(listOf(Color(0xFF1677E8), Color(0xFF1677E8))) else Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))))
                 }
             }
         }
         if (loading) {
             Box(Modifier.fillMaxWidth().padding(30.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Pink) }
-        } else if (selectedTab != "Publicações") {
+        } else if (selectedTab !in listOf("Publicações", "Vídeos", "Fotos")) {
             Box(Modifier.fillMaxWidth().padding(28.dp), contentAlignment = Alignment.Center) {
                 Text(when (selectedTab) {
                     "Vídeos" -> "Vídeos de $displayName"
@@ -5437,7 +5439,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
             }
         } else {
             Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                profilePosts.chunked(3).forEach { rowPosts ->                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                profilePosts.filter { selectedTab != "Vídeos" || it.mediaType == "video" }.filter { selectedTab != "Fotos" || it.mediaType == "image" }.chunked(3).forEach { rowPosts ->                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         rowPosts.forEach { post ->
                             Box(Modifier.weight(1f).height(145.dp).clip(RoundedCornerShape(7.dp)).background(Color(0xFF111426)).clickable {
                                 if (post.mediaUrl.isNotBlank()) expandedImage = post.mediaUrl; selectedPublicationCaption = post.caption; selectedPublication = post; postLiked = false; savedIds = prefs.getStringSet("saved_post_ids", emptySet())?.toSet() ?: emptySet(); viewingPublication = true
