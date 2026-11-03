@@ -3357,6 +3357,29 @@ private fun qinblyFrameWithoutWhiteSquare(source: Bitmap): Bitmap {
         if (y + 1 < height) enqueue(index + width)
     }
     for (i in 0 until tail) pixels[queue[i]] = android.graphics.Color.TRANSPARENT
+    // Alguns PNGs têm um quadrado branco interno que não toca a borda da imagem.
+    // Remover apenas o branco neutro fora da região circular da moldura.
+    // O centro, as pedras e os brilhos da coroa permanecem intactos.
+    val centerX = (width - 1) / 2f
+    val centerY = (height - 1) / 2f
+    val radius = minOf(width, height) * 0.43f
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            val dx = x - centerX
+            val dy = y - centerY
+            if (dx * dx + dy * dy < radius * radius) continue
+            val i = y * width + x
+            val color = pixels[i]
+            val red = android.graphics.Color.red(color)
+            val green = android.graphics.Color.green(color)
+            val blue = android.graphics.Color.blue(color)
+            if (android.graphics.Color.alpha(color) > 0 &&
+                red >= 238 && green >= 238 && blue >= 238 &&
+                maxOf(red, green, blue) - minOf(red, green, blue) <= 12) {
+                pixels[i] = android.graphics.Color.TRANSPARENT
+            }
+        }
+    }
     return Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
 }
 
