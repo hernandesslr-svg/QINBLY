@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.net.Uri
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.asImageBitmap
 import android.graphics.Canvas
 import android.graphics.Paint
