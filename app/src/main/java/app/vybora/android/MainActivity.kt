@@ -3479,7 +3479,7 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
     // Índices 0-5: coroas, dragões, gelo, fênix e decoração floral.
     // Índices 15-24: ornamentos mais elaborados da coleção.
     val detailedFrame = style in 0..5 || style in 15..24
-    val frameScale = if (detailedFrame) 1.17f else 0.98f
+    val frameScale = if (detailedFrame) 1.23f else 0.98f
     // Área externa sem recorte; a arte fica com folga em todos os lados.
     Box(Modifier.requiredSize(diameter).offset(y = verticalOffset).graphicsLayer { clip = false }, contentAlignment = Alignment.Center) {
     androidx.compose.foundation.Image(
