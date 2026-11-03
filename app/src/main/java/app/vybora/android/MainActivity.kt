@@ -3475,6 +3475,11 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
         ),
         label = "qinbly_frame_alpha"
     )
+    // Molduras ornamentadas recebem ampliação individual, sem alterar as simples.
+    // Índices 0-5: coroas, dragões, gelo, fênix e decoração floral.
+    // Índices 15-24: ornamentos mais elaborados da coleção.
+    val detailedFrame = style in 0..5 || style in 15..24
+    val frameScale = if (detailedFrame) 1.08f else 0.98f
     // Área externa sem recorte; a arte fica com folga em todos os lados.
     Box(Modifier.requiredSize(diameter).offset(y = verticalOffset).graphicsLayer { clip = false }, contentAlignment = Alignment.Center) {
     androidx.compose.foundation.Image(
@@ -3482,7 +3487,7 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
         contentDescription = "Moldura decorativa do perfil",
         contentScale = ContentScale.FillBounds,
         modifier = Modifier
-            .requiredSize(diameter * 0.98f)
+            .requiredSize(diameter * frameScale)
             .graphicsLayer {
                 // Sem rotação 3D: evita recorte dos detalhes da coroa nas bordas.
                 alpha = glowAlpha
