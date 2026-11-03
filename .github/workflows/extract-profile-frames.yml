@@ -32,6 +32,8 @@ jobs:
                 data=z.read(entry)
                 im=Image.open(BytesIO(data)).convert('RGBA')
                 assert min(im.size)>=128, 'Frame too small '+name
+                rgba=list(im.getdata())
+                im.putdata([(r,g,b,a*max(0,min(255,(max(r,g,b)-12)*4))//255) for r,g,b,a in rgba])
                 hole=Image.new('L',im.size,0)
                 radius=int(min(im.size)*0.43)
                 cx,cy=im.width//2,im.height//2
