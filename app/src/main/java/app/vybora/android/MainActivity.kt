@@ -3496,7 +3496,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
 
     Column(Modifier.fillMaxSize().background(RemoteAppearance.screenBackgroundColor).verticalScroll(profileScrollState), horizontalAlignment = Alignment.CenterHorizontally) {
         // Perfil QINBLY: sem capa; foto, nome e informações centralizados.
-        Box(Modifier.fillMaxWidth().padding(top = 10.dp, end = 12.dp), contentAlignment = Alignment.TopEnd) {
+        Box(Modifier.align(Alignment.End).padding(top = 10.dp, end = 12.dp).size(48.dp), contentAlignment = Alignment.Center) {
             IconButton(onClick = onSettings) {
                 Icon(Icons.Default.Menu, contentDescription = "Configurações do perfil", tint = RemoteAppearance.screenTextColor)
             }
