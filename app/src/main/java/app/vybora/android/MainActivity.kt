@@ -31,6 +31,7 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.*
@@ -3502,15 +3503,29 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
         contentScale = ContentScale.FillBounds,
         modifier = Modifier
             .requiredSize(diameter * frameScale)
+            .then(Modifier.drawBehind {
+                val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+                val radius = size.minDimension * 0.405f
+                // Sombra apenas circular, nunca quadrada.
+                drawCircle(Color.Black.copy(alpha = 0.07f), radius + 13.dp.toPx(), center,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 14.dp.toPx()))
+                drawCircle(Color.Black.copy(alpha = 0.14f), radius + 7.dp.toPx(),
+                    center.copy(y = center.y + 3.dp.toPx()),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 7.dp.toPx()))
+                // Aro interno metálico: borda escura, luz superior e reflexo.
+                drawCircle(Color(0xFF343A48).copy(alpha = 0.58f), radius, center,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 5.dp.toPx()))
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.sweepGradient(
+                        listOf(Color(0xFF424B5A), Color(0xFFE9F3FF), Color(0xFF717A8A),
+                            Color(0xFFFFFFFF), Color(0xFF343A48), Color(0xFFE9F3FF), Color(0xFF424B5A))
+                    ), radius = radius + 2.dp.toPx(), center = center,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx()))
+            })
             .graphicsLayer {
-                // Sem rotação 3D: evita recorte dos detalhes da coroa nas bordas.
-                alpha = if (style == 0) 0.88f + (testShimmer * 0.12f) else glowAlpha
-                // Relevo e profundidade na arte, sem alterar a escala ou o enquadramento.
-                shadowElevation = 8.dp.toPx()
-                ambientShadowColor = Color.Black.copy(alpha = 0.28f)
-                spotShadowColor = Color.Black.copy(alpha = 0.40f)
-                rotationX = 1.5f
-                rotationY = -1.5f
+                // A sombra antiga do graphicsLayer formava um quadrado no fundo.
+                // A moldura agora tem aro circular em camadas, com reflexo e profundidade.
+                alpha = 1f
                 clip = false
             }
             .zIndex(100f)
