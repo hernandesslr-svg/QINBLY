@@ -3317,7 +3317,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
 
 @Composable
 private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
-    // Final enhanced transparent frame assets are bundled above the profile avatar.
+    // Final enhanced frame assets (normalized artwork, no transparent outer padding) overlay the avatar.
     // Preserve its transparent center and decorative edges without additional clipping.
     val frames = intArrayOf(
         R.drawable.qinbly_frame_rosa_neon, R.drawable.qinbly_frame_azul_eletrico,
