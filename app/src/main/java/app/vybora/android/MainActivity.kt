@@ -3790,7 +3790,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         Icon(Icons.Default.Close, contentDescription = "Fechar molduras")
                     }
                 }
-                Text("10 molduras circulares para a foto de perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("25 molduras circulares para a foto de perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
                 Box(Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
                     Box(Modifier.size(230.dp), contentAlignment = Alignment.Center) {
