@@ -3387,11 +3387,31 @@ private fun qinblyFrameWithoutWhiteSquare(source: Bitmap): Bitmap {
 @Composable
 private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
     val frames = intArrayOf(
-        R.drawable.qinbly_frame_rosa_neon, R.drawable.qinbly_frame_azul_eletrico,
-        R.drawable.qinbly_frame_realeza, R.drawable.qinbly_frame_galaxia,
-        R.drawable.qinbly_frame_fogo, R.drawable.qinbly_frame_cristal,
-        R.drawable.qinbly_frame_romantica, R.drawable.qinbly_frame_dourada,
-        R.drawable.qinbly_frame_esmeralda, R.drawable.qinbly_frame_prateada
+        R.drawable.qinbly_frame_8778,
+        R.drawable.qinbly_frame_8779,
+        R.drawable.qinbly_frame_8780,
+        R.drawable.qinbly_frame_8781,
+        R.drawable.qinbly_frame_8783,
+        R.drawable.qinbly_frame_8784,
+        R.drawable.qinbly_frame_8785,
+        R.drawable.qinbly_frame_8786,
+        R.drawable.qinbly_frame_8787,
+        R.drawable.qinbly_frame_8789,
+        R.drawable.qinbly_frame_8790,
+        R.drawable.qinbly_frame_8791,
+        R.drawable.qinbly_frame_8792,
+        R.drawable.qinbly_frame_8793,
+        R.drawable.qinbly_frame_8794,
+        R.drawable.qinbly_frame_8795,
+        R.drawable.qinbly_frame_8796,
+        R.drawable.qinbly_frame_8797,
+        R.drawable.qinbly_frame_8798,
+        R.drawable.qinbly_frame_8799,
+        R.drawable.qinbly_frame_8800,
+        R.drawable.qinbly_frame_8801,
+        R.drawable.qinbly_frame_8802,
+        R.drawable.qinbly_frame_8803,
+        R.drawable.qinbly_frame_8804
     )
     val context = androidx.compose.ui.platform.LocalContext.current
     val resourceId = frames[style.coerceIn(0, frames.lastIndex)]
@@ -3751,13 +3771,9 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
     }
     if (framesOpen) {
-        val frameNames = listOf("Rosa Neon", "Azul Elétrico", "Realeza", "Galáxia", "Fogo", "Cristal", "Romântica", "Dourada", "Esmeralda", "Prateada")
-        val frameDecorations = listOf("🌸", "⚡", "👑", "✨", "🔥", "💎", "💕", "🌟", "🍃", "❄️")
-        val frameColors = listOf(
-            Color(0xFFFF3399), Color(0xFF268BFF), Color(0xFFAF72F5), Color(0xFF7856E8),
-            Color(0xFFFF692E), Color(0xFF80D9ED), Color(0xFFFF7799), Color(0xFFFFC247),
-            Color(0xFF35C78A), Color(0xFFBBC3D2)
-        )
+        val frameNames = listOf("Moldura 1", "Moldura 2", "Moldura 3", "Moldura 4", "Moldura 5", "Moldura 6", "Moldura 7", "Moldura 8", "Moldura 9", "Moldura 10", "Moldura 11", "Moldura 12", "Moldura 13", "Moldura 14", "Moldura 15", "Moldura 16", "Moldura 17", "Moldura 18", "Moldura 19", "Moldura 20", "Moldura 21", "Moldura 22", "Moldura 23", "Moldura 24", "Moldura 25")
+        val frameDecorations = listOf("✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨")
+        val frameColors = List(25) { Color(0xFF268BFF) }
         androidx.compose.ui.window.Dialog(
             onDismissRequest = { framesOpen = false },
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
