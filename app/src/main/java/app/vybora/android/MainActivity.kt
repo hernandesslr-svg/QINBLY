@@ -3548,7 +3548,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     val shownCountry = bio.lineSequence().firstOrNull { it.startsWith("🌍 ") }?.removePrefix("🌍 ").orEmpty()
     val profileContext = androidx.compose.ui.platform.LocalContext.current
     val profilePrefs = remember { profileContext.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
-    var appliedFrame by remember { mutableIntStateOf(profilePrefs.getInt("qinbly_profile_frame", -1)) }
+    var appliedFrame by remember { mutableIntStateOf(profilePrefs.getInt("qinbly_profile_frame", -1).takeIf { it in 6..14 } ?: -1) }
 
     LaunchedEffect(username, photoRefreshKey) {
         loadingPosts = true
@@ -3833,9 +3833,12 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
     }
     if (framesOpen) {
-        val frameNames = listOf("Moldura 1", "Moldura 2", "Moldura 3", "Moldura 4", "Moldura 5", "Moldura 6", "Moldura 7", "Moldura 8", "Moldura 9", "Moldura 10", "Moldura 11", "Moldura 12", "Moldura 13", "Moldura 14", "Moldura 15", "Moldura 16", "Moldura 17", "Moldura 18", "Moldura 19", "Moldura 20", "Moldura 21", "Moldura 22", "Moldura 23", "Moldura 24", "Moldura 25")
-        val frameDecorations = listOf("✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨", "✨")
-        val frameColors = List(25) { Color(0xFF268BFF) }
+        // Mantém apenas as nove molduras simples (IDs originais 7 a 15).
+        // IDs originais preservados para compatibilidade com perfis já salvos.
+        val simpleFrameIds = (6..14).toList()
+        val frameNames = simpleFrameIds.map { "Moldura ${it + 1}" }
+        val frameColors = List(simpleFrameIds.size) { Color(0xFF268BFF) }
+        if (selectedFramePreview !in simpleFrameIds) selectedFramePreview = simpleFrameIds.first()
         androidx.compose.ui.window.Dialog(
             onDismissRequest = { framesOpen = false },
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
@@ -3852,7 +3855,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         Icon(Icons.Default.Close, contentDescription = "Fechar molduras")
                     }
                 }
-                Text("25 molduras circulares para a foto de perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("9 molduras simples para a foto de perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
                 Box(Modifier.fillMaxWidth().height(290.dp), contentAlignment = Alignment.Center) {
                     Box(Modifier.size(225.dp), contentAlignment = Alignment.Center) {
@@ -3866,7 +3869,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         QiblyAnimatedFrame(selectedFramePreview, 225.dp)
                     }
                 }
-                Text(frameNames[selectedFramePreview], modifier = Modifier.fillMaxWidth().padding(10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold)
+                Text("Moldura ${selectedFramePreview + 1}", modifier = Modifier.fillMaxWidth().padding(10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold)
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     modifier = Modifier.weight(1f),
@@ -3876,9 +3879,9 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     items(frameNames.size) { index ->
                         Column(
                             Modifier.fillMaxWidth()
-                                .border(if (selectedFramePreview == index) 3.dp else 1.dp, frameColors[index], RoundedCornerShape(14.dp))
+                                .border(if (selectedFramePreview == simpleFrameIds[index]) 3.dp else 1.dp, frameColors[index], RoundedCornerShape(14.dp))
                                 .clip(RoundedCornerShape(14.dp))
-                                .clickable { selectedFramePreview = index }
+                                .clickable { selectedFramePreview = simpleFrameIds[index] }
                                 .padding(12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
@@ -3890,7 +3893,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                         contentScale = ContentScale.Crop)
                                     else Icon(Icons.Default.Person, contentDescription = null)
                                 }
-                                QiblyAnimatedFrame(index, 225.dp)
+                                QiblyAnimatedFrame(simpleFrameIds[index], 225.dp)
                             }
                             Text(frameNames[index], modifier = Modifier.padding(top = 8.dp), fontSize = 13.sp)
                         }
