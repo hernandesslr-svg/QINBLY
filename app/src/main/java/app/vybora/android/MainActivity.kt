@@ -3413,12 +3413,14 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
         ),
         label = "qinbly_frame_alpha"
     )
+    // Área externa sem recorte; a arte fica com folga em todos os lados.
+    Box(Modifier.requiredSize(diameter).graphicsLayer { clip = false }, contentAlignment = Alignment.Center) {
     androidx.compose.foundation.Image(
         bitmap = frameBitmap,
         contentDescription = "Moldura decorativa do perfil",
         contentScale = ContentScale.FillBounds,
         modifier = Modifier
-            .requiredSize(diameter)
+            .requiredSize(diameter * 0.92f)
             .graphicsLayer {
                 // Sem rotação 3D: evita recorte dos detalhes da coroa nas bordas.
                 alpha = glowAlpha
@@ -3426,6 +3428,7 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp) {
             }
             .zIndex(100f)
     )
+    }
 }
 
 @Composable
