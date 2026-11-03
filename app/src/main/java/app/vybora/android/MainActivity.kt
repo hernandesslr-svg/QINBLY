@@ -3678,7 +3678,32 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
     }
 
+    // O tema acompanha a moldura aplicada, sem alterar o tema global do aplicativo.
+    val frameAccent = when (appliedFrame) {
+        6, 7, 9 -> Color(0xFFE91E91) // coração, pet e laço
+        10, 12 -> Color(0xFF1677E8) // azul e celeste
+        11 -> Color(0xFF8796AF) // prata
+        13 -> Color(0xFFFFA000) // dourado
+        14 -> Color(0xFF8E44D9) // violeta
+        else -> Color(0xFF1677E8)
+    }
+    val frameTint = if (appliedFrame >= 0) frameAccent.copy(alpha = 0.09f) else RemoteAppearance.screenBackgroundColor
+    val frameBorder = if (appliedFrame >= 0) frameAccent.copy(alpha = 0.58f) else Color.Transparent
+    val profileAccent = if (appliedFrame >= 0) frameAccent else Color(0xFF1677E8)
     Column(Modifier.fillMaxSize().background(RemoteAppearance.screenBackgroundColor).verticalScroll(profileScrollState), horizontalAlignment = Alignment.CenterHorizontally) {
+        // Cabeçalho próprio do QINBLY, colorido conforme a moldura.
+        Box(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 5.dp)
+                .background(
+                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                        listOf(frameTint, RemoteAppearance.screenBackgroundColor)
+                    ),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
+                )
+                .then(if (appliedFrame >= 0) Modifier.border(1.dp, frameBorder, androidx.compose.foundation.shape.RoundedCornerShape(22.dp)) else Modifier),
+            contentAlignment = Alignment.Center
+        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
         // Perfil QINBLY: sem capa; foto, nome e informações centralizados.
         Box(Modifier.align(Alignment.End).padding(top = 10.dp, end = 12.dp).size(48.dp), contentAlignment = Alignment.Center) {
             IconButton(onClick = onSettings) {
@@ -3740,7 +3765,16 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Text("Molduras")
             }
         }
-        Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+        } // conteúdo do cabeçalho
+        } // painel temático
+        Spacer(Modifier.height(10.dp))
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp)
+                .background(frameTint, androidx.compose.foundation.shape.RoundedCornerShape(18.dp))
+                .then(if (appliedFrame >= 0) Modifier.border(1.dp, frameBorder, androidx.compose.foundation.shape.RoundedCornerShape(18.dp)) else Modifier)
+                .padding(top = 10.dp, bottom = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
             listOf("Publicações", "Vídeos", "Fotos", "Salvos").forEach { item ->
                 Column(Modifier.weight(1f).clickable { profileTab = item }.padding(vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(when(item) {
@@ -3748,10 +3782,10 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         "Fotos" -> Icons.Default.Image
                         "Salvos" -> Icons.Default.BookmarkBorder
                         else -> Icons.Outlined.GridView
-                    }, contentDescription = item, tint = if (profileTab == item) Color(0xFF1677E8) else RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(23.dp))
-                    Text(item, color = if (profileTab == item) Color(0xFF1677E8) else RemoteAppearance.screenTextColor, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                    }, contentDescription = item, tint = if (profileTab == item) profileAccent else RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(23.dp))
+                    Text(item, color = if (profileTab == item) profileAccent else RemoteAppearance.screenTextColor, style = MaterialTheme.typography.labelSmall, maxLines = 1)
                     Spacer(Modifier.height(5.dp))
-                    Box(Modifier.fillMaxWidth(0.8f).height(2.dp).background(if (profileTab == item) Color(0xFF1677E8) else Color.Transparent))
+                    Box(Modifier.fillMaxWidth(0.8f).height(2.dp).background(if (profileTab == item) profileAccent else Color.Transparent))
                 }
             }
         }
