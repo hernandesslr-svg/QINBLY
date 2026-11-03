@@ -3760,7 +3760,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Icon(Icons.Default.Menu, contentDescription = "Configurações do perfil", tint = RemoteAppearance.screenTextColor)
             }
             // Moldura e retrato centralizados na capa, preservando a arte integral.
-            Box(Modifier.align(Alignment.BottomCenter).size(225.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.align(Alignment.BottomCenter).then(if (appliedFrame >= 0) Modifier.offset(y = 85.dp) else Modifier).size(225.dp), contentAlignment = Alignment.Center) {
                 Box(Modifier.size(185.dp).zIndex(0f).clip(CircleShape).background(QiblyTheme.card).clickable {
                     val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
                     if (image.isNotBlank()) { expandedImage = image; viewingPublication = false } else onEditProfilePhoto()
@@ -3780,22 +3780,9 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     androidx.compose.ui.graphics.Brush.verticalGradient(listOf(frameAccent.copy(alpha = 0.14f), frameAccent.copy(alpha = 0.035f), RemoteAppearance.screenBackgroundColor)),
                     androidx.compose.foundation.shape.RoundedCornerShape(26.dp)
                 ) else Modifier)
-                .padding(top = 15.dp, bottom = 12.dp),
+                .padding(top = if (appliedFrame >= 0) 94.dp else 15.dp, bottom = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (appliedFrame >= 0) {
-                Text(when (appliedFrame) {
-                    6 -> "✦  AMOR NEON  ✦"
-                    7 -> "♡  AMOR PET  ♡"
-                    9 -> "✿  LAÇO ROSA  ✿"
-                    10 -> "❄  BRILHO AZUL  ❄"
-                    11 -> "◇  AURA PRATEADA  ◇"
-                    12 -> "✧  LUZ CELESTE  ✧"
-                    13 -> "♛  AURA DOURADA  ♛"
-                    else -> "✦  AURA MÁGICA  ✦"
-                }, color = frameAccent, fontSize = 11.sp, letterSpacing = 2.sp)
-                Spacer(Modifier.height(5.dp))
-            }
         Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 1)
         }
