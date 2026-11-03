@@ -1,9 +1,9 @@
-name: Install new QINBLY profile frames
+name: Install final enhanced QINBLY profile frames
 on:
   push:
     branches: [main]
     paths:
-      - 'molduras_qinbly_prontas_para_perfil.zip'
+      - 'qinbly_molduras_brilho_png.zip'
       - '.github/workflows/install-qinbly-frames.yml'
   workflow_dispatch:
 permissions:
@@ -21,7 +21,7 @@ jobs:
           from zipfile import ZipFile
           from pathlib import Path
           import struct, re
-          src=Path('molduras_qinbly_prontas_para_perfil.zip')
+          src=Path('qinbly_molduras_brilho_png.zip')
           target=Path('app/src/main/res/drawable-nodpi')
           expected={'rosa_neon','azul_eletrico','realeza','galaxia','fogo','cristal','romantica','dourada','esmeralda','prateada'}
           with ZipFile(src) as archive:
@@ -50,6 +50,6 @@ jobs:
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add app/src/main/res/drawable-nodpi/qinbly_frame_*.png
           if ! git diff --cached --quiet; then
-            git commit -m "Install ten new transparent QINBLY frame PNGs"
+            git commit -m "Replace old frames with final enhanced transparent PNGs"
             git push origin HEAD:main
           fi
