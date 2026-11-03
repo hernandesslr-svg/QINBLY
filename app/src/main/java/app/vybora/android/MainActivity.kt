@@ -3454,7 +3454,9 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             }
         }
         // The portrait fits INSIDE the ornament; the ornament can overflow freely.
-        Box(Modifier.padding(top = 18.dp, bottom = 18.dp).size(230.dp), contentAlignment = Alignment.Center) {
+        // A foto define o espaço no layout; a moldura de 200 dp flutua sobre ela.
+        // O padding inferior protege o nome da coroa e dos ornamentos.
+        Box(Modifier.padding(top = 28.dp, bottom = 30.dp).size(150.dp), contentAlignment = Alignment.Center) {
             Box(Modifier.size(150.dp).zIndex(0f).clip(CircleShape).background(QiblyTheme.card).clickable {
                 val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
                 if (image.isNotBlank()) { expandedImage = image; viewingPublication = false } else onEditProfilePhoto()
