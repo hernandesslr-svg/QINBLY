@@ -398,6 +398,9 @@ object VyboraApi {
     fun toggleFollow(token: String, userId: String): Boolean =
         request("POST", "/api/users/" + userId + "/follow", JSONObject(), token).optBoolean("following")
 
+    fun setProfileFrame(token: String, frame: Int): JSONObject =
+        request("PATCH", "/api/users/me/frame", JSONObject().put("frame", frame), token)
+
     fun getPublicProfile(username: String, token: String? = null): JSONObject {
         val name = java.net.URLEncoder.encode(username.trim().removePrefix("@").lowercase(), "UTF-8")
         return request("GET", "/api/users/" + name, null, token)
