@@ -3454,7 +3454,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             }
         }
         // The portrait fits INSIDE the ornament; the ornament can overflow freely.
-        Box(Modifier.padding(top = 18.dp, bottom = 18.dp).size(200.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.padding(top = 18.dp, bottom = 18.dp).size(230.dp), contentAlignment = Alignment.Center) {
             Box(Modifier.size(150.dp).zIndex(0f).clip(CircleShape).background(QiblyTheme.card).clickable {
                 val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
                 if (image.isNotBlank()) { expandedImage = image; viewingPublication = false } else onEditProfilePhoto()
@@ -3688,8 +3688,8 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 }
                 Text("10 molduras circulares para a foto de perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
-                Box(Modifier.fillMaxWidth().height(225.dp), contentAlignment = Alignment.Center) {
-                    Box(Modifier.size(200.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(230.dp), contentAlignment = Alignment.Center) {
                         Box(Modifier.size(150.dp).zIndex(0f).clip(CircleShape).background(QiblyTheme.card)) {
                             val image = profilePhotoUrl.ifBlank { avatarUrl }
                             if (image.isNotBlank()) AsyncImage(model = image,
