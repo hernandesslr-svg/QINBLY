@@ -3475,6 +3475,20 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
         ),
         label = "qinbly_frame_alpha"
     )
+    // Teste exclusivo da Moldura 1: oscilação suave de brilho e reflexo,
+    // sem alterar o tamanho, a foto ou as outras 24 molduras.
+    val testShimmer by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(
+                durationMillis = 2600,
+                easing = androidx.compose.animation.core.FastOutSlowInEasing
+            ),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+        ),
+        label = "qinbly_frame_one_shimmer"
+    )
     // Molduras ornamentadas recebem ampliação individual, sem alterar as simples.
     // Índices 0-5: coroas, dragões, gelo, fênix e decoração floral.
     // Índices 15-24: ornamentos mais elaborados da coleção.
@@ -3490,7 +3504,8 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
             .requiredSize(diameter * frameScale)
             .graphicsLayer {
                 // Sem rotação 3D: evita recorte dos detalhes da coroa nas bordas.
-                alpha = glowAlpha
+                alpha = if (style == 0) 0.88f + (testShimmer * 0.12f) else glowAlpha
+                rotationZ = if (style == 0) (testShimmer - 0.5f) * 0.8f else 0f
                 clip = false
             }
             .zIndex(100f)
