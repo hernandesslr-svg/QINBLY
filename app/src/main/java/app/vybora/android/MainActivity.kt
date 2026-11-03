@@ -3463,69 +3463,115 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
         val bitmap = BitmapFactory.decodeResource(context.resources, resourceId)
         qinblyNormalizedFrame(qinblyFrameWithoutWhiteSquare(bitmap)).asImageBitmap()
     }
-    // Animação nativa da decoração, independente da foto do usuário.
-    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "qinbly_frame_glow")
-    val glowAlpha by transition.animateFloat(
-        initialValue = 0.92f,
-        targetValue = 1f,
-        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-            animation = androidx.compose.animation.core.tween(
-                durationMillis = 1700,
-                easing = androidx.compose.animation.core.FastOutSlowInEasing
-            ),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
-        ),
-        label = "qinbly_frame_alpha"
-    )
-    // Teste exclusivo da Moldura 1: oscilação suave de brilho e reflexo,
-    // sem alterar o tamanho, a foto ou as outras 24 molduras.
-    val testShimmer by transition.animateFloat(
+    // Cada uma das oito molduras ativas tem uma assinatura de movimento própria.
+    // A foto permanece imóvel: apenas o PNG transparente e seus reflexos se movem.
+    val animationKind = when (style) {
+        6 -> 0  // Coração Neon: batimento rosa
+        7 -> 1  // Amor Pet: pulso alegre
+        9 -> 2  // Laço Rosa: balanço suave
+        10 -> 3 // Brilho Azul: reflexo elétrico
+        11 -> 4 // Aura Prateada: brilho metálico
+        12 -> 5 // Luz Celeste: aura luminosa
+        13 -> 6 // Rosa Radiante: respiração rosa
+        14 -> 7 // Estrela Neon: cintilação
+        else -> 4
+    }
+    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "qinbly_frame_motion_$style")
+    val phase by transition.animateFloat(
         initialValue = 0f,
-        targetValue = 1f,
+        targetValue = 6.2831855f,
         animationSpec = androidx.compose.animation.core.infiniteRepeatable(
             animation = androidx.compose.animation.core.tween(
-                durationMillis = 2600,
-                easing = androidx.compose.animation.core.FastOutSlowInEasing
+                durationMillis = when (animationKind) {
+                    0 -> 1350
+                    1 -> 1650
+                    2 -> 2700
+                    3 -> 1900
+                    4 -> 3100
+                    5 -> 2350
+                    6 -> 2800
+                    else -> 1450
+                },
+                easing = androidx.compose.animation.core.LinearEasing
             ),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+            repeatMode = androidx.compose.animation.core.RepeatMode.Restart
         ),
-        label = "qinbly_frame_one_shimmer"
+        label = "qinbly_frame_phase_$style"
     )
-    // Molduras ornamentadas recebem ampliação individual, sem alterar as simples.
-    // Índices 0-5: coroas, dragões, gelo, fênix e decoração floral.
-    // Índices 15-24: ornamentos mais elaborados da coleção.
-    val detailedFrame = style in 0..5 || style in 15..24
-    val frameScale = if (detailedFrame) 1.23f else 0.98f
-    // Área externa sem recorte; a arte fica com folga em todos os lados.
-    Box(Modifier.requiredSize(diameter).offset(y = verticalOffset).graphicsLayer { clip = false }, contentAlignment = Alignment.Center) {
-    androidx.compose.foundation.Image(
-        bitmap = frameBitmap,
-        contentDescription = "Moldura decorativa do perfil",
-        contentScale = ContentScale.FillBounds,
-        modifier = Modifier
-            .requiredSize(diameter * frameScale)
-            .then(Modifier.drawBehind {
-                // Sombra recortada pelo alfa da propria arte: segue flores,
-                // lacos, coracoes e coroas, sem formar aro cinza artificial.
-                val shadowX = 1.5.dp.toPx()
-                val shadowY = 3.dp.toPx()
-                withTransform({ translate(left = shadowX, top = shadowY) }) {
-                    drawImage(
-                        image = frameBitmap,
-                        dstSize = androidx.compose.ui.unit.IntSize(size.width.toInt(), size.height.toInt()),
-                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.Black),
-                        alpha = 0.20f
-                    )
+    val wave = kotlin.math.sin(phase)
+    val shimmer = (wave + 1f) / 2f
+    val frameScale = if (style in 0..5 || style in 15..24) 1.23f else 0.98f
+    val motionScale = when (animationKind) {
+        0 -> 1f + 0.045f * shimmer
+        1 -> 1f + 0.033f * shimmer
+        2 -> 1f + 0.014f * shimmer
+        3 -> 1f + 0.016f * shimmer
+        4 -> 1f + 0.012f * shimmer
+        5 -> 1f + 0.027f * shimmer
+        6 -> 1f + 0.026f * shimmer
+        else -> 1f + 0.024f * shimmer
+    }
+    val tilt = when (animationKind) {
+        2 -> 2.5f * wave
+        3 -> 1.3f * wave
+        4 -> 1.0f * wave
+        7 -> 1.5f * wave
+        else -> 0f
+    }
+    val glowColor = when (animationKind) {
+        0, 1, 2, 6 -> Color(0xFFFF35AA)
+        3, 5 -> Color(0xFF16C9FF)
+        4 -> Color(0xFFE5EEFF)
+        else -> Color(0xFFAE60FF)
+    }
+    // O brilho usa o próprio canal alfa da moldura, sem quadrado ou disco atrás.
+    Box(
+        Modifier.requiredSize(diameter).offset(y = verticalOffset).graphicsLayer { clip = false },
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.foundation.Image(
+            bitmap = frameBitmap,
+            contentDescription = "Moldura decorativa animada do perfil",
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier
+                .requiredSize(diameter * frameScale)
+                .drawBehind {
+                    val targetSize = androidx.compose.ui.unit.IntSize(size.width.toInt(), size.height.toInt())
+                    withTransform({
+                        translate(left = 1.5.dp.toPx(), top = 3.dp.toPx())
+                    }) {
+                        drawImage(
+                            image = frameBitmap,
+                            dstSize = targetSize,
+                            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.Black),
+                            alpha = 0.19f
+                        )
+                    }
+                    // Reflexo pulsante visível, especialmente nas peças neon.
+                    val haloAlpha = when (animationKind) {
+                        0, 1, 3, 5, 7 -> 0.14f + 0.29f * shimmer
+                        else -> 0.09f + 0.20f * shimmer
+                    }
+                    withTransform({
+                        scale(scaleX = 1.015f + 0.015f * shimmer, scaleY = 1.015f + 0.015f * shimmer)
+                    }) {
+                        drawImage(
+                            image = frameBitmap,
+                            dstSize = targetSize,
+                            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(glowColor),
+                            alpha = haloAlpha
+                        )
+                    }
                 }
-            })
-            .graphicsLayer {
-                // A sombra antiga do graphicsLayer formava um quadrado no fundo.
-                // A moldura agora tem aro circular em camadas, com reflexo e profundidade.
-                alpha = 1f
-                clip = false
-            }
-            .zIndex(100f)
-    )
+                .graphicsLayer {
+                    scaleX = motionScale
+                    scaleY = motionScale
+                    rotationZ = tilt
+                    alpha = 0.91f + 0.09f * shimmer
+                    clip = false
+                }
+                .zIndex(100f)
+        )
     }
 }
 
