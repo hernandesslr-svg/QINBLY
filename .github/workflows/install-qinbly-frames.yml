@@ -15,12 +15,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
+      - name: Install Pillow for lossless transparent-margin normalization
+        run: python -m pip install Pillow
       - name: Validate and extract ten transparent PNG assets
         run: |
           python - <<'PY'
           from zipfile import ZipFile
           from pathlib import Path
-          import struct, re
+          import struct, re, io
+          from PIL import Image
           src=Path('qinbly_molduras_brilho_png.zip')
           target=Path('app/src/main/res/drawable-nodpi')
           expected={'rosa_neon','azul_eletrico','realeza','galaxia','fogo','cristal','romantica','dourada','esmeralda','prateada'}
@@ -37,7 +40,19 @@ jobs:
               width,height=struct.unpack('>II',data[16:24])
               assert width>=128 and height>=128,(name,width,height)
               assert data[25]==6, 'Expected RGBA PNG: '+name
-              found[key]=data
+              image=Image.open(io.BytesIO(data)).convert('RGBA')
+              alpha=image.getchannel('A')
+              bounds=alpha.point(lambda a: 255 if a >= 8 else 0).getbbox()
+              assert bounds, 'Empty artwork: '+name
+              artwork=image.crop(bounds)
+              side=max(artwork.size)
+              canvas=Image.new('RGBA',(side,side),(0,0,0,0))
+              canvas.alpha_composite(artwork,((side-artwork.width)//2,(side-artwork.height)//2))
+              canvas=canvas.resize((700,700),Image.Resampling.LANCZOS)
+              output=io.BytesIO()
+              canvas.save(output,format='PNG',optimize=True)
+              found[key]=output.getvalue()
+              print(name,'artwork bounds',bounds,'normalized to 700x700')
           assert set(found)==expected, 'Missing: '+str(expected-set(found))
           target.mkdir(parents=True,exist_ok=True)
           for key,data in found.items():
