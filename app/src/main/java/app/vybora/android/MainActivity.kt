@@ -3537,8 +3537,10 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
                 .requiredSize(diameter * frameScale)
                 .drawBehind {
                     val targetSize = androidx.compose.ui.unit.IntSize(size.width.toInt(), size.height.toInt())
+                    val shadowX = 1.5.dp.toPx()
+                    val shadowY = 3.dp.toPx()
                     withTransform({
-                        translate(left = 1.5.dp.toPx(), top = 3.dp.toPx())
+                        translate(left = shadowX, top = shadowY)
                     }) {
                         drawImage(
                             image = frameBitmap,
