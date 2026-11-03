@@ -3444,7 +3444,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
         // The portrait fits INSIDE the ornament; the ornament can overflow freely.
         Box(Modifier.padding(top = 18.dp, bottom = 18.dp).size(156.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(136.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
+            Box(Modifier.size(150.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
                 val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
                 if (image.isNotBlank()) { expandedImage = image; viewingPublication = false } else onEditProfilePhoto()
             }) {
@@ -3680,7 +3680,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Spacer(Modifier.height(12.dp))
                 Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
                     Box(Modifier.size(156.dp), contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(124.dp).clip(CircleShape).background(QiblyTheme.card)) {
+                        Box(Modifier.size(140.dp).clip(CircleShape).background(QiblyTheme.card)) {
                             val image = profilePhotoUrl.ifBlank { avatarUrl }
                             if (image.isNotBlank()) AsyncImage(model = image,
                                 contentDescription = "Prévia circular", modifier = Modifier.fillMaxSize(),
@@ -3707,7 +3707,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Box(Modifier.size(96.dp), contentAlignment = Alignment.Center) {
-                                Box(Modifier.size(76.dp).clip(CircleShape).background(QiblyTheme.card)) {
+                                Box(Modifier.size(86.dp).clip(CircleShape).background(QiblyTheme.card)) {
                                     val image = profilePhotoUrl.ifBlank { avatarUrl }
                                     if (image.isNotBlank()) AsyncImage(model = image,
                                         contentDescription = null, modifier = Modifier.fillMaxSize(),
