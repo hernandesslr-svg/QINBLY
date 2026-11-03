@@ -5297,14 +5297,10 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
     var publicationComment by remember { mutableStateOf("") }
     var showMoreOptions by remember { mutableStateOf(false) }
     var profilePosts by remember(username) { mutableStateOf<List<VyboraApi.PostSummary>>(emptyList()) }
-    val displayName = user.optString("display_name").ifBlank { user.optString("displayName").ifBlank { username.removePrefix("@") } }
+    val displayName = user.optString("displayName").ifBlank { user.optString("display_name").ifBlank { username.removePrefix("@") } }
     val publicUsername = user.optString("username").ifBlank { username.removePrefix("@") }
     val avatarUrl = user.optString("avatar_url").ifBlank { user.optString("avatarUrl").ifBlank { user.optString("profile_photo_url").ifBlank { user.optString("profilePhotoUrl") } } }
-    val profilePhotoUrl = avatarUrl.ifBlank {
-        user.optString("profilePhotoUrl").ifBlank {
-            user.optString("cover_url")
-        }
-    }
+    val profilePhotoUrl = user.optString("coverUrl").ifBlank { user.optString("cover_url").ifBlank { user.optString("profilePhotoUrl").ifBlank { avatarUrl } } }
     val bio = user.optString("bio")
     LaunchedEffect(username) {
         loading = true
@@ -5313,7 +5309,22 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                 val response = VyboraApi.getPublicProfile(username, prefs.getString("token", null))
                 val found = response.optJSONObject("user") ?: response.optJSONObject("profile") ?: response
                 val resolvedUsername = found.optString("username").ifBlank { username.removePrefix("@") }
-                val posts = VyboraApi.getPosts(prefs.getString("token", null)).filter { it.username.removePrefix("@").equals(resolvedUsername.removePrefix("@"), ignoreCase = true) || it.username.removePrefix("@").equals(username.removePrefix("@"), ignoreCase = true) }
+                // O endpoint de perfil já devolve TODAS as publicações públicas do usuário.
+                // Não buscar somente os 30 itens mais recentes do feed global.
+                val responsePosts = response.optJSONArray("posts") ?: org.json.JSONArray()
+                val posts = (0 until responsePosts.length()).mapNotNull { index ->
+                    val post = responsePosts.optJSONObject(index) ?: return@mapNotNull null
+                    val author = post.optJSONObject("author") ?: org.json.JSONObject()
+                    VyboraApi.PostSummary(
+                        id = post.optString("id"), caption = post.optString("caption"),
+                        mediaUrl = post.optString("mediaUrl"), mediaType = post.optString("mediaType"),
+                        username = author.optString("username").ifBlank { resolvedUsername },
+                        displayName = author.optString("displayName").ifBlank { found.optString("displayName") },
+                        likes = post.optInt("likes"), comments = post.optInt("comments"),
+                        avatarUrl = author.optString("avatarUrl").ifBlank { found.optString("avatarUrl") },
+                        createdAt = post.optString("createdAt")
+                    )
+                }
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                     user = found
                     isFollowing = found.optBoolean("isFollowing")
@@ -5337,7 +5348,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
             IconButton(onClick = { showMoreOptions = true }) { Icon(Icons.Default.MoreHoriz, contentDescription = "Opções deste perfil", tint = RemoteAppearance.screenTextColor) }
         }
         Box(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(156.dp).border(3.dp, Brush.sweepGradient(listOf(Color(0xFFFF2499), Color(0xFF7B39FF), Color(0xFFFF2499))), CircleShape).padding(5.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
+            Box(Modifier.size(225.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
                 if (profilePhotoUrl.isNotBlank()) expandedImage = profilePhotoUrl; viewingPublication = false
             }) {
                 if (profilePhotoUrl.isNotBlank()) AsyncImage(model = profilePhotoUrl, contentDescription = "Foto de $displayName", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
@@ -5351,7 +5362,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
         val publicDescription = bio.lineSequence().filterNot { it.startsWith("✦ ") || it.startsWith("🌍 ") }.joinToString("\n").trim()
         if (publicCategories.isNotBlank()) Text(publicCategories, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenTextColor)
         if (publicDescription.isNotBlank()) Text(publicDescription, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenTextColor)
-        val joinedDate = listOf("created_at", "createdAt", "joined_at").map { user.optString(it) }.firstOrNull { it.matches(Regex("\\d{4}-\\d{2}.*")) }.orEmpty()
+        val joinedDate = listOf("createdAt", "created_at", "joined_at").map { user.optString(it) }.firstOrNull { it.matches(Regex("\\d{4}-\\d{2}.*")) }.orEmpty()
         val joinMonth = joinedDate.drop(5).take(2).toIntOrNull() ?: 0
         val monthNames = listOf("jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez")
         Row(Modifier.fillMaxWidth().padding(top = 9.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
