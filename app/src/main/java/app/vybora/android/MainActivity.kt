@@ -3452,7 +3452,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 else Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(28.dp))
             }
-            if (appliedFrame >= 0) QiblyAnimatedFrame(appliedFrame, 220.dp)
+            if (appliedFrame >= 0) QiblyAnimatedFrame(appliedFrame, 240.dp)
         }
         Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 1)
@@ -3686,7 +3686,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 contentScale = ContentScale.Crop)
                             else Icon(Icons.Default.Person, contentDescription = null)
                         }
-                        QiblyAnimatedFrame(selectedFramePreview, 220.dp)
+                        QiblyAnimatedFrame(selectedFramePreview, 240.dp)
                     }
                 }
                 Text(frameNames[selectedFramePreview], modifier = Modifier.fillMaxWidth().padding(10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold)
@@ -3705,7 +3705,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 .padding(12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Box(Modifier.size(136.dp), contentAlignment = Alignment.Center) {
+                            Box(Modifier.size(150.dp), contentAlignment = Alignment.Center) {
                                 Box(Modifier.size(86.dp).zIndex(0f).clip(CircleShape).background(QiblyTheme.card)) {
                                     val image = profilePhotoUrl.ifBlank { avatarUrl }
                                     if (image.isNotBlank()) AsyncImage(model = image,
@@ -3713,7 +3713,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                         contentScale = ContentScale.Crop)
                                     else Icon(Icons.Default.Person, contentDescription = null)
                                 }
-                                QiblyAnimatedFrame(index, 132.dp)
+                                QiblyAnimatedFrame(index, 150.dp)
                             }
                             Text(frameNames[index], modifier = Modifier.padding(top = 8.dp), fontSize = 13.sp)
                         }
