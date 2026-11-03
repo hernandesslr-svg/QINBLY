@@ -1,0 +1,55 @@
+name: Install new QINBLY profile frames
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'molduras_qinbly_prontas_para_perfil.zip'
+      - '.github/workflows/install-qinbly-frames.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Validate and extract ten transparent PNG assets
+        run: |
+          python - <<'PY'
+          from zipfile import ZipFile
+          from pathlib import Path
+          import struct, re
+          src=Path('molduras_qinbly_prontas_para_perfil.zip')
+          target=Path('app/src/main/res/drawable-nodpi')
+          expected={'rosa_neon','azul_eletrico','realeza','galaxia','fogo','cristal','romantica','dourada','esmeralda','prateada'}
+          with ZipFile(src) as archive:
+            found={}
+            for entry in archive.namelist():
+              name=Path(entry).name
+              match=re.fullmatch(r'qinbly_frame_([a-z_]+)\.png',name)
+              if not match: continue
+              key=match.group(1)
+              assert key in expected and key not in found, name
+              data=archive.read(entry)
+              assert data[:8]==bytes.fromhex('89504e470d0a1a0a'),name
+              width,height=struct.unpack('>II',data[16:24])
+              assert width>=128 and height>=128,(name,width,height)
+              assert data[25]==6, 'Expected RGBA PNG: '+name
+              found[key]=data
+          assert set(found)==expected, 'Missing: '+str(expected-set(found))
+          target.mkdir(parents=True,exist_ok=True)
+          for key,data in found.items():
+            (target/('qinbly_frame_'+key+'.png')).write_bytes(data)
+          print('Installed',len(found),'PNG frames')
+          PY
+      - name: Commit installed frame assets to main
+        run: |
+          git config user.name github-actions
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add app/src/main/res/drawable-nodpi/qinbly_frame_*.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Install ten new transparent QINBLY frame PNGs"
+            git push origin HEAD:main
+          fi
