@@ -251,6 +251,12 @@ app.post('/api/auth/login', asyncRoute(async (req,res) => {
   res.json({ token: tokenFor(rows[0]), user: safeUser(rows[0]) });
 }));
 app.get('/api/auth/me', auth, asyncRoute(async (req,res) => res.json({ user: await withProfileImageUrls(req.user) })));
+app.patch('/api/users/me/frame', auth, asyncRoute(async (req,res) => {
+  const frame = Number(req.body?.frame);
+  if (!Number.isInteger(frame) || (frame !== -1 && (frame < 6 || frame > 14 || frame === 8))) return res.status(400).json({ error: 'Moldura inválida.' });
+  await pool.query('UPDATE users SET profile_frame=$1,updated_at=NOW() WHERE id=$2', [frame,req.user.id]);
+  res.json({ frame });
+}));
 app.patch('/api/users/me/avatar', auth, asyncRoute(async (req,res) => {
   const fileId = String(req.body?.fileId || '');
   const file = await pool.query("SELECT object_key FROM user_files WHERE id=$1 AND owner_id=$2 AND category='avatar' AND status='ready' AND deleted_at IS NULL", [fileId, req.user.id]);
@@ -360,7 +366,7 @@ app.get('/api/users/:username', asyncRoute(async (req,res) => {
       viewerId = typeof payload.sub === 'string' ? payload.sub : null;
     } catch { /* Perfil público continua acessível sem sessão válida. */ }
   }
-  const { rows } = await pool.query(`SELECT u.id,u.username,u.display_name,u.bio,u.avatar_url,u.cover_url,u.is_verified,u.created_at,
+  const { rows } = await pool.query(`SELECT u.id,u.username,u.display_name,u.bio,u.avatar_url,u.cover_url,u.profile_frame AS "profileFrame",u.is_verified,u.created_at,
     (SELECT COUNT(*)::int FROM follows WHERE following_id=u.id) AS followers,
     (SELECT COUNT(*)::int FROM follows WHERE follower_id=u.id) AS following,
     (SELECT COUNT(*)::int FROM posts WHERE user_id=u.id) AS posts_count,
