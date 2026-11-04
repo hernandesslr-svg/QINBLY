@@ -2058,11 +2058,11 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         }
 
 
-        val feedFilters = listOf("Novidades", "Tendências", "Vídeos", "Fotos", "Lives", "Perto de mim")
-        val feedFilterIcons = listOf("✨", "🔥", "▶️", "🖼️", "🔴", "📍")
+        val feedFilters = listOf("Novidades", "Tendências", "Vídeos", "Lives", "Perto de mim")
+        val feedFilterIcons = listOf("✨", "🔥", "▶️", "🔴", "📍")
         val feedFilterAccent = listOf(
             Color(0xFF1655E8), Color(0xFFFF663C), Color(0xFF111827),
-            Color(0xFF1655E8), Color(0xFF1655E8), Color(0xFF1655E8)
+            Color(0xFF1655E8), Color(0xFF1655E8)
         )
         androidx.compose.foundation.lazy.LazyRow(
             modifier = Modifier.fillMaxWidth().padding(top = 11.dp, bottom = 15.dp),
