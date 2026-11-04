@@ -475,7 +475,7 @@ private fun AccountSwitcherDialog(
      val target = confirmRemove
      confirmRemove = ""
      onRemove(target)
-     selectedUsername = ""
+
     }) { Text("Remover", color = Pink) }
    },
    dismissButton = { TextButton(onClick = { confirmRemove = "" }) { Text("Cancelar") } },
