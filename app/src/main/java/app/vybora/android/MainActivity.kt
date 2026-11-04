@@ -1172,54 +1172,69 @@ private fun VyboraApp() {
                         "Enquete" to "▤",
                         "Live" to "◉"
                     ).forEach { (label, symbol) ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth()
-                                .clip(RoundedCornerShape(24.dp))
-                                .background(if (QiblyTheme.dark) Color(0xFF20242C) else Color.White)
-                                .border(1.dp, Color(0xFFBFD5F5), RoundedCornerShape(24.dp))
-                                .clickable {
-                                    showCreateOptions = false
-                                    when (label) {
-                                        "Galeria", "Câmera" -> tab = 2
-                                        "Texto" -> notice = "Publicações só de texto estão em preparação."
-                                        "Enquete" -> notice = "Enquetes ainda estão em preparação."
-                                        "Live" -> notice = "Transmissões ao vivo ainda não estão disponíveis."
+                        val onChoice: () -> Unit = {
+                            showCreateOptions = false
+                            when (label) {
+                                "Galeria", "Câmera" -> tab = 2
+                                "Texto" -> notice = "Publicações só de texto estão em preparação."
+                                "Enquete" -> notice = "Enquetes ainda estão em preparação."
+                                "Live" -> notice = "Transmissões ao vivo ainda não estão disponíveis."
+                            }
+                        }
+                        if (label == "Live") {
+                            // O botão Live e o bico inclinado são UM contorno fechado.
+                            // Altura do bico: 10 dp (equivalente lógico aos 10 px pedidos).
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier.fillMaxWidth().height(48.dp).clickable(onClick = onChoice)
+                            ) {
+                                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                                    val sx = size.width / 103f
+                                    val sy = size.height / 48f
+                                    val outline = androidx.compose.ui.graphics.Path().apply {
+                                        moveTo(19f * sx, 1f * sy)
+                                        lineTo(85f * sx, 1f * sy)
+                                        quadraticTo(102f * sx, 1f * sy, 102f * sx, 18f * sy)
+                                        lineTo(102f * sx, 20f * sy)
+                                        quadraticTo(102f * sx, 38f * sy, 85f * sx, 38f * sy)
+                                        lineTo(31f * sx, 38f * sy)
+                                        quadraticTo(23f * sx, 38f * sy, 18f * sx, 41f * sy)
+                                        lineTo(1f * sx, 47f * sy)
+                                        quadraticTo(7f * sx, 42f * sy, 7f * sx, 28f * sy)
+                                        lineTo(7f * sx, 18f * sy)
+                                        quadraticTo(7f * sx, 1f * sy, 19f * sx, 1f * sy)
+                                        close()
                                     }
+                                    drawPath(outline, if (QiblyTheme.dark) Color(0xFF20242C) else Color.White)
+                                    drawPath(
+                                        outline,
+                                        Color(0xFFBFD5F5),
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx())
+                                    )
                                 }
-                                .padding(horizontal = 9.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(7.dp)
-                        ) {
-                            Text(symbol, color = Color(0xFF1677F2), fontSize = 18.sp)
-                            Text(
-                                label,
-                                color = if (QiblyTheme.dark) Color.White else Color(0xFF172337),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                                Row(
+                                    modifier = Modifier.padding(start = 16.dp, top = 7.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(7.dp)
+                                ) {
+                                    Text(symbol, color = Color(0xFF1677F2), fontSize = 18.sp)
+                                    Text(label, color = if (QiblyTheme.dark) Color.White else Color(0xFF172337), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth()
+                                    .clip(RoundedCornerShape(24.dp))
+                                    .background(if (QiblyTheme.dark) Color(0xFF20242C) else Color.White)
+                                    .border(1.dp, Color(0xFFBFD5F5), RoundedCornerShape(24.dp))
+                                    .clickable(onClick = onChoice)
+                                    .padding(horizontal = 9.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(7.dp)
+                            ) {
+                                Text(symbol, color = Color(0xFF1677F2), fontSize = 18.sp)
+                                Text(label, color = if (QiblyTheme.dark) Color.White else Color(0xFF172337), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            }
                         }
-                    }
-                    // Biquinho visível, ligado à borda inferior esquerda de Live,
-                    // apontando na diagonal para o botão central Criar (+).
-                    androidx.compose.foundation.Canvas(
-                        modifier = Modifier
-                            .offset(x = (-6).dp, y = (-6).dp)
-                            .size(width = 28.dp, height = 18.dp)
-                    ) {
-                        val tail = androidx.compose.ui.graphics.Path().apply {
-                            moveTo(size.width * 0.48f, 0f)
-                            lineTo(size.width, 0f)
-                            lineTo(0f, size.height)
-                            close()
-                        }
-                        val bubbleColor = if (QiblyTheme.dark) Color(0xFF20242C) else Color.White
-                        drawPath(tail, color = bubbleColor)
-                        drawLine(
-                            color = Color(0xFFBFD5F5),
-                            start = androidx.compose.ui.geometry.Offset(size.width, 0f),
-                            end = androidx.compose.ui.geometry.Offset(0f, size.height),
-                            strokeWidth = 1.2.dp.toPx()
-                        )
                     }
                 }
             }
