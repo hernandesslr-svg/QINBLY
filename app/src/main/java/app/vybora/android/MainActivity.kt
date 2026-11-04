@@ -1039,7 +1039,7 @@ private fun VyboraApp() {
                     PublicProfilePage(
                         username = publicProfileUsername,
                         onBack = { publicProfileUsername = "" },
-                        onMessage = { recipient -> publicProfileUsername = ""; messageRecipient = recipient; tab = 3 },
+                        onMessage = { recipient -> publicProfileUsername = ""; messageRecipient = recipient; tab = 1 },
                         onNotice = { notice = it }
                     )
                 } else androidx.compose.runtime.key(accountSessionVersion) { when (tab) {
