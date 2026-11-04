@@ -1199,6 +1199,24 @@ private fun VyboraApp() {
                             )
                         }
                     }
+                    // Pequeno biquinho ligado ao botão Live, apontando para o + Criar.
+                    androidx.compose.foundation.Canvas(
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .offset(y = (-7).dp)
+                            .size(width = 23.dp, height = 15.dp)
+                    ) {
+                        val triangle = androidx.compose.ui.graphics.Path().apply {
+                            moveTo(0f, 0f)
+                            lineTo(size.width, 0f)
+                            lineTo(0f, size.height)
+                            close()
+                        }
+                        drawPath(
+                            path = triangle,
+                            color = if (QiblyTheme.dark) Color(0xFF20242C) else Color.White
+                        )
+                    }
                 }
             }
         }
