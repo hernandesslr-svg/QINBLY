@@ -541,7 +541,7 @@ private object RemoteAppearance {
         set(value) { actionIconColorBase = value }
     var actionIconSize by androidx.compose.runtime.mutableIntStateOf(24)
     var actionsVisible by androidx.compose.runtime.mutableStateOf(true)
-    var navigationLabels by androidx.compose.runtime.mutableStateOf(listOf("Início", "Lives", "Criar", "Mensagens", "Perfil"))
+    var navigationLabels by androidx.compose.runtime.mutableStateOf(listOf("Início", "Comunidades", "Criar", "Mensagens", "Perfil"))
     var feedLabels by androidx.compose.runtime.mutableStateOf(listOf("Descobrir", "Seguindo", "Comunidade"))
     var navigationLabelSize by androidx.compose.runtime.mutableIntStateOf(14)
     private var headerBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color.Black)
@@ -806,7 +806,7 @@ private fun VyboraApp() {
         Scaffold(containerColor = QiblyTheme.background, bottomBar = {
             if (tab != 2) {
             Column {
-                if (tab == 3) {
+                if (false) {
                     Button(
                         onClick = { notice = "A transmissão ainda não pode começar: o servidor de mídia precisa ser integrado e validado." },
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 8.dp)
@@ -829,7 +829,7 @@ private fun VyboraApp() {
                         unselectedTextColor = if (QiblyTheme.dark) Color.White else navigationUnselectedColor
                     )
                     NavigationBarItem(selected = tab == 0 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; messageRecipient = ""; showAuth = false; if (tab == 0) navTopRequest++; tab = 0 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Home, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 0 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text(RemoteAppearance.navigationLabels[0], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
-                    NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 3) navTopRequest++; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Radio, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text(RemoteAppearance.navigationLabels[1], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
+                    NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 3) navTopRequest++; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Groups, contentDescription = "Comunidades"); if (RemoteAppearance.navigationUnderlineVisible && tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text("Comunidades", fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                     NavigationBarItem(selected = false, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; tab = 2 }, icon = {
                         Box(
                             Modifier.size(width = 30.dp, height = 30.dp)
@@ -933,7 +933,7 @@ private fun VyboraApp() {
                         Text("Mensagens", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     }
                     3 -> Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Lives", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Text("Comunidades", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         IconButton(onClick = { showSearchDialog = true }) { Icon(Icons.Default.Search, contentDescription = "Pesquisar lives e pessoas", tint = Color.Black) }
                         IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Menu, contentDescription = "Abrir menu e configurações", tint = Color.Black) }
                     }
@@ -1046,7 +1046,7 @@ private fun VyboraApp() {
                     0 -> FeedPage(scrollToTopRequest = navTopRequest, currentUsername = loggedInUser, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true })
                     1 -> MessagesPage(scrollToTopRequest = navTopRequest, recipientUsername = messageRecipient, onSearch = { showSearchDialog = true }, onOpenConversation = { messageRecipient = it }, onOpenProfile = { publicProfileUsername = it }, onNotice = { notice = it })
                     2 -> PostPage(onNotice = { notice = it }, onCameraCancelled = { tab = 0 })
-                    3 -> LivePage(scrollToTopRequest = navTopRequest, onNotice = { notice = it })
+                    3 -> CommunitiesPage(onNotice = { notice = it })
                     else -> if (showAuth) {
                         AuthPage(
                             onSuccess = { username ->
@@ -2913,6 +2913,54 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
 
 }
 
+}
+
+@Composable
+private fun CommunitiesPage(onNotice: (String) -> Unit) {
+    var selected by remember { mutableStateOf("Descobrir") }
+    val examples = listOf(
+        Triple("Jogos e Gamers", "Converse sobre jogos e novidades", "🎮"),
+        Triple("Academia e Fitness", "Treinos, dicas e motivação", "💪"),
+        Triple("Música e Shows", "Artistas, músicas e eventos", "🎵"),
+        Triple("Animes e Mangás", "Compartilhe suas histórias favoritas", "✨")
+    )
+    Column(Modifier.fillMaxSize().background(RemoteAppearance.screenBackgroundColor).padding(16.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("Minhas", "Em alta", "Descobrir").forEach { item ->
+                Surface(
+                    modifier = Modifier.weight(1f).clickable { selected = item },
+                    shape = RoundedCornerShape(22.dp),
+                    color = if (selected == item) Color(0xFF1677F2) else QiblyTheme.card
+                ) {
+                    Text(item, modifier = Modifier.padding(vertical = 12.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        color = if (selected == item) Color.White else RemoteAppearance.screenTextColor)
+                }
+            }
+        }
+        Spacer(Modifier.height(18.dp))
+        if (selected == "Minhas") {
+            Text("Você ainda não participa de comunidades.", color = RemoteAppearance.screenSecondaryTextColor)
+            Spacer(Modifier.height(10.dp))
+            Text("Descubra comunidades para participar.", modifier = Modifier.clickable { selected = "Descobrir" }, color = Color(0xFF1677F2))
+        } else {
+            Text(if (selected == "Em alta") "Comunidades em alta" else "Descubra comunidades",
+                color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(12.dp))
+            examples.forEach { (name, description, emoji) ->
+                Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(emoji, style = MaterialTheme.typography.headlineMedium)
+                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Text(name, color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold)
+                        Text(description, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
+                    }
+                    OutlinedButton(onClick = { onNotice("A participação em comunidades estará disponível quando o serviço for integrado.") }) {
+                        Text("Entrar", color = Color(0xFF1677F2))
+                    }
+                }
+                HorizontalDivider(color = RemoteAppearance.screenSecondaryTextColor.copy(alpha = 0.15f))
+            }
+        }
+    }
 }
 
 @Composable
