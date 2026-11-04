@@ -444,7 +444,7 @@ private fun AccountSwitcherDialog(
         if (active) Icon(Icons.Default.CheckCircle, "Conta atual", tint = blue)
         else Icon(Icons.Default.ChevronRight, "Trocar para esta conta", tint = Color(0xFF667085))
         IconButton(onClick = { confirmRemove = account.username }, modifier = Modifier.size(34.dp)) {
-         Icon(Icons.Default.DeleteOutline, "Remover conta deste aparelho", tint = Color(0xFF667085))
+         Icon(Icons.Filled.DeleteForever, contentDescription = "Remover conta deste aparelho", tint = Color(0xFF667085), modifier = Modifier.size(22.dp))
         }
        }
       }
