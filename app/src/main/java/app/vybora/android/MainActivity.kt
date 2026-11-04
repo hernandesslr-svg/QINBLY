@@ -460,7 +460,7 @@ private fun AccountSwitcherDialog(
       Text("Adicionar outra conta", color = blue, fontWeight = FontWeight.SemiBold)
      }
     }
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(64.dp))
    }
    }
   }
