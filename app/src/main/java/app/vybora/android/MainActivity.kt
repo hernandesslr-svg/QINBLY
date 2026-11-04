@@ -1999,7 +1999,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                         Text(
                             if (RemoteAppearance.headerVisible) feedTab else "",
                             color = RemoteAppearance.headerTextColor,
-                            fontSize = RemoteAppearance.headerTextSize.sp,
+                            fontSize = 16.sp,
                             maxLines = 1,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
                         )
@@ -2011,7 +2011,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     }
                     if (feedIndex == 0) {
                         Box(
-                            Modifier.padding(horizontal = 9.dp).width(1.dp).height(20.dp)
+                            Modifier.padding(horizontal = 4.dp).width(1.dp).height(20.dp)
                                 .background(RemoteAppearance.headerTextColor.copy(alpha = 0.5f))
                         )
                     }
