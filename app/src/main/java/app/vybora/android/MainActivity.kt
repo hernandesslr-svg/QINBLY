@@ -1985,31 +1985,36 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             Modifier.fillMaxWidth().padding(start = RemoteAppearance.headerHorizontalPadding.dp, end = 12.dp, top = RemoteAppearance.headerVerticalPadding.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            listOf("Descobrir", "Seguindo").forEachIndexed { feedIndex, feedTab ->
-                val selected = selectedFeedTab == feedTab
-                Column(
-                    modifier = Modifier.clickable { selectedFeedTab = feedTab }
-                        .padding(horizontal = 3.dp, vertical = 5.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        if (RemoteAppearance.headerVisible) feedTab else "",
-                        color = RemoteAppearance.headerTextColor,
-                        fontSize = RemoteAppearance.headerTextSize.sp,
-                        maxLines = 1,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-                    )
-                    Spacer(Modifier.height(7.dp))
-                    Box(
-                        Modifier.width(if (selected) 64.dp else 0.dp).height(3.dp)
-                            .clip(CircleShape).background(Color(0xFF1677F2))
-                    )
-                }
-                if (feedIndex == 0) {
-                    Box(
-                        Modifier.padding(horizontal = 6.dp).width(1.dp).height(22.dp)
-                            .background(RemoteAppearance.headerTextColor.copy(alpha = 0.50f))
-                    )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                listOf("Descobrir", "Seguindo").forEachIndexed { feedIndex, feedTab ->
+                    val selected = selectedFeedTab == feedTab
+                    Column(
+                        modifier = Modifier.clickable { selectedFeedTab = feedTab }
+                            .padding(horizontal = 2.dp, vertical = 5.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            if (RemoteAppearance.headerVisible) feedTab else "",
+                            color = RemoteAppearance.headerTextColor,
+                            fontSize = RemoteAppearance.headerTextSize.sp,
+                            maxLines = 1,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                        )
+                        Spacer(Modifier.height(7.dp))
+                        Box(
+                            Modifier.width(if (selected) 64.dp else 0.dp).height(3.dp)
+                                .clip(CircleShape).background(Color(0xFF1677F2))
+                        )
+                    }
+                    if (feedIndex == 0) {
+                        Box(
+                            Modifier.padding(horizontal = 9.dp).width(1.dp).height(20.dp)
+                                .background(RemoteAppearance.headerTextColor.copy(alpha = 0.5f))
+                        )
+                    }
                 }
             }
             Spacer(Modifier.weight(1f))
