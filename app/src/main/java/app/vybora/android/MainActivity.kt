@@ -1155,15 +1155,15 @@ private fun VyboraApp() {
             androidx.compose.ui.window.Popup(
                 alignment = androidx.compose.ui.Alignment.BottomCenter,
                 offset = androidx.compose.ui.unit.IntOffset(
-                    with(androidx.compose.ui.platform.LocalDensity.current) { 88.dp.roundToPx() },
+                    with(androidx.compose.ui.platform.LocalDensity.current) { 84.dp.roundToPx() },
                     with(androidx.compose.ui.platform.LocalDensity.current) { (-94).dp.roundToPx() }
                 ),
                 onDismissRequest = { showCreateOptions = false },
                 properties = androidx.compose.ui.window.PopupProperties(focusable = true)
             ) {
                 Column(
-                    modifier = Modifier.width(150.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.width(120.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     listOf(
                         "Texto" to "✎",
@@ -1186,15 +1186,15 @@ private fun VyboraApp() {
                                         "Live" -> notice = "Transmissões ao vivo ainda não estão disponíveis."
                                     }
                                 }
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                .padding(horizontal = 9.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.spacedBy(7.dp)
                         ) {
-                            Text(symbol, color = Color(0xFF1677F2), fontSize = 20.sp)
+                            Text(symbol, color = Color(0xFF1677F2), fontSize = 18.sp)
                             Text(
                                 label,
                                 color = if (QiblyTheme.dark) Color.White else Color(0xFF172337),
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
