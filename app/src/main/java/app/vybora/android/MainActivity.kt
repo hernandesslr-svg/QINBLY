@@ -1999,7 +1999,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                         Text(
                             if (RemoteAppearance.headerVisible) feedTab else "",
                             color = RemoteAppearance.headerTextColor,
-                            fontSize = 16.sp,
+                            fontSize = 18.sp,
                             maxLines = 1,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
                         )
@@ -2011,7 +2011,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     }
                     if (feedIndex == 0) {
                         Box(
-                            Modifier.padding(horizontal = 4.dp).width(1.dp).height(20.dp)
+                            Modifier.padding(horizontal = 8.5.dp).width(1.dp).height(23.dp)
                                 .background(RemoteAppearance.headerTextColor.copy(alpha = 0.5f))
                         )
                     }
@@ -2021,8 +2021,8 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             Row(
                 modifier = Modifier.padding(end = 3.dp)
                     .background(
-                        if (QiblyTheme.dark) Color.White.copy(alpha = 0.09f)
-                        else Color(0xFF6F8ABF).copy(alpha = 0.07f),
+                        if (QiblyTheme.dark) Color.White.copy(alpha = 0.06f)
+                        else Color(0xFF6F8ABF).copy(alpha = 0.06f),
                         RoundedCornerShape(20.dp)
                     )
                     .padding(horizontal = 7.dp, vertical = 7.dp),
