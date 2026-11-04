@@ -399,49 +399,69 @@ private fun AccountSwitcherDialog(
  onAddAccount: () -> Unit,
  onRemove: (String) -> Unit
 ) {
- var selectedUsername by remember { mutableStateOf("") }
  var confirmRemove by remember { mutableStateOf("") }
- androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
-  Surface(Modifier.fillMaxWidth(), color = Panel, shape = RoundedCornerShape(26.dp), border = BorderStroke(1.dp, Violet.copy(alpha = .55f))) {
-   Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-    Text("Trocar de conta", color = Color.Black, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-    Text("Escolha uma conta para continuar", color = Muted)
-    if (accounts.isEmpty()) Text("Nenhuma conta salva neste aparelho ainda.", color = Muted, style = MaterialTheme.typography.bodySmall)
-    accounts.forEach { account ->
-     val active = account.username.equals(currentUsername, true)
-     val selected = account.username.equals(selectedUsername, true)
-     Surface(
-      Modifier.fillMaxWidth().clickable {
-       selectedUsername = account.username
-       if (!active) onSelect(account)
-      },
-      color = if (active) Violet.copy(alpha = .16f) else Color(0xFF0A0D1A),
-      shape = RoundedCornerShape(16.dp),
-      border = BorderStroke(1.dp, if (selected) Pink.copy(alpha = .9f) else if (active) Pink.copy(alpha = .65f) else Color.White.copy(alpha = .08f))
-     ) {
-      Row(Modifier.padding(13.dp), verticalAlignment = Alignment.CenterVertically) {
-       Box(Modifier.size(44.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Violet, Pink))), contentAlignment = Alignment.Center) {
-        Text(account.username.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
-       }
-       Column(Modifier.weight(1f).padding(start = 12.dp)) {
-        Text(account.displayName.ifBlank { account.username }, color = Color.Black, fontWeight = FontWeight.SemiBold)
-        Text("@" + account.username.removePrefix("@"), color = Muted, style = MaterialTheme.typography.bodySmall)
-       }
-       if (active) Icon(Icons.Default.CheckCircle, contentDescription = "Conta atual", tint = Pink)
-       else Icon(Icons.Default.ChevronRight, contentDescription = "Selecionar", tint = Muted)
-       if (selected) {
-        Spacer(Modifier.width(8.dp))
-        IconButton(onClick = { confirmRemove = account.username }, modifier = Modifier.size(32.dp)) {
-         Icon(Icons.Default.Close, contentDescription = "Remover conta", tint = Color.Black)
+ val blue = Color(0xFF1877F2)
+ androidx.compose.ui.window.Dialog(
+  onDismissRequest = onDismiss,
+  properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+ ) {
+  Surface(
+   modifier = Modifier.fillMaxSize(),
+   color = Color.White
+  ) {
+   Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
+    Spacer(Modifier.height(34.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+     IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.Black) }
+     Column(Modifier.weight(1f)) {
+      Text("Trocar de conta", fontSize = 25.sp, fontWeight = FontWeight.Bold, color = Color(0xFF101828))
+      Text("Selecione o perfil que deseja usar", fontSize = 14.sp, color = Color(0xFF667085))
+     }
+    }
+    Spacer(Modifier.height(25.dp))
+    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+     if (accounts.isEmpty()) Text("Nenhuma conta salva neste aparelho.", color = Color.Gray)
+     accounts.forEach { account ->
+      val active = account.username.equals(currentUsername, ignoreCase = true)
+      Surface(
+       modifier = Modifier.fillMaxWidth().clickable { if (!active) onSelect(account) },
+       color = if (active) Color(0xFFF2F8FF) else Color.White,
+       shape = RoundedCornerShape(17.dp),
+       border = BorderStroke(if (active) 1.5.dp else 1.dp, if (active) blue else Color(0xFFE3E7ED))
+      ) {
+       Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        QiblyAccountAvatar(account.username, "", 66.dp) { if (!active) onSelect(account) }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+         Text(account.displayName.ifBlank { account.username }, color = Color(0xFF101828), fontWeight = FontWeight.Bold, fontSize = 18.sp, maxLines = 1)
+         Text("@"+account.username.removePrefix("@"), color = Color(0xFF667085), fontSize = 14.sp)
+         if (active) Text("● Conta atual", color = blue, fontSize = 12.sp, modifier = Modifier.padding(top = 5.dp))
+        }
+        if (active) Icon(Icons.Default.CheckCircle, "Conta atual", tint = blue)
+        else Icon(Icons.Default.ChevronRight, "Trocar para esta conta", tint = Color(0xFF667085))
+        IconButton(onClick = { confirmRemove = account.username }, modifier = Modifier.size(34.dp)) {
+         Icon(Icons.Default.MoreVert, "Gerenciar conta", tint = Color(0xFF667085))
         }
        }
       }
      }
+     OutlinedButton(
+      onClick = onAddAccount,
+      modifier = Modifier.fillMaxWidth().height(56.dp),
+      shape = RoundedCornerShape(16.dp),
+      border = BorderStroke(1.dp, Color(0xFFDCE9FA))
+     ) {
+      Icon(Icons.Default.Add, null, tint = blue)
+      Spacer(Modifier.width(8.dp))
+      Text("Adicionar outra conta", color = blue, fontWeight = FontWeight.SemiBold)
+     }
+     TextButton(onClick = {
+      if (accounts.isNotEmpty()) confirmRemove = accounts.firstOrNull { !it.username.equals(currentUsername,true) }?.username.orEmpty()
+     }, modifier = Modifier.fillMaxWidth()) {
+      Text("Gerenciar contas", color = Color(0xFF475467))
+     }
     }
-    OutlinedButton(onClick = onAddAccount, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-     Icon(Icons.Default.Add, null); Spacer(Modifier.width(8.dp)); Text("Adicionar outra conta")
-    }
-    OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) { Text("Cancelar") }
+    Spacer(Modifier.height(16.dp))
    }
   }
  }
