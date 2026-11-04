@@ -398,6 +398,9 @@ object VyboraApi {
     fun toggleFollow(token: String, userId: String): Boolean =
         request("POST", "/api/users/" + userId + "/follow", JSONObject(), token).optBoolean("following")
 
+    fun heartbeatPresence(token: String): Int =
+        request("POST", "/api/presence/heartbeat", JSONObject(), token).optInt("onlineCount", -1)
+
     fun setProfileFrame(token: String, frame: Int): JSONObject =
         request("PATCH", "/api/users/me/frame", JSONObject().put("frame", frame), token)
 
