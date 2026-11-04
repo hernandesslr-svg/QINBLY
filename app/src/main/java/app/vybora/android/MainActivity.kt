@@ -1152,45 +1152,55 @@ private fun VyboraApp() {
             })
         }
         if (showCreateOptions) {
-            androidx.compose.material3.AlertDialog(
+            androidx.compose.ui.window.Popup(
+                alignment = androidx.compose.ui.Alignment.BottomCenter,
+                offset = androidx.compose.ui.unit.IntOffset(
+                    with(androidx.compose.ui.platform.LocalDensity.current) { 88.dp.roundToPx() },
+                    with(androidx.compose.ui.platform.LocalDensity.current) { (-94).dp.roundToPx() }
+                ),
                 onDismissRequest = { showCreateOptions = false },
-                title = { Text("Criar publicação", fontWeight = FontWeight.Bold) },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(
-                            Triple("Texto", "Compartilhe suas ideias e opiniões", "✎"),
-                            Triple("Foto", "Escolha uma foto para publicar", "▣"),
-                            Triple("Vídeo", "Escolha ou grave um vídeo", "▶"),
-                            Triple("Live", "Inicie uma transmissão ao vivo", "◉")
-                        ).forEach { (label, description, symbol) ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .clickable {
-                                        showCreateOptions = false
-                                        when (label) {
-                                            "Foto", "Vídeo" -> tab = 2
-                                            "Texto" -> notice = "Publicações só de texto estão em preparação."
-                                            "Live" -> notice = "Transmissões ao vivo ainda não estão disponíveis."
-                                        }
+                properties = androidx.compose.ui.window.PopupProperties(focusable = true)
+            ) {
+                Column(
+                    modifier = Modifier.width(150.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(
+                        "Texto" to "✎",
+                        "Galeria" to "▣",
+                        "Câmera" to "◎",
+                        "Enquete" to "▤",
+                        "Live" to "◉"
+                    ).forEach { (label, symbol) ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(if (QiblyTheme.dark) Color(0xFF20242C) else Color.White)
+                                .border(1.dp, Color(0xFFBFD5F5), RoundedCornerShape(24.dp))
+                                .clickable {
+                                    showCreateOptions = false
+                                    when (label) {
+                                        "Galeria", "Câmera" -> tab = 2
+                                        "Texto" -> notice = "Publicações só de texto estão em preparação."
+                                        "Enquete" -> notice = "Enquetes ainda estão em preparação."
+                                        "Live" -> notice = "Transmissões ao vivo ainda não estão disponíveis."
                                     }
-                                    .padding(horizontal = 10.dp, vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(symbol, color = Color(0xFF1677F2), fontSize = 24.sp)
-                                Spacer(Modifier.width(14.dp))
-                                Column {
-                                    Text(label, fontWeight = FontWeight.SemiBold)
-                                    Text(description, fontSize = 12.sp, color = Muted)
                                 }
-                            }
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text(symbol, color = Color(0xFF1677F2), fontSize = 20.sp)
+                            Text(
+                                label,
+                                color = if (QiblyTheme.dark) Color.White else Color(0xFF172337),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
-                },
-                confirmButton = {
-                    TextButton(onClick = { showCreateOptions = false }) { Text("Fechar") }
                 }
-            )
+            }
         }
         if (showSearchDialog) {
             SearchUsersDialog(
