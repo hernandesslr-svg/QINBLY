@@ -1988,7 +1988,8 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             listOf("Descobrir", "Seguindo").forEachIndexed { feedIndex, feedTab ->
                 val selected = selectedFeedTab == feedTab
                 Column(
-                    modifier = Modifier.weight(1f).clickable { selectedFeedTab = feedTab }.padding(vertical = 5.dp),
+                    modifier = Modifier.clickable { selectedFeedTab = feedTab }
+                        .padding(horizontal = 3.dp, vertical = 5.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -2006,31 +2007,34 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 }
                 if (feedIndex == 0) {
                     Box(
-                        Modifier.padding(horizontal = 2.dp).width(1.dp).height(24.dp)
-                            .background(RemoteAppearance.headerTextColor.copy(alpha = 0.42f))
+                        Modifier.padding(horizontal = 6.dp).width(1.dp).height(22.dp)
+                            .background(RemoteAppearance.headerTextColor.copy(alpha = 0.50f))
                     )
                 }
             }
-            if (onlineUsers >= 0) {
-                Row(
-                    modifier = Modifier.padding(start = 3.dp, end = 4.dp)
-                        .background(
-                            if (QiblyTheme.dark) Color.White.copy(alpha = 0.10f)
-                            else Color(0xFF6F8ABF).copy(alpha = 0.08f),
-                            RoundedCornerShape(18.dp)
-                        )
-                        .padding(horizontal = 8.dp, vertical = 7.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(Modifier.size(7.dp).background(Color(0xFF16BF6B), CircleShape))
-                    Spacer(Modifier.width(5.dp))
-                    Text(
-                        if (onlineUsers >= 1000) String.format(java.util.Locale("pt", "BR"), "%.1f mil online", onlineUsers / 1000.0)
-                        else "$onlineUsers online",
-                        fontSize = 10.sp, maxLines = 1,
-                        color = RemoteAppearance.headerTextColor
+            Spacer(Modifier.weight(1f))
+            Row(
+                modifier = Modifier.padding(end = 3.dp)
+                    .background(
+                        if (QiblyTheme.dark) Color.White.copy(alpha = 0.09f)
+                        else Color(0xFF6F8ABF).copy(alpha = 0.07f),
+                        RoundedCornerShape(20.dp)
                     )
-                }
+                    .padding(horizontal = 7.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(Modifier.size(6.dp).background(
+                    if (onlineUsers >= 0) Color(0xFF16BF6B) else RemoteAppearance.headerTextColor.copy(alpha = 0.35f),
+                    CircleShape
+                ))
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    if (onlineUsers < 0) "— online"
+                    else if (onlineUsers >= 1000) String.format(java.util.Locale("pt", "BR"), "%.1f mil online", onlineUsers / 1000.0)
+                    else "$onlineUsers online",
+                    fontSize = 10.sp, maxLines = 1,
+                    color = RemoteAppearance.headerTextColor.copy(alpha = 0.85f)
+                )
             }
             IconButton(onClick = onSearch, modifier = Modifier.size(40.dp)) {
                 Icon(Icons.Default.Search, contentDescription = "Buscar", tint = if (QiblyTheme.dark) Color.White else Color.Black, modifier = Modifier.size(26.dp))
