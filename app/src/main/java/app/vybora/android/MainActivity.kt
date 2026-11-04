@@ -1155,14 +1155,14 @@ private fun VyboraApp() {
             androidx.compose.ui.window.Popup(
                 alignment = androidx.compose.ui.Alignment.BottomCenter,
                 offset = androidx.compose.ui.unit.IntOffset(
-                    with(androidx.compose.ui.platform.LocalDensity.current) { 80.dp.roundToPx() },
+                    with(androidx.compose.ui.platform.LocalDensity.current) { 55.dp.roundToPx() },
                     with(androidx.compose.ui.platform.LocalDensity.current) { (-94).dp.roundToPx() }
                 ),
                 onDismissRequest = { showCreateOptions = false },
                 properties = androidx.compose.ui.window.PopupProperties(focusable = true)
             ) {
                 Column(
-                    modifier = Modifier.width(116.dp),
+                    modifier = Modifier.width(103.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     listOf(
@@ -1203,8 +1203,8 @@ private fun VyboraApp() {
                     // apontando na diagonal para o botão central Criar (+).
                     androidx.compose.foundation.Canvas(
                         modifier = Modifier
-                            .offset(x = (-22).dp, y = (-6).dp)
-                            .size(width = 45.dp, height = 21.dp)
+                            .offset(x = (-6).dp, y = (-6).dp)
+                            .size(width = 28.dp, height = 18.dp)
                     ) {
                         val tail = androidx.compose.ui.graphics.Path().apply {
                             moveTo(size.width * 0.48f, 0f)
