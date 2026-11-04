@@ -1155,8 +1155,8 @@ private fun VyboraApp() {
             androidx.compose.ui.window.Popup(
                 alignment = androidx.compose.ui.Alignment.BottomCenter,
                 offset = androidx.compose.ui.unit.IntOffset(
-                    with(androidx.compose.ui.platform.LocalDensity.current) { 55.dp.roundToPx() },
-                    with(androidx.compose.ui.platform.LocalDensity.current) { (-94).dp.roundToPx() }
+                    with(androidx.compose.ui.platform.LocalDensity.current) { 0.dp.roundToPx() },
+                    with(androidx.compose.ui.platform.LocalDensity.current) { (-104).dp.roundToPx() }
                 ),
                 onDismissRequest = { showCreateOptions = false },
                 properties = androidx.compose.ui.window.PopupProperties(focusable = true)
