@@ -444,7 +444,7 @@ private fun AccountSwitcherDialog(
         if (active) Icon(Icons.Default.CheckCircle, "Conta atual", tint = blue)
         else Icon(Icons.Default.ChevronRight, "Trocar para esta conta", tint = Color(0xFF667085))
         IconButton(onClick = { confirmRemove = account.username }, modifier = Modifier.size(34.dp)) {
-         Icon(Icons.Default.MoreVert, "Gerenciar conta", tint = Color(0xFF667085))
+         Icon(Icons.Default.DeleteOutline, "Remover conta deste aparelho", tint = Color(0xFF667085))
         }
        }
       }
@@ -458,11 +458,6 @@ private fun AccountSwitcherDialog(
       Icon(Icons.Default.Add, null, tint = blue)
       Spacer(Modifier.width(8.dp))
       Text("Adicionar outra conta", color = blue, fontWeight = FontWeight.SemiBold)
-     }
-     TextButton(onClick = {
-      if (accounts.isNotEmpty()) confirmRemove = accounts.firstOrNull { !it.username.equals(currentUsername,true) }?.username.orEmpty()
-     }, modifier = Modifier.fillMaxWidth()) {
-      Text("Gerenciar contas", color = Color(0xFF475467))
      }
     }
     Spacer(Modifier.height(12.dp))
@@ -481,12 +476,12 @@ private fun AccountSwitcherDialog(
      confirmRemove = ""
      onRemove(target)
 
-    }) { Text("Remover", color = Pink) }
+    }) { Text("Remover", color = Color(0xFF475467)) }
    },
    dismissButton = { TextButton(onClick = { confirmRemove = "" }) { Text("Cancelar") } },
-   containerColor = Panel,
-   titleContentColor = Color.White,
-   textContentColor = Muted
+   containerColor = Color.White,
+   titleContentColor = Color(0xFF101828),
+   textContentColor = Color(0xFF667085)
   )
  }
 }
