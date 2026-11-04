@@ -3039,11 +3039,11 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                     val selected = selectedFilter == label
                     Surface(
                         modifier = Modifier.clickable { selectedFilter = label },
-                        color = if (selected) Color(0xFF9D1BCA) else Panel,
+                        color = if (selected) Color(0xFF1877F2) else RemoteAppearance.screenBackgroundColor,
                         shape = RoundedCornerShape(22.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) Pink else Color(0xFF30334D))
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) Color(0xFF1877F2) else RemoteAppearance.screenSecondaryTextColor.copy(alpha = 0.55f))
                     ) {
-                        Text(label, Modifier.padding(horizontal = 11.dp, vertical = 10.dp), color = if (selected) Color.White else Muted, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                        Text(label, Modifier.padding(horizontal = 11.dp, vertical = 10.dp), color = if (selected) Color.White else RemoteAppearance.screenTextColor, style = MaterialTheme.typography.labelMedium, maxLines = 1)
                     }
                 }
             }
@@ -3068,22 +3068,17 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
-                            Box(Modifier.size(70.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Pink, Violet))).padding(2.dp), contentAlignment = Alignment.Center) {
-                                if (conversation.avatarUrl.isNotBlank()) AsyncImage(model = conversation.avatarUrl, contentDescription = "Foto de perfil", modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-                                else Box(Modifier.fillMaxSize().clip(CircleShape).background(RemoteAppearance.screenBackgroundColor), contentAlignment = Alignment.Center) {
-                                    Text(conversation.displayName.ifBlank { conversation.username }.take(1).uppercase(), color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                                }
-                            }
+                            QiblyAccountAvatar(conversation.username, conversation.avatarUrl, 70.dp) { onOpenProfile(conversation.username) }
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                                 Text(conversation.displayName.ifBlank { conversation.username }, color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1)
-                                Text(conversation.body.ifBlank { "@${conversation.username}" }, color = if (conversation.unreadCount > 0) Color.White else Muted, maxLines = 1, style = MaterialTheme.typography.bodyLarge)
+                                Text(conversation.body.ifBlank { "@${conversation.username}" }, color = RemoteAppearance.screenSecondaryTextColor, maxLines = 1, style = MaterialTheme.typography.bodyLarge)
                             }
                             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Agora", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall)
                                 if (conversation.unreadCount > 0) Box(
                                     Modifier.sizeIn(minWidth = 20.dp, minHeight = 20.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFFFF3045))
+                                        .background(Color(0xFF1877F2))
                                         .padding(horizontal = 5.dp, vertical = 2.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -3091,7 +3086,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                                 }
                             }
                         }
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f), thickness = 0.7.dp)
+                        HorizontalDivider(color = RemoteAppearance.screenSecondaryTextColor.copy(alpha = 0.18f), thickness = 0.7.dp)
                         }
                     }
                 }
