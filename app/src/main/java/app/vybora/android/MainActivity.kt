@@ -411,7 +411,7 @@ private fun AccountSwitcherDialog(
     color = Color.White,
     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
    ) {
-   Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp)) {
+   Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 18.dp)) {
     Spacer(Modifier.height(12.dp))
     Box(Modifier.align(Alignment.CenterHorizontally).size(width = 42.dp, height = 4.dp).background(Color(0xFFD0D5DD), RoundedCornerShape(50)))
     Spacer(Modifier.height(12.dp))
@@ -460,7 +460,7 @@ private fun AccountSwitcherDialog(
       Text("Adicionar outra conta", color = blue, fontWeight = FontWeight.SemiBold)
      }
     }
-    Spacer(Modifier.height(64.dp))
+    Spacer(Modifier.height(28.dp))
    }
    }
   }
