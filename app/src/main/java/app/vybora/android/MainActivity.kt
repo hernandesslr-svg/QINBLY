@@ -703,6 +703,7 @@ private fun VyboraApp() {
 
     var liked by remember { mutableStateOf(setOf<String>()) }
     var notice by remember { mutableStateOf("") }
+    var showCreateOptions by remember { mutableStateOf(false) }
     var profileStat by remember { mutableStateOf("") }
     var profileStatUsers by remember { mutableStateOf<List<VyboraApi.UserSummary>>(emptyList()) }
     var showAuth by remember { mutableStateOf(false) }
@@ -847,7 +848,7 @@ private fun VyboraApp() {
                     )
                     NavigationBarItem(selected = tab == 0 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; messageRecipient = ""; showAuth = false; if (tab == 0) navTopRequest++; tab = 0 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Home, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 0 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text(RemoteAppearance.navigationLabels[0], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                     NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 3) navTopRequest++; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Groups, contentDescription = "Comunidades"); if (RemoteAppearance.navigationUnderlineVisible && tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text("Comunidades", fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
-                    NavigationBarItem(selected = false, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; tab = 2 }, icon = {
+                    NavigationBarItem(selected = false, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; showCreateOptions = true }, icon = {
                         Box(
                             Modifier.size(width = 30.dp, height = 30.dp)
                                 .border(2.dp, Color(0xFF1677F2), RoundedCornerShape(9.dp)),
@@ -1149,6 +1150,47 @@ private fun VyboraApp() {
                 }
                 edit.apply()
             })
+        }
+        if (showCreateOptions) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showCreateOptions = false },
+                title = { Text("Criar publicação", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(
+                            Triple("Texto", "Compartilhe suas ideias e opiniões", "✎"),
+                            Triple("Foto", "Escolha uma foto para publicar", "▣"),
+                            Triple("Vídeo", "Escolha ou grave um vídeo", "▶"),
+                            Triple("Live", "Inicie uma transmissão ao vivo", "◉")
+                        ).forEach { (label, description, symbol) ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        showCreateOptions = false
+                                        when (label) {
+                                            "Foto", "Vídeo" -> tab = 2
+                                            "Texto" -> notice = "Publicações só de texto estão em preparação."
+                                            "Live" -> notice = "Transmissões ao vivo ainda não estão disponíveis."
+                                        }
+                                    }
+                                    .padding(horizontal = 10.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(symbol, color = Color(0xFF1677F2), fontSize = 24.sp)
+                                Spacer(Modifier.width(14.dp))
+                                Column {
+                                    Text(label, fontWeight = FontWeight.SemiBold)
+                                    Text(description, fontSize = 12.sp, color = Muted)
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showCreateOptions = false }) { Text("Fechar") }
+                }
+            )
         }
         if (showSearchDialog) {
             SearchUsersDialog(
