@@ -2117,7 +2117,7 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
                                         if (post.mediaUrl.isBlank() || (post.mediaType != "image" && post.mediaType != "video")) {
                                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().background(Color.Transparent).padding(horizontal = 14.dp, vertical = 7.dp)) {
                                     val avatarUrl = post.avatarUrl.ifBlank { "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=240&auto=format&fit=crop&q=80" }
-                                    AsyncImage(model = avatarUrl, contentDescription = "Abrir perfil de @${post.username}", modifier = Modifier.size(52.dp).clip(CircleShape).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }, contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                                    QiblyAccountAvatar(post.username, avatarUrl, 52.dp) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
                                     Spacer(Modifier.width(10.dp))
                                     Column(Modifier.weight(1f).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }) {
                                         Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" }, color = RemoteAppearance.feedTextColor, fontSize = 17.sp, fontWeight = if (nameFontStyle == "Elegante") FontWeight.Medium else FontWeight.Bold, fontFamily = nameFontFamily(nameFontStyle))
@@ -2198,14 +2198,7 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
                                     verticalArrangement = Arrangement.spacedBy(5.dp)
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                                        AsyncImage(
-                                            model = post.avatarUrl, contentDescription = "Foto de perfil do autor",
-                                            modifier = Modifier.size(52.dp)
-                                                .border(2.dp, Color(0xFF2196F3), CircleShape)
-                                                .padding(2.dp).clip(CircleShape)
-                                                .clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) },
-                                            contentScale = ContentScale.Crop
-                                        )
+                                        QiblyAccountAvatar(post.username, post.avatarUrl, 52.dp) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
                                         Column(Modifier.weight(1f)) {
                                             Text(
                                                 post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" },
@@ -3574,6 +3567,36 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
                 }
                 .zIndex(100f)
         )
+    }
+}
+
+@Composable
+private fun QiblyAccountAvatar(username: String, fallbackUrl: String, diameter: Dp, onClick: () -> Unit) {
+    var resolvedUrl by remember(username, fallbackUrl) { mutableStateOf(fallbackUrl) }
+    var frame by remember(username) { mutableIntStateOf(-1) }
+    LaunchedEffect(username) {
+        frame = -1
+        if (username.isNotBlank() && !username.contains(".demo")) {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    val result = VyboraApi.getPublicProfile(username)
+                    val profile = result.optJSONObject("user") ?: result.optJSONObject("profile") ?: result
+                    val image = profile.optString("avatarUrl").ifBlank { profile.optString("coverUrl") }
+                    val selected = profile.optInt("profileFrame", -1)
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        if (image.isNotBlank()) resolvedUrl = image
+                        frame = selected.takeIf { it in 6..14 && it != 8 } ?: -1
+                    }
+                } catch (_: Exception) { }
+            }
+        }
+    }
+    Box(Modifier.size(diameter).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(if (frame >= 0) diameter * 0.82f else diameter).clip(CircleShape).background(QiblyTheme.card)) {
+            if (resolvedUrl.isNotBlank()) AsyncImage(model = resolvedUrl, contentDescription = "Foto de @$username", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            else Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.fillMaxSize().padding(8.dp))
+        }
+        if (frame >= 0) QiblyAnimatedFrame(frame, diameter)
     }
 }
 
