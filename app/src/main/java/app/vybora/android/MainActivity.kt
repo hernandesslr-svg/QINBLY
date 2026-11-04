@@ -1155,7 +1155,7 @@ private fun VyboraApp() {
             androidx.compose.ui.window.Popup(
                 alignment = androidx.compose.ui.Alignment.BottomCenter,
                 offset = androidx.compose.ui.unit.IntOffset(
-                    with(androidx.compose.ui.platform.LocalDensity.current) { 136.dp.roundToPx() },
+                    with(androidx.compose.ui.platform.LocalDensity.current) { 80.dp.roundToPx() },
                     with(androidx.compose.ui.platform.LocalDensity.current) { (-94).dp.roundToPx() }
                 ),
                 onDismissRequest = { showCreateOptions = false },
@@ -1199,22 +1199,26 @@ private fun VyboraApp() {
                             )
                         }
                     }
-                    // Pequeno biquinho ligado ao botão Live, apontando para o + Criar.
+                    // Biquinho visível, ligado à borda inferior esquerda de Live,
+                    // apontando na diagonal para o botão central Criar (+).
                     androidx.compose.foundation.Canvas(
                         modifier = Modifier
-                            .padding(start = 12.dp)
-                            .offset(y = (-7).dp)
-                            .size(width = 23.dp, height = 15.dp)
+                            .offset(x = (-22).dp, y = (-6).dp)
+                            .size(width = 45.dp, height = 21.dp)
                     ) {
-                        val triangle = androidx.compose.ui.graphics.Path().apply {
-                            moveTo(0f, 0f)
+                        val tail = androidx.compose.ui.graphics.Path().apply {
+                            moveTo(size.width * 0.48f, 0f)
                             lineTo(size.width, 0f)
                             lineTo(0f, size.height)
                             close()
                         }
-                        drawPath(
-                            path = triangle,
-                            color = if (QiblyTheme.dark) Color(0xFF20242C) else Color.White
+                        val bubbleColor = if (QiblyTheme.dark) Color(0xFF20242C) else Color.White
+                        drawPath(tail, color = bubbleColor)
+                        drawLine(
+                            color = Color(0xFFBFD5F5),
+                            start = androidx.compose.ui.geometry.Offset(size.width, 0f),
+                            end = androidx.compose.ui.geometry.Offset(0f, size.height),
+                            strokeWidth = 1.2.dp.toPx()
                         )
                     }
                 }
