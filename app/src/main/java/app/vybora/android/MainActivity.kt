@@ -1039,6 +1039,7 @@ private fun VyboraApp() {
                     PublicProfilePage(
                         username = publicProfileUsername,
                         onBack = { publicProfileUsername = "" },
+                        onMessage = { recipient -> publicProfileUsername = ""; messageRecipient = recipient; tab = 3 },
                         onNotice = { notice = it }
                     )
                 } else androidx.compose.runtime.key(accountSessionVersion) { when (tab) {
@@ -5321,7 +5322,7 @@ private fun saveProfilePhotoToDevice(context: android.content.Context, imageUrl:
 }
 
 @Composable
-private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (String) -> Unit) {
+private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (String) -> Unit, onNotice: (String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
     var user by remember(username) { mutableStateOf(org.json.JSONObject()) }
@@ -5439,7 +5440,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = {
                 val token = prefs.getString("token", null)
-                val targetId = user.optString("id")
+                val targetId = user.optString("id").ifBlank { user.optString("userId") }.ifBlank { user.optString("user_id") }
                 if (token.isNullOrBlank()) onNotice("Entre na sua conta para seguir pessoas.")
                 else if (targetId.isBlank()) onNotice("O identificador deste perfil não foi carregado.")
                 else Thread {
@@ -5459,7 +5460,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onNotice: (S
                 Text(if (isFollowing) "Seguindo" else "Seguir", color = if (isFollowing) Color(0xFF1677E8) else Color.White, fontWeight = FontWeight.Bold)
             }
             OutlinedButton(onClick = {
-                onNotice("A conversa com @$publicUsername será aberta quando a tela de mensagens estiver conectada.")
+                onMessage(publicUsername)
             }, modifier = Modifier.weight(0.88f).height(46.dp), border = BorderStroke(1.dp, Color(0xFF1677E8))) {
                 Icon(Icons.Default.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(17.dp), tint = Color(0xFF1677E8))
                 Spacer(Modifier.width(6.dp))
