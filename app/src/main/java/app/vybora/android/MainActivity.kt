@@ -715,6 +715,23 @@ private fun VyboraApp() {
     val appPrefs = remember { appContext.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
     var loggedInUser by remember { mutableStateOf(appPrefs.getString("username", "") ?: "") }
     var unreadMessages by remember { mutableIntStateOf(0) }
+    var onlineUsers by remember { mutableIntStateOf(-1) }
+    LaunchedEffect(loggedInUser, accountSessionVersion) {
+        val token = appPrefs.getString("token", null)
+        onlineUsers = -1
+        if (!token.isNullOrBlank()) {
+            while (true) {
+                try {
+                    onlineUsers = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        VyboraApi.heartbeatPresence(token)
+                    }
+                } catch (_: Exception) {
+                    onlineUsers = -1
+                }
+                kotlinx.coroutines.delay(30_000L)
+            }
+        }
+    }
     LaunchedEffect(loggedInUser, accountSessionVersion) {
         val token = appPrefs.getString("token", null)
         if (token.isNullOrBlank()) {
@@ -1043,7 +1060,7 @@ private fun VyboraApp() {
                         onNotice = { notice = it }
                     )
                 } else androidx.compose.runtime.key(accountSessionVersion) { when (tab) {
-                    0 -> FeedPage(scrollToTopRequest = navTopRequest, currentUsername = loggedInUser, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true })
+                    0 -> FeedPage(scrollToTopRequest = navTopRequest, onlineUsers = onlineUsers, currentUsername = loggedInUser, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true })
                     1 -> MessagesPage(scrollToTopRequest = navTopRequest, recipientUsername = messageRecipient, onSearch = { showSearchDialog = true }, onOpenConversation = { messageRecipient = it }, onOpenProfile = { publicProfileUsername = it }, onNotice = { notice = it })
                     2 -> PostPage(onNotice = { notice = it }, onCameraCancelled = { tab = 0 })
                     3 -> CommunitiesPage(onNotice = { notice = it })
@@ -1772,7 +1789,7 @@ private fun QiblyShareDialog(
 
 @Composable
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontStyle: String, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onAddStory: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit) {
+private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername: String, nameFontStyle: String, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onAddStory: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
     var posts by remember { mutableStateOf<List<VyboraApi.PostSummary>>(emptyList()) }
@@ -1968,7 +1985,7 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
             Modifier.fillMaxWidth().padding(start = RemoteAppearance.headerHorizontalPadding.dp, end = 12.dp, top = RemoteAppearance.headerVerticalPadding.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            listOf("Descobrir", "Seguindo", "Comunidade").forEachIndexed { feedIndex, feedTab ->
+            listOf("Descobrir", "Seguindo").forEachIndexed { feedIndex, feedTab ->
                 val selected = selectedFeedTab == feedTab
                 Column(
                     modifier = Modifier.weight(1f).clickable { selectedFeedTab = feedTab }.padding(vertical = 6.dp),
@@ -1979,6 +1996,20 @@ private fun FeedPage(scrollToTopRequest: Int, currentUsername: String, nameFontS
                     Spacer(Modifier.height(6.dp))
                     Box(Modifier.width(if (selected) 58.dp else 0.dp).height(3.dp)
                         .clip(CircleShape).background(RemoteAppearance.headerUnderlineColor))
+                }
+            }
+            if (onlineUsers >= 0) {
+                Row(
+                    modifier = Modifier.padding(end = 5.dp).background(
+                        if (QiblyTheme.dark) Color(0xFF20252D) else Color(0xFFF0F5FC),
+                        RoundedCornerShape(16.dp)
+                    ).padding(horizontal = 7.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(Modifier.size(6.dp).background(Color(0xFF19B96A), CircleShape))
+                    Spacer(Modifier.width(4.dp))
+                    Text("$onlineUsers online", fontSize = 10.sp, maxLines = 1,
+                        color = if (QiblyTheme.dark) Color.White else Color(0xFF27364B))
                 }
             }
             IconButton(onClick = onSearch, modifier = Modifier.size(40.dp)) {
