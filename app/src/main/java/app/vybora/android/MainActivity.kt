@@ -3612,7 +3612,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     val shownCountry = bio.lineSequence().firstOrNull { it.startsWith("🌍 ") }?.removePrefix("🌍 ").orEmpty()
     val profileContext = androidx.compose.ui.platform.LocalContext.current
     val profilePrefs = remember { profileContext.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
-    var appliedFrame by remember { mutableIntStateOf(profilePrefs.getInt("qinbly_profile_frame", -1).takeIf { it in 6..14 && it != 8 } ?: -1) }
+    var appliedFrame by remember(username) { mutableIntStateOf(-1) }
 
     LaunchedEffect(username, photoRefreshKey) {
         loadingPosts = true
@@ -3624,12 +3624,14 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         try { VyboraApi.getMyProfile(token) } catch (_: Exception) { VyboraApi.getPublicProfile(username) }
                     } else VyboraApi.getPublicProfile(username)
                     val user = response.optJSONObject("user") ?: response.optJSONObject("profile") ?: response
+                    val accountFrame = user.optInt("profileFrame", -1).takeIf { it in 6..14 && it != 8 } ?: -1
                     // Falha no feed de publicações não pode impedir o carregamento da capa do perfil.
                     val loadedPosts = try {
                         VyboraApi.getPosts().filter { it.username.equals(username, ignoreCase = true) }
                     } catch (_: Exception) { emptyList() }
                     android.os.Handler(android.os.Looper.getMainLooper()).post {
                         if (user != null) {
+                            appliedFrame = accountFrame
                             val created = listOf("created_at", "createdAt", "joined_at").map { user.optString(it) }.firstOrNull { it.matches(Regex("\\d{4}-\\d{2}.*")) }.orEmpty()
                             joinedMonthYear = if (created.length >= 7) {
                                 val month = created.substring(5, 7).toIntOrNull() ?: 0
@@ -4068,7 +4070,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedButton(onClick = {
                         appliedFrame = -1
-                        profilePrefs.edit().putInt("qinbly_profile_frame", -1).apply()
+                        // Moldura persistida exclusivamente no perfil autenticado do servidor.
                         profilePrefs.getString("token", null)?.takeIf { it.isNotBlank() }?.let { token ->
                             Thread { try { VyboraApi.setProfileFrame(token, -1) } catch (_: Exception) { } }.start()
                         }
@@ -4076,7 +4078,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     }, modifier = Modifier.weight(1f)) { Text("Sem moldura") }
                     Button(onClick = {
                         appliedFrame = selectedFramePreview
-                        profilePrefs.edit().putInt("qinbly_profile_frame", selectedFramePreview).apply()
+                        // Moldura persistida exclusivamente no perfil autenticado do servidor.
                         profilePrefs.getString("token", null)?.takeIf { it.isNotBlank() }?.let { token ->
                             Thread { try { VyboraApi.setProfileFrame(token, selectedFramePreview) } catch (_: Exception) { } }.start()
                         }
