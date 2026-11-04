@@ -1988,28 +1988,48 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             listOf("Descobrir", "Seguindo").forEachIndexed { feedIndex, feedTab ->
                 val selected = selectedFeedTab == feedTab
                 Column(
-                    modifier = Modifier.weight(1f).clickable { selectedFeedTab = feedTab }.padding(vertical = 6.dp),
+                    modifier = Modifier.weight(1f).clickable { selectedFeedTab = feedTab }.padding(vertical = 5.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(if (RemoteAppearance.headerVisible) feedTab else "", color = RemoteAppearance.headerTextColor, fontSize = RemoteAppearance.headerTextSize.sp, maxLines = 1,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
-                    Spacer(Modifier.height(6.dp))
-                    Box(Modifier.width(if (selected) 58.dp else 0.dp).height(3.dp)
-                        .clip(CircleShape).background(RemoteAppearance.headerUnderlineColor))
+                    Text(
+                        if (RemoteAppearance.headerVisible) feedTab else "",
+                        color = RemoteAppearance.headerTextColor,
+                        fontSize = RemoteAppearance.headerTextSize.sp,
+                        maxLines = 1,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                    )
+                    Spacer(Modifier.height(7.dp))
+                    Box(
+                        Modifier.width(if (selected) 64.dp else 0.dp).height(3.dp)
+                            .clip(CircleShape).background(Color(0xFF1677F2))
+                    )
+                }
+                if (feedIndex == 0) {
+                    Box(
+                        Modifier.padding(horizontal = 2.dp).width(1.dp).height(24.dp)
+                            .background(RemoteAppearance.headerTextColor.copy(alpha = 0.42f))
+                    )
                 }
             }
             if (onlineUsers >= 0) {
                 Row(
-                    modifier = Modifier.padding(end = 5.dp).background(
-                        if (QiblyTheme.dark) Color(0xFF20252D) else Color(0xFFF0F5FC),
-                        RoundedCornerShape(16.dp)
-                    ).padding(horizontal = 7.dp, vertical = 6.dp),
+                    modifier = Modifier.padding(start = 3.dp, end = 4.dp)
+                        .background(
+                            if (QiblyTheme.dark) Color.White.copy(alpha = 0.10f)
+                            else Color(0xFF6F8ABF).copy(alpha = 0.08f),
+                            RoundedCornerShape(18.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 7.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(Modifier.size(6.dp).background(Color(0xFF19B96A), CircleShape))
-                    Spacer(Modifier.width(4.dp))
-                    Text("$onlineUsers online", fontSize = 10.sp, maxLines = 1,
-                        color = if (QiblyTheme.dark) Color.White else Color(0xFF27364B))
+                    Box(Modifier.size(7.dp).background(Color(0xFF16BF6B), CircleShape))
+                    Spacer(Modifier.width(5.dp))
+                    Text(
+                        if (onlineUsers >= 1000) String.format(java.util.Locale("pt", "BR"), "%.1f mil online", onlineUsers / 1000.0)
+                        else "$onlineUsers online",
+                        fontSize = 10.sp, maxLines = 1,
+                        color = RemoteAppearance.headerTextColor
+                    )
                 }
             }
             IconButton(onClick = onSearch, modifier = Modifier.size(40.dp)) {
