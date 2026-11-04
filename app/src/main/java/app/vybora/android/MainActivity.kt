@@ -405,12 +405,16 @@ private fun AccountSwitcherDialog(
   onDismissRequest = onDismiss,
   properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
  ) {
-  Surface(
-   modifier = Modifier.fillMaxSize(),
-   color = Color.White
-  ) {
-   Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
-    Spacer(Modifier.height(34.dp))
+  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+   Surface(
+    modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+    color = Color.White,
+    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+   ) {
+   Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp)) {
+    Spacer(Modifier.height(12.dp))
+    Box(Modifier.align(Alignment.CenterHorizontally).size(width = 42.dp, height = 4.dp).background(Color(0xFFD0D5DD), RoundedCornerShape(50)))
+    Spacer(Modifier.height(12.dp))
     Row(verticalAlignment = Alignment.CenterVertically) {
      IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.Black) }
      Column(Modifier.weight(1f)) {
@@ -418,8 +422,8 @@ private fun AccountSwitcherDialog(
       Text("Selecione o perfil que deseja usar", fontSize = 14.sp, color = Color(0xFF667085))
      }
     }
-    Spacer(Modifier.height(25.dp))
-    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Spacer(Modifier.height(16.dp))
+    Column(Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
      if (accounts.isEmpty()) Text("Nenhuma conta salva neste aparelho.", color = Color.Gray)
      accounts.forEach { account ->
       val active = account.username.equals(currentUsername, ignoreCase = true)
@@ -461,7 +465,8 @@ private fun AccountSwitcherDialog(
       Text("Gerenciar contas", color = Color(0xFF475467))
      }
     }
-    Spacer(Modifier.height(16.dp))
+    Spacer(Modifier.height(12.dp))
+   }
    }
   }
  }
