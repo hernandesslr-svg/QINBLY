@@ -405,7 +405,7 @@ private fun AccountSwitcherDialog(
   onDismissRequest = onDismiss,
   properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
  ) {
-  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+  Box(Modifier.fillMaxSize().padding(bottom = 92.dp), contentAlignment = Alignment.BottomCenter) {
    Surface(
     modifier = Modifier.fillMaxWidth().wrapContentHeight(),
     color = Color.White,
@@ -460,7 +460,7 @@ private fun AccountSwitcherDialog(
       Text("Adicionar outra conta", color = blue, fontWeight = FontWeight.SemiBold)
      }
     }
-    Spacer(Modifier.height(104.dp))
+    Spacer(Modifier.height(16.dp))
    }
    }
   }
