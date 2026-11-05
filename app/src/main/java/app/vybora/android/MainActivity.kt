@@ -6251,30 +6251,65 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
 
     if (initialMode == "text" || initialMode == "poll") {
         Column(
-            Modifier.fillMaxSize().background(RemoteAppearance.screenBackgroundColor).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            Modifier.fillMaxSize().background(Color.White).padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onCameraCancelled) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.Black) }
+                Text(if (initialMode == "poll") "Criar enquete" else "Nova publicação",
+                    color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.weight(1f))
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onCameraCancelled) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                Icon(Icons.Default.AccountCircle, contentDescription = null, tint = Color.DarkGray, modifier = Modifier.size(44.dp))
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text(prefs.getString("username", "Meu perfil").orEmpty(), fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text("Público", color = Color.DarkGray, style = MaterialTheme.typography.labelMedium)
                 }
-                Text(if (initialMode == "poll") "Criar enquete" else "Publicação de texto", fontWeight = FontWeight.Bold, fontSize = 20.sp)
             }
             OutlinedTextField(
-                value = caption, onValueChange = { caption = it },
-                label = { Text(if (initialMode == "poll") "Pergunta da enquete" else "O que você quer compartilhar?") },
-                modifier = Modifier.fillMaxWidth(), minLines = 3
+                value = caption,
+                onValueChange = { if (it.length <= (if (initialMode == "poll") 200 else 5000)) caption = it },
+                placeholder = { Text(if (initialMode == "poll") "Qual é a sua pergunta?" else "No que você está pensando?") },
+                modifier = Modifier.fillMaxWidth().then(if (initialMode == "text") Modifier.heightIn(min = 240.dp) else Modifier),
+                minLines = if (initialMode == "text") 8 else 2,
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black, unfocusedTextColor = Color.Black,
+                    focusedBorderColor = Color(0xFF1976D2), unfocusedBorderColor = Color.LightGray
+                )
             )
+            Text("${caption.length} / ${if (initialMode == "poll") 200 else 5000}",
+                modifier = Modifier.align(Alignment.End), color = Color.DarkGray, style = MaterialTheme.typography.labelSmall)
             if (initialMode == "poll") {
                 pollOptions.forEachIndexed { index, option ->
-                    OutlinedTextField(
-                        value = option,
-                        onValueChange = { value -> pollOptions = pollOptions.toMutableList().also { it[index] = value } },
-                        label = { Text("Opção ${index + 1}") },
-                        modifier = Modifier.fillMaxWidth(), singleLine = true
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(value = option,
+                            onValueChange = { value -> pollOptions = pollOptions.toMutableList().also { it[index] = value } },
+                            placeholder = { Text("Opção ${index + 1}") }, modifier = Modifier.weight(1f), singleLine = true)
+                        if (pollOptions.size > 2) IconButton(onClick = { pollOptions = pollOptions.filterIndexed { i, _ -> i != index } }) {
+                            Icon(Icons.Default.Close, contentDescription = "Remover opção", tint = Color.DarkGray)
+                        }
+                    }
                 }
-                if (pollOptions.size < 6) TextButton(onClick = { pollOptions = pollOptions + "" }) { Text("+ Adicionar opção") }
+                if (pollOptions.size < 6) TextButton(onClick = { pollOptions = pollOptions + "" }) {
+                    Text("+ Adicionar opção", color = Color.Black)
+                }
+                HorizontalDivider(color = Color.LightGray)
+                Text("Duração da enquete: 3 dias", color = Color.Black)
+                Text("Mostrar resultado para todos", color = Color.DarkGray)
+            } else {
+                HorizontalDivider(color = Color.LightGray)
+                Text("Galeria", color = Color.Black, modifier = Modifier.fillMaxWidth().clickable { openVyboraGallery() }.padding(12.dp))
+                HorizontalDivider(color = Color.LightGray)
+                Text("Câmera", color = Color.Black, modifier = Modifier.fillMaxWidth().clickable {
+                    onNotice("Use Câmera no menu Criar para abrir a câmera.")
+                }.padding(12.dp))
+                HorizontalDivider(color = Color.LightGray)
+                Text("Localização", color = Color.Black, modifier = Modifier.fillMaxWidth().padding(12.dp))
+                HorizontalDivider(color = Color.LightGray)
+                Text("Permitir comentários", color = Color.Black, modifier = Modifier.fillMaxWidth().padding(12.dp))
+                HorizontalDivider(color = Color.LightGray)
+                Text("Permitir compartilhamentos", color = Color.Black, modifier = Modifier.fillMaxWidth().padding(12.dp))
             }
             Button(
                 onClick = {
