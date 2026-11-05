@@ -2468,65 +2468,71 @@ DropdownMenuItem(
                                 )
                             }
                             if (post.mediaType == "poll" && post.pollOptions.isNotEmpty()) {
-                                Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
-                                    verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                                    Text(post.caption, color = RemoteAppearance.feedTextColor, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                                Column(
+                                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(9.dp)
+                                ) {
+                                    Text(post.caption, color = RemoteAppearance.feedTextColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                                     val totalVotes = post.pollVotes.sum()
+                                    val hasVoted = post.myPollVote >= 0
                                     post.pollOptions.forEachIndexed { optionIndex, option ->
                                         val count = post.pollVotes.getOrElse(optionIndex) { 0 }
+                                        val percent = if (totalVotes > 0) count * 100 / totalVotes else 0
+                                        val selected = post.myPollVote == optionIndex
                                         Box(
-                                            modifier = Modifier.fillMaxWidth()
-                                                .height(32.dp)
-                                                .background(Color(0xFF10141D), RoundedCornerShape(8.dp))
-                                                .clickable(enabled = post.myPollVote < 0) {
+                                            Modifier.fillMaxWidth().height(48.dp)
+                                                .background(Color(0xFFF0F4FA), RoundedCornerShape(13.dp))
+                                                .clickable(enabled = !hasVoted) {
                                                     val token = prefs.getString("token", null)
                                                     if (token.isNullOrBlank()) onNotice("Entre na sua conta para votar.")
-                                                    else if (post.myPollVote < 0) {
-                                                        Thread {
-                                                            try {
-                                                                VyboraApi.votePoll(token, post.id, optionIndex)
-                                                                android.os.Handler(android.os.Looper.getMainLooper()).post { refreshKey++ }
-                                                            } catch (e: Exception) {
-                                                                android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível votar.") }
+                                                    else Thread {
+                                                        try {
+                                                            VyboraApi.votePoll(token, post.id, optionIndex)
+                                                            android.os.Handler(android.os.Looper.getMainLooper()).post { refreshKey++ }
+                                                        } catch (e: Exception) {
+                                                            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                                                onNotice(e.message ?: "Não foi possível votar.")
                                                             }
-                                                        }.start()
-                                                    }
+                                                        }
+                                                    }.start()
                                                 }
                                         ) {
-                                            if (post.myPollVote >= 0 && totalVotes > 0) {
+                                            if (hasVoted && percent > 0) {
                                                 Box(
-                                                    Modifier.fillMaxWidth(count.toFloat() / totalVotes.toFloat())
-                                                        .height(32.dp)
+                                                    Modifier.fillMaxWidth(percent / 100f).fillMaxHeight()
                                                         .align(Alignment.CenterStart)
-                                                        .background(Color(0xFF1677F2), RoundedCornerShape(8.dp))
+                                                        .background(Color(0xFFB9D7FF), RoundedCornerShape(13.dp))
                                                 )
                                             }
                                             Row(
-                                                modifier = Modifier.fillMaxWidth().align(Alignment.Center)
-                                                    .padding(horizontal = 8.dp),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
+                                                Modifier.fillMaxSize().padding(horizontal = 14.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
                                             ) {
                                                 Text(
                                                     option.replace(Regex("^\\s*\\d+\\s*[—–-]\\s*"), ""),
-                                                    color = Color.White, fontSize = 14.sp,
+                                                    color = Color(0xFF14233B), fontSize = 14.sp,
+                                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                                                     modifier = Modifier.weight(1f), maxLines = 1
                                                 )
-                                                if (post.myPollVote >= 0) {
-                                                    val percent = if (totalVotes > 0) count * 100 / totalVotes else 0
-                                                    Text("$percent%", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                                if (hasVoted) {
+                                                    Text("$percent%", color = Color(0xFF14233B), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                                    if (selected) {
+                                                        Spacer(Modifier.width(8.dp))
+                                                        Text("✓", color = Color(0xFF1677F2), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                                    }
                                                 }
                                             }
                                         }
                                     }
-                                    Text("$totalVotes votos", color = RemoteAppearance.feedTextColor, fontSize = 12.sp)
+                                    Text("$totalVotes votos", color = RemoteAppearance.feedTextColor.copy(alpha = 0.65f), fontSize = 12.sp)
                                 }
                             } else if (post.mediaType != "image" && post.mediaType != "video" && post.caption.isNotBlank()) {
                                 Text(post.caption, color = RemoteAppearance.feedTextColor, fontSize = 15.sp,
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
                                     maxLines = 3, lineHeight = 20.sp)
                             }
-                            if (true) { // Ações abaixo de todas as publicações, inclusive fotos e vídeos
+                            if (post.mediaType != "poll") { // Enquetes exibem apenas votação e total de votos
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
