@@ -614,8 +614,8 @@ private fun VyboraApp() {
                 try {
                     val nonce = System.currentTimeMillis().toString()
                     // GitHub Contents API avoids stale raw.githubusercontent.com CDN revisions.
-                    fetchJson("https://api.github.com/repos/hernandesslr-svg/VYBORA/contents/remote-config/android-ui.json?ref=main&nonce=" + nonce, true)
-                        ?: fetchJson("https://raw.githubusercontent.com/hernandesslr-svg/VYBORA/main/remote-config/android-ui.json?refresh=" + nonce, false)
+                    fetchJson("https://api.github.com/repos/hernandesslr-svg/QINBLY/contents/remote-config/android-ui.json?ref=main&nonce=" + nonce, true)
+                        ?: fetchJson("https://raw.githubusercontent.com/hernandesslr-svg/QINBLY/main/remote-config/android-ui.json?refresh=" + nonce, false)
                 } catch (_: Exception) { null }
             }
             if (manualRefresh && firstRequest) {
@@ -1965,7 +1965,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         if (refreshKey > 0) {
             val fetched = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
-                    val url = java.net.URL("https://raw.githubusercontent.com/hernandesslr-svg/VYBORA/main/remote-config/test-feed.json?refresh=" + System.currentTimeMillis())
+                    val url = java.net.URL("https://raw.githubusercontent.com/hernandesslr-svg/QINBLY/main/remote-config/test-feed.json?refresh=" + System.currentTimeMillis())
                     val connection = url.openConnection() as java.net.HttpURLConnection
                     try {
                         connection.connectTimeout = 5000
