@@ -3889,7 +3889,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     val accountFrame = user.optInt("profileFrame", -1).takeIf { it in 6..14 && it != 8 } ?: -1
                     // Falha no feed de publicações não pode impedir o carregamento da capa do perfil.
                     val loadedPosts = try {
-                        VyboraApi.getPosts().filter { it.username.equals(username, ignoreCase = true) }
+                        VyboraApi.getPosts(profilePrefs.getString("token", null)).filter { it.username.equals(username, ignoreCase = true) }
                     } catch (_: Exception) { emptyList() }
                     android.os.Handler(android.os.Looper.getMainLooper()).post {
                         if (user != null) {
@@ -4158,7 +4158,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 .padding(12.dp),
                             verticalArrangement = Arrangement.spacedBy(9.dp)
                         ) {
-                            Text(post.caption.ifBlank { "Publicação" }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.bodyMedium)
+                            Text(post.caption.ifBlank { "Publicação" }, color = RemoteAppearance.screenTextColor, fontSize = if (post.mediaType == "poll") 18.sp else 14.sp, fontWeight = if (post.mediaType == "poll") FontWeight.Bold else FontWeight.Normal)
                             if (post.mediaUrl.isNotBlank()) {
                                 Box(Modifier.fillMaxWidth().height(240.dp).clip(RoundedCornerShape(8.dp))) {
                                     AsyncImage(model = post.mediaUrl, contentDescription = "Mídia da publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
@@ -4183,7 +4183,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                                     else Thread {
                                                         try {
                                                             VyboraApi.votePoll(token, post.id, optionIndex)
-                                                            val updated = VyboraApi.getPosts().filter { it.username.equals(username, ignoreCase = true) }
+                                                            val updated = VyboraApi.getPosts(profilePrefs.getString("token", null)).filter { it.username.equals(username, ignoreCase = true) }
                                                             android.os.Handler(android.os.Looper.getMainLooper()).post { profilePosts = updated; onNotice("Voto registrado.") }
                                                         } catch (e: Exception) {
                                                             android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível votar.") }
@@ -4232,7 +4232,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                         else Thread {
                                             try {
                                                 VyboraApi.toggleLike(token, post.id)
-                                                val updated = VyboraApi.getPosts().filter { it.username.equals(username, ignoreCase = true) }
+                                                val updated = VyboraApi.getPosts(profilePrefs.getString("token", null)).filter { it.username.equals(username, ignoreCase = true) }
                                                 android.os.Handler(android.os.Looper.getMainLooper()).post { profilePosts = updated }
                                             } catch (e: Exception) {
                                                 android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível curtir.") }
