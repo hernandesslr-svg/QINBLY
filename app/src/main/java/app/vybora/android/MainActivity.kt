@@ -4394,9 +4394,10 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Box(Modifier.size(42.dp).clip(CircleShape).background(Color(0xFF272B33)), contentAlignment = Alignment.Center) {
-                                    if (avatarUrl.isNotBlank()) {
+                                    val viewerAvatar = selectedPublication?.avatarUrl.orEmpty().ifBlank { avatarUrl }.ifBlank { profilePhotoUrl }
+                                    if (viewerAvatar.isNotBlank()) {
                                         AsyncImage(
-                                            model = avatarUrl,
+                                            model = viewerAvatar,
                                             contentDescription = "Foto de perfil de @${selectedPublication?.username.orEmpty()}",
                                             modifier = Modifier.fillMaxSize(),
                                             contentScale = androidx.compose.ui.layout.ContentScale.Crop
