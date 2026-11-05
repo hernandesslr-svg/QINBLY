@@ -2490,7 +2490,7 @@ DropdownMenuItem(
                                         }, enabled = post.myPollVote < 0, modifier = Modifier.fillMaxWidth()) {
                                             Text(if (post.myPollVote >= 0) {
                                                 val percent = if (totalVotes > 0) count * 100 / totalVotes else 0
-                                                "$option — $percent% ($count)"
+                                                "$option — $percent%"
                                             } else option, color = Color(0xFF1677F2))
                                         }
                                     }
