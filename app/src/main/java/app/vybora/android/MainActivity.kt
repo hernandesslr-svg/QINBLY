@@ -2215,7 +2215,9 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                                                 Icon(Icons.Default.MoreVert, contentDescription = "Opções da publicação")
                                             }
                                             DropdownMenu(expanded = postMenuExpanded, onDismissRequest = { postMenuExpanded = false }) {
-                                                DropdownMenuItem(
+                                                
+                                                if (post.username.isNotBlank() && post.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
+DropdownMenuItem(
                                                     text = { Text("Excluir publicação") },
                                                     leadingIcon = { Icon(Icons.Default.DeleteForever, contentDescription = null) },
                                                     onClick = {
@@ -2238,6 +2240,20 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                                                         }.start()
                                                     }
                                                 )
+                                                } else {
+                                                    DropdownMenuItem(text = { Text("Ocultar publicação") }, onClick = {
+                                                        postMenuExpanded = false
+                                                        posts = posts.filterNot { it.id == post.id }
+                                                        onNotice("Publicação ocultada deste feed.")
+                                                    })
+                                                    DropdownMenuItem(text = { Text("Copiar link") }, onClick = {
+                                                        postMenuExpanded = false
+                                                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Publicação QINBLY", "https://qinbly.com/post/" + post.id))
+                                                        onNotice("Link copiado.")
+                                                    })
+                                                }
+
                                             }
                                         }
                                     }
@@ -2263,7 +2279,9 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                                                 Icon(Icons.Default.MoreVert, contentDescription = "Opções da publicação", tint = RemoteAppearance.feedTextColor)
                                             }
                                             DropdownMenu(expanded = postMenuExpanded, onDismissRequest = { postMenuExpanded = false }) {
-                                                DropdownMenuItem(
+                                                
+                                                if (post.username.isNotBlank() && post.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
+DropdownMenuItem(
                                                     text = { Text("Excluir publicação") },
                                                     onClick = {
                                                         postMenuExpanded = false
@@ -2285,6 +2303,20 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                                                         }.start()
                                                     }
                                                 )
+                                                } else {
+                                                    DropdownMenuItem(text = { Text("Ocultar publicação") }, onClick = {
+                                                        postMenuExpanded = false
+                                                        posts = posts.filterNot { it.id == post.id }
+                                                        onNotice("Publicação ocultada deste feed.")
+                                                    })
+                                                    DropdownMenuItem(text = { Text("Copiar link") }, onClick = {
+                                                        postMenuExpanded = false
+                                                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Publicação QINBLY", "https://qinbly.com/post/" + post.id))
+                                                        onNotice("Link copiado.")
+                                                    })
+                                                }
+
                                             }
                                         }
                                     }
