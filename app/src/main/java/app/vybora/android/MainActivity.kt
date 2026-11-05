@@ -4393,19 +4393,12 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 .padding(start = 20.dp, end = 20.dp, bottom = 16.dp, top = 28.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Box(Modifier.size(42.dp).clip(CircleShape).background(Color(0xFF272B33)), contentAlignment = Alignment.Center) {
-                                    val viewerAvatar = selectedPublication?.avatarUrl.orEmpty().ifBlank { avatarUrl }.ifBlank { profilePhotoUrl }
-                                    if (viewerAvatar.isNotBlank()) {
-                                        AsyncImage(
-                                            model = viewerAvatar,
-                                            contentDescription = "Foto de perfil de @${selectedPublication?.username.orEmpty()}",
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                                        )
-                                    } else {
-                                        Icon(Icons.Default.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(25.dp))
-                                    }
-                                }
+                                QiblyAccountAvatar(
+                                    username = selectedPublication?.username.orEmpty(),
+                                    fallbackUrl = selectedPublication?.avatarUrl.orEmpty().ifBlank { avatarUrl },
+                                    diameter = 52.dp,
+                                    onClick = {}
+                                )
                                 Column {
                                     Text("@${selectedPublication?.username.orEmpty()}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                     val postedAt = selectedPublication?.createdAt.orEmpty()
