@@ -2274,6 +2274,42 @@ DropdownMenuItem(
                                             )
                                             Text("Há 2 min", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
                                         }
+                                    val currentUsername = prefs.getString("username", "").orEmpty()
+                                    if (post.username.isNotBlank() && !post.username.equals(currentUsername, ignoreCase = true)) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                val token = prefs.getString("token", null)
+                                                if (token.isNullOrBlank()) onNotice("Entre na sua conta para seguir pessoas.")
+                                                else Thread {
+                                                    try {
+                                                        val profile = VyboraApi.getPublicProfile(post.username)
+                                                        val user = profile.optJSONObject("user") ?: profile
+                                                        val userId = user.optString("id")
+                                                        if (userId.isBlank()) throw IllegalStateException("Não foi possível localizar este perfil.")
+                                                        val following = VyboraApi.toggleFollow(token, userId)
+                                                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                                            isFollowingPost = following
+                                                            prefs.edit().putBoolean(followingPrefKey, following).apply()
+                                                            onNotice(if (following) "Você está seguindo ${post.displayName.ifBlank { post.username }}." else "Você deixou de seguir ${post.displayName.ifBlank { post.username }}.")
+                                                        }
+                                                    } catch (e: Exception) {
+                                                        android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível seguir este perfil.") }
+                                                    }
+                                                }.start()
+                                            },
+                                            modifier = Modifier.width(76.dp).height(32.dp),
+                                            contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp),
+                                            shape = RoundedCornerShape(18.dp),
+                                            border = BorderStroke(1.dp, RemoteAppearance.feedTextColor),
+                                            colors = ButtonDefaults.outlinedButtonColors(
+                                                containerColor = if (isFollowingPost) RemoteAppearance.feedTextColor else Color.Transparent,
+                                                contentColor = if (isFollowingPost) Color.White else RemoteAppearance.feedTextColor
+                                            )
+                                        ) {
+                                            Text(if (isFollowingPost) "Seguindo" else "Seguir", fontSize = 14.sp, color = if (isFollowingPost) Color.White else RemoteAppearance.feedTextColor)
+                                        }
+                                        Spacer(Modifier.width(3.dp))
+                                    }
                                         Box {
                                             IconButton(onClick = { postMenuExpanded = true }) {
                                                 Icon(Icons.Default.MoreVert, contentDescription = "Opções da publicação", tint = RemoteAppearance.feedTextColor)
