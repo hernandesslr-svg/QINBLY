@@ -1920,141 +1920,17 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     // Perfis/publicações demonstrativas locais para testar a interface sem tocar no banco.
     var demoLikes by remember { mutableStateOf(prefs.getStringSet("demo_liked_post_ids", emptySet())?.toSet() ?: emptySet()) }
     var demoComments by remember { mutableStateOf<Map<String, List<VyboraApi.CommentSummary>>>(emptyMap()) }
-    val demoPosts = remember {
-        listOf(
-            VyboraApi.PostSummary("demo-post-01", "Confiança é o melhor look. Qual foto merece ir para os favoritos? 🖤✨ #QINBLY", "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=900", "image", "ana.lima.demo", "Ana Lima", 11879, 11027, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160"),
-            VyboraApi.PostSummary("demo-post-02", "Noite elegante, luz baixa e playlist perfeita 🥂", "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=900", "image", "marcos.rocha.demo", "Marcos Rocha", 13258, 11854, "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160"),
-            VyboraApi.PostSummary("demo-post-03", "Um pouco de sol, mar e atitude. 🌊🔥", "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900", "image", "bia.santos.demo", "Beatriz Santos", 14637, 12681, "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160"),
-            VyboraApi.PostSummary("demo-post-04", "Treino concluído. Um passo de cada vez 💪", "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900", "image", "lucas.fit.demo", "Lucas Ferreira", 16016, 13508, "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=160"),
-            VyboraApi.PostSummary("demo-post-05", "Look preto, batom marcante e zero pressa. 🖤", "https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=900", "image", "nina.alves.demo", "Nina Alves", 17395, 14335, "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=160"),
-            VyboraApi.PostSummary("demo-post-06", "Biquíni, sol e mar: dia perfeito de verão ☀️👙🌊", "https://images.unsplash.com/photo-1679620455972-72e53db09d18?auto=format&fit=crop&fm=jpg&q=85&w=1000", "image", "carol.mendes.demo", "Carol Mendes", 18774, 15162, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop&q=80"),
-            VyboraApi.PostSummary("demo-post-07", "Curtindo a praia com meu biquíni favorito 🏖️👙", "https://images.unsplash.com/photo-1726842569517-56877c34aaac?auto=format&fit=crop&fm=jpg&q=85&w=1000", "image", "julia.ribeiro.demo", "Júlia Ribeiro", 20153, 15989, "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=160&auto=format&fit=crop&q=80"),
-            VyboraApi.PostSummary("demo-post-08", "Dia de piscina, biquíni preto e boas energias 🖤☀️", "https://images.unsplash.com/photo-1698447695797-df112ffb87fc?auto=format&fit=crop&fm=jpg&q=85&w=1000", "image", "marina.costa.demo", "Marina Costa", 21532, 16816, "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160&auto=format&fit=crop&q=80"),
-            VyboraApi.PostSummary("demo-post-09", "Um sorriso, um olhar e uma noite para lembrar ✨", "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1000&auto=format&fit=crop&q=85", "image", "leticia.alves.demo", "Letícia Alves", 22911, 17643, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop&q=80")
-        )
-    }
-    // Perfis e posts extras de demonstração, mantidos somente em memória no aparelho.
-    // 20 publicações locais com URLs de imagens distintas, selecionadas de fotos reais de stock.
-    val extraDemoPosts = remember {
-        listOf(
-            VyboraApi.PostSummary("demo-post-10", "Lingerie preta e atitude 🖤", "https://images.pexels.com/photos/13636983/pexels-photo-13636983.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "ana.clara.demo", "Ana Clara", 24290, 18470, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160"),
-            VyboraApi.PostSummary("demo-post-11", "Elegância em renda preta ✨", "https://images.pexels.com/photos/11254431/pexels-photo-11254431.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "bruna.martins.demo", "Bruna Martins", 25669, 19297, "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=160"),
-            VyboraApi.PostSummary("demo-post-12", "Tons neutros e pose editorial 🤎", "https://images.pexels.com/photos/16585363/pexels-photo-16585363.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "giovana.reis.demo", "Giovana Reis", 27048, 20124, "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160"),
-            VyboraApi.PostSummary("demo-post-13", "Estilo ousado em preto e branco 🖤", "https://images.pexels.com/photos/34225851/pexels-photo-34225851.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "leticia.souza.demo", "Letícia Souza", 28427, 20951, "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=160"),
-            VyboraApi.PostSummary("demo-post-14", "Um toque vermelho ❤️", "https://images.pexels.com/photos/28179353/pexels-photo-28179353.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "amanda.reis.demo", "Amanda Reis", 29806, 21778, "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=160"),
-            VyboraApi.PostSummary("demo-post-15", "Lingerie preta sob a luz do sol ☀️", "https://images.pexels.com/photos/24701207/pexels-photo-24701207.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "vitoria.lima.demo", "Vitória Lima", 31185, 22605, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160"),
-            VyboraApi.PostSummary("demo-post-16", "Preto, luz e sombra 🖤", "https://images.pexels.com/photos/4456681/pexels-photo-4456681.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "marina.alves.demo", "Marina Alves", 32564, 23432, "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=160"),
-            VyboraApi.PostSummary("demo-post-17", "Renda preta e olhar marcante ✨", "https://images.pexels.com/photos/11345542/pexels-photo-11345542.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "carol.santos.demo", "Carol Santos", 33943, 24259, "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160"),
-            VyboraApi.PostSummary("demo-post-18", "Editorial em tons terrosos 🤎", "https://images.pexels.com/photos/16585365/pexels-photo-16585365.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "beatriz.costa.demo", "Beatriz Costa", 35322, 25086, "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=160"),
-            VyboraApi.PostSummary("demo-post-19", "Conjunto clássico e elegante 🖤", "https://images.pexels.com/photos/11810949/pexels-photo-11810949.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "isadora.lima.demo", "Isadora Lima", 36701, 25913, "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=160"),
-            VyboraApi.PostSummary("demo-post-20", "Visual sofisticado em preto 💙", "https://images.pexels.com/photos/9836062/pexels-photo-9836062.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "julia.mendes.demo", "Julia Mendes", 38080, 26740, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160"),
-            VyboraApi.PostSummary("demo-post-21", "Minimalismo preto e branco 🤍", "https://images.pexels.com/photos/14037286/pexels-photo-14037286.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "leticia.rocha.demo", "Letícia Rocha", 39459, 27567, "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=160"),
-            VyboraApi.PostSummary("demo-post-22", "Detalhes escuros e atitude 🖤", "https://images.pexels.com/photos/16585371/pexels-photo-16585371.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "fernanda.ribeiro.demo", "Fernanda Ribeiro", 40838, 28394, "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160"),
-            VyboraApi.PostSummary("demo-post-23", "Renda preta em estilo editorial ✨", "https://images.pexels.com/photos/21367288/pexels-photo-21367288.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "alice.barros.demo", "Alice Barros", 42217, 29221, "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=160"),
-            VyboraApi.PostSummary("demo-post-24", "Retrato monocromático 🖤", "https://images.pexels.com/photos/8953405/pexels-photo-8953405.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "heloisa.freire.demo", "Heloísa Freire", 43596, 30048, "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=160"),
-            VyboraApi.PostSummary("demo-post-25", "Luz e sombra em preto e branco", "https://images.pexels.com/photos/14982381/pexels-photo-14982381.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "clarissa.nunes.demo", "Clarissa Nunes", 44975, 30875, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160"),
-            VyboraApi.PostSummary("demo-post-26", "Corset de renda e detalhes dourados ✨", "https://images.pexels.com/photos/16070984/pexels-photo-16070984.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "raquel.pires.demo", "Raquel Pires", 46354, 31702, "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=160"),
-            VyboraApi.PostSummary("demo-post-27", "Renda delicada em tons suaves 🌫️", "https://images.pexels.com/photos/7737960/pexels-photo-7737960.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "sabrina.lopes.demo", "Sabrina Lopes", 47733, 32529, "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160"),
-            VyboraApi.PostSummary("demo-post-28", "Pose editorial em luz suave 🤍", "https://images.pexels.com/photos/7738073/pexels-photo-7738073.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "laura.martins.demo", "Laura Martins", 49112, 33356, "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=160"),
-            VyboraApi.PostSummary("demo-post-29", "Lingerie preta com luz natural ☀️", "https://images.pexels.com/photos/26761372/pexels-photo-26761372.jpeg?auto=compress&cs=tinysrgb&w=1000", "image", "gabriela.moraes.demo", "Gabriela Moraes", 50491, 34183, "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=160")
-        )
-    }
-    // Publicações reais recentes aparecem primeiro; demonstrações ficam depois.
-    var remoteTestPosts by remember { mutableStateOf<List<VyboraApi.PostSummary>>(emptyList()) }
-    LaunchedEffect(refreshKey) {
-        if (refreshKey > 0) {
-            val fetched = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                try {
-                    val url = java.net.URL("https://raw.githubusercontent.com/hernandesslr-svg/QINBLY/main/remote-config/test-feed.json?refresh=" + System.currentTimeMillis())
-                    val connection = url.openConnection() as java.net.HttpURLConnection
-                    try {
-                        connection.connectTimeout = 5000
-                        connection.readTimeout = 5000
-                        connection.useCaches = false
-                        if (connection.responseCode !in 200..299) null else {
-                            val raw = connection.inputStream.bufferedReader().use { it.readText() }
-                            if (raw.length > 65536) null else {
-                                val root = JSONObject(raw)
-                                if (root.optInt("schemaVersion") != 1) null else {
-                                    val items = root.optJSONArray("posts") ?: org.json.JSONArray()
-                                    (0 until minOf(items.length(), 30)).mapNotNull { index ->
-                                        val item = items.optJSONObject(index) ?: return@mapNotNull null
-                                        val id = item.optString("id")
-                                        val media = item.optString("mediaUrl")
-                                        if (id.isBlank() || !media.startsWith("https://")) null
-                                        else VyboraApi.PostSummary(
-                                            id, item.optString("caption"), media, "image",
-                                            item.optString("username"), item.optString("displayName"),
-                                            item.optInt("likes"), item.optInt("comments"), item.optString("avatarUrl")
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    } finally { connection.disconnect() }
-                } catch (_: Exception) { null }
-            }
-            if (fetched != null) {
-                remoteTestPosts = fetched
-                onNotice("Feed de teste atualizado: " + fetched.size + " publicações")
-            } else onNotice("Não foi possível buscar o feed de teste no GitHub")
-        }
-    }
-    // Conteúdo de demonstração por filtro: somente no aparelho, nunca no Supabase.
-    // Lives são simulações visuais, não transmissões ativas.
-    val filterDemoPosts = remember {
-        listOf(
-            VyboraApi.PostSummary("demo-video-01", "Vídeo de teste: aventura e animação 🎬", "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", "video", "studio.demo", "Studio Demo", 346, 42, "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160"),
-            VyboraApi.PostSummary("demo-video-02", "Vídeo de teste: cenas e movimento 🎥", "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", "video", "cine.demo", "Cine Demo", 287, 31, "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=160"),
-            VyboraApi.PostSummary("demo-video-03", "Vídeo de teste: natureza e aventura 🌿", "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4", "video", "aventura.demo", "Aventura Demo", 219, 18, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160")
-        )
-    }
-    val liveDemoPosts = remember {
-        listOf(
-            VyboraApi.PostSummary("demo-live-01", "🔴 SIMULAÇÃO DE LIVE · Conversando com vocês! 💬", "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1000", "image", "julia.live.demo", "Júlia Ribeiro", 732, 94, "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=160"),
-            VyboraApi.PostSummary("demo-live-02", "🔴 SIMULAÇÃO DE LIVE · Música e bate-papo 🎤", "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=1000", "image", "rafa.live.demo", "Rafael Costa", 418, 63, "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160"),
-            VyboraApi.PostSummary("demo-live-03", "🔴 SIMULAÇÃO DE LIVE · Preparando uma receita 🍳", "https://images.unsplash.com/photo-1556911220-bff31c812dba?w=1000", "image", "bia.live.demo", "Bia Santos", 295, 28, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160")
-        )
-    }
-    val nearbyDemoPosts = remember {
-        listOf(
-            VyboraApi.PostSummary("demo-near-01", "📍 TESTE LOCAL · Praça e passeio pela cidade 🌳", "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1000", "image", "marcos.local.demo", "Marcos Lima", 82, 9, "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160"),
-            VyboraApi.PostSummary("demo-near-02", "📍 TESTE LOCAL · Café da tarde ☕", "https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1000", "image", "ana.local.demo", "Ana Clara", 65, 7, "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160"),
-            VyboraApi.PostSummary("demo-near-03", "📍 TESTE LOCAL · Paisagens da região 🌅", "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=1000", "image", "lucas.local.demo", "Lucas Ferreira", 91, 13, "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=160")
-        )
-    }
-    val moreDemoVideos = remember {
-        val urls = listOf("BigBuckBunny.mp4", "ElephantsDream.mp4", "ForBiggerBlazes.mp4", "ForBiggerEscapes.mp4", "ForBiggerFun.mp4", "ForBiggerJoyrides.mp4", "Sintel.mp4", "TearsOfSteel.mp4")
-        (1..32).map { n ->
-            VyboraApi.PostSummary("video-sample-$n", "Vídeo de teste número $n", "https://storage.googleapis.com/gtv-videos-bucket/sample/${urls[(n - 1) % urls.size]}", "video", "creator.video.$n", "Criador $n", n * 25, n * 3, "")
-        }
-    }
-    val moreDemoLives = remember {
-        val topics = listOf("Música", "Jogos", "Bate-papo", "Moda", "Culinária", "Arte")
-        (1..32).map { n ->
-            VyboraApi.PostSummary("live-sample-$n", "LIVE SIMULADA: ${topics[(n - 1) % topics.size]} · Teste $n", "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=900", "image", "creator.live.$n", "Apresentador $n", n * 21, n * 4, "")
-        }
-    }
-    val moreDemoNearby = remember {
-        val topics = listOf("Parque", "Café", "Praça", "Paisagem", "Feira", "Passeio")
-        (1..32).map { n ->
-            VyboraApi.PostSummary("near-sample-$n", "LOCAL FICTÍCIO: ${topics[(n - 1) % topics.size]} · Teste $n", "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=900", "image", "creator.near.$n", "Morador $n", n * 9, n, "")
-        }
-    }
-    // Publicações reais sempre primeiro, da mais recente para a mais antiga.
-    // Conteúdo demonstrativo fica depois e nunca encobre uma publicação nova.
-    val allFeedPosts = (posts.sortedByDescending { it.createdAt } + remoteTestPosts + demoPosts + extraDemoPosts).distinctBy { it.id }
+    // O feed usa somente publicações reais retornadas pela API.
+    val allFeedPosts = posts.sortedByDescending { it.createdAt }.distinctBy { it.id }
     val feedTabPosts = when (selectedFeedTab) {
         "Seguindo" -> allFeedPosts.filter { it.isFollowing }
         "Comunidade" -> allFeedPosts.filter { it.comments > 0 }
         else -> allFeedPosts
     }
     val displayedPosts = when (selectedFeedFilter) {
-        "Vídeos" -> (feedTabPosts.filter { it.mediaType.equals("video", ignoreCase = true) } + filterDemoPosts + moreDemoVideos).distinctBy { it.id }
+        "Vídeos" -> feedTabPosts.filter { it.mediaType.equals("video", ignoreCase = true) }
         "Fotos" -> feedTabPosts.filter { it.mediaType.equals("image", ignoreCase = true) }
-        "Tendências" -> feedTabPosts
-        "Lives" -> liveDemoPosts + moreDemoLives // Apenas simulação de lives.
-        "Perto de mim" -> nearbyDemoPosts + moreDemoNearby // Exemplos fictícios.
+        "Lives" -> feedTabPosts.filter { it.mediaType.equals("live", ignoreCase = true) }
         else -> feedTabPosts
     }
     LaunchedEffect(refreshKey) {
