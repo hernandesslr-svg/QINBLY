@@ -4405,7 +4405,32 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                         Icon(Icons.Default.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(25.dp))
                                     }
                                 }
-                                Text("@${selectedPublication?.username.orEmpty()}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Column {
+                                    Text("@${selectedPublication?.username.orEmpty()}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    val postedAt = selectedPublication?.createdAt.orEmpty()
+                                    if (postedAt.isNotBlank()) {
+                                        val elapsedLabel = remember(postedAt) {
+                                            try {
+                                                val instant = try { java.time.Instant.parse(postedAt) }
+                                                catch (_: Exception) { java.time.OffsetDateTime.parse(postedAt).toInstant() }
+                                                val elapsed = java.time.Duration.between(instant, java.time.Instant.now()).coerceAtLeast(java.time.Duration.ZERO)
+                                                val minutes = elapsed.toMinutes()
+                                                val hours = elapsed.toHours()
+                                                val days = elapsed.toDays()
+                                                when {
+                                                    minutes < 1 -> "Agora"
+                                                    minutes < 60 -> "Há ${minutes} min"
+                                                    hours < 24 -> "Há ${hours} h"
+                                                    days == 1L -> "Há 1 dia"
+                                                    days < 30 -> "Há ${days} dias"
+                                                    else -> java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                                                        .withZone(java.time.ZoneId.systemDefault()).format(instant)
+                                                }
+                                            } catch (_: Exception) { postedAt.take(10) }
+                                        }
+                                        Text(elapsedLabel, color = Color(0xFFCCCCCC), fontSize = 12.sp)
+                                    }
+                                }
                             }
                             val viewerCaption = selectedPublicationCaption.ifBlank { selectedPublication?.caption.orEmpty() }
                             if (viewerCaption.isNotBlank()) {
