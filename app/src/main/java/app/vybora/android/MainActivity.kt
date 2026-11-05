@@ -2489,7 +2489,7 @@ DropdownMenuItem(
                                             }
                                         }) {
                                             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                                Text(option, color = RemoteAppearance.feedTextColor, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                                                Text(option.replace(Regex("^\\s*\\d+\\s*[—–-]\\s*"), ""), color = RemoteAppearance.feedTextColor, fontSize = 14.sp, modifier = Modifier.weight(1f))
                                                 if (post.myPollVote >= 0) {
                                                     val percent = if (totalVotes > 0) count * 100 / totalVotes else 0
                                                     Text("$percent%", color = RemoteAppearance.feedTextColor, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
