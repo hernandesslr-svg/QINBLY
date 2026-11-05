@@ -418,7 +418,7 @@ app.get('/api/posts', asyncRoute(async (req,res) => {
       viewerId = typeof payload.sub === 'string' ? payload.sub : null;
     } catch { /* Token inválido não bloqueia a leitura pública do feed. */ }
   }
-  const { rows } = await pool.query(`SELECT p.id,p.caption,p.media_url AS "mediaUrl",p.media_type AS "mediaType",p.visibility,p.created_at AS "createdAt",
+  const { rows } = await pool.query(`SELECT p.id,p.caption,p.media_url AS "mediaUrl",p.media_type AS "mediaType",p.visibility,p.created_at AS "createdAt",p.poll_options AS "pollOptions",
     json_build_object('id',u.id,'username',u.username,'displayName',u.display_name,'avatarUrl',u.avatar_url,'verified',u.is_verified) AS author,
     (SELECT COUNT(*)::int FROM post_likes l WHERE l.post_id=p.id) AS likes,
     (SELECT COUNT(*)::int FROM comments c WHERE c.post_id=p.id) AS comments,
@@ -440,7 +440,11 @@ app.post('/api/posts', auth, asyncRoute(async (req,res) => {
   const mediaType = String(req.body?.mediaType || (mediaFileId || mediaUrl ? 'image' : 'text'));
   if (!caption && !mediaFileId && !mediaUrl) return res.status(400).json({ error: 'Adicione texto ou mídia à publicação.' });
   if (caption.length > 2200) return res.status(400).json({ error: 'A legenda ultrapassa 2200 caracteres.' });
-  if (!['text','image','video'].includes(mediaType)) return res.status(400).json({ error: 'Tipo de mídia inválido.' });
+  if (!['text','image','video','poll'].includes(mediaType)) return res.status(400).json({ error: 'Tipo de mídia inválido.' });
+  const pollOptions = mediaType === 'poll' ? req.body?.pollOptions : null;
+  if (mediaType === 'poll' && (!Array.isArray(pollOptions) || pollOptions.length < 2 || pollOptions.length > 6 || pollOptions.some(o => typeof o !== 'string' || !o.trim() || o.length > 120))) {
+    return res.status(400).json({ error: 'Informe entre 2 e 6 opções válidas para a enquete.' });
+  }
   if (mediaFileId) {
     const file = await pool.query("SELECT object_key,content_type FROM user_files WHERE id=$1 AND owner_id=$2 AND category='post_media' AND status='ready' AND deleted_at IS NULL", [mediaFileId, req.user.id]);
     if (!file.rowCount) return res.status(400).json({ error: 'A mídia não foi enviada ou validada para esta conta.' });
@@ -450,10 +454,20 @@ app.post('/api/posts', auth, asyncRoute(async (req,res) => {
   } else if (mediaUrl && !/^https:\/\//i.test(mediaUrl)) {
     return res.status(400).json({ error: 'A URL da mídia precisa usar HTTPS.' });
   }
-  const { rows } = await pool.query('INSERT INTO posts(user_id,caption,media_url,media_type) VALUES($1,$2,$3,$4) RETURNING id,caption,media_url AS "mediaUrl",media_type AS "mediaType",created_at AS "createdAt"',[req.user.id,caption,mediaUrl,mediaType]);
+  const { rows } = await pool.query('INSERT INTO posts(user_id,caption,media_url,media_type,poll_options) VALUES($1,$2,$3,$4,$5::jsonb) RETURNING id,caption,media_url AS "mediaUrl",media_type AS "mediaType",created_at AS "createdAt"',[req.user.id,caption,mediaUrl,mediaType,pollOptions ? JSON.stringify(pollOptions) : null]);
   const post = rows[0];
   if (post.mediaUrl && post.mediaUrl.startsWith('users/')) post.mediaUrl = await createDownloadUrl(post.mediaUrl);
   res.status(201).json({ post: { ...post, author: safeUser(req.user), likes: 0, comments: 0 } });
+}));
+app.post('/api/posts/:id/vote', auth, asyncRoute(async (req,res) => {
+  const index = Number(req.body?.optionIndex);
+  const post = await pool.query("SELECT id,poll_options FROM posts WHERE id=$1 AND media_type='poll'",[req.params.id]);
+  if (!post.rowCount) return res.status(404).json({ error: 'Enquete não encontrada.' });
+  const options = post.rows[0].poll_options;
+  if (!Number.isInteger(index) || index < 0 || index >= options.length) return res.status(400).json({ error: 'Opção inválida.' });
+  await pool.query('INSERT INTO poll_votes(post_id,user_id,option_index) VALUES($1,$2,$3) ON CONFLICT(post_id,user_id) DO NOTHING',[req.params.id,req.user.id,index]);
+  const { rows } = await pool.query('SELECT option_index,COUNT(*)::int AS votes FROM poll_votes WHERE post_id=$1 GROUP BY option_index',[req.params.id]);
+  res.json({ votes: rows });
 }));
 app.delete('/api/posts/:id', auth, asyncRoute(async (req,res) => {
   const client = await pool.connect();
