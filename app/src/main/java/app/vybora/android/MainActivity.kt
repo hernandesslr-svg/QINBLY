@@ -6341,7 +6341,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 if (initialMode == "poll") {
                                     // A API atual não expõe votação; preserva pergunta e opções como publicação textual.
                                     val options = pollOptions.filter { it.isNotBlank() }
-                                    VyboraApi.createTextPost(token, caption.trim() + "\\n\\n" + options.mapIndexed { index, option -> "${index + 1}. $option" }.joinToString("\\n"))
+                                    VyboraApi.createTextPost(token, caption.trim() + "\n\n" + options.mapIndexed { index, option -> "${index + 1}. $option" }.joinToString("\n"))
                                 } else {
                                     VyboraApi.createTextPost(token, caption.trim())
                                 }
