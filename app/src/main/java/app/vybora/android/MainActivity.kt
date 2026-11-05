@@ -4316,49 +4316,93 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     }
     if (expandedImage.isNotBlank()) {
         androidx.compose.ui.window.Dialog(
-            onDismissRequest = { expandedImage = "" },
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+            onDismissRequest = { expandedImage = ""; viewingPublication = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
         ) {
-            Column(Modifier.fillMaxSize().background(Color(0xFF101014)).navigationBarsPadding().padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 24.dp)) {
-                Row(Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { expandedImage = "" }) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White) }
-                    Spacer(Modifier.weight(1f))
-                    if (viewingPublication) Text("Publicação", color = Color.White, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.weight(1f))
-                    Box {
-                        IconButton(onClick = { photoMenuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Opções", tint = Color.White) }
-                        DropdownMenu(expanded = photoMenuOpen, onDismissRequest = { photoMenuOpen = false }) {
-                            DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = {
-                                photoMenuOpen = false
-                                saveProfilePhotoToDevice(profileContext, expandedImage, onNotice)
-                            })
-                            DropdownMenuItem(text = { Text(if (viewingPublication) "Apagar publicação" else "Apagar foto") }, onClick = {
-                                photoMenuOpen = false
-                                onNotice("Exclusão ainda não conectada. Nenhuma publicação foi apagada.")
-                            })
-                        }
-                    }
-                }
-                Spacer(Modifier.weight(1f))
-                // A foto usa a proporção natural; não esticamos a imagem para preencher a tela.
-                // O limite vertical reserva espaço para legenda e ações, sem barras pretas artificiais.
+            var viewerScale by remember(expandedImage) { mutableFloatStateOf(1f) }
+            var viewerOffset by remember(expandedImage) { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+            var viewerControls by remember(expandedImage) { mutableStateOf(true) }
+            Box(Modifier.fillMaxSize().background(Color.Black)) {
                 AsyncImage(
                     model = expandedImage,
-                    contentDescription = "Imagem da publicação",
-                    modifier = Modifier.fillMaxWidth()
-                        .heightIn(max = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp * 0.56f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .pointerInput(viewingPublication, selectedPublication?.id, postLiked) {
-                            detectTapGestures(onDoubleTap = {
-                                if (viewingPublication) likeSelectedPublication()
-                            })
+                    contentDescription = "Visualização da foto",
+                    modifier = Modifier.fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = viewerScale
+                            scaleY = viewerScale
+                            translationX = viewerOffset.x
+                            translationY = viewerOffset.y
+                        }
+                        .pointerInput(expandedImage) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                viewerScale = (viewerScale * zoom).coerceIn(1f, 5f)
+                                viewerOffset = if (viewerScale > 1f) viewerOffset + pan else androidx.compose.ui.geometry.Offset.Zero
+                            }
+                        }
+                        .pointerInput(expandedImage) {
+                            detectTapGestures(
+                                onTap = { viewerControls = !viewerControls },
+                                onDoubleTap = {
+                                    viewerScale = if (viewerScale > 1f) 1f else 2f
+                                    viewerOffset = androidx.compose.ui.geometry.Offset.Zero
+                                }
+                            )
                         },
                     contentScale = androidx.compose.ui.layout.ContentScale.Fit
                 )
-                Spacer(Modifier.weight(1f))
+                if (viewerControls) {
+                    Row(
+                        Modifier.fillMaxWidth().align(Alignment.TopCenter)
+                            .statusBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { expandedImage = ""; viewingPublication = false }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                        }
+                        Spacer(Modifier.weight(1f))
+                        if (viewingPublication) {
+                            Text("1/1", color = Color.White, fontWeight = FontWeight.SemiBold)
+                        }
+                        Spacer(Modifier.weight(1f))
+                        Box {
+                            IconButton(onClick = { photoMenuOpen = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "Opções da foto", tint = Color.White)
+                            }
+                            DropdownMenu(expanded = photoMenuOpen, onDismissRequest = { photoMenuOpen = false }) {
+                                DropdownMenuItem(text = { Text("Salvar foto no celular") }, onClick = {
+                                    photoMenuOpen = false
+                                    saveProfilePhotoToDevice(profileContext, expandedImage, onNotice)
+                                })
+                                DropdownMenuItem(text = { Text("Compartilhar foto") }, onClick = {
+                                    photoMenuOpen = false
+                                    val share = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(android.content.Intent.EXTRA_TEXT, expandedImage)
+                                    }
+                                    profileContext.startActivity(android.content.Intent.createChooser(share, "Compartilhar foto"))
+                                })
+                            }
+                        }
+                    }
+                    if (viewingPublication && selectedPublication != null) {
+                        Column(
+                            Modifier.align(Alignment.BottomStart).fillMaxWidth()
+                                .navigationBarsPadding()
+                                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))))
+                                .padding(start = 20.dp, end = 20.dp, bottom = 24.dp, top = 28.dp)
+                        ) {
+                            Text("@${selectedPublication?.username.orEmpty()}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            if (selectedPublicationCaption.isNotBlank()) {
+                                Spacer(Modifier.height(4.dp))
+                                Text(selectedPublicationCaption, color = Color.White, fontSize = 14.sp, maxLines = 2)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
+
     if (framesOpen) {
         // Mantém apenas as nove molduras simples (IDs originais 7 a 15).
         // IDs originais preservados para compatibilidade com perfis já salvos.
