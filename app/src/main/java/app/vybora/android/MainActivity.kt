@@ -6299,17 +6299,35 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 Text("Mostrar resultado para todos", color = Color.DarkGray)
             } else {
                 HorizontalDivider(color = Color.LightGray)
-                Text("Galeria", color = Color.Black, modifier = Modifier.fillMaxWidth().clickable { openVyboraGallery() }.padding(12.dp))
+                Row(Modifier.fillMaxWidth().clickable { openVyboraGallery() }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Image, contentDescription = null, tint = Color.Black)
+                    Spacer(Modifier.width(14.dp))
+                    Text("Galeria", color = Color.Black)
+                }
                 HorizontalDivider(color = Color.LightGray)
-                Text("Câmera", color = Color.Black, modifier = Modifier.fillMaxWidth().clickable {
-                    onNotice("Use Câmera no menu Criar para abrir a câmera.")
-                }.padding(12.dp))
+                Row(Modifier.fillMaxWidth().clickable {
+                    onNotice("Para fotografar, selecione Câmera no menu Criar.")
+                }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.Black)
+                    Spacer(Modifier.width(14.dp))
+                    Text("Câmera", color = Color.Black)
+                }
                 HorizontalDivider(color = Color.LightGray)
-                Text("Localização", color = Color.Black, modifier = Modifier.fillMaxWidth().padding(12.dp))
+                Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color.Black)
+                    Spacer(Modifier.width(14.dp))
+                    Text("Localização", color = Color.Black)
+                }
                 HorizontalDivider(color = Color.LightGray)
-                Text("Permitir comentários", color = Color.Black, modifier = Modifier.fillMaxWidth().padding(12.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Permitir comentários", modifier = Modifier.weight(1f), color = Color.Black)
+                    Switch(checked = allowComments, onCheckedChange = { allowComments = it })
+                }
                 HorizontalDivider(color = Color.LightGray)
-                Text("Permitir compartilhamentos", color = Color.Black, modifier = Modifier.fillMaxWidth().padding(12.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Permitir compartilhamentos", modifier = Modifier.weight(1f), color = Color.Black)
+                    Switch(checked = allowSharing, onCheckedChange = { allowSharing = it })
+                }
             }
             Button(
                 onClick = {
@@ -6344,6 +6362,18 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 enabled = !publishing && caption.isNotBlank() && (initialMode != "poll" || pollOptions.count { it.isNotBlank() } >= 2),
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Publicar") }
+        }
+        return
+    }
+
+    if (initialMode == "gallery" && !showComposer && !galleryOpen) {
+        Column(Modifier.fillMaxSize().background(Color.White).padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center) {
+            Text("Selecionar foto ou vídeo", color = Color.Black, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = { openVyboraGallery() }) { Text("Abrir galeria") }
+            TextButton(onClick = onCameraCancelled) { Text("Voltar") }
         }
         return
     }
