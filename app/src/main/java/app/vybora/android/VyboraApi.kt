@@ -188,7 +188,7 @@ object VyboraApi {
         val id: String, val caption: String, val mediaUrl: String, val mediaType: String,
         val username: String, val displayName: String, val likes: Int, val comments: Int,
         val avatarUrl: String = "", val likedByMe: Boolean = false, val isFollowing: Boolean = false,
-        val createdAt: String = ""
+        val createdAt: String = "", val pollOptions: List<String> = emptyList()
     )
 
     fun getPosts(token: String? = null): List<PostSummary> {
@@ -209,7 +209,8 @@ object VyboraApi {
                 avatarUrl = author.optString("avatarUrl", author.optString("avatar_url")),
                 likedByMe = post.optBoolean("likedByMe"),
                 isFollowing = post.optBoolean("isFollowing"),
-                createdAt = post.optString("createdAt", post.optString("created_at"))
+                createdAt = post.optString("createdAt", post.optString("created_at")),
+                pollOptions = post.optJSONArray("pollOptions")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
             )
         }
         applicationContext?.let { cachePosts(it, result) }
@@ -255,6 +256,13 @@ object VyboraApi {
 
     fun createTextPost(token: String, caption: String): JSONObject =
         request("POST", "/api/posts", JSONObject().put("caption", caption.trim()).put("mediaType", "text"), token)
+
+    fun createPollPost(token: String, question: String, options: List<String>): JSONObject =
+        request("POST", "/api/posts", JSONObject().put("caption", question.trim())
+            .put("mediaType", "poll").put("pollOptions", org.json.JSONArray(options)), token)
+
+    fun votePoll(token: String, postId: String, optionIndex: Int): JSONObject =
+        request("POST", "/api/posts/${postId}/vote", JSONObject().put("optionIndex", optionIndex), token)
 
     fun createMediaPost(token: String, caption: String, fileId: String, mediaType: String): JSONObject =
         request("POST", "/api/posts", JSONObject().put("caption", caption.trim())
