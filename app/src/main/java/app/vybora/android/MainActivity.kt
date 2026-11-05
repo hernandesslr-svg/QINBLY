@@ -2521,7 +2521,36 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)
                                 )
                             }
-                            if (post.mediaType != "image" && post.mediaType != "video" && post.caption.isNotBlank()) {
+                            if (post.mediaType == "poll" && post.pollOptions.isNotEmpty()) {
+                                Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(post.caption, color = RemoteAppearance.feedTextColor, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                                    val totalVotes = post.pollVotes.sum()
+                                    post.pollOptions.forEachIndexed { optionIndex, option ->
+                                        val count = post.pollVotes.getOrElse(optionIndex) { 0 }
+                                        OutlinedButton(onClick = {
+                                            val token = prefs.getString("token", null)
+                                            if (token.isNullOrBlank()) onNotice("Entre na sua conta para votar.")
+                                            else if (post.myPollVote < 0) {
+                                                Thread {
+                                                    try {
+                                                        VyboraApi.votePoll(token, post.id, optionIndex)
+                                                        android.os.Handler(android.os.Looper.getMainLooper()).post { refreshKey++ }
+                                                    } catch (e: Exception) {
+                                                        android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível votar.") }
+                                                    }
+                                                }.start()
+                                            }
+                                        }, enabled = post.myPollVote < 0, modifier = Modifier.fillMaxWidth()) {
+                                            Text(if (post.myPollVote >= 0) {
+                                                val percent = if (totalVotes > 0) count * 100 / totalVotes else 0
+                                                "$option — $percent% ($count)"
+                                            } else option, color = Color(0xFF1677F2))
+                                        }
+                                    }
+                                    Text("$totalVotes votos", color = RemoteAppearance.feedTextColor, fontSize = 12.sp)
+                                }
+                            } else if (post.mediaType != "image" && post.mediaType != "video" && post.caption.isNotBlank()) {
                                 Text(post.caption, color = RemoteAppearance.feedTextColor, fontSize = 15.sp,
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
                                     maxLines = 3, lineHeight = 20.sp)
@@ -6341,13 +6370,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 if (initialMode == "poll") {
                                     // A API atual não expõe votação; preserva pergunta e opções como publicação textual.
                                     val options = pollOptions.filter { it.isNotBlank() }
-                                    VyboraApi.createTextPost(token, caption.trim() + "\n\n" + options.mapIndexed { index, option -> "${index + 1}. $option" }.joinToString("\n"))
+                                    VyboraApi.createPollPost(token, caption.trim(), options)
                                 } else {
                                     VyboraApi.createTextPost(token, caption.trim())
                                 }
                                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                                     publishing = false
-                                    onNotice(if (initialMode == "poll") "Pergunta e opções publicadas como texto. A votação interativa ainda não está disponível." else "Texto publicado com sucesso!")
+                                    onNotice(if (initialMode == "poll") "Enquete publicada!" else "Texto publicado com sucesso!")
                                     onCameraCancelled()
                                 }
                             } catch (e: Exception) {
