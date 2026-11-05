@@ -704,6 +704,7 @@ private fun VyboraApp() {
     var liked by remember { mutableStateOf(setOf<String>()) }
     var notice by remember { mutableStateOf("") }
     var showCreateOptions by remember { mutableStateOf(false) }
+    var createEntryMode by remember { mutableStateOf("camera") }
     var profileStat by remember { mutableStateOf("") }
     var profileStatUsers by remember { mutableStateOf<List<VyboraApi.UserSummary>>(emptyList()) }
     var showAuth by remember { mutableStateOf(false) }
@@ -1063,7 +1064,7 @@ private fun VyboraApp() {
                 } else androidx.compose.runtime.key(accountSessionVersion) { when (tab) {
                     0 -> FeedPage(scrollToTopRequest = navTopRequest, onlineUsers = onlineUsers, currentUsername = loggedInUser, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true })
                     1 -> MessagesPage(scrollToTopRequest = navTopRequest, recipientUsername = messageRecipient, onSearch = { showSearchDialog = true }, onOpenConversation = { messageRecipient = it }, onOpenProfile = { publicProfileUsername = it }, onNotice = { notice = it })
-                    2 -> PostPage(onNotice = { notice = it }, onCameraCancelled = { tab = 0 })
+                    2 -> PostPage(onNotice = { notice = it }, onCameraCancelled = { tab = 0 }, initialMode = createEntryMode)
                     3 -> CommunitiesPage(onNotice = { notice = it })
                     else -> if (showAuth) {
                         AuthPage(
@@ -1175,9 +1176,10 @@ private fun VyboraApp() {
                         val onChoice: () -> Unit = {
                             showCreateOptions = false
                             when (label) {
-                                "Galeria", "Câmera" -> tab = 2
-                                "Texto" -> notice = "Publicações só de texto estão em preparação."
-                                "Enquete" -> notice = "Enquetes ainda estão em preparação."
+                                "Galeria", "Câmera", "Texto", "Enquete" -> {
+                                    createEntryMode = when (label) { "Galeria" -> "gallery"; "Texto" -> "text"; "Enquete" -> "poll"; else -> "camera" }
+                                    tab = 2
+                                }
                                 "Live" -> notice = "Transmissões ao vivo ainda não estão disponíveis."
                             }
                         }
@@ -6040,11 +6042,12 @@ private fun extractVyboraVideoFrames(context: android.content.Context, uri: Uri)
 }
 
 @Composable
-private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) {
+private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, initialMode: String = "camera") {
     val context = androidx.compose.ui.platform.LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val prefs = remember { context.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
     var caption by remember { mutableStateOf("") }
+    var pollOptions by remember { mutableStateOf(listOf("", "")) }
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
     var sourceUri by remember { mutableStateOf<Uri?>(null) }
     var selectedType by remember { mutableStateOf("") }
@@ -6122,6 +6125,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
     fun openVyboraGallery() {
         try { mediaPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }
         catch (e: Exception) { onNotice("Não foi possível abrir a galeria: " + (e.localizedMessage ?: "tente novamente")) }
+    }
+    LaunchedEffect(initialMode) {
+        if (initialMode == "gallery") openVyboraGallery()
     }
     LaunchedEffect(sourceUri) {
         val media = sourceUri
@@ -6241,6 +6247,42 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit) 
             imageCapture = null
             videoCapture = null
         }
+    }
+
+    if (initialMode == "text" || initialMode == "poll") {
+        Column(
+            Modifier.fillMaxSize().background(RemoteAppearance.screenBackgroundColor).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onCameraCancelled) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                }
+                Text(if (initialMode == "poll") "Criar enquete" else "Publicação de texto", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            }
+            OutlinedTextField(
+                value = caption, onValueChange = { caption = it },
+                label = { Text(if (initialMode == "poll") "Pergunta da enquete" else "O que você quer compartilhar?") },
+                modifier = Modifier.fillMaxWidth(), minLines = 3
+            )
+            if (initialMode == "poll") {
+                pollOptions.forEachIndexed { index, option ->
+                    OutlinedTextField(
+                        value = option,
+                        onValueChange = { value -> pollOptions = pollOptions.toMutableList().also { it[index] = value } },
+                        label = { Text("Opção ${index + 1}") },
+                        modifier = Modifier.fillMaxWidth(), singleLine = true
+                    )
+                }
+                if (pollOptions.size < 6) TextButton(onClick = { pollOptions = pollOptions + "" }) { Text("+ Adicionar opção") }
+            }
+            Button(
+                onClick = { onNotice("O editor está disponível, mas a publicação de " + (if (initialMode == "poll") "enquetes" else "texto") + " ainda precisa de suporte na API para ser enviada.") },
+                enabled = caption.isNotBlank() && (initialMode != "poll" || pollOptions.count { it.isNotBlank() } >= 2),
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Publicar") }
+        }
+        return
     }
 
     if (!cameraGranted && !showComposer) {
