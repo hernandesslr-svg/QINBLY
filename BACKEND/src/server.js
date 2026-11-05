@@ -90,8 +90,8 @@ app.get('/api/app-config', (_req, res) => {
 // Manifesto público da atualização do APK nativo (separado do OTA da interface web).
 // A release precisa conter um APK assinado com a mesma chave da instalação existente.
 app.get('/api/app-update', asyncRoute(async (_req, res) => {
-  const releaseResponse = await fetch('https://api.github.com/repos/hernandesslr-svg/VYBORA/releases/latest', {
-    headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'VYBORA-Android-Updater' },
+  const releaseResponse = await fetch('https://api.github.com/repos/hernandesslr-svg/QINBLY/releases/latest', {
+    headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'QINBLY-Android-Updater' },
     signal: AbortSignal.timeout(10000)
   });
   if (!releaseResponse.ok) {
