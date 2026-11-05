@@ -30,19 +30,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate release signing secrets
-        env:
-          KEYSTORE_BASE64: ${{ secrets.VYBORA_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.VYBORA_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.VYBORA_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.VYBORA_KEY_PASSWORD }}
-        run: |
-          set -euo pipefail
-          test -n "$KEYSTORE_BASE64" || { echo "::error::Configure VYBORA_KEYSTORE_BASE64 in repository Actions secrets."; exit 1; }
-          test -n "$KEYSTORE_PASSWORD" || { echo "::error::Configure VYBORA_KEYSTORE_PASSWORD in repository Actions secrets."; exit 1; }
-          test -n "$KEY_ALIAS" || { echo "::error::Configure VYBORA_KEY_ALIAS in repository Actions secrets."; exit 1; }
-          test -n "$KEY_PASSWORD" || { echo "::error::Configure VYBORA_KEY_PASSWORD in repository Actions secrets."; exit 1; }
-
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -68,6 +55,26 @@ jobs:
           base64 --decode app/icon-assets/qinbly_icon.jpg.b64 > app/src/main/res/drawable-nodpi/qinbly_icon.jpg
           test -s app/src/main/res/drawable-nodpi/qinbly_icon.jpg
           file app/src/main/res/drawable-nodpi/qinbly_icon.jpg
+
+      - name: Compile Android Kotlin before signing validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew :app:compileDebugKotlin --stacktrace --no-daemon
+
+      - name: Validate release signing secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.VYBORA_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.VYBORA_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.VYBORA_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.VYBORA_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64" || { echo "::error::Configure VYBORA_KEYSTORE_BASE64 in repository Actions secrets."; exit 1; }
+          test -n "$KEYSTORE_PASSWORD" || { echo "::error::Configure VYBORA_KEYSTORE_PASSWORD in repository Actions secrets."; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "::error::Configure VYBORA_KEY_ALIAS in repository Actions secrets."; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "::error::Configure VYBORA_KEY_PASSWORD in repository Actions secrets."; exit 1; }
 
       - name: Decode and verify original release signing key
         env:
