@@ -730,7 +730,7 @@ private fun VyboraApp() {
                 } catch (_: Exception) {
                     onlineUsers = -1
                 }
-                kotlinx.coroutines.delay(15_000L)
+                kotlinx.coroutines.delay(5_000L)
             }
         }
     }
