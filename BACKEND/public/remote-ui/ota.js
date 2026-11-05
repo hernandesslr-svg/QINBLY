@@ -72,7 +72,7 @@
         setStatus('Iniciando o download seguro pelo Android…');
         window.VyboraNative.downloadAndInstall(manifest.apkUrl);
       } else {
-        setStatus('Esta versão do VYBORA ainda não tem o instalador integrado. Atualize o aplicativo uma vez para habilitar as próximas atualizações por dentro dele.', true);
+        setStatus('Esta versão do QINBLY ainda não tem o instalador integrado. Atualize o aplicativo uma vez para habilitar as próximas atualizações por dentro dele.', true);
         updateButton.disabled = false;
       }
     } catch (error) {
