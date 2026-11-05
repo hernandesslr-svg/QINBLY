@@ -4219,12 +4219,68 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 }
                             }
                             if (post.mediaType != "poll") {
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Curtir", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall)
-                                Text("Comentar", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall)
-                                Text("Compartilhar", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall)
-                                Text("Salvar", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall)
-                            }
+                                val isSaved = post.id in savedIds
+                                Row(
+                                    Modifier.fillMaxWidth().padding(top = 5.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(Modifier.clickable {
+                                        val token = profilePrefs.getString("token", null)
+                                        if (token.isNullOrBlank()) onNotice("Entre na sua conta para curtir.")
+                                        else Thread {
+                                            try {
+                                                VyboraApi.toggleLike(token, post.id)
+                                                val updated = VyboraApi.getPosts().filter { it.username.equals(username, ignoreCase = true) }
+                                                android.os.Handler(android.os.Looper.getMainLooper()).post { profilePosts = updated }
+                                            } catch (e: Exception) {
+                                                android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível curtir.") }
+                                            }
+                                        }.start()
+                                    }, verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(23.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("${post.likes}", fontSize = 12.sp, color = RemoteAppearance.screenSecondaryTextColor)
+                                    }
+                                    Row(Modifier.clickable {
+                                        selectedPublication = post
+                                        commentsOpen = true
+                                        commentsLoading = true
+                                        Thread {
+                                            try {
+                                                val loaded = VyboraApi.getComments(post.id)
+                                                android.os.Handler(android.os.Looper.getMainLooper()).post { postComments = loaded; commentsLoading = false }
+                                            } catch (e: Exception) {
+                                                android.os.Handler(android.os.Looper.getMainLooper()).post { commentsLoading = false; onNotice(e.message ?: "Não foi possível carregar comentários.") }
+                                            }
+                                        }.start()
+                                    }, verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentar", tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(23.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("${post.comments}", fontSize = 12.sp, color = RemoteAppearance.screenSecondaryTextColor)
+                                    }
+                                    Row(Modifier.clickable {
+                                        val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(android.content.Intent.EXTRA_TEXT, post.caption)
+                                        }
+                                        profileContext.startActivity(android.content.Intent.createChooser(send, "Compartilhar publicação"))
+                                    }, verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(23.dp))
+                                    }
+                                    Row(Modifier.clickable {
+                                        savedIds = if (isSaved) savedIds - post.id else savedIds + post.id
+                                        profilePrefs.edit().putStringSet("saved_post_ids", savedIds).apply()
+                                        onNotice(if (isSaved) "Publicação removida dos salvos." else "Publicação salva.")
+                                    }, verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                                            contentDescription = "Salvar",
+                                            tint = if (isSaved) Color(0xFFFFC107) else RemoteAppearance.screenTextColor,
+                                            modifier = Modifier.size(23.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
