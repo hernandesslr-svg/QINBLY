@@ -2491,7 +2491,7 @@ DropdownMenuItem(
                                             Box(Modifier.fillMaxWidth()) {
                                                 if (post.myPollVote >= 0 && totalVotes > 0) {
                                                     Box(Modifier.matchParentSize()) {
-                                                        Box(Modifier.fillMaxWidth(count.toFloat() / totalVotes.toFloat()).fillMaxHeight().background(Color(0xFF1677F2).copy(alpha = 0.22f), RoundedCornerShape(10.dp)))
+                                                        Box(Modifier.fillMaxWidth(count.toFloat() / totalVotes.toFloat()).height(5.dp).align(Alignment.BottomStart).background(Color(0xFF1677F2), RoundedCornerShape(10.dp)))
                                                     }
                                                 }
                                             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
