@@ -4387,14 +4387,15 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     if (viewingPublication && selectedPublication != null) {
                         Column(
                             Modifier.align(Alignment.BottomStart).fillMaxWidth()
-                                .navigationBarsPadding()
-                                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))))
-                                .padding(start = 20.dp, end = 20.dp, bottom = 24.dp, top = 28.dp)
+                                .padding(bottom = 92.dp)
+                                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.92f))))
+                                .padding(start = 20.dp, end = 20.dp, bottom = 16.dp, top = 28.dp)
                         ) {
                             Text("@${selectedPublication?.username.orEmpty()}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                            if (selectedPublicationCaption.isNotBlank()) {
-                                Spacer(Modifier.height(4.dp))
-                                Text(selectedPublicationCaption, color = Color.White, fontSize = 14.sp, maxLines = 2)
+                            val viewerCaption = selectedPublicationCaption.ifBlank { selectedPublication?.caption.orEmpty() }
+                            if (viewerCaption.isNotBlank()) {
+                                Spacer(Modifier.height(6.dp))
+                                Text(viewerCaption, color = Color.White, fontSize = 14.sp, maxLines = 3)
                             }
                         }
                     }
