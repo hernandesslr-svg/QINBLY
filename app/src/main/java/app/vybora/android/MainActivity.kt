@@ -4355,12 +4355,6 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         },
                     contentScale = androidx.compose.ui.layout.ContentScale.Fit
                 )
-                if (viewingPublication) {
-                    if (selectedPublicationCaption.isNotBlank()) {
-                        Text(selectedPublicationCaption, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp), color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
-                    }
-
-                }
                 Spacer(Modifier.weight(1f))
             }
         }
