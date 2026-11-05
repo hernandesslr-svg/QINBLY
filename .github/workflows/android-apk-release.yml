@@ -1,4 +1,4 @@
-name: Android APK Release
+name: QINBLY Android APK Release
 
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: vybora-android-release
+  group: qinbly-android-release
   cancel-in-progress: false
 
 jobs:
@@ -110,7 +110,7 @@ jobs:
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
           echo "TAG_NAME=v$VERSION_NAME" >> "$GITHUB_ENV"
-          echo "Building VYBORA $VERSION_NAME (versionCode $VERSION_CODE)"
+          echo "Building QINBLY $VERSION_NAME (versionCode $VERSION_CODE)"
 
       - name: Build, sign and verify release APK
         env:
