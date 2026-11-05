@@ -419,6 +419,8 @@ app.get('/api/posts', asyncRoute(async (req,res) => {
     } catch { /* Token inválido não bloqueia a leitura pública do feed. */ }
   }
   const { rows } = await pool.query(`SELECT p.id,p.caption,p.media_url AS "mediaUrl",p.media_type AS "mediaType",p.visibility,p.created_at AS "createdAt",p.poll_options AS "pollOptions",
+    (SELECT COALESCE(json_agg(json_build_object('optionIndex',v.option_index,'votes',v.n)), '[]'::json) FROM (SELECT option_index,COUNT(*)::int AS n FROM poll_votes WHERE post_id=p.id GROUP BY option_index) v) AS "pollVotes",
+    (SELECT option_index FROM poll_votes WHERE post_id=p.id AND user_id=$3::uuid) AS "myPollVote",
     json_build_object('id',u.id,'username',u.username,'displayName',u.display_name,'avatarUrl',u.avatar_url,'verified',u.is_verified) AS author,
     (SELECT COUNT(*)::int FROM post_likes l WHERE l.post_id=p.id) AS likes,
     (SELECT COUNT(*)::int FROM comments c WHERE c.post_id=p.id) AS comments,
