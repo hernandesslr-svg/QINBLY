@@ -1062,7 +1062,7 @@ private fun VyboraApp() {
                         onNotice = { notice = it }
                     )
                 } else androidx.compose.runtime.key(accountSessionVersion) { when (tab) {
-                    0 -> FeedPage(scrollToTopRequest = navTopRequest, onlineUsers = onlineUsers, currentUsername = loggedInUser, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true })
+                    0 -> FeedPage(scrollToTopRequest = navTopRequest, onlineUsers = onlineUsers, currentUsername = loggedInUser, photoRefreshKey = profilePhotoRefreshKey, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true })
                     1 -> MessagesPage(scrollToTopRequest = navTopRequest, recipientUsername = messageRecipient, onSearch = { showSearchDialog = true }, onOpenConversation = { messageRecipient = it }, onOpenProfile = { publicProfileUsername = it }, onNotice = { notice = it })
                     2 -> PostPage(onNotice = { notice = it }, onCameraCancelled = { tab = 0 }, initialMode = createEntryMode)
                     3 -> CommunitiesPage(onNotice = { notice = it })
@@ -1881,7 +1881,7 @@ private fun QiblyShareDialog(
 
 @Composable
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername: String, nameFontStyle: String, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onAddStory: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit) {
+private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername: String, photoRefreshKey: Int, nameFontStyle: String, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onAddStory: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
     var posts by remember { mutableStateOf<List<VyboraApi.PostSummary>>(emptyList()) }
@@ -1933,7 +1933,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         "Lives" -> feedTabPosts.filter { it.mediaType.equals("live", ignoreCase = true) }
         else -> feedTabPosts
     }
-    LaunchedEffect(refreshKey) {
+    LaunchedEffect(refreshKey, photoRefreshKey) {
         loading = true
         Thread {
             try {
@@ -4972,6 +4972,8 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
                                 VyboraApi.uploadProfileImage(context, token, uri, "cover_original")
                                 // A capa visível no perfil continua usando exatamente o enquadramento escolhido.
                                 VyboraApi.uploadProfileImage(context, token, Uri.fromFile(outFile), "cover")
+                                // A foto de perfil também é o avatar público de todas as telas e publicações.
+                                VyboraApi.uploadProfileImage(context, prefs.getString("token", token) ?: token, Uri.fromFile(outFile), "avatar")
                                 outFile.delete()
                                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                                     loading = false
