@@ -173,7 +173,7 @@ class RemoteUiActivity : ComponentActivity() {
     private fun loadLatestReleasePage() {
         Thread {
             try {
-                val connection = (java.net.URL("https://api.github.com/repos/hernandesslr-svg/VYBORA/releases/latest")
+                val connection = (java.net.URL("https://api.github.com/repos/hernandesslr-svg/QINBLY/releases/latest")
                     .openConnection() as java.net.HttpURLConnection).apply {
                     requestMethod = "GET"
                     connectTimeout = 12000
