@@ -4392,7 +4392,21 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.92f))))
                                 .padding(start = 20.dp, end = 20.dp, bottom = 16.dp, top = 28.dp)
                         ) {
-                            Text("@${selectedPublication?.username.orEmpty()}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Box(Modifier.size(42.dp).clip(CircleShape).background(Color(0xFF272B33)), contentAlignment = Alignment.Center) {
+                                    if (avatarUrl.isNotBlank()) {
+                                        AsyncImage(
+                                            model = avatarUrl,
+                                            contentDescription = "Foto de perfil de @${selectedPublication?.username.orEmpty()}",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                        )
+                                    } else {
+                                        Icon(Icons.Default.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(25.dp))
+                                    }
+                                }
+                                Text("@${selectedPublication?.username.orEmpty()}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            }
                             val viewerCaption = selectedPublicationCaption.ifBlank { selectedPublication?.caption.orEmpty() }
                             if (viewerCaption.isNotBlank()) {
                                 Spacer(Modifier.height(6.dp))
