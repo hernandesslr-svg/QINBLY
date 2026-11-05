@@ -2474,33 +2474,48 @@ DropdownMenuItem(
                                     val totalVotes = post.pollVotes.sum()
                                     post.pollOptions.forEachIndexed { optionIndex, option ->
                                         val count = post.pollVotes.getOrElse(optionIndex) { 0 }
-                                        Box(modifier = Modifier.fillMaxWidth().background(RemoteAppearance.feedActionBackgroundColor, RoundedCornerShape(10.dp)).clickable(enabled = post.myPollVote < 0) {
-                                            val token = prefs.getString("token", null)
-                                            if (token.isNullOrBlank()) onNotice("Entre na sua conta para votar.")
-                                            else if (post.myPollVote < 0) {
-                                                Thread {
-                                                    try {
-                                                        VyboraApi.votePoll(token, post.id, optionIndex)
-                                                        android.os.Handler(android.os.Looper.getMainLooper()).post { refreshKey++ }
-                                                    } catch (e: Exception) {
-                                                        android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível votar.") }
-                                                    }
-                                                }.start()
-                                            }
-                                        }) {
-                                            Box(Modifier.fillMaxWidth()) {
-                                                if (post.myPollVote >= 0 && totalVotes > 0) {
-                                                    Box(Modifier.matchParentSize()) {
-                                                        Box(Modifier.fillMaxWidth(count.toFloat() / totalVotes.toFloat()).height(5.dp).align(Alignment.BottomStart).background(Color(0xFF1677F2), RoundedCornerShape(10.dp)))
+                                        Box(
+                                            modifier = Modifier.fillMaxWidth()
+                                                .height(22.dp)
+                                                .background(Color(0xFF10141D), RoundedCornerShape(8.dp))
+                                                .clickable(enabled = post.myPollVote < 0) {
+                                                    val token = prefs.getString("token", null)
+                                                    if (token.isNullOrBlank()) onNotice("Entre na sua conta para votar.")
+                                                    else if (post.myPollVote < 0) {
+                                                        Thread {
+                                                            try {
+                                                                VyboraApi.votePoll(token, post.id, optionIndex)
+                                                                android.os.Handler(android.os.Looper.getMainLooper()).post { refreshKey++ }
+                                                            } catch (e: Exception) {
+                                                                android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível votar.") }
+                                                            }
+                                                        }.start()
                                                     }
                                                 }
-                                            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                                Text(option.replace(Regex("^\\s*\\d+\\s*[—–-]\\s*"), ""), color = RemoteAppearance.feedTextColor, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                                        ) {
+                                            if (post.myPollVote >= 0 && totalVotes > 0) {
+                                                Box(
+                                                    Modifier.fillMaxWidth(count.toFloat() / totalVotes.toFloat())
+                                                        .height(22.dp)
+                                                        .align(Alignment.CenterStart)
+                                                        .background(Color(0xFF1677F2), RoundedCornerShape(8.dp))
+                                                )
+                                            }
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth().align(Alignment.Center)
+                                                    .padding(horizontal = 8.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    option.replace(Regex("^\\\\s*\\\\d+\\\\s*[—–-]\\\\s*"), ""),
+                                                    color = Color.White, fontSize = 14.sp,
+                                                    modifier = Modifier.weight(1f), maxLines = 1
+                                                )
                                                 if (post.myPollVote >= 0) {
                                                     val percent = if (totalVotes > 0) count * 100 / totalVotes else 0
-                                                    Text("$percent%", color = RemoteAppearance.feedTextColor, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                                    Text("$percent%", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                                                 }
-                                            }
                                             }
                                         }
                                     }
