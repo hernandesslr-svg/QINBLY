@@ -2469,14 +2469,14 @@ DropdownMenuItem(
                             }
                             if (post.mediaType == "poll" && post.pollOptions.isNotEmpty()) {
                                 Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    verticalArrangement = Arrangement.spacedBy(14.dp)) {
                                     Text(post.caption, color = RemoteAppearance.feedTextColor, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                                     val totalVotes = post.pollVotes.sum()
                                     post.pollOptions.forEachIndexed { optionIndex, option ->
                                         val count = post.pollVotes.getOrElse(optionIndex) { 0 }
                                         Box(
                                             modifier = Modifier.fillMaxWidth()
-                                                .height(22.dp)
+                                                .height(28.dp)
                                                 .background(Color(0xFF10141D), RoundedCornerShape(8.dp))
                                                 .clickable(enabled = post.myPollVote < 0) {
                                                     val token = prefs.getString("token", null)
@@ -2496,7 +2496,7 @@ DropdownMenuItem(
                                             if (post.myPollVote >= 0 && totalVotes > 0) {
                                                 Box(
                                                     Modifier.fillMaxWidth(count.toFloat() / totalVotes.toFloat())
-                                                        .height(22.dp)
+                                                        .height(28.dp)
                                                         .align(Alignment.CenterStart)
                                                         .background(Color(0xFF1677F2), RoundedCornerShape(8.dp))
                                                 )
