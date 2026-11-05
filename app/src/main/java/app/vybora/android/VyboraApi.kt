@@ -188,7 +188,8 @@ object VyboraApi {
         val id: String, val caption: String, val mediaUrl: String, val mediaType: String,
         val username: String, val displayName: String, val likes: Int, val comments: Int,
         val avatarUrl: String = "", val likedByMe: Boolean = false, val isFollowing: Boolean = false,
-        val createdAt: String = "", val pollOptions: List<String> = emptyList()
+        val createdAt: String = "", val pollOptions: List<String> = emptyList(),
+        val pollVotes: List<Int> = emptyList(), val myPollVote: Int = -1
     )
 
     fun getPosts(token: String? = null): List<PostSummary> {
@@ -210,7 +211,12 @@ object VyboraApi {
                 likedByMe = post.optBoolean("likedByMe"),
                 isFollowing = post.optBoolean("isFollowing"),
                 createdAt = post.optString("createdAt", post.optString("created_at")),
-                pollOptions = post.optJSONArray("pollOptions")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
+                pollOptions = post.optJSONArray("pollOptions")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList(),
+                pollVotes = post.optJSONArray("pollOptions")?.let { a -> List(a.length()) { i ->
+                    val counts = post.optJSONArray("pollVotes") ?: org.json.JSONArray()
+                    (0 until counts.length()).mapNotNull { counts.optJSONObject(it) }.firstOrNull { it.optInt("optionIndex") == i }?.optInt("votes") ?: 0
+                } } ?: emptyList(),
+                myPollVote = post.optInt("myPollVote", -1)
             )
         }
         applicationContext?.let { cachePosts(it, result) }
