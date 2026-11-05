@@ -33,7 +33,8 @@ class RemoteUiActivity : ComponentActivity() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action != DownloadManager.ACTION_DOWNLOAD_COMPLETE) return
             val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
-            if (id != pendingDownloadId) return
+            if (id != pendingDownloadId && id != prefs.getLong("pending_update_download_id", -1L)) return
+            prefs.edit().remove("pending_update_download_id").apply()
             val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
             val query = DownloadManager.Query().setFilterById(id)
             manager.query(query).use { cursor ->
@@ -101,7 +102,7 @@ class RemoteUiActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         ContextCompat.registerReceiver(
             this, downloadReceiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-            ContextCompat.RECEIVER_NOT_EXPORTED
+            ContextCompat.RECEIVER_EXPORTED
         )
         webView = WebView(this)
         webView.settings.apply {
@@ -224,9 +225,10 @@ class RemoteUiActivity : ComponentActivity() {
                     .error{color:#ff6ba9;white-space:pre-wrap;overflow-wrap:anywhere}.notes{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;color:#d7d9e8}
                     </style><body><div class="brand"><div class="logo">V</div><h1>QINBLY</h1><div class="muted">Atualização do aplicativo</div></div>
                     <section class="card"><div class="muted">Versão disponível</div><div class="version" id="version"></div><div class="muted">Novidades</div><p class="notes" id="notes"></p>
-                    <button class="btn" onclick="VyboraNative.downloadAndInstall(apkUrl)">Baixar e instalar atualização</button>
+                    <button class="btn" id="updateBtn" onclick="this.disabled=true;this.textContent='Iniciando download…';VyboraNative.downloadAndInstall(apkUrl)">Baixar e instalar atualização</button>
+                    <p class="muted" id="updateStatus" role="status"></p>
                     <p class="muted">O Android solicitará confirmação antes de instalar. Suas informações não são apagadas pela atualização normal.</p></section>
-                    <script>const apkUrl=$urlJs;document.getElementById('version').textContent=$tagJs;document.getElementById('notes').textContent=$notesJs;</script>
+                    <script>const apkUrl=$urlJs;document.getElementById('version').textContent=$tagJs;document.getElementById('notes').textContent=$notesJs;window.vyboraOtaNativeStatus=function(message,isError){document.getElementById('updateStatus').textContent=message;document.getElementById('updateBtn').disabled=!isError;document.getElementById('updateBtn').textContent=isError?'Tentar novamente':'Download em andamento…';};</script>
                     </body></html>
                 """.trimIndent()
                 runOnUiThread { webView.loadDataWithBaseURL("https://github.com/", html, "text/html", "UTF-8", null) }
@@ -235,7 +237,7 @@ class RemoteUiActivity : ComponentActivity() {
                 val html = """
                     <!doctype html><html lang="pt-BR"><meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="utf-8">
                     <style>body{background:#050711;color:#f5f5fb;font:16px Arial;padding:28px 20px}.card{background:#111528;border:1px solid #292d43;border-radius:20px;padding:22px}.muted{color:#adb2cb;line-height:1.5}.error{color:#ff6ba9;overflow-wrap:anywhere}button{padding:14px 18px;background:#8b35ff;color:white;border:0;border-radius:12px;font-weight:bold}</style>
-                    <h1>Atualizações do QINBLY</h1><div class="card"><p class="error" id="error"></p><p class="muted">Não foi possível consultar as versões no GitHub.</p><button onclick="location.reload()">Tentar novamente</button><p><a style="color:#c58bff" href="https://github.com/hernandesslr-svg/VYBORA/releases">Abrir downloads no GitHub</a></p></div>
+                    <h1>Atualizações do QINBLY</h1><div class="card"><p class="error" id="error"></p><p class="muted">Não foi possível consultar as versões no GitHub.</p><button onclick="location.reload()">Tentar novamente</button><p><a style="color:#c58bff" href="https://github.com/hernandesslr-svg/QINBLY/releases">Abrir downloads no GitHub</a></p></div>
                     <script>document.getElementById('error').textContent=$message;</script></html>
                 """.trimIndent()
                 runOnUiThread { if (::webView.isInitialized) webView.loadDataWithBaseURL("https://github.com/", html, "text/html", "UTF-8", null) }
@@ -301,9 +303,10 @@ class RemoteUiActivity : ComponentActivity() {
                         .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                         .setAllowedOverMetered(true)
                         .setAllowedOverRoaming(false)
-                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "QINBLY-update.apk")
+                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "QINBLY-update-" + System.currentTimeMillis() + ".apk")
                     val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
                     pendingDownloadId = manager.enqueue(request)
+                    prefs.edit().putLong("pending_update_download_id", pendingDownloadId).apply()
                     notifyWeb("Download iniciado. O Android avisará quando estiver pronto para instalar.", false)
                 } catch (_: Exception) {
                     notifyWeb("Não foi possível iniciar o download. Verifique a conexão e tente novamente.", true)
