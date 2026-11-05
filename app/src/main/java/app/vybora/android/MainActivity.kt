@@ -2508,7 +2508,7 @@ DropdownMenuItem(
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
                                                 Text(
-                                                    option.replace(Regex("^\\\\s*\\\\d+\\\\s*[—–-]\\\\s*"), ""),
+                                                    option.replace(Regex("^\\s*\\d+\\s*[—–-]\\s*"), ""),
                                                     color = Color.White, fontSize = 14.sp,
                                                     modifier = Modifier.weight(1f), maxLines = 1
                                                 )
