@@ -4359,49 +4359,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     if (selectedPublicationCaption.isNotBlank()) {
                         Text(selectedPublicationCaption, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp), color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
                     }
-                    Row(
-                        Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp).border(1.dp, Color.DarkGray, RoundedCornerShape(28.dp)).padding(horizontal = 8.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = likeSelectedPublication) {
-                            Icon(if (postLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = if (postLiked) Color.Red else Color.White)
-                        }
-                        IconButton(onClick = { val post = selectedPublication
-                            if (post != null) {
-                                commentsOpen = true
-                                commentsLoading = true
-                                Thread {
-                                    try {
-                                        val loaded = VyboraApi.getComments(post.id)
-                                        android.os.Handler(android.os.Looper.getMainLooper()).post { postComments = loaded; commentsLoading = false }
-                                    } catch (e: Exception) {
-                                        android.os.Handler(android.os.Looper.getMainLooper()).post { commentsLoading = false; onNotice(e.message ?: "Erro ao carregar comentários.") }
-                                    }
-                                }.start()
-                            } }) {
-                            Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White)
-                        }
-                        IconButton(onClick = { val post = selectedPublication
-                            if (post != null) {
-                                val share = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(android.content.Intent.EXTRA_TEXT, post.caption + "\\n" + post.mediaUrl)
-                                }
-                                profileContext.startActivity(android.content.Intent.createChooser(share, "Compartilhar publicação"))
-                            } }) {
-                            Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = Color.White)
-                        }
-                        IconButton(onClick = { val post = selectedPublication
-                            if (post != null) {
-                                val wasSaved = post.id in savedIds
-                                savedIds = if (wasSaved) savedIds - post.id else savedIds + post.id
-                                profilePrefs.edit().putStringSet("saved_post_ids", savedIds).apply()
-                                onNotice(if (wasSaved) "Publicação removida dos salvos." else "Publicação salva.")
-                            } }) {
-                            Icon(if ((selectedPublication?.id?.let { it in savedIds } == true)) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = "Salvar publicação", tint = Color(0xFFFFD54F))
-                        }
-                    }
+
                 }
                 Spacer(Modifier.weight(1f))
             }
