@@ -2479,9 +2479,15 @@ DropdownMenuItem(
                                         val count = post.pollVotes.getOrElse(optionIndex) { 0 }
                                         val percent = if (totalVotes > 0) count * 100 / totalVotes else 0
                                         val selected = post.myPollVote == optionIndex
-                                        Box(
-                                            Modifier.fillMaxWidth().height(48.dp)
-                                                .background(Color(0xFFF0F4FA), RoundedCornerShape(13.dp))
+                                        val pollShape = RoundedCornerShape(14.dp)
+                                        Row(
+                                            Modifier.fillMaxWidth().height(52.dp)
+                                                .background(if (selected) Color(0xFFF0F6FF) else Color.White, pollShape)
+                                                .border(
+                                                    width = if (selected) 1.5.dp else 1.dp,
+                                                    color = if (selected) Color(0xFF1677F2) else Color(0xFFE0E7F0),
+                                                    shape = pollShape
+                                                )
                                                 .clickable(enabled = !hasVoted) {
                                                     val token = prefs.getString("token", null)
                                                     if (token.isNullOrBlank()) onNotice("Entre na sua conta para votar.")
@@ -2496,30 +2502,41 @@ DropdownMenuItem(
                                                         }
                                                     }.start()
                                                 }
+                                                .padding(horizontal = 10.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                                         ) {
-                                            if (hasVoted && percent > 0) {
-                                                Box(
-                                                    Modifier.fillMaxWidth(percent / 100f).fillMaxHeight()
-                                                        .align(Alignment.CenterStart)
-                                                        .background(Color(0xFFB9D7FF), RoundedCornerShape(13.dp))
-                                                )
-                                            }
-                                            Row(
-                                                Modifier.fillMaxSize().padding(horizontal = 14.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            Box(
+                                                Modifier.size(34.dp)
+                                                    .background(if (selected) Color(0xFFE8F2FF) else Color(0xFFF0F3F8), CircleShape)
+                                                    .border(1.dp, if (selected) Color(0xFFC5DEFF) else Color.Transparent, CircleShape),
+                                                contentAlignment = Alignment.Center
                                             ) {
                                                 Text(
                                                     option.replace(Regex("^\\s*\\d+\\s*[—–-]\\s*"), ""),
                                                     color = Color(0xFF14233B), fontSize = 14.sp,
-                                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                                    modifier = Modifier.weight(1f), maxLines = 1
+                                                    fontWeight = FontWeight.SemiBold, maxLines = 1
                                                 )
-                                                if (hasVoted) {
-                                                    Text("$percent%", color = Color(0xFF14233B), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                                                    if (selected) {
-                                                        Spacer(Modifier.width(8.dp))
-                                                        Text("✓", color = Color(0xFF1677F2), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                            }
+                                            Box(
+                                                Modifier.weight(1f).height(20.dp)
+                                                    .background(Color(0xFFE0E9F6), RoundedCornerShape(12.dp))
+                                            ) {
+                                                if (hasVoted && percent > 0) {
+                                                    Box(
+                                                        Modifier.fillMaxWidth(percent / 100f).fillMaxHeight()
+                                                            .background(Color(0xFF1677F2), RoundedCornerShape(12.dp))
+                                                    )
+                                                }
+                                            }
+                                            if (hasVoted) {
+                                                Text("$percent%", color = Color(0xFF14233B), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                                if (selected) {
+                                                    Box(
+                                                        Modifier.size(28.dp).background(Color(0xFF1677F2), CircleShape),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Text("✓", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                                                     }
                                                 }
                                             }
