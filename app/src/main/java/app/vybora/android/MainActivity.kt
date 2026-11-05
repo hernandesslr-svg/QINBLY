@@ -6212,7 +6212,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         else cameraError = "Permita o microfone para gravar vídeos com áudio."
     }
     LaunchedEffect(cameraGranted, lensFacing, showComposer, previewView) {
-        if (cameraGranted && !showComposer && previewView != null) {
+        if (initialMode == "camera" && cameraGranted && !showComposer && previewView != null) {
             try {
                 val future = androidx.camera.lifecycle.ProcessCameraProvider.getInstance(context)
                 future.addListener({
@@ -6277,15 +6277,43 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 if (pollOptions.size < 6) TextButton(onClick = { pollOptions = pollOptions + "" }) { Text("+ Adicionar opção") }
             }
             Button(
-                onClick = { onNotice("O editor está disponível, mas a publicação de " + (if (initialMode == "poll") "enquetes" else "texto") + " ainda precisa de suporte na API para ser enviada.") },
-                enabled = caption.isNotBlank() && (initialMode != "poll" || pollOptions.count { it.isNotBlank() } >= 2),
+                onClick = {
+                    val token = prefs.getString("token", null)
+                    if (token.isNullOrBlank()) {
+                        onNotice("Entre na sua conta antes de publicar.")
+                    } else if (!publishing) {
+                        publishing = true
+                        Thread {
+                            try {
+                                if (initialMode == "poll") {
+                                    // A API atual não expõe votação; preserva pergunta e opções como publicação textual.
+                                    val options = pollOptions.filter { it.isNotBlank() }
+                                    VyboraApi.createTextPost(token, caption.trim() + "\\n\\n" + options.mapIndexed { index, option -> "${index + 1}. $option" }.joinToString("\\n"))
+                                } else {
+                                    VyboraApi.createTextPost(token, caption.trim())
+                                }
+                                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                    publishing = false
+                                    onNotice(if (initialMode == "poll") "Pergunta e opções publicadas como texto. A votação interativa ainda não está disponível." else "Texto publicado com sucesso!")
+                                    onCameraCancelled()
+                                }
+                            } catch (e: Exception) {
+                                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                    publishing = false
+                                    onNotice(e.message ?: "Falha ao publicar.")
+                                }
+                            }
+                        }.start()
+                    }
+                },
+                enabled = !publishing && caption.isNotBlank() && (initialMode != "poll" || pollOptions.count { it.isNotBlank() } >= 2),
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Publicar") }
         }
         return
     }
 
-    if (!cameraGranted && !showComposer) {
+    if (initialMode == "camera" && !cameraGranted && !showComposer) {
         Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(60.dp))
             Text("Câmera QINBLY", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
@@ -6346,7 +6374,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         return
     }
 
-    if (!showComposer) {
+    if (initialMode == "camera" && !showComposer) {
         Box(Modifier.fillMaxSize().background(Color(0xFF080808))) {
             androidx.compose.ui.viewinterop.AndroidView(
                 factory = { ctx -> androidx.camera.view.PreviewView(ctx).also {
