@@ -2041,19 +2041,21 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             VyboraApi.PostSummary("near-sample-$n", "LOCAL FICTÍCIO: ${topics[(n - 1) % topics.size]} · Teste $n", "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=900", "image", "creator.near.$n", "Morador $n", n * 9, n, "")
         }
     }
-    val allFeedPosts = (remoteTestPosts + posts.sortedByDescending { it.createdAt } + demoPosts + extraDemoPosts).distinctBy { it.id }
+    // Publicações reais sempre primeiro, da mais recente para a mais antiga.
+    // Conteúdo demonstrativo fica depois e nunca encobre uma publicação nova.
+    val allFeedPosts = (posts.sortedByDescending { it.createdAt } + remoteTestPosts + demoPosts + extraDemoPosts).distinctBy { it.id }
     val feedTabPosts = when (selectedFeedTab) {
         "Seguindo" -> allFeedPosts.filter { it.isFollowing }
-        "Comunidade" -> allFeedPosts.filter { it.comments > 0 }.sortedWith(compareByDescending<VyboraApi.PostSummary> { it.comments }.thenByDescending { it.createdAt })
+        "Comunidade" -> allFeedPosts.filter { it.comments > 0 }
         else -> allFeedPosts
     }
     val displayedPosts = when (selectedFeedFilter) {
-        "Vídeos" -> (filterDemoPosts + moreDemoVideos + feedTabPosts.filter { it.mediaType.equals("video", ignoreCase = true) }).distinctBy { it.id }
+        "Vídeos" -> (feedTabPosts.filter { it.mediaType.equals("video", ignoreCase = true) } + filterDemoPosts + moreDemoVideos).distinctBy { it.id }
         "Fotos" -> feedTabPosts.filter { it.mediaType.equals("image", ignoreCase = true) }
-        "Tendências" -> feedTabPosts.sortedByDescending { it.likes + it.comments * 3 }
-        "Lives" -> liveDemoPosts + moreDemoLives // Apenas simulação de lives, sem espectadores reais ou streaming.
-        "Perto de mim" -> nearbyDemoPosts + moreDemoNearby // Exemplos fictícios, não baseados na localização do aparelho.
-        else -> feedTabPosts.sortedByDescending { it.createdAt }
+        "Tendências" -> feedTabPosts
+        "Lives" -> liveDemoPosts + moreDemoLives // Apenas simulação de lives.
+        "Perto de mim" -> nearbyDemoPosts + moreDemoNearby // Exemplos fictícios.
+        else -> feedTabPosts
     }
     LaunchedEffect(refreshKey) {
         loading = true
