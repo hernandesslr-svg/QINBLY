@@ -4104,16 +4104,62 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 }
             }
         } else {
-            LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.fillMaxWidth().heightIn(max = 560.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                items(profilePosts.filter { profileTab != "Vídeos" || it.mediaType == "video" }.filter { profileTab != "Fotos" || it.mediaType == "image" }.size) { index ->
-                    val post = profilePosts.filter { profileTab != "Vídeos" || it.mediaType == "video" }.filter { profileTab != "Fotos" || it.mediaType == "image" }[index]
-                    Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(8.dp)).background(Brush.linearGradient(listOf(Color(0xFF241047), Color(0xFF9D236E), Color(0xFF071A38)))).clickable { if (post.mediaUrl.isNotBlank()) { expandedImage = post.mediaUrl; selectedPublicationCaption = post.caption; selectedPublication = post; postLiked = false; savedIds = profilePrefs.getStringSet("saved_post_ids", emptySet())?.toSet() ?: emptySet(); viewingPublication = true } }) {
-                        if (post.mediaUrl.isNotBlank()) AsyncImage(model = post.mediaUrl, contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-                        else Column(Modifier.align(Alignment.Center).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = null, tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(30.dp))
-                            Text(post.caption.ifBlank { "QINBLY" }, color = RemoteAppearance.screenTextColor, maxLines = 4, style = MaterialTheme.typography.labelSmall)
+            val visiblePosts = profilePosts.filter { profileTab != "Vídeos" || it.mediaType == "video" }
+                .filter { profileTab != "Fotos" || it.mediaType == "image" }
+            if (profileTab == "Publicações") {
+                // Lista vertical de publicações mistas, sem modificar o cabeçalho ou as demais abas.
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    visiblePosts.forEach { post ->
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (QiblyTheme.dark) Color(0xFF20242C) else Color.White)
+                                .border(1.dp, Color(0xFFE2E5EA), RoundedCornerShape(12.dp))
+                                .clickable {
+                                    selectedPublicationCaption = post.caption
+                                    selectedPublication = post
+                                    postLiked = false
+                                    savedIds = profilePrefs.getStringSet("saved_post_ids", emptySet())?.toSet() ?: emptySet()
+                                    if (post.mediaUrl.isNotBlank()) {
+                                        expandedImage = post.mediaUrl
+                                        viewingPublication = true
+                                    } else {
+                                        onNotice("Publicação de texto: " + post.caption)
+                                    }
+                                }
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(9.dp)
+                        ) {
+                            Text(post.caption.ifBlank { "Publicação" }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.bodyMedium)
+                            if (post.mediaUrl.isNotBlank()) {
+                                Box(Modifier.fillMaxWidth().height(240.dp).clip(RoundedCornerShape(8.dp))) {
+                                    AsyncImage(model = post.mediaUrl, contentDescription = "Mídia da publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                                    if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = Color.White, modifier = Modifier.align(Alignment.Center).size(44.dp))
+                                }
+                            } else if (post.mediaType == "poll") {
+                                Text("Enquete", color = Color(0xFF1677F2), fontWeight = FontWeight.SemiBold)
+                            }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Curtir", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall)
+                                Text("Comentar", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall)
+                                Text("Compartilhar", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall)
+                                Text("Salvar", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall)
+                            }
                         }
-                        if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.TopEnd).padding(5.dp))
+                    }
+                }
+            } else {
+                LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.fillMaxWidth().heightIn(max = 560.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    items(visiblePosts.size) { index ->
+                        val post = visiblePosts[index]
+                        Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(8.dp)).background(Brush.linearGradient(listOf(Color(0xFF241047), Color(0xFF9D236E), Color(0xFF071A38)))).clickable { if (post.mediaUrl.isNotBlank()) { expandedImage = post.mediaUrl; selectedPublicationCaption = post.caption; selectedPublication = post; postLiked = false; savedIds = profilePrefs.getStringSet("saved_post_ids", emptySet())?.toSet() ?: emptySet(); viewingPublication = true } }) {
+                            if (post.mediaUrl.isNotBlank()) AsyncImage(model = post.mediaUrl, contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                            else Text(post.caption.ifBlank { "QINBLY" }, color = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.Center).padding(8.dp), maxLines = 4)
+                            if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.TopEnd).padding(5.dp))
+                        }
                     }
                 }
             }
