@@ -2476,7 +2476,7 @@ DropdownMenuItem(
                                         val count = post.pollVotes.getOrElse(optionIndex) { 0 }
                                         Box(
                                             modifier = Modifier.fillMaxWidth()
-                                                .height(28.dp)
+                                                .height(32.dp)
                                                 .background(Color(0xFF10141D), RoundedCornerShape(8.dp))
                                                 .clickable(enabled = post.myPollVote < 0) {
                                                     val token = prefs.getString("token", null)
@@ -2496,7 +2496,7 @@ DropdownMenuItem(
                                             if (post.myPollVote >= 0 && totalVotes > 0) {
                                                 Box(
                                                     Modifier.fillMaxWidth(count.toFloat() / totalVotes.toFloat())
-                                                        .height(28.dp)
+                                                        .height(32.dp)
                                                         .align(Alignment.CenterStart)
                                                         .background(Color(0xFF1677F2), RoundedCornerShape(8.dp))
                                                 )
