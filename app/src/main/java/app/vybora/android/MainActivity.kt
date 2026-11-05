@@ -4183,7 +4183,8 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                                     else Thread {
                                                         try {
                                                             VyboraApi.votePoll(token, post.id, optionIndex)
-                                                            android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice("Voto registrado. Atualize para ver o resultado.") }
+                                                            val updated = VyboraApi.getPosts().filter { it.username.equals(username, ignoreCase = true) }
+                                                            android.os.Handler(android.os.Looper.getMainLooper()).post { profilePosts = updated; onNotice("Voto registrado.") }
                                                         } catch (e: Exception) {
                                                             android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível votar.") }
                                                         }
@@ -4201,11 +4202,11 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                                 Text(option.replace(Regex("^\\s*\\d+\\s*[—–-]\\s*"), ""), color = Color(0xFF14233B), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                                             }
                                             Box(Modifier.weight(1f).height(20.dp).background(Color(0xFFE0E9F6), RoundedCornerShape(12.dp))) {
-                                                if (hasVoted && percent > 0) {
+                                                if (percent > 0) {
                                                     Box(Modifier.fillMaxWidth(percent / 100f).fillMaxHeight().background(Color(0xFF1677F2), RoundedCornerShape(12.dp)))
                                                 }
                                             }
-                                            if (hasVoted) {
+                                            if (true) {
                                                 Text("$percent%", color = Color(0xFF14233B), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                                 if (selected) {
                                                     Box(Modifier.size(28.dp).background(Color(0xFF1677F2), CircleShape), contentAlignment = Alignment.Center) {
@@ -4215,7 +4216,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                             }
                                         }
                                     }
-                                    Text("$totalVotes votos", color = RemoteAppearance.screenSecondaryTextColor, fontSize = 12.sp)
+                                    Text("$totalVotes ${if (totalVotes == 1) "voto" else "votos"}", color = RemoteAppearance.screenSecondaryTextColor, fontSize = 12.sp)
                                 }
                             }
                             if (post.mediaType != "poll") {
