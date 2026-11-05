@@ -6260,7 +6260,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.weight(1f))
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.AccountCircle, contentDescription = null, tint = Color.DarkGray, modifier = Modifier.size(44.dp))
+                Icon(Icons.Default.Person, contentDescription = null, tint = Color.DarkGray, modifier = Modifier.size(44.dp))
                 Spacer(Modifier.width(12.dp))
                 Column {
                     Text(prefs.getString("username", "Meu perfil").orEmpty(), fontWeight = FontWeight.Bold, color = Color.Black)
