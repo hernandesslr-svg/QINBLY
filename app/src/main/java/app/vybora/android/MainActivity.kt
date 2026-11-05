@@ -2474,7 +2474,7 @@ DropdownMenuItem(
                                     val totalVotes = post.pollVotes.sum()
                                     post.pollOptions.forEachIndexed { optionIndex, option ->
                                         val count = post.pollVotes.getOrElse(optionIndex) { 0 }
-                                        OutlinedButton(onClick = {
+                                        Box(modifier = Modifier.fillMaxWidth().background(RemoteAppearance.feedActionBackgroundColor, RoundedCornerShape(10.dp)).clickable(enabled = post.myPollVote < 0) {
                                             val token = prefs.getString("token", null)
                                             if (token.isNullOrBlank()) onNotice("Entre na sua conta para votar.")
                                             else if (post.myPollVote < 0) {
@@ -2487,11 +2487,14 @@ DropdownMenuItem(
                                                     }
                                                 }.start()
                                             }
-                                        }, enabled = post.myPollVote < 0, modifier = Modifier.fillMaxWidth()) {
-                                            Text(if (post.myPollVote >= 0) {
-                                                val percent = if (totalVotes > 0) count * 100 / totalVotes else 0
-                                                "$option — $percent%"
-                                            } else option, color = Color(0xFF1677F2))
+                                        }) {
+                                            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                                Text(option, color = RemoteAppearance.feedTextColor, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                                                if (post.myPollVote >= 0) {
+                                                    val percent = if (totalVotes > 0) count * 100 / totalVotes else 0
+                                                    Text("$percent%", color = RemoteAppearance.feedTextColor, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                                }
+                                            }
                                         }
                                     }
                                     Text("$totalVotes votos", color = RemoteAppearance.feedTextColor, fontSize = 12.sp)
