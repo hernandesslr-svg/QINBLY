@@ -410,6 +410,10 @@ object VyboraApi {
         }
     }
 
+    fun markNotificationRead(token: String, notificationId: String) {
+        request("POST", "/api/notifications/" + java.net.URLEncoder.encode(notificationId, "UTF-8") + "/read", JSONObject(), token)
+    }
+
     fun markNotificationsRead(token: String) {
         request("POST", "/api/notifications/read", JSONObject(), token)
     }
