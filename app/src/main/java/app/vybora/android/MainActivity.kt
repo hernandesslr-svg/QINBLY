@@ -2798,10 +2798,19 @@ DropdownMenuItem(
                             VyboraFullscreenVideo(video.mediaUrl, Modifier.fillMaxSize())
                         }
                         Column(
-                            Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 205.dp),
+                            Modifier.align(Alignment.BottomEnd).padding(end = 22.dp, bottom = 180.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
+                            // Disco musical independente, sem painel preto atrás dos controles.
+                            Box(
+                                modifier = Modifier.padding(bottom = 12.dp).size(43.dp)
+                                    .border(2.dp, Color(0xFF43C6FF), CircleShape)
+                                    .background(Color.Transparent, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.MusicNote, contentDescription = "Música da publicação", tint = Color.White, modifier = Modifier.size(23.dp))
+                            }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 IconButton(onClick = {
                                     val token = prefs.getString("token", null)
