@@ -1692,7 +1692,7 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
         }
     }
     Box(modifier.background(Color.Black)) {
-        AndroidView(modifier = Modifier.fillMaxSize(), factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false } }, update = { view -> view.player = player; view.useController = false })
+        AndroidView(modifier = Modifier.fillMaxSize(), factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false; resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM } }, update = { view -> view.player = player; view.useController = false; view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM })
         Box(Modifier.fillMaxSize().clickable {
             if (player.isPlaying) { player.pause(); playing = false } else { player.play(); playing = true }
         }, contentAlignment = Alignment.Center) {
@@ -1700,10 +1700,10 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
                 Icon(Icons.Default.PlayArrow, contentDescription = "Continuar vídeo", tint = Color.White, modifier = Modifier.size(52.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.42f)).padding(12.dp))
             }
         }
-        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 18.dp, end = 18.dp, bottom = 68.dp)) {
+        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 18.dp, end = 18.dp, bottom = 18.dp)) {
             val seconds = (position * duration).toLong().coerceAtLeast(0L) / 1000L
             val total = duration.coerceAtLeast(0L) / 1000L
-            Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')} / ${total / 60}:${(total % 60).toString().padStart(2, '0')}", color = Color.Black, fontSize = 12.sp)
+            Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')} / ${total / 60}:${(total % 60).toString().padStart(2, '0')}", color = Color.White, fontSize = 12.sp)
             BoxWithConstraints(
                 Modifier.fillMaxWidth().height(24.dp)
                     .pointerInput(duration) {
@@ -2780,7 +2780,7 @@ DropdownMenuItem(
                             VyboraFullscreenVideo(video.mediaUrl, Modifier.fillMaxSize())
                         }
                         Column(
-                            Modifier.align(Alignment.CenterEnd).padding(end = 14.dp, bottom = 4.dp),
+                            Modifier.align(Alignment.BottomEnd).padding(end = 14.dp, bottom = 145.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(20.dp)
                         ) {
@@ -2806,7 +2806,7 @@ DropdownMenuItem(
                             }
                         }
                         Column(
-                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.78f).padding(start = 16.dp, bottom = 115.dp),
+                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.78f).padding(start = 16.dp, bottom = 85.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
