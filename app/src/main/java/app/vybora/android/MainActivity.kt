@@ -4200,7 +4200,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             Text(post.caption.ifBlank { "Publicação" }, color = RemoteAppearance.screenTextColor, fontSize = if (post.mediaType == "poll") 18.sp else 14.sp, fontWeight = if (post.mediaType == "poll") FontWeight.Bold else FontWeight.Normal)
                             if (post.mediaUrl.isNotBlank()) {
                                 Box(Modifier.fillMaxWidth().height(240.dp).clip(RoundedCornerShape(8.dp))) {
-                                    AsyncImage(model = post.mediaUrl, contentDescription = "Mídia da publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                                    AsyncImage(model = post.mediaUrl, contentDescription = "Mídia da publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
                                     if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = Color.White, modifier = Modifier.align(Alignment.Center).size(44.dp))
                                 }
                             } else if (post.mediaType == "poll" && post.pollOptions.isNotEmpty()) {
@@ -4330,7 +4330,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     items(visiblePosts.size) { index ->
                         val post = visiblePosts[index]
                         Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(8.dp)).background(Brush.linearGradient(listOf(Color(0xFF241047), Color(0xFF9D236E), Color(0xFF071A38)))).clickable { if (post.mediaUrl.isNotBlank()) { expandedImage = post.mediaUrl; selectedPublicationCaption = post.caption; selectedPublication = post; postLiked = false; savedIds = profilePrefs.getStringSet("saved_post_ids", emptySet())?.toSet() ?: emptySet(); viewingPublication = true } }) {
-                            if (post.mediaUrl.isNotBlank()) AsyncImage(model = post.mediaUrl, contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                            if (post.mediaUrl.isNotBlank()) AsyncImage(model = post.mediaUrl, contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
                             else Text(post.caption.ifBlank { "QINBLY" }, color = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.Center).padding(8.dp), maxLines = 4)
                             if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.TopEnd).padding(5.dp))
                         }
@@ -5963,7 +5963,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                                 if (post.mediaUrl.isNotBlank()) expandedImage = post.mediaUrl; selectedPublicationCaption = post.caption; selectedPublication = post; postLiked = false; savedIds = prefs.getStringSet("saved_post_ids", emptySet())?.toSet() ?: emptySet(); viewingPublication = true
                             }) {
                                 if (post.mediaUrl.isNotBlank()) {
-                                    AsyncImage(model = post.mediaUrl, contentDescription = "Publicação de $displayName", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                                    AsyncImage(model = post.mediaUrl, contentDescription = "Publicação de $displayName", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
                                 } else {
                                     Text(post.caption.ifBlank { "QINBLY" }, color = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.Center).padding(8.dp), maxLines = 4)
                                 }
