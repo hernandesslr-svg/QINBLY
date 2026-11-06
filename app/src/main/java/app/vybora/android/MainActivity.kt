@@ -2802,11 +2802,11 @@ DropdownMenuItem(
                         Column(
                             Modifier.align(Alignment.BottomEnd).padding(end = 22.dp, bottom = 180.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
                             // Disco musical independente, sem painel preto atrás dos controles.
                             Box(
-                                modifier = Modifier.padding(bottom = 12.dp).size(45.dp)
+                                modifier = Modifier.padding(bottom = 19.dp).size(45.dp)
                                     .border(2.dp, Color(0xFF43C6FF), CircleShape)
                                     .clickable { selectedAudioPost = video; fullscreenVideoId = null },
                                 contentAlignment = Alignment.Center
@@ -2874,6 +2874,7 @@ DropdownMenuItem(
                             }
                             Text(if (video.id in savedPostIds) "Salvo" else "Salvar", color = if (video.id in savedPostIds) Color(0xFFFFC107) else Color.White, fontSize = 13.sp)
                             }
+                            Spacer(Modifier.height(4.dp))
                             IconButton(onClick = { onNotice("Mais opções disponíveis no feed.") }) {
                                 Icon(Icons.Default.MoreHoriz, contentDescription = "Mais opções", tint = Color.White, modifier = Modifier.size(28.dp))
                             }
