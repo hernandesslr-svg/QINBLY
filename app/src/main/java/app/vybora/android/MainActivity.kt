@@ -1704,7 +1704,7 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
         }
         Row(
             Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                .padding(start = 18.dp, end = 18.dp, bottom = 78.dp),
+                .padding(start = 18.dp, end = 18.dp, bottom = 118.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -2825,13 +2825,13 @@ DropdownMenuItem(
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 IconButton(onClick = { commentPost = video; fullscreenVideoId = null }) {
-                                    Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White, modifier = Modifier.size(36.dp))
+                                    Icon(Icons.Default.ModeComment, contentDescription = "Comentários", tint = Color.White, modifier = Modifier.size(36.dp))
                                 }
                                 Text(video.comments.toString(), color = Color.White, fontSize = 14.sp)
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 IconButton(onClick = { sharePost = video; fullscreenVideoId = null }) {
-                                    Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = Color.White, modifier = Modifier.size(36.dp))
+                                    Icon(Icons.Default.NearMe, contentDescription = "Compartilhar", tint = Color.White, modifier = Modifier.size(36.dp))
                                 }
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -2850,7 +2850,7 @@ DropdownMenuItem(
                             }
                         }
                         Column(
-                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 18.dp, bottom = 135.dp),
+                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 18.dp, bottom = 185.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
