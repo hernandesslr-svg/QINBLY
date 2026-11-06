@@ -2808,14 +2808,23 @@ DropdownMenuItem(
                                     if (token.isNullOrBlank()) onNotice("Entre na sua conta para curtir.")
                                     else if (!likeBusy) {
                                         likeBusy = true
+                                        val previousLiked = fullscreenLiked
+                                        val previousLikes = fullscreenLikes
+                                        fullscreenLiked = !previousLiked
+                                        fullscreenLikes = (previousLikes + if (fullscreenLiked) 1 else -1).coerceAtLeast(0)
                                         scope.launch {
                                             try {
                                                 val liked = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.toggleLike(token, video.id) }
-                                                fullscreenLiked = liked
-                                                fullscreenLikes = (video.likes + if (liked && !video.likedByMe) 1 else if (!liked && video.likedByMe) -1 else 0).coerceAtLeast(0)
+                                                if (liked != fullscreenLiked) {
+                                                    fullscreenLikes = (fullscreenLikes + if (liked) 1 else -1).coerceAtLeast(0)
+                                                    fullscreenLiked = liked
+                                                }
                                                 posts = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.getPosts(token) }
-                                            } catch (e: Exception) { onNotice(e.message ?: "Falha ao curtir vídeo.") }
-                                            finally { likeBusy = false }
+                                            } catch (e: Exception) {
+                                                fullscreenLiked = previousLiked
+                                                fullscreenLikes = previousLikes
+                                                onNotice(e.message ?: "Falha ao curtir vídeo.")
+                                            } finally { likeBusy = false }
                                         }
                                     }
                                 }) {
