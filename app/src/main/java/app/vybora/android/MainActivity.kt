@@ -2811,9 +2811,9 @@ DropdownMenuItem(
                                         scope.launch {
                                             try {
                                                 val liked = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.toggleLike(token, video.id) }
-                                                fullscreenLikes = (fullscreenLikes + if (liked) 1 else -1).coerceAtLeast(0)
                                                 fullscreenLiked = liked
-                                                posts = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.getPosts() }
+                                                fullscreenLikes = (video.likes + if (liked && !video.likedByMe) 1 else if (!liked && video.likedByMe) -1 else 0).coerceAtLeast(0)
+                                                posts = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.getPosts(token) }
                                             } catch (e: Exception) { onNotice(e.message ?: "Falha ao curtir vídeo.") }
                                             finally { likeBusy = false }
                                         }
@@ -2841,9 +2841,9 @@ DropdownMenuItem(
                                 savedPostIds = next
                                 prefs.edit().putStringSet("saved_post_ids", next).apply()
                             }) {
-                                Icon(Icons.Default.BookmarkBorder, contentDescription = "Salvar", tint = Color.White, modifier = Modifier.size(36.dp))
+                                Icon(if (video.id in savedPostIds) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = if (video.id in savedPostIds) "Remover dos salvos" else "Salvar", tint = if (video.id in savedPostIds) Color(0xFFFFC107) else Color.White, modifier = Modifier.size(36.dp))
                             }
-                            Text("Salvar", color = Color.White, fontSize = 13.sp)
+                            Text(if (video.id in savedPostIds) "Salvo" else "Salvar", color = if (video.id in savedPostIds) Color(0xFFFFC107) else Color.White, fontSize = 13.sp)
                             }
                             IconButton(onClick = { onNotice("Mais opções disponíveis no feed.") }) {
                                 Icon(Icons.Default.MoreHoriz, contentDescription = "Mais opções", tint = Color.White, modifier = Modifier.size(28.dp))
