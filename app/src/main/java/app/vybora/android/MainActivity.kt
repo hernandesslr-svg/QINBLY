@@ -6090,7 +6090,17 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                                 if (post.mediaUrl.isNotBlank()) expandedImage = post.mediaUrl; selectedPublicationCaption = post.caption; selectedPublication = post; postLiked = false; savedIds = prefs.getStringSet("saved_post_ids", emptySet())?.toSet() ?: emptySet(); viewingPublication = true
                             }) {
                                 if (post.mediaUrl.isNotBlank()) {
-                                    AsyncImage(model = post.mediaUrl, contentDescription = "Publicação de $displayName", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
+                                    AsyncImage(
+                                        model = if (post.mediaType.equals("video", ignoreCase = true)) {
+                                            coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                                                .data(post.mediaUrl)
+                                                .decoderFactory(coil.decode.VideoFrameDecoder.Factory())
+                                                .build()
+                                        } else post.mediaUrl,
+                                        contentDescription = "Publicação de $displayName",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                    )
                                 } else {
                                     Text(post.caption.ifBlank { "QINBLY" }, color = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.Center).padding(8.dp), maxLines = 4)
                                 }
