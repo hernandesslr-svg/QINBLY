@@ -2790,6 +2790,18 @@ DropdownMenuItem(
                 ) { page ->
                     val video = fullscreenVideos[page]
                     var isFollowing by remember(video.id) { mutableStateOf(video.isFollowing) }
+                    LaunchedEffect(video.username, prefs.getString("token", null)) {
+                        val token = prefs.getString("token", null)
+                        if (!token.isNullOrBlank()) {
+                            try {
+                                val profile = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    VyboraApi.getPublicProfile(video.username, token)
+                                }
+                                val user = profile.optJSONObject("user") ?: profile
+                                isFollowing = user.optBoolean("isFollowing")
+                            } catch (_: Exception) { }
+                        }
+                    }
                     var followBusy by remember(video.id) { mutableStateOf(false) }
                     val scope = rememberCoroutineScope()
                     var fullscreenLiked by remember(video.id) { mutableStateOf(video.likedByMe) }
@@ -2898,7 +2910,7 @@ DropdownMenuItem(
                                             followBusy = true
                                             scope.launch {
                                                 try {
-                                                    val profile = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.getPublicProfile(video.username) }
+                                                    val profile = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.getPublicProfile(video.username, token) }
                                                     val following = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                                                         val user = profile.optJSONObject("user") ?: profile.optJSONObject("profile") ?: profile
                                                         val targetId = user.optString("id")
@@ -4158,9 +4170,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             Thread {
                 try {
                     val token = profilePrefs.getString("token", "") ?: ""
-                    val response = if (token.isNotBlank()) {
-                        try { VyboraApi.getMyProfile(token) } catch (_: Exception) { VyboraApi.getPublicProfile(username) }
-                    } else VyboraApi.getPublicProfile(username)
+                    val response = VyboraApi.getPublicProfile(username, token.takeIf { it.isNotBlank() })
                     val user = response.optJSONObject("user") ?: response.optJSONObject("profile") ?: response
                     val accountFrame = user.optInt("profileFrame", -1).takeIf { it in 6..14 && it != 8 } ?: -1
                     // Falha no feed de publicações não pode impedir o carregamento da capa do perfil.
