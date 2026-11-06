@@ -2798,9 +2798,9 @@ DropdownMenuItem(
                             VyboraFullscreenVideo(video.mediaUrl, Modifier.fillMaxSize())
                         }
                         Column(
-                            Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 235.dp),
+                            Modifier.align(Alignment.BottomEnd).padding(end = 10.dp, bottom = 205.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 IconButton(onClick = {
@@ -2829,9 +2829,12 @@ DropdownMenuItem(
                                 }
                                 Text(video.comments.toString(), color = Color.White, fontSize = 14.sp)
                             }
-                            IconButton(onClick = { sharePost = video; fullscreenVideoId = null }) {
-                                Icon(Icons.Default.Share, contentDescription = "Compartilhar", tint = Color.White, modifier = Modifier.size(36.dp))
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                IconButton(onClick = { sharePost = video; fullscreenVideoId = null }) {
+                                    Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = Color.White, modifier = Modifier.size(36.dp))
+                                }
                             }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             IconButton(onClick = {
                                 val next = savedPostIds.toMutableSet()
                                 if (!next.add(video.id)) next.remove(video.id)
@@ -2840,20 +2843,22 @@ DropdownMenuItem(
                             }) {
                                 Icon(Icons.Default.BookmarkBorder, contentDescription = "Salvar", tint = Color.White, modifier = Modifier.size(36.dp))
                             }
+                            Text("Salvar", color = Color.White, fontSize = 13.sp)
+                            }
                             IconButton(onClick = { onNotice("Mais opções disponíveis no feed.") }) {
                                 Icon(Icons.Default.MoreHoriz, contentDescription = "Mais opções", tint = Color.White, modifier = Modifier.size(28.dp))
                             }
                         }
                         Column(
-                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 16.dp, bottom = 155.dp),
+                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 18.dp, bottom = 135.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                QiblyAccountAvatar(video.username, video.avatarUrl, 36.dp) {
+                                QiblyAccountAvatar(video.username, video.avatarUrl, 46.dp) {
                                     fullscreenVideoId = null
                                     onOpenProfile(video.username)
                                 }
-                                Text("@"+video.username, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+                                Text("@"+video.username, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, fontSize = 15.sp)
                                 if (video.username.isNotBlank() && !video.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
                                     TextButton(enabled = !followBusy, onClick = {
                                         val token = prefs.getString("token", null)
@@ -2875,7 +2880,7 @@ DropdownMenuItem(
                                     }
                                 }
                             }
-                            if (video.caption.isNotBlank()) Text(video.caption, color = Color.White, maxLines = 3, fontSize = 14.sp)
+                            if (video.caption.isNotBlank()) Text(video.caption, color = Color.White, maxLines = 3, fontSize = 15.sp)
                         }
                     }
                 }
