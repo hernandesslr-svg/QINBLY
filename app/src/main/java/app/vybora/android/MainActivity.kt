@@ -2780,15 +2780,21 @@ DropdownMenuItem(
                             VyboraFullscreenVideo(video.mediaUrl, Modifier.fillMaxSize())
                         }
                         Column(
-                            Modifier.align(Alignment.BottomEnd).padding(end = 14.dp, bottom = 145.dp),
+                            Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 165.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(20.dp)
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            IconButton(onClick = { onNotice("Curta esta publicação no feed.") }) {
-                                Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = Color.White, modifier = Modifier.size(30.dp))
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                IconButton(onClick = { onNotice("Curtir disponível no feed.") }) {
+                                    Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = Color.White, modifier = Modifier.size(30.dp))
+                                }
+                                Text(video.likes.toString(), color = Color.White, fontSize = 12.sp)
                             }
-                            IconButton(onClick = { commentPost = video; fullscreenVideoId = null }) {
-                                Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White, modifier = Modifier.size(30.dp))
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                IconButton(onClick = { commentPost = video; fullscreenVideoId = null }) {
+                                    Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White, modifier = Modifier.size(30.dp))
+                                }
+                                Text(video.comments.toString(), color = Color.White, fontSize = 12.sp)
                             }
                             IconButton(onClick = { sharePost = video; fullscreenVideoId = null }) {
                                 Icon(Icons.Default.Share, contentDescription = "Compartilhar", tint = Color.White, modifier = Modifier.size(30.dp))
@@ -2799,14 +2805,14 @@ DropdownMenuItem(
                                 savedPostIds = next
                                 prefs.edit().putStringSet("saved_post_ids", next).apply()
                             }) {
-                                Icon(Icons.Default.Archive, contentDescription = "Salvar", tint = if (video.id in savedPostIds) Color(0xFFFFC107) else Color.White, modifier = Modifier.size(30.dp))
+                                Icon(Icons.Default.Archive, contentDescription = "Salvar", tint = Color.White, modifier = Modifier.size(30.dp))
                             }
                             IconButton(onClick = { onNotice("Mais opções disponíveis no feed.") }) {
                                 Icon(Icons.Default.MoreHoriz, contentDescription = "Mais opções", tint = Color.White, modifier = Modifier.size(28.dp))
                             }
                         }
                         Column(
-                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.78f).padding(start = 16.dp, bottom = 85.dp),
+                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 16.dp, bottom = 80.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -2814,7 +2820,7 @@ DropdownMenuItem(
                                     fullscreenVideoId = null
                                     onOpenProfile(video.username)
                                 }
-                                Text("@"+video.username, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
+                                Text("@"+video.username, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
                                 if (video.username.isNotBlank() && !video.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
                                     TextButton(enabled = !followBusy, onClick = {
                                         val token = prefs.getString("token", null)
@@ -2836,7 +2842,7 @@ DropdownMenuItem(
                                     }
                                 }
                             }
-                            Text(video.caption, color = Color.White, maxLines = 3, fontSize = 14.sp)
+                            if (video.caption.isNotBlank()) Text(video.caption, color = Color.White, maxLines = 3, fontSize = 14.sp)
                         }
                     }
                 }
