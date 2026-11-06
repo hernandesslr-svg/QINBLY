@@ -450,7 +450,8 @@ object VyboraApi {
     fun getConnections(username: String, type: String): List<UserSummary> {
         require(type == "followers" || type == "following") { "Tipo de lista inválido." }
         val name = java.net.URLEncoder.encode(username.trim().removePrefix("@").lowercase(), "UTF-8")
-        val response = request("GET", "/api/users/" + name + "/" + type)
+        val sessionToken = applicationContext?.getSharedPreferences("vybora_session", Context.MODE_PRIVATE)?.getString("token", null)
+        val response = request("GET", "/api/users/" + name + "/" + type, null, sessionToken)
         val users = response.optJSONArray("users") ?: org.json.JSONArray()
         return (0 until users.length()).mapNotNull { index ->
             val user = users.optJSONObject(index) ?: return@mapNotNull null
