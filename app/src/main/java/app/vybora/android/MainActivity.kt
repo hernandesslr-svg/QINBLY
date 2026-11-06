@@ -1702,14 +1702,17 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
                 Icon(Icons.Default.PlayArrow, contentDescription = "Continuar vídeo", tint = Color.White, modifier = Modifier.size(52.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.42f)).padding(12.dp))
             }
         }
-        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 2.dp).windowInsetsPadding(WindowInsets.navigationBars)) {
-            val seconds = (position * duration).toLong().coerceAtLeast(0L) / 1000L
-            val total = duration.coerceAtLeast(0L) / 1000L
-            Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')} / ${total / 60}:${(total % 60).toString().padStart(2, '0')}", color = Color.White, fontSize = 10.sp)
+        Row(
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .padding(start = 18.dp, end = 18.dp, bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             BoxWithConstraints(
-                Modifier.fillMaxWidth().height(24.dp)
+                Modifier.weight(1f).height(32.dp)
                     .pointerInput(duration) {
-                        detectTapGestures { tap: androidx.compose.ui.geometry.Offset ->
+                        detectTapGestures { tap ->
                             val fraction = (tap.x / size.width.toFloat()).coerceIn(0f, 1f)
                             position = fraction
                             if (duration > 0L) player.seekTo((duration * fraction).toLong())
@@ -1725,10 +1728,13 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
                     },
                 contentAlignment = Alignment.CenterStart
             ) {
-                Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(3.dp)).background(Color.White.copy(alpha = 0.48f)))
-                Box(Modifier.fillMaxWidth(position.coerceIn(0f, 1f)).height(3.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFF168BFF)))
-                Box(Modifier.offset(x = maxWidth * position.coerceIn(0f, 1f) - 4.dp).size(8.dp).clip(CircleShape).background(Color(0xFF168BFF)))
+                Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(3.dp)).background(Color.White.copy(alpha = 0.9f)))
+                Box(Modifier.fillMaxWidth(position.coerceIn(0f, 1f)).height(4.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFF168BFF)))
+                Box(Modifier.offset(x = maxWidth * position.coerceIn(0f, 1f) - 7.dp).size(14.dp).clip(CircleShape).background(Color.White))
             }
+            val seconds = (position * duration).toLong().coerceAtLeast(0L) / 1000L
+            val total = duration.coerceAtLeast(0L) / 1000L
+            Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')} / ${total / 60}:${(total % 60).toString().padStart(2, '0')}", color = Color.White, fontSize = 12.sp)
         }
     }
 }
@@ -2793,7 +2799,7 @@ DropdownMenuItem(
                             VyboraFullscreenVideo(video.mediaUrl, Modifier.fillMaxSize())
                         }
                         Column(
-                            Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 115.dp).windowInsetsPadding(WindowInsets.navigationBars),
+                            Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 155.dp).windowInsetsPadding(WindowInsets.navigationBars),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
@@ -2814,18 +2820,18 @@ DropdownMenuItem(
                                         }
                                     }
                                 }) {
-                                    Icon(if (fullscreenLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = if (fullscreenLiked) Color.Red else Color.White, modifier = Modifier.size(30.dp))
+                                    Icon(if (fullscreenLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = if (fullscreenLiked) Color.Red else Color.White, modifier = Modifier.size(36.dp))
                                 }
-                                Text(fullscreenLikes.toString(), color = Color.White, fontSize = 12.sp)
+                                Text(fullscreenLikes.toString(), color = Color.White, fontSize = 14.sp)
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 IconButton(onClick = { commentPost = video; fullscreenVideoId = null }) {
-                                    Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White, modifier = Modifier.size(30.dp))
+                                    Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White, modifier = Modifier.size(36.dp))
                                 }
-                                Text(video.comments.toString(), color = Color.White, fontSize = 12.sp)
+                                Text(video.comments.toString(), color = Color.White, fontSize = 14.sp)
                             }
                             IconButton(onClick = { sharePost = video; fullscreenVideoId = null }) {
-                                Icon(Icons.Default.Share, contentDescription = "Compartilhar", tint = Color.White, modifier = Modifier.size(30.dp))
+                                Icon(Icons.Default.Share, contentDescription = "Compartilhar", tint = Color.White, modifier = Modifier.size(36.dp))
                             }
                             IconButton(onClick = {
                                 val next = savedPostIds.toMutableSet()
@@ -2833,14 +2839,14 @@ DropdownMenuItem(
                                 savedPostIds = next
                                 prefs.edit().putStringSet("saved_post_ids", next).apply()
                             }) {
-                                Icon(Icons.Default.Archive, contentDescription = "Salvar", tint = Color.White, modifier = Modifier.size(30.dp))
+                                Icon(Icons.Default.BookmarkBorder, contentDescription = "Salvar", tint = Color.White, modifier = Modifier.size(36.dp))
                             }
                             IconButton(onClick = { onNotice("Mais opções disponíveis no feed.") }) {
                                 Icon(Icons.Default.MoreHoriz, contentDescription = "Mais opções", tint = Color.White, modifier = Modifier.size(28.dp))
                             }
                         }
                         Column(
-                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 16.dp, bottom = 44.dp).windowInsetsPadding(WindowInsets.navigationBars),
+                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 16.dp, bottom = 92.dp).windowInsetsPadding(WindowInsets.navigationBars),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
