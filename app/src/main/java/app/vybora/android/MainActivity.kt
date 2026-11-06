@@ -741,6 +741,8 @@ private fun VyboraApp() {
     var createEntryMode by remember { mutableStateOf("camera") }
     var profileStat by remember { mutableStateOf("") }
     var profileStatUsers by remember { mutableStateOf<List<VyboraApi.UserSummary>>(emptyList()) }
+    var profileStatLoading by remember { mutableStateOf(false) }
+    var profileStatError by remember { mutableStateOf("") }
     var showAuth by remember { mutableStateOf(false) }
     var showAccountSwitcher by remember { mutableStateOf(false) }
     var accountSessionVersion by remember { mutableIntStateOf(0) }
@@ -1129,17 +1131,25 @@ private fun VyboraApp() {
                     } else ProfilePage(scrollToTopRequest = navTopRequest, username = loggedInUser, displayName = profileName, bio = profileBio, photoRefreshKey = profilePhotoRefreshKey, onNotice = { notice = it }, onStat = { stat ->
                         profileStat = stat
                         profileStatUsers = emptyList()
+                        profileStatError = ""
+                        profileStatLoading = true
                         val tokenUser = loggedInUser
                         if (tokenUser.isNotBlank() && (stat == "Seguidores" || stat == "Seguindo")) {
                             Thread {
                                 try {
                                     val users = VyboraApi.getConnections(tokenUser, if (stat == "Seguidores") "followers" else "following")
-                                    android.os.Handler(android.os.Looper.getMainLooper()).post { profileStatUsers = users }
+                                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                        profileStatUsers = users
+                                        profileStatLoading = false
+                                    }
                                 } catch (e: Exception) {
-                                    android.os.Handler(android.os.Looper.getMainLooper()).post { notice = e.message ?: "Não foi possível carregar a lista." }
+                                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                        profileStatError = e.message ?: "Não foi possível carregar a lista."
+                                        profileStatLoading = false
+                                    }
                                 }
                             }.start()
-                        }
+                        } else profileStatLoading = false
                     }, onAuth = { showAuth = true }, onEdit = { showEditProfile = true; showSettings = false; showEditProfilePhoto = false; publicProfileUsername = "" }, onEditProfilePhoto = { showEditProfilePhoto = true; showEditProfile = false; showSettings = false; publicProfileUsername = "" }, onSettings = { showSettings = true })
                 } }
             }
@@ -1321,6 +1331,12 @@ private fun VyboraApp() {
                             when {
                                 loggedInUser.isBlank() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     Text("Entre na sua conta para consultar esta lista.", color = Muted)
+                                }
+                                profileStatLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                                profileStatError.isNotBlank() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text(profileStatError, color = Muted)
                                 }
                                 profileStatUsers.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     Text("Nenhuma conta nesta lista.", color = Muted)
