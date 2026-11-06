@@ -6213,6 +6213,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     val prefs = remember { context.getSharedPreferences("vybora_session", android.content.Context.MODE_PRIVATE) }
     var caption by remember { mutableStateOf("") }
     var pollOptions by remember { mutableStateOf(listOf("", "")) }
+    var pollDurationHours by remember { mutableIntStateOf(24) }
+    var pollDurationExpanded by remember { mutableStateOf(false) }
+    var pollMultipleAnswers by remember { mutableStateOf(false) }
+    var pollShowResults by remember { mutableStateOf(true) }
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
     var sourceUri by remember { mutableStateOf<Uri?>(null) }
     var selectedType by remember { mutableStateOf("") }
@@ -6460,8 +6464,32 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     Text("+ Adicionar opção", color = Color.Black)
                 }
                 HorizontalDivider(color = Color.LightGray)
-                Text("Duração da enquete: 3 dias", color = Color.Black)
-                Text("Mostrar resultado para todos", color = Color.DarkGray)
+                Text("Duração da enquete", color = Color.Black, fontWeight = FontWeight.SemiBold)
+                val pollDurations = listOf(1 to "1 hora", 2 to "2 horas", 3 to "3 horas", 6 to "6 horas", 12 to "12 horas", 24 to "24 horas", 48 to "2 dias", 72 to "3 dias", 168 to "7 dias")
+                Column {
+                    OutlinedButton(onClick = { pollDurationExpanded = !pollDurationExpanded }, modifier = Modifier.fillMaxWidth()) {
+                        Text(pollDurations.first { it.first == pollDurationHours }.second, modifier = Modifier.weight(1f), color = Color.Black)
+                        Icon(if (pollDurationExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = "Selecionar duração", tint = Color.Black)
+                    }
+                    if (pollDurationExpanded) {
+                        pollDurations.forEach { (hours, label) ->
+                            Row(Modifier.fillMaxWidth().clickable { pollDurationHours = hours; pollDurationExpanded = false }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(label, modifier = Modifier.weight(1f), color = Color.Black)
+                                if (hours == pollDurationHours) Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF1976D2))
+                            }
+                        }
+                    }
+                }
+                Text("A votação termina automaticamente após o período escolhido.", color = Color.DarkGray, style = MaterialTheme.typography.labelSmall)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Permitir múltiplas respostas", modifier = Modifier.weight(1f), color = Color.Black)
+                    Switch(checked = pollMultipleAnswers, onCheckedChange = { pollMultipleAnswers = it })
+                }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Mostrar resultados ao votar", modifier = Modifier.weight(1f), color = Color.Black)
+                    Switch(checked = pollShowResults, onCheckedChange = { pollShowResults = it })
+                }
+                Text("Os votos são anônimos. A enquete permanece no feed após encerrar.", color = Color.DarkGray, style = MaterialTheme.typography.labelSmall)
             } else {
                 HorizontalDivider(color = Color.LightGray)
                 Row(Modifier.fillMaxWidth().clickable { openVyboraGallery() }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -6506,7 +6534,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 if (initialMode == "poll") {
                                     // A API atual não expõe votação; preserva pergunta e opções como publicação textual.
                                     val options = pollOptions.filter { it.isNotBlank() }
-                                    VyboraApi.createPollPost(token, caption.trim(), options)
+                                    VyboraApi.createPollPost(token, caption.trim(), options, pollDurationHours, pollMultipleAnswers, pollShowResults)
                                 } else {
                                     VyboraApi.createTextPost(token, caption.trim())
                                 }
