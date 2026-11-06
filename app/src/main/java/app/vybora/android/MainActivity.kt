@@ -6030,6 +6030,28 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
     var profileLoadError by remember(username) { mutableStateOf<String?>(null) }
     var publicFrame by remember(username) { mutableIntStateOf(-1) }
     var isFollowing by remember(username) { mutableStateOf(prefs.getBoolean("following_${username.removePrefix("@").lowercase()}", false)) }
+    var connectionListType by remember(username) { mutableStateOf("") }
+    var connectionListUsers by remember(username) { mutableStateOf<List<VyboraApi.UserSummary>>(emptyList()) }
+    var connectionListLoading by remember(username) { mutableStateOf(false) }
+    fun openConnections(type: String) {
+        connectionListType = type
+        connectionListLoading = true
+        Thread {
+            try {
+                val people = VyboraApi.getConnections(username, type)
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    connectionListUsers = people
+                    connectionListLoading = false
+                }
+            } catch (e: Exception) {
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    connectionListLoading = false
+                    onNotice(e.message ?: "Não foi possível carregar a lista.")
+                }
+            }
+        }.start()
+    }
+
     var selectedTab by remember(username) { mutableStateOf("Publicações") }
     var expandedImage by remember { mutableStateOf<String?>(null) }
     var photoMenuOpen by remember { mutableStateOf(false) }
@@ -6134,9 +6156,27 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                 Text("Entrou em ${monthNames[joinMonth - 1]} ${joinedDate.take(4)}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
             }
         }
+    if (connectionListType.isNotBlank()) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { connectionListType = "" }) {
+            Surface(shape = RoundedCornerShape(20.dp), color = Color.White) {
+                Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                    Text(if (connectionListType == "following") "Seguindo" else "Seguidores", fontWeight = FontWeight.Bold, color = Color.Black)
+                    Spacer(Modifier.height(12.dp))
+                    if (connectionListLoading) androidx.compose.material3.CircularProgressIndicator()
+                    else if (connectionListUsers.isEmpty()) Text("Nenhuma pessoa encontrada.", color = Color.Gray)
+                    else LazyColumn(Modifier.heightIn(max = 440.dp)) {
+                        items(connectionListUsers) { person ->
+                            Text("@${person.username}", color = Color.Black, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp))
+                        }
+                    }
+                    TextButton(onClick = { connectionListType = "" }) { Text("Fechar") }
+                }
+            }
+        }
+    }
         Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-            ProfileStat("Seguindo", user.optInt("following").toString(), Icons.Default.PersonAddAlt1) { onNotice("Lista de seguindo em preparação.") }
-            ProfileStat("Seguidores", user.optInt("followers").toString(), Icons.Default.Groups) { onNotice("Lista de seguidores em preparação.") }
+            ProfileStat("Seguindo", user.optInt("following").toString(), Icons.Default.PersonAddAlt1) { openConnections("following") }
+            ProfileStat("Seguidores", user.optInt("followers").toString(), Icons.Default.Groups) { openConnections("followers") }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = {
@@ -6150,6 +6190,10 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                         android.os.Handler(android.os.Looper.getMainLooper()).post {
                             isFollowing = following
                             prefs.edit().putBoolean("following_${publicUsername.lowercase()}", following).apply()
+                            user = org.json.JSONObject(user.toString()).apply {
+                                put("followers", (optInt("followers") + if (following) 1 else -1).coerceAtLeast(0))
+                                put("isFollowing", following)
+                            }
                             onNotice(if (following) "Agora você segue @$publicUsername." else "Você deixou de seguir @$publicUsername.")
                         }
                     } catch (e: Exception) {
