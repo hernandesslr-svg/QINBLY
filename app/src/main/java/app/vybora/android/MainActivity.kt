@@ -1648,6 +1648,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                                                     val following = VyboraApi.toggleFollow(token, user.id)
                                                     android.os.Handler(android.os.Looper.getMainLooper()).post {
                                                         followingByUser[user.id] = following
+                                                        prefs.edit().putBoolean("following_${user.username.lowercase()}", following).apply()
                                                         followingBusy[user.id] = false
                                                     }
                                                 } catch (e: Exception) {
@@ -1659,7 +1660,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                                             }.start()
                                         }
                                     }
-                                ) { Text(if (followingBusy[user.id] == true) "Aguarde..." else if (followingByUser[user.id] == true) "Seguindo" else "Seguir", color = Pink) }
+                                ) { Text(if (followingBusy[user.id] == true) "Aguarde..." else if ((followingByUser[user.id] ?: prefs.getBoolean("following_${user.username.lowercase()}", user.isFollowing))) "Seguindo" else "Seguir", color = Pink) }
                             }
                         }
                     }
@@ -2224,7 +2225,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
                             val followingPrefKey = "following_${post.username.lowercase()}"
                             var isFollowingPost by remember(post.id, post.isFollowing) {
-                                mutableStateOf(if (post.id.startsWith("demo-post-")) prefs.getBoolean(followingPrefKey, false) else post.isFollowing)
+                                mutableStateOf(prefs.getBoolean(followingPrefKey, post.isFollowing))
                             }
 
                                         if (post.mediaUrl.isBlank() || (post.mediaType != "image" && post.mediaType != "video")) {
@@ -2789,7 +2790,7 @@ DropdownMenuItem(
                     beyondViewportPageCount = 0
                 ) { page ->
                     val video = fullscreenVideos[page]
-                    var isFollowing by remember(video.id) { mutableStateOf(video.isFollowing) }
+                    var isFollowing by remember(video.id) { mutableStateOf(prefs.getBoolean("following_${video.username.lowercase()}", video.isFollowing)) }
                     LaunchedEffect(video.username, prefs.getString("token", null)) {
                         val token = prefs.getString("token", null)
                         if (!token.isNullOrBlank()) {
@@ -2799,6 +2800,7 @@ DropdownMenuItem(
                                 }
                                 val user = profile.optJSONObject("user") ?: profile
                                 isFollowing = user.optBoolean("isFollowing")
+                                prefs.edit().putBoolean("following_${video.username.lowercase()}", isFollowing).apply()
                             } catch (_: Exception) { }
                         }
                     }
@@ -2918,6 +2920,7 @@ DropdownMenuItem(
                                                         VyboraApi.toggleFollow(token, targetId)
                                                     }
                                                     isFollowing = following
+                                                    prefs.edit().putBoolean("following_${video.username.lowercase()}", following).apply()
                                                 } catch (e: Exception) { onNotice(e.message ?: "Falha ao seguir perfil.") }
                                                 finally { followBusy = false }
                                             }
@@ -6026,7 +6029,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
     var loading by remember(username) { mutableStateOf(true) }
     var profileLoadError by remember(username) { mutableStateOf<String?>(null) }
     var publicFrame by remember(username) { mutableIntStateOf(-1) }
-    var isFollowing by remember(username) { mutableStateOf(false) }
+    var isFollowing by remember(username) { mutableStateOf(prefs.getBoolean("following_${username.removePrefix("@").lowercase()}", false)) }
     var selectedTab by remember(username) { mutableStateOf("Publicações") }
     var expandedImage by remember { mutableStateOf<String?>(null) }
     var photoMenuOpen by remember { mutableStateOf(false) }
@@ -6077,6 +6080,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                     profileLoadError = null
                     publicFrame = found.optInt("profileFrame", -1)
                     isFollowing = found.optBoolean("isFollowing")
+                    prefs.edit().putBoolean("following_${resolvedUsername.lowercase()}", isFollowing).apply()
                     profilePosts = posts
                     loading = false
                 }
@@ -6145,6 +6149,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                         val following = VyboraApi.toggleFollow(token, targetId)
                         android.os.Handler(android.os.Looper.getMainLooper()).post {
                             isFollowing = following
+                            prefs.edit().putBoolean("following_${publicUsername.lowercase()}", following).apply()
                             onNotice(if (following) "Agora você segue @$publicUsername." else "Você deixou de seguir @$publicUsername.")
                         }
                     } catch (e: Exception) {
