@@ -2840,7 +2840,7 @@ DropdownMenuItem(
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 IconButton(onClick = { sharePost = video; fullscreenVideoId = null }) {
-                                    Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = Color.White, modifier = Modifier.size(36.dp))
+                                    Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = Color.White, modifier = Modifier.size(36.dp).graphicsLayer { rotationZ = -25f })
                                 }
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
