@@ -189,7 +189,8 @@ object VyboraApi {
         val username: String, val displayName: String, val likes: Int, val comments: Int,
         val avatarUrl: String = "", val likedByMe: Boolean = false, val isFollowing: Boolean = false,
         val createdAt: String = "", val mediaUrls: List<String> = emptyList(), val pollOptions: List<String> = emptyList(),
-        val pollVotes: List<Int> = emptyList(), val myPollVote: Int = -1
+        val pollVotes: List<Int> = emptyList(), val myPollVote: Int = -1,
+        val audioId: String = "", val audioTitle: String = "", val audioArtist: String = ""
     )
 
     fun getPosts(token: String? = null): List<PostSummary> {
@@ -211,6 +212,9 @@ object VyboraApi {
                 likedByMe = post.optBoolean("likedByMe"),
                 isFollowing = post.optBoolean("isFollowing"),
                 createdAt = post.optString("createdAt", post.optString("created_at")),
+                audioId = post.optString("audioId", post.optString("audio_id")).ifBlank { post.optJSONObject("audio")?.optString("id").orEmpty() },
+                audioTitle = post.optString("audioTitle", post.optString("audio_title")).ifBlank { post.optJSONObject("audio")?.optString("title").orEmpty() },
+                audioArtist = post.optString("audioArtist", post.optString("audio_artist")).ifBlank { post.optJSONObject("audio")?.optString("artist").orEmpty() },
                 mediaUrls = post.optJSONArray("mediaUrls")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList(),
                 pollOptions = post.optJSONArray("pollOptions")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList(),
                 pollVotes = post.optJSONArray("pollOptions")?.let { a -> List(a.length()) { i ->
