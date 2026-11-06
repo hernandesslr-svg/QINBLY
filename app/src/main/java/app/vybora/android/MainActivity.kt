@@ -7324,17 +7324,17 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         }
     } else {
         Column(
-            Modifier.fillMaxSize().background(Color(0xFF080808)).verticalScroll(rememberScrollState())
+            Modifier.fillMaxSize().background(QiblyTheme.background).verticalScroll(rememberScrollState())
                 .padding(horizontal = 18.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { publishSettings = false }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Voltar à edição", tint = Color.Black)
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Voltar à edição", tint = QiblyTheme.text)
                 }
-                Text("Nova publicação", color = Color.Black, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Nova publicação", color = QiblyTheme.text, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = { publishSettings = false }) { Text("Editar", color = Color.Black) }
+                TextButton(onClick = { publishSettings = false }) { Text("Editar", color = QiblyTheme.text) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.Top) {
                 if ((selectedUri ?: sourceUri) != null && selectedType == "foto") {
@@ -7346,7 +7346,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     )
                 } else {
                     Box(Modifier.width(86.dp).height(112.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF222222)), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.PlayCircle, contentDescription = null, tint = Color.Black, modifier = Modifier.size(34.dp))
+                        Icon(Icons.Default.PlayCircle, contentDescription = null, tint = QiblyTheme.text, modifier = Modifier.size(34.dp))
                     }
                 }
                 OutlinedTextField(
@@ -7358,61 +7358,61 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     maxLines = 6,
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = Color.White,
-                        unfocusedBorderColor = Color(0xFF555555),
-                        cursorColor = Color.White,
+                        focusedTextColor = QiblyTheme.text,
+                        unfocusedTextColor = QiblyTheme.text,
+                        focusedBorderColor = QiblyTheme.text,
+                        unfocusedBorderColor = if (QiblyTheme.dark) Color(0xFF555555) else Color(0xFFCCCCCC),
+                        cursorColor = QiblyTheme.text,
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent
                     )
                 )
             }
-            Divider(color = Color(0xFF303030))
+            Divider(color = if (QiblyTheme.dark) Color(0xFF303030) else Color(0xFFE5E5E5))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.PersonAddAlt1, contentDescription = null, tint = Color.Black)
+                Icon(Icons.Default.PersonAddAlt1, contentDescription = null, tint = QiblyTheme.text)
                 Spacer(Modifier.width(14.dp))
-                Text("Marcar pessoas", color = Color.Black, modifier = Modifier.weight(1f))
+                Text("Marcar pessoas", color = QiblyTheme.text, modifier = Modifier.weight(1f))
                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Language, contentDescription = null, tint = Color.Black)
+                Icon(Icons.Default.Language, contentDescription = null, tint = QiblyTheme.text)
                 Spacer(Modifier.width(14.dp))
-                Text("Adicionar localização", color = Color.Black, modifier = Modifier.weight(1f))
+                Text("Adicionar localização", color = QiblyTheme.text, modifier = Modifier.weight(1f))
                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Mic, contentDescription = null, tint = Color.Black)
+                Icon(Icons.Default.Mic, contentDescription = null, tint = QiblyTheme.text)
                 Spacer(Modifier.width(14.dp))
-                Text("Adicionar música", color = Color.Black, modifier = Modifier.weight(1f))
+                Text("Adicionar música", color = QiblyTheme.text, modifier = Modifier.weight(1f))
                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
             }
-            Divider(color = Color(0xFF303030))
+            Divider(color = if (QiblyTheme.dark) Color(0xFF303030) else Color(0xFFE5E5E5))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Groups, contentDescription = null, tint = Color.Black)
+                Icon(Icons.Default.Groups, contentDescription = null, tint = QiblyTheme.text)
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Público", color = Color.Black)
+                    Text("Público", color = QiblyTheme.text)
                     Text("Todos podem ver sua publicação", color = Color.LightGray, style = MaterialTheme.typography.bodySmall)
                 }
                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.ChatBubbleOutline, contentDescription = null, tint = Color.Black)
+                Icon(Icons.Default.ChatBubbleOutline, contentDescription = null, tint = QiblyTheme.text)
                 Spacer(Modifier.width(14.dp))
-                Text("Permitir comentários", color = Color.Black, modifier = Modifier.weight(1f))
+                Text("Permitir comentários", color = QiblyTheme.text, modifier = Modifier.weight(1f))
                 androidx.compose.material3.Switch(checked = allowComments, onCheckedChange = { allowComments = it }, colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = Color(0xFF1976D2), checkedThumbColor = Color.White))
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Share, contentDescription = null, tint = Color.Black)
+                Icon(Icons.Default.Share, contentDescription = null, tint = QiblyTheme.text)
                 Spacer(Modifier.width(14.dp))
-                Text("Permitir compartilhamento", color = Color.Black, modifier = Modifier.weight(1f))
+                Text("Permitir compartilhamento", color = QiblyTheme.text, modifier = Modifier.weight(1f))
                 androidx.compose.material3.Switch(checked = allowSharing, onCheckedChange = { allowSharing = it }, colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = Color(0xFF1976D2), checkedThumbColor = Color.White))
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.FileDownload, contentDescription = null, tint = Color.Black)
+                Icon(Icons.Default.FileDownload, contentDescription = null, tint = QiblyTheme.text)
                 Spacer(Modifier.width(14.dp))
-                Text("Salvar no dispositivo", color = Color.Black, modifier = Modifier.weight(1f))
+                Text("Salvar no dispositivo", color = QiblyTheme.text, modifier = Modifier.weight(1f))
                 androidx.compose.material3.Switch(checked = saveToDevice, onCheckedChange = { saveToDevice = it }, colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = Color(0xFF1976D2), checkedThumbColor = Color.White))
             }
             Button(
@@ -7497,16 +7497,16 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 shape = RoundedCornerShape(28.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)
             ) {
-                if (publishing) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp, color = Color.Black)
-                else Icon(Icons.Default.Send, contentDescription = null, tint = Color.Black)
+                if (publishing) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp, color = if (QiblyTheme.dark) Color.Black else Color.White)
+                else Icon(Icons.Default.Send, contentDescription = null, tint = if (QiblyTheme.dark) Color.Black else Color.White)
                 Spacer(Modifier.width(8.dp))
-                Text(if (publishing) "Publicando…" else "Publicar", fontWeight = FontWeight.Bold, color = Color.Black)
+                Text(if (publishing) "Publicando…" else "Publicar", fontWeight = FontWeight.Bold, color = if (QiblyTheme.dark) Color.Black else Color.White)
             }
             if (publishError.isNotBlank()) {
                 Text(publishError, color = Color(0xFFFF8A80), style = MaterialTheme.typography.bodyMedium)
             }
             TextButton(onClick = { publishSettings = false }) {
-                Text("Voltar à edição", color = Color.Black)
+                Text("Voltar à edição", color = QiblyTheme.text)
             }
         }
     }
