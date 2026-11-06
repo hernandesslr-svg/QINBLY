@@ -1660,7 +1660,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                                             }.start()
                                         }
                                     }
-                                ) { Text(if (followingBusy[user.id] == true) "Aguarde..." else if ((followingByUser[user.id] ?: prefs.getBoolean("following_${user.username.lowercase()}", user.isFollowing))) "Seguindo" else "Seguir", color = Pink) }
+                                ) { Text(if (followingBusy[user.id] == true) "Aguarde..." else if ((followingByUser[user.id] ?: prefs.getBoolean("following_${user.username.lowercase()}", false))) "Seguindo" else "Seguir", color = Pink) }
                             }
                         }
                     }
