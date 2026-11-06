@@ -2798,7 +2798,7 @@ DropdownMenuItem(
                             VyboraFullscreenVideo(video.mediaUrl, Modifier.fillMaxSize())
                         }
                         Column(
-                            Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 235.dp),
+                            Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 205.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
