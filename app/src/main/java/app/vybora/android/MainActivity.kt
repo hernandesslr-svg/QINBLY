@@ -6469,13 +6469,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 Column {
                     OutlinedButton(onClick = { pollDurationExpanded = !pollDurationExpanded }, modifier = Modifier.fillMaxWidth()) {
                         Text(pollDurations.first { it.first == pollDurationHours }.second, modifier = Modifier.weight(1f), color = Color.Black)
-                        Icon(if (pollDurationExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = "Selecionar duração", tint = Color.Black)
+                        Text(if (pollDurationExpanded) "▲" else "▼", color = Color.Black)
                     }
                     if (pollDurationExpanded) {
                         pollDurations.forEach { (hours, label) ->
                             Row(Modifier.fillMaxWidth().clickable { pollDurationHours = hours; pollDurationExpanded = false }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text(label, modifier = Modifier.weight(1f), color = Color.Black)
-                                if (hours == pollDurationHours) Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF1976D2))
+                                if (hours == pollDurationHours) Text("✓", color = Color(0xFF1976D2))
                             }
                         }
                     }
