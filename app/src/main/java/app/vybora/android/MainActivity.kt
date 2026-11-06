@@ -1702,10 +1702,10 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
                 Icon(Icons.Default.PlayArrow, contentDescription = "Continuar vídeo", tint = Color.White, modifier = Modifier.size(52.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.42f)).padding(12.dp))
             }
         }
-        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 18.dp, end = 18.dp, bottom = 12.dp).windowInsetsPadding(WindowInsets.navigationBars)) {
+        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 2.dp).windowInsetsPadding(WindowInsets.navigationBars)) {
             val seconds = (position * duration).toLong().coerceAtLeast(0L) / 1000L
             val total = duration.coerceAtLeast(0L) / 1000L
-            Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')} / ${total / 60}:${(total % 60).toString().padStart(2, '0')}", color = Color.White, fontSize = 12.sp)
+            Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')} / ${total / 60}:${(total % 60).toString().padStart(2, '0')}", color = Color.White, fontSize = 10.sp)
             BoxWithConstraints(
                 Modifier.fillMaxWidth().height(24.dp)
                     .pointerInput(duration) {
@@ -2793,7 +2793,7 @@ DropdownMenuItem(
                             VyboraFullscreenVideo(video.mediaUrl, Modifier.fillMaxSize())
                         }
                         Column(
-                            Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 165.dp),
+                            Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 115.dp).windowInsetsPadding(WindowInsets.navigationBars),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
@@ -2840,7 +2840,7 @@ DropdownMenuItem(
                             }
                         }
                         Column(
-                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 16.dp, bottom = 95.dp).windowInsetsPadding(WindowInsets.navigationBars),
+                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 16.dp, bottom = 44.dp).windowInsetsPadding(WindowInsets.navigationBars),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
