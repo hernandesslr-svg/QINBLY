@@ -2761,6 +2761,7 @@ DropdownMenuItem(
             onNotice = onNotice
         )
     }
+    var selectedAudioPost by remember { mutableStateOf<VyboraApi.PostSummary?>(null) }
     val fullscreenVideos = displayedPosts.filter { it.mediaType == "video" && it.mediaUrl.isNotBlank() }
     val initialFullscreenIndex = fullscreenVideos.indexOfFirst { it.id == fullscreenVideoId }
     if (fullscreenVideoId != null && initialFullscreenIndex >= 0) {
@@ -2806,10 +2807,19 @@ DropdownMenuItem(
                             Box(
                                 modifier = Modifier.padding(bottom = 12.dp).size(45.dp)
                                     .border(2.dp, Color(0xFF43C6FF), CircleShape)
-                                    .background(Color.Transparent, CircleShape),
+                                    .clickable { selectedAudioPost = video; fullscreenVideoId = null },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.MusicNote, contentDescription = "Música da publicação", tint = Color.White, modifier = Modifier.size(23.dp))
+                                if (video.audioId.isBlank() && video.avatarUrl.isNotBlank()) {
+                                    AsyncImage(
+                                        model = video.avatarUrl,
+                                        contentDescription = "Som original de @${video.username}. Ver publicações com este áudio",
+                                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                    )
+                                } else {
+                                    Icon(Icons.Default.MusicNote, contentDescription = "Ver publicações com este áudio", tint = Color.White, modifier = Modifier.size(23.dp))
+                                }
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 IconButton(onClick = {
@@ -2907,6 +2917,87 @@ DropdownMenuItem(
                     modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
                 ) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                }
+            }
+        }
+    }
+    if (selectedAudioPost != null) {
+        val sourcePost = selectedAudioPost!!
+        val originalSound = sourcePost.audioId.isBlank()
+        val matchingPosts = allFeedPosts.filter { candidate ->
+            candidate.mediaType.equals("video", ignoreCase = true) &&
+                if (originalSound) candidate.id == sourcePost.id
+                else candidate.audioId == sourcePost.audioId
+        }.ifEmpty { listOf(sourcePost) }
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { selectedAudioPost = null },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Column(Modifier.fillMaxSize().background(Color(0xFF101010))) {
+                Row(
+                    Modifier.fillMaxWidth().padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { selectedAudioPost = null }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text("Áudio", color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.Bold)
+                }
+                Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(74.dp).clip(CircleShape).background(Color(0xFF252525)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (originalSound && sourcePost.avatarUrl.isNotBlank()) {
+                            AsyncImage(
+                                model = sourcePost.avatarUrl, contentDescription = "Autor do som original",
+                                modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                            )
+                        } else Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color.White, modifier = Modifier.size(34.dp))
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text(if (originalSound) "Som original" else sourcePost.audioTitle.ifBlank { "Áudio" },
+                            color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                        Text(if (originalSound) "@${sourcePost.username}" else sourcePost.audioArtist.ifBlank { "@${sourcePost.username}" },
+                            color = Color.LightGray, fontSize = 15.sp)
+                        Text("${matchingPosts.size} publicação(ões) carregada(s) com este áudio",
+                            color = Color.LightGray, fontSize = 12.sp)
+                    }
+                }
+                Text("Publicações com este áudio", color = Color.White, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 18.dp, top = 12.dp, bottom = 10.dp))
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(matchingPosts, key = { it.id }) { post ->
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFF202020))
+                                .clickable { selectedAudioPost = null; fullscreenVideoId = post.id }
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                                    .data(post.mediaUrl)
+                                    .decoderFactory(coil.decode.VideoFrameDecoder.Factory())
+                                    .build(),
+                                contentDescription = "Vídeo de @${post.username}",
+                                modifier = Modifier.size(width = 86.dp, height = 105.dp).clip(RoundedCornerShape(8.dp)),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("@${post.username}", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text(post.caption, color = Color.LightGray, maxLines = 3)
+                            }
+                            Icon(Icons.Default.PlayCircle, contentDescription = "Assistir", tint = Color.White)
+                        }
+                    }
                 }
             }
         }
