@@ -7506,10 +7506,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 shape = RoundedCornerShape(28.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)
             ) {
-                if (publishing) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp, color = if (QiblyTheme.dark) Color.Black else Color.White)
-                else Icon(Icons.Default.Send, contentDescription = null, tint = if (QiblyTheme.dark) Color.Black else Color.White)
+                if (publishing) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp, color = Color.White)
+                else Icon(Icons.Default.Send, contentDescription = null, tint = Color.White)
                 Spacer(Modifier.width(8.dp))
-                Text(if (publishing) "Publicando…" else "Publicar", fontWeight = FontWeight.Bold, color = if (QiblyTheme.dark) Color.Black else Color.White)
+                Text(if (publishing) "Publicando…" else "Publicar", fontWeight = FontWeight.Bold, color = Color.White)
             }
           }
     }
