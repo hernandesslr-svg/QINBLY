@@ -2412,7 +2412,7 @@ DropdownMenuItem(
                                             "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1000&auto=format&fit=crop&q=85",
                                             "https://images.unsplash.com/photo-1473116763249-2faaef81ccda?w=1000&auto=format&fit=crop&q=85"
                                         )
-                                        else -> listOf(post.mediaUrl)
+                                        else -> post.mediaUrls.ifEmpty { listOf(post.mediaUrl) }
                                     }
                                 }
                                 var photoIndex by remember(post.id) { mutableIntStateOf(0) }
