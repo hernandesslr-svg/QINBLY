@@ -1,5 +1,36 @@
 package app.vybora.android
 
+private fun postRelativeTime(createdAt: String, nowMillis: Long): String {
+    val timestamp = try {
+        java.time.Instant.parse(createdAt).toEpochMilli()
+    } catch (_: Exception) {
+        try {
+            java.time.OffsetDateTime.parse(createdAt.replace(" ", "T")).toInstant().toEpochMilli()
+        } catch (_: Exception) { return "Data indisponível" }
+    }
+    val seconds = ((nowMillis - timestamp) / 1000).coerceAtLeast(0)
+    return when {
+        seconds < 60 -> "Agora"
+        seconds < 3600 -> "Há ${seconds / 60} min"
+        seconds < 86400 -> "Há ${seconds / 3600} h"
+        seconds < 604800 -> "Há ${seconds / 86400} d"
+        else -> java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy", java.util.Locale("pt", "BR"))
+            .withZone(java.time.ZoneId.systemDefault()).format(java.time.Instant.ofEpochMilli(timestamp))
+    }
+}
+
+@androidx.compose.runtime.Composable
+private fun LivePostTime(createdAt: String, color: androidx.compose.ui.graphics.Color, suffix: String = "") {
+    var nowMillis by androidx.compose.runtime.remember { androidx.compose.runtime.mutableLongStateOf(System.currentTimeMillis()) }
+    androidx.compose.runtime.LaunchedEffect(createdAt) {
+        while (true) {
+            nowMillis = System.currentTimeMillis()
+            kotlinx.coroutines.delay(15_000L)
+        }
+    }
+    androidx.compose.material3.Text(postRelativeTime(createdAt, nowMillis) + suffix, color = color, fontSize = androidx.compose.ui.unit.TextUnit(12f, androidx.compose.ui.unit.TextUnitType.Sp))
+}
+
 import android.os.Bundle
 import org.json.JSONArray
 import org.json.JSONObject
@@ -2172,7 +2203,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                                     Spacer(Modifier.width(10.dp))
                                     Column(Modifier.weight(1f).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }) {
                                         Text(post.displayName.ifBlank { post.username }.ifBlank { "QINBLY" }, color = RemoteAppearance.feedTextColor, fontSize = 17.sp, fontWeight = if (nameFontStyle == "Elegante") FontWeight.Medium else FontWeight.Bold, fontFamily = nameFontFamily(nameFontStyle))
-                                        Text("Há 2 min · Novo", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
+                                        LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor)
                                     }
                                     val currentUsername = prefs.getString("username", "").orEmpty()
                                     if (post.username.isNotBlank() && !post.username.equals(currentUsername, ignoreCase = true)) {
@@ -2272,7 +2303,7 @@ DropdownMenuItem(
                                                 color = RemoteAppearance.feedTextColor, fontSize = 15.sp, fontWeight = FontWeight.Bold,
                                                 modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }
                                             )
-                                            Text("Há 2 min", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
+                                            LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor)
                                         }
                                     val currentUsername = prefs.getString("username", "").orEmpty()
                                     if (post.username.isNotBlank() && !post.username.equals(currentUsername, ignoreCase = true)) {
