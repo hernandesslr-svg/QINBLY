@@ -7323,11 +7323,12 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             }
         }
     } else {
-        Column(
-            Modifier.fillMaxSize().background(QiblyTheme.background).verticalScroll(rememberScrollState())
+        Column(Modifier.fillMaxSize().background(QiblyTheme.background)) {
+          Column(
+            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
                 .padding(horizontal = 18.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
-        ) {
+          ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { publishSettings = false }) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Voltar à edição", tint = QiblyTheme.text)
@@ -7415,6 +7416,14 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 Text("Salvar no dispositivo", color = QiblyTheme.text, modifier = Modifier.weight(1f))
                 androidx.compose.material3.Switch(checked = saveToDevice, onCheckedChange = { saveToDevice = it }, colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = Color(0xFF1976D2), checkedThumbColor = Color.White))
             }
+            if (publishError.isNotBlank()) {
+                Text(publishError, color = Color(0xFFFF8A80), style = MaterialTheme.typography.bodyMedium)
+            }
+            TextButton(onClick = { publishSettings = false }) {
+                Text("Voltar à edição", color = QiblyTheme.text)
+            }
+          }
+          Column(Modifier.fillMaxWidth().background(QiblyTheme.background).padding(horizontal = 18.dp, vertical = 10.dp)) {
             Button(
                 onClick = {
                     val token = prefs.getString("token", null)
@@ -7502,13 +7511,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 Spacer(Modifier.width(8.dp))
                 Text(if (publishing) "Publicando…" else "Publicar", fontWeight = FontWeight.Bold, color = if (QiblyTheme.dark) Color.Black else Color.White)
             }
-            if (publishError.isNotBlank()) {
-                Text(publishError, color = Color(0xFFFF8A80), style = MaterialTheme.typography.bodyMedium)
-            }
-            TextButton(onClick = { publishSettings = false }) {
-                Text("Voltar à edição", color = QiblyTheme.text)
-            }
-        }
+          }
     }
 }
 
