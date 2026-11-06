@@ -2825,7 +2825,7 @@ DropdownMenuItem(
                                             scope.launch {
                                                 try {
                                                     val profile = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.getPublicProfile(video.username) }
-                                                    val following = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.toggleFollow(token, profile.id) }
+                                                    val following = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.toggleFollow(token, profile.optString("id")) }
                                                     isFollowing = following
                                                 } catch (e: Exception) { onNotice(e.message ?: "Falha ao seguir perfil.") }
                                                 finally { followBusy = false }
