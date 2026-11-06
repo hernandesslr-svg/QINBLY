@@ -1704,8 +1704,7 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
         }
         Row(
             Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(start = 18.dp, end = 18.dp, bottom = 16.dp),
+                .padding(start = 18.dp, end = 18.dp, bottom = 78.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -2799,7 +2798,7 @@ DropdownMenuItem(
                             VyboraFullscreenVideo(video.mediaUrl, Modifier.fillMaxSize())
                         }
                         Column(
-                            Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 155.dp).windowInsetsPadding(WindowInsets.navigationBars),
+                            Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 235.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
@@ -2846,7 +2845,7 @@ DropdownMenuItem(
                             }
                         }
                         Column(
-                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 16.dp, bottom = 92.dp).windowInsetsPadding(WindowInsets.navigationBars),
+                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 16.dp, bottom = 155.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
