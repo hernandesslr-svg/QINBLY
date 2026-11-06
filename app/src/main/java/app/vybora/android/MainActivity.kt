@@ -1694,7 +1694,7 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
         }
     }
     Box(modifier.background(Color.Black)) {
-        AndroidView(modifier = Modifier.fillMaxSize(), factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false; resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM } }, update = { view -> view.player = player; view.useController = false; view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM })
+        AndroidView(modifier = Modifier.fillMaxSize(), factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false; resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT } }, update = { view -> view.player = player; view.useController = false; view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT })
         Box(Modifier.fillMaxSize().clickable {
             if (player.isPlaying) { player.pause(); playing = false } else { player.play(); playing = true }
         }, contentAlignment = Alignment.Center) {
@@ -2850,7 +2850,7 @@ DropdownMenuItem(
                             }
                         }
                         Column(
-                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 18.dp, bottom = 205.dp),
+                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 18.dp, bottom = 180.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
