@@ -1354,15 +1354,9 @@ private fun VyboraApp() {
                                             }.padding(horizontal = 8.dp, vertical = 12.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Box(
-                                                Modifier.size(50.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Pink, Violet))),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                if (user.avatarUrl.isNotBlank()) {
-                                                    AsyncImage(model = user.avatarUrl, contentDescription = "Foto de @${user.username}", modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-                                                } else {
-                                                    Text(user.displayName.ifBlank { user.username }.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
-                                                }
+                                            QiblyAccountAvatar(user.username, user.avatarUrl, 62.dp) {
+                                                publicProfileUsername = user.username
+                                                profileStat = ""
                                             }
                                             Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                                 Text(user.displayName.ifBlank { user.username }, fontWeight = FontWeight.SemiBold, color = Color.Black)
