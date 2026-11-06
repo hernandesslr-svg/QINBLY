@@ -8,6 +8,8 @@ import android.content.IntentFilter
 import android.net.Uri
 import android.os.Bundle
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.os.Environment
 import android.webkit.JavascriptInterface
@@ -29,32 +31,54 @@ class RemoteUiActivity : ComponentActivity() {
     private val prefs by lazy { getSharedPreferences("vybora_session", MODE_PRIVATE) }
     private var pendingDownloadId: Long = -1L
 
+    private val handler = Handler(Looper.getMainLooper())
+    private val monitor = object : Runnable {
+        override fun run() {
+            checkDownload()
+            if (prefs.getLong("pending_update_download_id", -1L) > 0L) handler.postDelayed(this, 1500L)
+        }
+    }
+
+    private fun checkDownload() {
+        val id = prefs.getLong("pending_update_download_id", -1L)
+        if (id <= 0L) return
+        val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+        try {
+            manager.query(DownloadManager.Query().setFilterById(id))?.use { cursor ->
+                if (!cursor.moveToFirst()) {
+                    prefs.edit().remove("pending_update_download_id").apply()
+                    notifyWeb("Download não encontrado. Tente novamente.", true)
+                    return
+                }
+                when (cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))) {
+                    DownloadManager.STATUS_SUCCESSFUL -> {
+                        prefs.edit().remove("pending_update_download_id").apply()
+                        val uri = manager.getUriForDownloadedFile(id)
+                        if (uri != null) openInstallerOrRequestPermission(uri)
+                        else notifyWeb("Arquivo APK indisponível. Tente novamente.", true)
+                    }
+                    DownloadManager.STATUS_FAILED -> {
+                        val reason = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
+                        prefs.edit().remove("pending_update_download_id").apply()
+                        notifyWeb("Falha no download (código $reason). Tente novamente.", true)
+                    }
+                    DownloadManager.STATUS_RUNNING -> {
+                        val total = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+                        val done = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+                        notifyWeb(if (total > 0) "Baixando APK: ${(done * 100 / total).coerceIn(0, 100)}%" else "Baixando APK…", false)
+                    }
+                    else -> notifyWeb("Aguardando download…", false)
+                }
+            }
+        } catch (e: Exception) {
+            prefs.edit().remove("pending_update_download_id").apply()
+            notifyWeb("Erro ao verificar download. Tente novamente.", true)
+        }
+    }
+
     private val downloadReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action != DownloadManager.ACTION_DOWNLOAD_COMPLETE) return
-            val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
-            if (id != pendingDownloadId && id != prefs.getLong("pending_update_download_id", -1L)) return
-            prefs.edit().remove("pending_update_download_id").apply()
-            val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
-            val query = DownloadManager.Query().setFilterById(id)
-            manager.query(query).use { cursor ->
-                if (!cursor.moveToFirst()) {
-                    notifyWeb("O download não foi encontrado. Tente novamente.", true)
-                    return
-                }
-                val statusColumn = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                if (statusColumn < 0 || cursor.getInt(statusColumn) != DownloadManager.STATUS_SUCCESSFUL) {
-                    notifyWeb("O download do QINBLY falhou. Verifique sua conexão e tente novamente.", true)
-                    return
-                }
-            }
-            val apkUri = manager.getUriForDownloadedFile(id)
-            if (apkUri == null) {
-                notifyWeb("O Android não disponibilizou o arquivo baixado.", true)
-                return
-            }
-            notifyWeb("Download concluído. Preparando a instalação…", false)
-            openInstallerOrRequestPermission(apkUri)
+            if (intent.action == DownloadManager.ACTION_DOWNLOAD_COMPLETE) checkDownload()
         }
     }
 
@@ -64,6 +88,11 @@ class RemoteUiActivity : ComponentActivity() {
      */
     override fun onResume() {
         super.onResume()
+        if (prefs.getLong("pending_update_download_id", -1L) > 0L) {
+            checkDownload()
+            handler.removeCallbacks(monitor)
+            if (prefs.getLong("pending_update_download_id", -1L) > 0L) handler.postDelayed(monitor, 1500L)
+        }
         val pending = prefs.getString("pending_update_apk_uri", null) ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) return
         prefs.edit().remove("pending_update_apk_uri").apply()
@@ -200,7 +229,7 @@ class RemoteUiActivity : ComponentActivity() {
                     connection.disconnect()
                 }
                 val tag = release.optString("tag_name", "Versão mais recente")
-                val notes = release.optString("body", "Atualização do QINBLY.")
+                val notes = release.optString("body").takeUnless { it.isBlank() || it == "null" } ?: "Melhorias e correções do QINBLY."
                 val assets = release.optJSONArray("assets") ?: org.json.JSONArray()
                 var apkUrl = ""
                 for (i in 0 until assets.length()) {
@@ -228,7 +257,7 @@ class RemoteUiActivity : ComponentActivity() {
                     <button class="btn" id="updateBtn" onclick="this.disabled=true;this.textContent='Iniciando download…';VyboraNative.downloadAndInstall(apkUrl)">Baixar e instalar atualização</button>
                     <p class="muted" id="updateStatus" role="status"></p>
                     <p class="muted">O Android solicitará confirmação antes de instalar. Suas informações não são apagadas pela atualização normal.</p></section>
-                    <script>const apkUrl=$urlJs;document.getElementById('version').textContent=$tagJs;document.getElementById('notes').textContent=$notesJs;window.vyboraOtaNativeStatus=function(message,isError){document.getElementById('updateStatus').textContent=message;document.getElementById('updateBtn').disabled=!isError;document.getElementById('updateBtn').textContent=isError?'Tentar novamente':'Download em andamento…';};</script>
+                    <script>const apkUrl=$urlJs;document.getElementById('version').textContent=$tagJs;document.getElementById('notes').textContent=$notesJs;window.vyboraOtaNativeStatus=function(message,isError){document.getElementById('updateStatus').textContent=message;document.getElementById('updateBtn').disabled=!isError;document.getElementById('updateBtn').textContent=isError?'Tentar novamente':message;};</script>
                     </body></html>
                 """.trimIndent()
                 runOnUiThread { webView.loadDataWithBaseURL("https://github.com/", html, "text/html", "UTF-8", null) }
@@ -259,6 +288,7 @@ class RemoteUiActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        handler.removeCallbacks(monitor)
         try { unregisterReceiver(downloadReceiver) } catch (_: Exception) { }
         if (::webView.isInitialized) {
             webView.stopLoading()
@@ -307,7 +337,9 @@ class RemoteUiActivity : ComponentActivity() {
                     val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
                     pendingDownloadId = manager.enqueue(request)
                     prefs.edit().putLong("pending_update_download_id", pendingDownloadId).apply()
-                    notifyWeb("Download iniciado. O Android avisará quando estiver pronto para instalar.", false)
+                    notifyWeb("Download iniciado. Acompanhando o progresso…", false)
+                    handler.removeCallbacks(monitor)
+                    handler.postDelayed(monitor, 700L)
                 } catch (_: Exception) {
                     notifyWeb("Não foi possível iniciar o download. Verifique a conexão e tente novamente.", true)
                 }
