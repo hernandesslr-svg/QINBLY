@@ -427,8 +427,14 @@ object VyboraApi {
         val bio: String, val avatarUrl: String, val verified: Boolean
     )
 
-    fun toggleFollow(token: String, userId: String): Boolean =
-        request("POST", "/api/users/" + userId + "/follow", JSONObject(), token).optBoolean("following")
+    fun toggleFollow(token: String, userId: String): Boolean {
+        require(token.isNotBlank() && userId.isNotBlank()) { "Conta ou sessão inválida para seguir." }
+        val response = request("POST", "/api/users/" + userId + "/follow", JSONObject(), token)
+        if (!response.has("following") || response.isNull("following")) {
+            throw IllegalStateException("O servidor não confirmou a alteração de seguimento.")
+        }
+        return response.getBoolean("following")
+    }
 
     fun heartbeatPresence(token: String): Int =
         request("POST", "/api/presence/heartbeat", JSONObject(), token).optInt("onlineCount", -1)
