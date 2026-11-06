@@ -1,5 +1,7 @@
 package app.vybora.android
 
+import androidx.compose.foundation.layout.windowInsetsPadding
+
 import android.os.Bundle
 import org.json.JSONArray
 import org.json.JSONObject
@@ -1700,7 +1702,7 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
                 Icon(Icons.Default.PlayArrow, contentDescription = "Continuar vídeo", tint = Color.White, modifier = Modifier.size(52.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.42f)).padding(12.dp))
             }
         }
-        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 18.dp, end = 18.dp, bottom = 18.dp)) {
+        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 18.dp, end = 18.dp, bottom = 12.dp).windowInsetsPadding(WindowInsets.navigationBars)) {
             val seconds = (position * duration).toLong().coerceAtLeast(0L) / 1000L
             val total = duration.coerceAtLeast(0L) / 1000L
             Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')} / ${total / 60}:${(total % 60).toString().padStart(2, '0')}", color = Color.White, fontSize = 12.sp)
@@ -2766,6 +2768,14 @@ DropdownMenuItem(
                 pageCount = { fullscreenVideos.size }
             )
             Box(Modifier.fillMaxSize().background(Color.Black)) {
+                val videoDialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+                SideEffect {
+                    videoDialogWindow?.let { window ->
+                        window.navigationBarColor = android.graphics.Color.BLACK
+                        window.statusBarColor = android.graphics.Color.BLACK
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
+                    }
+                }
                 androidx.compose.foundation.pager.VerticalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
@@ -2775,6 +2785,9 @@ DropdownMenuItem(
                     var isFollowing by remember(video.id) { mutableStateOf(video.isFollowing) }
                     var followBusy by remember(video.id) { mutableStateOf(false) }
                     val scope = rememberCoroutineScope()
+                    var fullscreenLiked by remember(video.id) { mutableStateOf(video.likedByMe) }
+                    var fullscreenLikes by remember(video.id) { mutableStateOf(video.likes) }
+                    var likeBusy by remember(video.id) { mutableStateOf(false) }
                     Box(Modifier.fillMaxSize().background(Color.Black)) {
                         if (pagerState.currentPage == page) {
                             VyboraFullscreenVideo(video.mediaUrl, Modifier.fillMaxSize())
@@ -2785,10 +2798,25 @@ DropdownMenuItem(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                IconButton(onClick = { onNotice("Curtir disponível no feed.") }) {
-                                    Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = Color.White, modifier = Modifier.size(30.dp))
+                                IconButton(onClick = {
+                                    val token = prefs.getString("token", null)
+                                    if (token.isNullOrBlank()) onNotice("Entre na sua conta para curtir.")
+                                    else if (!likeBusy) {
+                                        likeBusy = true
+                                        scope.launch {
+                                            try {
+                                                val liked = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.toggleLike(token, video.id) }
+                                                fullscreenLikes = (fullscreenLikes + if (liked) 1 else -1).coerceAtLeast(0)
+                                                fullscreenLiked = liked
+                                                posts = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.getPosts() }
+                                            } catch (e: Exception) { onNotice(e.message ?: "Falha ao curtir vídeo.") }
+                                            finally { likeBusy = false }
+                                        }
+                                    }
+                                }) {
+                                    Icon(if (fullscreenLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = if (fullscreenLiked) Color.Red else Color.White, modifier = Modifier.size(30.dp))
                                 }
-                                Text(video.likes.toString(), color = Color.White, fontSize = 12.sp)
+                                Text(fullscreenLikes.toString(), color = Color.White, fontSize = 12.sp)
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 IconButton(onClick = { commentPost = video; fullscreenVideoId = null }) {
@@ -2812,7 +2840,7 @@ DropdownMenuItem(
                             }
                         }
                         Column(
-                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 16.dp, bottom = 80.dp),
+                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 16.dp, bottom = 95.dp).windowInsetsPadding(WindowInsets.navigationBars),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
