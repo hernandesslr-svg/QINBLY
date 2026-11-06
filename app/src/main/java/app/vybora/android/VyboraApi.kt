@@ -263,9 +263,11 @@ object VyboraApi {
     fun createTextPost(token: String, caption: String): JSONObject =
         request("POST", "/api/posts", JSONObject().put("caption", caption.trim()).put("mediaType", "text"), token)
 
-    fun createPollPost(token: String, question: String, options: List<String>): JSONObject =
+    fun createPollPost(token: String, question: String, options: List<String>, durationHours: Int = 24, multipleAnswers: Boolean = false, showResultsAfterVote: Boolean = true): JSONObject =
         request("POST", "/api/posts", JSONObject().put("caption", question.trim())
-            .put("mediaType", "poll").put("pollOptions", org.json.JSONArray(options)), token)
+            .put("mediaType", "poll").put("pollOptions", org.json.JSONArray(options))
+            .put("durationHours", durationHours).put("multipleAnswers", multipleAnswers)
+            .put("showResultsAfterVote", showResultsAfterVote), token)
 
     fun votePoll(token: String, postId: String, optionIndex: Int): JSONObject =
         request("POST", "/api/posts/${postId}/vote", JSONObject().put("optionIndex", optionIndex), token)
