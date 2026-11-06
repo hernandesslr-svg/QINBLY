@@ -2772,14 +2772,71 @@ DropdownMenuItem(
                     beyondViewportPageCount = 0
                 ) { page ->
                     val video = fullscreenVideos[page]
+                    var isFollowing by remember(video.id) { mutableStateOf(video.isFollowing) }
+                    var followBusy by remember(video.id) { mutableStateOf(false) }
+                    val scope = rememberCoroutineScope()
                     Box(Modifier.fillMaxSize().background(Color.Black)) {
                         if (pagerState.currentPage == page) {
                             VyboraFullscreenVideo(video.mediaUrl, Modifier.fillMaxSize())
                         }
-                        Column(Modifier.align(Alignment.BottomEnd).padding(end = 14.dp, bottom = 122.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            listOf(Icons.Default.Person, Icons.Default.PersonAdd, Icons.Default.FavoriteBorder, Icons.Default.ChatBubbleOutline, Icons.Default.Share, Icons.Default.Archive, Icons.Default.MoreHoriz).forEach {
-                                Icon(it, contentDescription = null, tint = Color.Black, modifier = Modifier.size(34.dp).padding(5.dp))
+                        Column(
+                            Modifier.align(Alignment.CenterEnd).padding(end = 14.dp, bottom = 4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(20.dp)
+                        ) {
+                            IconButton(onClick = { onNotice("Curta esta publicação no feed.") }) {
+                                Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = Color.White, modifier = Modifier.size(30.dp))
                             }
+                            IconButton(onClick = { commentPost = video; fullscreenVideoId = null }) {
+                                Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White, modifier = Modifier.size(30.dp))
+                            }
+                            IconButton(onClick = { sharePost = video; fullscreenVideoId = null }) {
+                                Icon(Icons.Default.Share, contentDescription = "Compartilhar", tint = Color.White, modifier = Modifier.size(30.dp))
+                            }
+                            IconButton(onClick = {
+                                val next = savedPostIds.toMutableSet()
+                                if (!next.add(video.id)) next.remove(video.id)
+                                savedPostIds = next
+                                prefs.edit().putStringSet("saved_post_ids", next).apply()
+                            }) {
+                                Icon(Icons.Default.Archive, contentDescription = "Salvar", tint = if (video.id in savedPostIds) Color(0xFFFFC107) else Color.White, modifier = Modifier.size(30.dp))
+                            }
+                            IconButton(onClick = { onNotice("Mais opções disponíveis no feed.") }) {
+                                Icon(Icons.Default.MoreHoriz, contentDescription = "Mais opções", tint = Color.White, modifier = Modifier.size(28.dp))
+                            }
+                        }
+                        Column(
+                            Modifier.align(Alignment.BottomStart).fillMaxWidth(0.78f).padding(start = 16.dp, bottom = 115.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                QiblyAccountAvatar(video.username, video.avatarUrl, 36.dp) {
+                                    fullscreenVideoId = null
+                                    onOpenProfile(video.username)
+                                }
+                                Text("@"+video.username, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
+                                if (video.username.isNotBlank() && !video.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
+                                    TextButton(enabled = !followBusy, onClick = {
+                                        val token = prefs.getString("token", null)
+                                        if (token.isNullOrBlank()) {
+                                            onNotice("Entre na sua conta para seguir.")
+                                        } else {
+                                            followBusy = true
+                                            scope.launch {
+                                                try {
+                                                    val profile = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.getPublicProfile(video.username) }
+                                                    val following = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.toggleFollow(token, profile.id) }
+                                                    isFollowing = following
+                                                } catch (e: Exception) { onNotice(e.message ?: "Falha ao seguir perfil.") }
+                                                finally { followBusy = false }
+                                            }
+                                        }
+                                    }, colors = ButtonDefaults.textButtonColors(containerColor = Color.White, contentColor = Color.Black)) {
+                                        Text(if (isFollowing) "Seguindo" else "Seguir", fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                            Text(video.caption, color = Color.White, maxLines = 3, fontSize = 14.sp)
                         }
                     }
                 }
@@ -2787,13 +2844,8 @@ DropdownMenuItem(
                     onClick = { fullscreenVideoId = null },
                     modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "Fechar tela inteira", tint = Color.Black)
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
                 }
-                Text(
-                    "${pagerState.currentPage + 1}/${fullscreenVideos.size}",
-                    modifier = Modifier.align(Alignment.TopEnd).padding(24.dp),
-                    color = Color.Black, fontSize = 13.sp
-                )
             }
         }
     }
