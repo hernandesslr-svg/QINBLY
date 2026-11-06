@@ -6531,26 +6531,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 Text("Os votos são anônimos. A enquete permanece no feed após encerrar.", color = Color.DarkGray, style = MaterialTheme.typography.labelSmall)
             } else {
                 HorizontalDivider(color = Color.LightGray)
-                Row(Modifier.fillMaxWidth().clickable { openVyboraGallery() }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Image, contentDescription = null, tint = Color.Black)
-                    Spacer(Modifier.width(14.dp))
-                    Text("Galeria", color = Color.Black)
-                }
-                HorizontalDivider(color = Color.LightGray)
-                Row(Modifier.fillMaxWidth().clickable {
-                    onNotice("Para fotografar, selecione Câmera no menu Criar.")
-                }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.Black)
-                    Spacer(Modifier.width(14.dp))
-                    Text("Câmera", color = Color.Black)
-                }
-                HorizontalDivider(color = Color.LightGray)
-                Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color.Black)
-                    Spacer(Modifier.width(14.dp))
-                    Text("Localização", color = Color.Black)
-                }
-                HorizontalDivider(color = Color.LightGray)
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text("Permitir comentários", modifier = Modifier.weight(1f), color = Color.Black)
                     Switch(checked = allowComments, onCheckedChange = { allowComments = it })
