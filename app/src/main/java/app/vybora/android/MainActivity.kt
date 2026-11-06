@@ -6268,33 +6268,45 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                 }
             }
         } else {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                profilePosts.filter { selectedTab != "Vídeos" || it.mediaType == "video" }.filter { selectedTab != "Fotos" || it.mediaType == "image" }.chunked(3).forEach { rowPosts ->                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        rowPosts.forEach { post ->
-                            Box(Modifier.weight(1f).height(145.dp).clip(RoundedCornerShape(7.dp)).background(Color(0xFF111426)).clickable {
-                                if (post.mediaUrl.isNotBlank()) expandedImage = post.mediaUrl; selectedPublicationCaption = post.caption; selectedPublication = post; postLiked = false; savedIds = prefs.getStringSet("saved_post_ids", emptySet())?.toSet() ?: emptySet(); viewingPublication = true
-                            }) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                profilePosts.filter { selectedTab != "Vídeos" || it.mediaType == "video" }
+                    .filter { selectedTab != "Fotos" || it.mediaType == "image" }
+                    .forEach { post ->
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                selectedPublicationCaption = post.caption
+                                selectedPublication = post
+                                postLiked = false
+                                savedIds = prefs.getStringSet("saved_post_ids", emptySet())?.toSet() ?: emptySet()
+                                expandedImage = post.mediaUrl.ifBlank { "publication" }
+                                viewingPublication = true
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            color = QiblyTheme.card,
+                            border = BorderStroke(1.dp, QiblyTheme.border)
+                        ) {
+                            Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                if (post.caption.isNotBlank()) Text(post.caption, color = RemoteAppearance.screenTextColor)
                                 if (post.mediaUrl.isNotBlank()) {
                                     AsyncImage(
                                         model = if (post.mediaType.equals("video", ignoreCase = true)) {
-                                            coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
-                                                .data(post.mediaUrl)
-                                                .decoderFactory(coil.decode.VideoFrameDecoder.Factory())
-                                                .build()
+                                            coil.request.ImageRequest.Builder(context).data(post.mediaUrl)
+                                                .decoderFactory(coil.decode.VideoFrameDecoder.Factory()).build()
                                         } else post.mediaUrl,
                                         contentDescription = "Publicação de $displayName",
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                        modifier = Modifier.fillMaxWidth().heightIn(max = 460.dp).height(310.dp),
+                                        contentScale = ContentScale.Fit
                                     )
-                                } else {
-                                    Text(post.caption.ifBlank { "QINBLY" }, color = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.Center).padding(8.dp), maxLines = 4)
                                 }
-                                if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.TopEnd).padding(5.dp))
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = RemoteAppearance.screenTextColor)
+                                    Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentar", tint = RemoteAppearance.screenTextColor)
+                                    Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = RemoteAppearance.screenTextColor)
+                                    Icon(Icons.Default.BookmarkBorder, contentDescription = "Salvar", tint = RemoteAppearance.screenTextColor)
+                                }
                             }
                         }
-                        repeat(3 - rowPosts.size) { Spacer(Modifier.weight(1f).height(145.dp)) }
                     }
-                }
             }
         }
         Spacer(Modifier.height(24.dp))
