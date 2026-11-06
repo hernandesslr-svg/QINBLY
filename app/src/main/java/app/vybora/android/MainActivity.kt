@@ -6320,6 +6320,20 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         if (uri != null) { sourceUri = uri; selectedUri = uri; showComposer = true; selectedType = "vídeo" }
     }
     // Seletor do Android: não depende de permissão de acesso a toda a biblioteca.
+    val multiPhotoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(10)) { uris ->
+        if (uris.isNotEmpty()) {
+            gallerySelection.clear()
+            gallerySelection.addAll(uris.take(10))
+            sourceUri = uris.first()
+            selectedUri = uris.first()
+            selectedType = "foto"
+            galleryOpen = false
+            publishSettings = false
+            showComposer = true
+        } else if (initialMode == "gallery" && !showComposer) {
+            onCameraCancelled()
+        }
+    }
     val mediaPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             sourceUri = uri
@@ -6333,7 +6347,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         }
     }
     fun openVyboraGallery() {
-        try { mediaPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }
+        try { multiPhotoPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
         catch (e: Exception) { onNotice("Não foi possível abrir a galeria: " + (e.localizedMessage ?: "tente novamente")) }
     }
     fun returnToGallery() {
@@ -6946,13 +6960,16 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         Box(
                             Modifier.fillMaxWidth().aspectRatio(0.76f).clip(RoundedCornerShape(4.dp))
                                 .clickable {
-                                    gallerySelection.clear()
-                                    gallerySelection.add(asset.uri)
-                                    sourceUri = asset.uri
-                                    selectedUri = asset.uri
-                                    selectedType = if (asset.isVideo) "vídeo" else "foto"
-                                    galleryOpen = false
-                                    showComposer = true
+                                    if (asset.isVideo) {
+                                        gallerySelection.clear()
+                                        gallerySelection.add(asset.uri)
+                                    } else if (selectedIndex >= 0) {
+                                        gallerySelection.remove(asset.uri)
+                                    } else if (gallerySelection.size < 10) {
+                                        gallerySelection.add(asset.uri)
+                                    } else {
+                                        onNotice("O limite é de 10 fotos por publicação.")
+                                    }
                                 }
                         ) {
                             AsyncImage(model = asset.uri, contentDescription = asset.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
@@ -6966,7 +6983,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                             Box(Modifier.align(Alignment.TopEnd).padding(6.dp).size(23.dp).border(1.5.dp, Color.White, CircleShape)
                                 .background(if (selectedIndex >= 0) Color(0xFFB12AFF) else Color(0x55000000), CircleShape),
                                 contentAlignment = Alignment.Center) {
-                                if (selectedIndex >= 0) Text("1", color = Color.Black, style = MaterialTheme.typography.labelSmall)
+                                if (selectedIndex >= 0) Text("${selectedIndex + 1}", color = Color.Black, style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -6986,7 +7003,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).height(52.dp),
                 shape = RoundedCornerShape(28.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)
-            ) { Text(if (gallerySelection.isEmpty()) "Avançar" else "Avançar (1)", fontWeight = FontWeight.Bold) }
+            ) { Text(if (gallerySelection.isEmpty()) "Avançar" else "Avançar (${gallerySelection.size}/10)", fontWeight = FontWeight.Bold) }
         }
         return
     }
@@ -7410,7 +7427,25 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                             val extension = android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: if (mime.startsWith("video/")) "mp4" else "jpg"
                                             val fileName = "vybora-${System.currentTimeMillis()}.$extension"
                                             val fileId = VyboraApi.uploadPostMedia(context, token, uploadUri, fileName, mime, size)
-                                            VyboraApi.createMediaPost(token, caption, fileId, if (mime.startsWith("video/")) "video" else "image")
+                                            if (selectedType == "foto" && gallerySelection.size > 1) {
+                                                val uploadedIds = mutableListOf(fileId)
+                                                for ((index, extraUri) in gallerySelection.drop(1).withIndex()) {
+                                                    val extraMime = context.contentResolver.getType(extraUri)?.takeIf { it.startsWith("image/") } ?: "image/jpeg"
+                                                    val extraFile = java.io.File.createTempFile("vybora-album-", ".jpg", context.cacheDir)
+                                                    try {
+                                                        val extraSize = context.contentResolver.openInputStream(extraUri)?.use { input ->
+                                                            extraFile.outputStream().use { output -> input.copyTo(output, 64 * 1024) }
+                                                            extraFile.length()
+                                                        } ?: throw IllegalStateException("Não foi possível ler uma das fotos.")
+                                                        val extraExt = android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(extraMime) ?: "jpg"
+                                                        uploadedIds.add(VyboraApi.uploadPostMedia(context, token, Uri.fromFile(extraFile),
+                                                            "vybora-album-${System.currentTimeMillis()}-${index}.${extraExt}", extraMime, extraSize))
+                                                    } finally { extraFile.delete() }
+                                                }
+                                                VyboraApi.createPhotoAlbum(token, caption, uploadedIds)
+                                            } else {
+                                                VyboraApi.createMediaPost(token, caption, fileId, if (mime.startsWith("video/")) "video" else "image")
+                                            }
                                         } finally {
                                             tempUploadFile?.delete()
                                         }
@@ -7419,6 +7454,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                         publishing = false
                                         caption = ""
                                         selectedUri = null
+                                        gallerySelection.clear()
                                         selectedType = ""
                                         publishSettings = false
                                         publishSuccess = true
