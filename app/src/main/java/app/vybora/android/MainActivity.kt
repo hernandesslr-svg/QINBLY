@@ -2854,11 +2854,11 @@ DropdownMenuItem(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                QiblyAccountAvatar(video.username, video.avatarUrl, 46.dp) {
+                                QiblyAccountAvatar(video.username, video.avatarUrl, 52.dp) {
                                     fullscreenVideoId = null
                                     onOpenProfile(video.username)
                                 }
-                                Text("@"+video.username, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, fontSize = 15.sp)
+                                Text("@"+video.username, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, fontSize = 17.sp)
                                 if (video.username.isNotBlank() && !video.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
                                     TextButton(enabled = !followBusy, onClick = {
                                         val token = prefs.getString("token", null)
@@ -2880,7 +2880,7 @@ DropdownMenuItem(
                                     }
                                 }
                             }
-                            if (video.caption.isNotBlank()) Text(video.caption, color = Color.White, maxLines = 3, fontSize = 15.sp)
+                            if (video.caption.isNotBlank()) Text(video.caption, color = Color.White, maxLines = 3, fontSize = 17.sp)
                         }
                     }
                 }
