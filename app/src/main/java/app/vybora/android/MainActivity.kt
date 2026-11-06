@@ -1049,6 +1049,7 @@ private fun VyboraApp() {
                         onSaved = {
                             showEditProfilePhoto = false
                             profilePhotoRefreshKey++
+                            qiblyAvatarRefreshVersion.intValue++
                             notice = "Foto do perfil atualizada."
                         },
                         onNotice = { notice = it }
@@ -4075,18 +4076,21 @@ private fun QiblyAnimatedFrame(style: Int, diameter: Dp, verticalOffset: Dp = 0.
     }
 }
 
+private val qiblyAvatarRefreshVersion = androidx.compose.runtime.mutableIntStateOf(0)
+
 @Composable
 private fun QiblyAccountAvatar(username: String, fallbackUrl: String, diameter: Dp, onClick: () -> Unit) {
-    var resolvedUrl by remember(username, fallbackUrl) { mutableStateOf(fallbackUrl) }
+    val avatarVersion = qiblyAvatarRefreshVersion.intValue
+    var resolvedUrl by remember(username, fallbackUrl, avatarVersion) { mutableStateOf(fallbackUrl) }
     var frame by remember(username) { mutableIntStateOf(-1) }
-    LaunchedEffect(username) {
+    LaunchedEffect(username, fallbackUrl, avatarVersion) {
         frame = -1
         if (username.isNotBlank() && !username.contains(".demo")) {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 try {
                     val result = VyboraApi.getPublicProfile(username)
                     val profile = result.optJSONObject("user") ?: result.optJSONObject("profile") ?: result
-                    val image = profile.optString("avatarUrl").ifBlank { profile.optString("coverUrl") }
+                    val image = profile.optString("avatarUrl").ifBlank { profile.optString("avatar_url") }.ifBlank { profile.optString("profilePhotoUrl") }.ifBlank { profile.optString("coverUrl") }
                     val selected = profile.optInt("profileFrame", -1)
                     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                         if (image.isNotBlank()) resolvedUrl = image
@@ -4098,7 +4102,7 @@ private fun QiblyAccountAvatar(username: String, fallbackUrl: String, diameter: 
     }
     Box(Modifier.size(diameter).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
         Box(Modifier.size(if (frame >= 0) diameter * 0.82f else diameter).clip(CircleShape).background(QiblyTheme.card)) {
-            if (resolvedUrl.isNotBlank()) AsyncImage(model = resolvedUrl, contentDescription = "Foto de @$username", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            if (resolvedUrl.isNotBlank()) AsyncImage(model = coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current).data(resolvedUrl).memoryCacheKey("avatar:$username:$avatarVersion:$resolvedUrl").diskCacheKey("avatar:$username:$avatarVersion:$resolvedUrl").build(), contentDescription = "Foto de @$username", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             else Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.fillMaxSize().padding(8.dp))
         }
         if (frame >= 0) QiblyAnimatedFrame(frame, diameter)
