@@ -109,6 +109,37 @@
       }
     } catch (error) { list.replaceChildren(element("div", "empty-card error-text", error.message)); }
   }
+  function followButton(user, compact = false) {
+    const button = element("button", compact ? "vybora-player-action" : "primary-button", compact ? "⊕" : "Seguir");
+    button.type = "button";
+    let following = Boolean(user.isFollowing);
+    const sync = () => {
+      button.textContent = compact ? (following ? "✓" : "⊕") : (following ? "Seguindo" : "Seguir");
+      button.setAttribute("aria-label", following ? "Deixar de seguir" : "Seguir perfil");
+      button.setAttribute("aria-pressed", String(following));
+    };
+    sync();
+    button.addEventListener("click", async event => {
+      event.stopPropagation();
+      if (!getToken()) { toast("Entre na sua conta para seguir pessoas."); return; }
+      if (!user.id) { toast("Não foi possível identificar este perfil."); return; }
+      button.disabled = true;
+      try {
+        const response = await api("/api/users/" + encodeURIComponent(user.id) + "/follow", { method: "POST" });
+        following = Boolean(response.following);
+        user.isFollowing = following;
+        sync();
+        document.dispatchEvent(new CustomEvent("vybora:follow-changed", { detail: { id: user.id, following } }));
+      } catch (error) { toast(error.message || "Não foi possível atualizar o seguimento."); }
+      finally { button.disabled = false; }
+    });
+    document.addEventListener("vybora:follow-changed", event => {
+      if (event.detail && event.detail.id === user.id) {
+        following = Boolean(event.detail.following); sync();
+      }
+    }, { signal: undefined });
+    return button;
+  }
   function makePostCard(post) {
     const card = element("article", "post-card");
     const head = element("div", "post-head");
@@ -146,9 +177,7 @@
           const profile = element("button", "vybora-player-avatar");
           profile.type = "button"; profile.setAttribute("aria-label", "Perfil do autor");
           profile.append(avatar(name, author.avatarUrl || author.avatar_url));
-          const follow = element("button", "vybora-player-action", "⊕");
-          follow.type = "button"; follow.setAttribute("aria-label", "Seguir perfil");
-          follow.addEventListener("click", () => toast("Abra o perfil para seguir."));
+          const follow = followButton(author, true);
           const likeVideo = element("button", "vybora-player-action", "♡");
           likeVideo.type = "button"; likeVideo.setAttribute("aria-label", "Curtir");
           likeVideo.addEventListener("click", () => { overlay.remove(); player.pause(); like.click(); });
@@ -261,6 +290,7 @@
     open.type = "button";
     open.addEventListener("click", () => renderPublicProfile(user.username || ""));
     card.append(open);
+    card.append(followButton(user));
     return card;
   }
   async function renderExplore() {
@@ -314,12 +344,21 @@
       identity.append(nameLine);
       identity.append(element("p", "muted", "@" + (user.username || "")));
       card.append(identity);
+      card.append(followButton(user));
       card.append(element("p", "profile-bio", user.bio || "Esta pessoa ainda não adicionou uma biografia."));
       const stats = element("div", "profile-stats");
       [[user.posts_count || 0, "publicações"], [user.followers || 0, "seguidores"], [user.following || 0, "seguindo"]].forEach(pair => {
         const item = element("div"); item.append(element("strong", "", pair[0]), element("small", "", pair[1])); stats.append(item);
       });
       card.append(stats);
+      const followersCount = stats.children[1] && stats.children[1].querySelector("strong");
+      document.addEventListener("vybora:follow-changed", event => {
+        if (event.detail && event.detail.id === user.id && followersCount) {
+          const next = Number(user.followers || 0) + (event.detail.following ? 1 : -1);
+          user.followers = Math.max(0, next);
+          followersCount.textContent = String(user.followers);
+        }
+      });
       const back = element("button", "secondary-button", "Voltar à busca");
       back.type = "button"; back.addEventListener("click", renderExplore); card.append(back);
       const postsHeading = element("h3", "profile-posts-heading", "Publicações");
