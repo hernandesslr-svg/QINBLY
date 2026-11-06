@@ -2417,10 +2417,11 @@ DropdownMenuItem(
                                 }
                                 var photoIndex by remember(post.id) { mutableIntStateOf(0) }
                                 val shownPhoto = demoGallery[photoIndex.coerceIn(0, demoGallery.lastIndex)]
+                                var imageAspectRatio by remember(shownPhoto) { mutableFloatStateOf(0.8f) }
                                 var dragDistance by remember(post.id) { mutableFloatStateOf(0f) }
                                 Box(
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
-                                        .aspectRatio(0.8f)
+                                        .aspectRatio(imageAspectRatio.coerceIn(0.5f, 1.8f))
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(Color.Black)
                                 ) {
@@ -2435,6 +2436,12 @@ DropdownMenuItem(
                                     }
                                     AsyncImage(
                                         model = shownPhoto, contentDescription = "Foto ${photoIndex + 1} de ${demoGallery.size}",
+                                        onSuccess = { result ->
+                                            val drawable = result.result.drawable
+                                            if (drawable.intrinsicWidth > 0 && drawable.intrinsicHeight > 0) {
+                                                imageAspectRatio = drawable.intrinsicWidth.toFloat() / drawable.intrinsicHeight.toFloat()
+                                            }
+                                        },
                                         modifier = Modifier.fillMaxSize()
                                             .pointerInput(post.id, photoIndex, demoGallery.size) {
                                                 detectHorizontalDragGestures(
@@ -2451,7 +2458,7 @@ DropdownMenuItem(
                                                 )
                                             }
                                             .clickable { expandedMedia = shownPhoto },
-                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
                                     )
 
                                     
