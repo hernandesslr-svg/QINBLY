@@ -6328,11 +6328,22 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             galleryOpen = false
             publishSettings = false
             showComposer = true
+        } else if (initialMode == "gallery" && !showComposer) {
+            onCameraCancelled()
         }
     }
     fun openVyboraGallery() {
         try { mediaPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }
         catch (e: Exception) { onNotice("Não foi possível abrir a galeria: " + (e.localizedMessage ?: "tente novamente")) }
+    }
+    fun returnToGallery() {
+        publishSettings = false
+        showComposer = false
+        editorTool = "Filtros"
+        openVyboraGallery()
+    }
+    BackHandler(enabled = initialMode == "gallery" && showComposer) {
+        returnToGallery()
     }
     LaunchedEffect(initialMode) {
         if (initialMode == "gallery") openVyboraGallery()
@@ -6578,15 +6589,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         return
     }
 
+    // A tela intermediária foi removida. Se o seletor do Android for cancelado,
+    // voltamos ao início em vez de deixar uma página vazia.
     if (initialMode == "gallery" && !showComposer && !galleryOpen) {
-        Column(Modifier.fillMaxSize().background(Color.White).padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center) {
-            Text("Selecionar foto ou vídeo", color = Color.Black, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(16.dp))
-            Button(onClick = { openVyboraGallery() }) { Text("Abrir galeria") }
-            TextButton(onClick = onCameraCancelled) { Text("Voltar") }
-        }
+        Box(Modifier.fillMaxSize().background(Color.White))
         return
     }
 
@@ -7069,16 +7075,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             // Cabeçalho: voltar à esquerda e música centralizada, sem ferramentas horizontais.
             IconButton(
                 onClick = {
-                    selectedUri = null
-                    sourceUri = null
-                    selectedType = ""
-                    caption = ""
-                    editorText = ""
-                    editorSticker = ""
-                    editorStrokes.clear()
-                    editorRatio = "Original"
-                    publishSettings = false
-                    showComposer = false
+                    returnToGallery()
                 },
                 modifier = Modifier.align(Alignment.TopStart).padding(start = 12.dp, top = 12.dp)
                     .size(48.dp).border(1.dp, Color(0x557E828B), CircleShape)
