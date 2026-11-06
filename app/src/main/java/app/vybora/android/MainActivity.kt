@@ -7504,7 +7504,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 modifier = Modifier.fillMaxWidth().height(54.dp),
                 enabled = !publishing,
                 shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2), contentColor = Color.White)
             ) {
                 if (publishing) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp, color = Color.White)
                 else Icon(Icons.Default.Send, contentDescription = null, tint = Color.White)
@@ -7512,6 +7512,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 Text(if (publishing) "Publicando…" else "Publicar", fontWeight = FontWeight.Bold, color = Color.White)
             }
           }
+        }
     }
 }
 
