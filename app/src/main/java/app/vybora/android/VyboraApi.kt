@@ -188,7 +188,7 @@ object VyboraApi {
         val id: String, val caption: String, val mediaUrl: String, val mediaType: String,
         val username: String, val displayName: String, val likes: Int, val comments: Int,
         val avatarUrl: String = "", val likedByMe: Boolean = false, val isFollowing: Boolean = false,
-        val createdAt: String = "", val pollOptions: List<String> = emptyList(),
+        val createdAt: String = "", val mediaUrls: List<String> = emptyList(), val pollOptions: List<String> = emptyList(),
         val pollVotes: List<Int> = emptyList(), val myPollVote: Int = -1
     )
 
@@ -211,6 +211,7 @@ object VyboraApi {
                 likedByMe = post.optBoolean("likedByMe"),
                 isFollowing = post.optBoolean("isFollowing"),
                 createdAt = post.optString("createdAt", post.optString("created_at")),
+                mediaUrls = post.optJSONArray("mediaUrls")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList(),
                 pollOptions = post.optJSONArray("pollOptions")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList(),
                 pollVotes = post.optJSONArray("pollOptions")?.let { a -> List(a.length()) { i ->
                     val counts = post.optJSONArray("pollVotes") ?: org.json.JSONArray()
@@ -275,6 +276,13 @@ object VyboraApi {
     fun createMediaPost(token: String, caption: String, fileId: String, mediaType: String): JSONObject =
         request("POST", "/api/posts", JSONObject().put("caption", caption.trim())
             .put("mediaFileId", fileId).put("mediaType", mediaType), token)
+
+    fun createPhotoAlbum(token: String, caption: String, fileIds: List<String>): JSONObject {
+        require(fileIds.size in 1..10) { "Selecione de 1 a 10 fotos." }
+        return request("POST", "/api/posts", JSONObject().put("caption", caption.trim())
+            .put("mediaType", "image").put("mediaFileId", fileIds.first())
+            .put("mediaFileIds", org.json.JSONArray(fileIds)), token)
+    }
 
     fun uploadPostMedia(context: Context, token: String, uri: Uri, fileName: String, contentType: String, sizeBytes: Long): String {
         require(sizeBytes in 1..(100L * 1024L * 1024L)) { "O arquivo está vazio ou ultrapassa 100 MB." }
