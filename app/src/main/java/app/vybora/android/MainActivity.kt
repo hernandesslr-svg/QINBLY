@@ -1377,20 +1377,21 @@ private fun NotificationsPage(
     var notifications by remember { mutableStateOf<List<VyboraApi.NotificationSummary>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var selectedFilter by remember { mutableStateOf("Todas") }
+    val notificationScope = rememberCoroutineScope()
+    var nowNotificationTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            nowNotificationTime = System.currentTimeMillis()
+            kotlinx.coroutines.delay(15_000L)
+        }
+    }
     LaunchedEffect(token) {
         if (token.isBlank()) {
             loading = false
         } else {
             try {
                 val loaded = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.getNotifications(token) }
-                val demoNotifications = listOf(
-                    VyboraApi.NotificationSummary("demo-notif-01", "like", "demo-post-06", "Agora", "", "carol.mendes.demo", "Carol Mendes", "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160"),
-                    VyboraApi.NotificationSummary("demo-notif-02", "comment", "demo-post-07", "Agora", "", "julia.ribeiro.demo", "Júlia Ribeiro", "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=160"),
-                    VyboraApi.NotificationSummary("demo-notif-03", "follow", "", "Agora", "", "marina.costa.demo", "Marina Costa", "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=160"),
-                    VyboraApi.NotificationSummary("demo-notif-04", "system", "", "Hoje", "", "qinbly", "QINBLY", "")
-                )
-                notifications = (loaded + demoNotifications).distinctBy { it.id }
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { VyboraApi.markNotificationsRead(token) }
+                notifications = loaded
             } catch (e: Exception) {
                 onNotice(e.message ?: "Não foi possível carregar as notificações.")
             } finally {
@@ -1406,12 +1407,12 @@ private fun NotificationsPage(
             else -> true
         }
     }
-    Column(Modifier.fillMaxSize().background(RemoteAppearance.screenBackgroundColor).padding(horizontal = 18.dp, vertical = 10.dp)) {
+    Column(Modifier.fillMaxSize().background(Color.White).padding(horizontal = 18.dp, vertical = 10.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.screenTextColor) }
-            Text("Notificações", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.Black) }
+            Text("Notificações", color = Color.Black, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             Box(Modifier.size(30.dp), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.Notifications, contentDescription = null, tint = Pink)
+                Icon(Icons.Default.Notifications, contentDescription = null, tint = Color(0xFF1677F2))
                 val unreadVisibleNotifications = notifications.count { it.readAt.isBlank() && it.kind != "message" }
                 if (unreadVisibleNotifications > 0) {
                     Box(
@@ -1420,17 +1421,17 @@ private fun NotificationsPage(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(if (unreadVisibleNotifications > 99) "99+" else unreadVisibleNotifications.toString(),
-                            color = RemoteAppearance.screenTextColor, fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                            color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
             }
         }
         Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("Todas", "Atividades", "Do QINBLY").forEach { label ->                Surface(                    modifier = Modifier.clickable { selectedFilter = label },                    color = if (selectedFilter == label) Color(0xFF35113B) else Panel,
+            listOf("Todas", "Atividades", "Do QINBLY").forEach { label ->                Surface(                    modifier = Modifier.clickable { selectedFilter = label },                    color = if (selectedFilter == label) Color(0xFFE8F1FF) else Color.White,
                     shape = RoundedCornerShape(20.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, if (selectedFilter == label) Pink else Color.Transparent)
+                    border = androidx.compose.foundation.BorderStroke(1.dp, if (selectedFilter == label) Color(0xFF1677F2) else Color(0xFFE5E7EB))
                 ) {
-                    Text(label, modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp), color = if (selectedFilter == label) Pink else Muted, style = MaterialTheme.typography.labelMedium)
+                    Text(label, modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp), color = if (selectedFilter == label) Color(0xFF1677F2) else Color.DarkGray, style = MaterialTheme.typography.labelMedium)
                 }
             }
         }
@@ -1456,8 +1457,29 @@ private fun NotificationsPage(
                         else -> "tem uma novidade para você"
                     }
                     Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(if (item.readAt.isBlank()) Color(0xFF171024) else Night)
-                            .clickable { onOpen(item) }.padding(12.dp),
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color.White)
+                            .clickable {
+                                if (item.readAt.isBlank()) {
+                                    notifications = notifications.map { current ->
+                                        if (current.id == item.id) current.copy(readAt = java.time.Instant.now().toString()) else current
+                                    }
+                                    notificationScope.launch {
+                                        try {
+                                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                                VyboraApi.markNotificationRead(token, item.id)
+                                            }
+                                        } catch (_: Exception) {
+                                            try {
+                                                val fresh = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                                    VyboraApi.getNotifications(token)
+                                                }
+                                                notifications = fresh
+                                            } catch (_: Exception) {}
+                                        }
+                                    }
+                                }
+                                onOpen(item)
+                            }.padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
@@ -1469,8 +1491,8 @@ private fun NotificationsPage(
                             }
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text("$actor $description", color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.bodyMedium)
-                            Text(item.createdAt, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall)
+                            Text("$actor $description", color = Color.Black, style = MaterialTheme.typography.bodyMedium)
+                            Text(postRelativeTime(item.createdAt, nowNotificationTime), color = Color.DarkGray, style = MaterialTheme.typography.labelSmall)
                         }
                         if (item.readAt.isBlank()) Box(Modifier.size(9.dp).clip(CircleShape).background(Color(0xFFFF3045)))
                     }
