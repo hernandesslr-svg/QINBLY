@@ -2804,7 +2804,7 @@ DropdownMenuItem(
                         ) {
                             // Disco musical independente, sem painel preto atrás dos controles.
                             Box(
-                                modifier = Modifier.padding(bottom = 12.dp).size(43.dp)
+                                modifier = Modifier.padding(bottom = 12.dp).size(45.dp)
                                     .border(2.dp, Color(0xFF43C6FF), CircleShape)
                                     .background(Color.Transparent, CircleShape),
                                 contentAlignment = Alignment.Center
@@ -2837,19 +2837,19 @@ DropdownMenuItem(
                                         }
                                     }
                                 }) {
-                                    Icon(if (fullscreenLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = if (fullscreenLiked) Color.Red else Color.White, modifier = Modifier.size(36.dp))
+                                    Icon(if (fullscreenLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = if (fullscreenLiked) Color.Red else Color.White, modifier = Modifier.size(30.dp))
                                 }
                                 Text(fullscreenLikes.toString(), color = Color.White, fontSize = 14.sp)
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 IconButton(onClick = { commentPost = video; fullscreenVideoId = null }) {
-                                    Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White, modifier = Modifier.size(36.dp))
+                                    Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentários", tint = Color.White, modifier = Modifier.size(30.dp))
                                 }
                                 Text(video.comments.toString(), color = Color.White, fontSize = 14.sp)
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 IconButton(onClick = { sharePost = video; fullscreenVideoId = null }) {
-                                    Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = Color.White, modifier = Modifier.size(36.dp).graphicsLayer { rotationZ = -25f })
+                                    Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = Color.White, modifier = Modifier.size(30.dp).graphicsLayer { rotationZ = -25f })
                                 }
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -2859,7 +2859,7 @@ DropdownMenuItem(
                                 savedPostIds = next
                                 prefs.edit().putStringSet("saved_post_ids", next).apply()
                             }) {
-                                Icon(if (video.id in savedPostIds) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = if (video.id in savedPostIds) "Remover dos salvos" else "Salvar", tint = if (video.id in savedPostIds) Color(0xFFFFC107) else Color.White, modifier = Modifier.size(36.dp))
+                                Icon(if (video.id in savedPostIds) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = if (video.id in savedPostIds) "Remover dos salvos" else "Salvar", tint = if (video.id in savedPostIds) Color(0xFFFFC107) else Color.White, modifier = Modifier.size(30.dp))
                             }
                             Text(if (video.id in savedPostIds) "Salvo" else "Salvar", color = if (video.id in savedPostIds) Color(0xFFFFC107) else Color.White, fontSize = 13.sp)
                             }
