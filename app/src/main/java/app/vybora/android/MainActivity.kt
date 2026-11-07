@@ -4636,33 +4636,37 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             var viewerOffset by remember(expandedImage) { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
             var viewerControls by remember(expandedImage) { mutableStateOf(true) }
             Box(Modifier.fillMaxSize().background(Color.Black)) {
-                AsyncImage(
-                    model = expandedImage,
-                    contentDescription = "Visualização da foto",
-                    modifier = Modifier.fillMaxSize()
-                        .graphicsLayer {
-                            scaleX = viewerScale
-                            scaleY = viewerScale
-                            translationX = viewerOffset.x
-                            translationY = viewerOffset.y
-                        }
-                        .pointerInput(expandedImage) {
-                            detectTransformGestures { _, pan, zoom, _ ->
-                                viewerScale = (viewerScale * zoom).coerceIn(1f, 5f)
-                                viewerOffset = if (viewerScale > 1f) viewerOffset + pan else androidx.compose.ui.geometry.Offset.Zero
+                if (viewingPublication && selectedPublication?.mediaType.equals("video", ignoreCase = true)) {
+                    VyboraFullscreenVideo(url = expandedImage, modifier = Modifier.fillMaxSize())
+                } else {
+                    AsyncImage(
+                        model = expandedImage,
+                        contentDescription = "Visualização da foto",
+                        modifier = Modifier.fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = viewerScale
+                                scaleY = viewerScale
+                                translationX = viewerOffset.x
+                                translationY = viewerOffset.y
                             }
-                        }
-                        .pointerInput(expandedImage) {
-                            detectTapGestures(
-                                onTap = { viewerControls = !viewerControls },
-                                onDoubleTap = {
-                                    viewerScale = if (viewerScale > 1f) 1f else 2f
-                                    viewerOffset = androidx.compose.ui.geometry.Offset.Zero
+                            .pointerInput(expandedImage) {
+                                detectTransformGestures { _, pan, zoom, _ ->
+                                    viewerScale = (viewerScale * zoom).coerceIn(1f, 5f)
+                                    viewerOffset = if (viewerScale > 1f) viewerOffset + pan else androidx.compose.ui.geometry.Offset.Zero
                                 }
-                            )
-                        },
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                )
+                            }
+                            .pointerInput(expandedImage) {
+                                detectTapGestures(
+                                    onTap = { viewerControls = !viewerControls },
+                                    onDoubleTap = {
+                                        viewerScale = if (viewerScale > 1f) 1f else 2f
+                                        viewerOffset = androidx.compose.ui.geometry.Offset.Zero
+                                    }
+                                )
+                            },
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                    )
+                }
                 if (viewerControls) {
                     Row(
                         Modifier.fillMaxWidth().align(Alignment.TopCenter)
