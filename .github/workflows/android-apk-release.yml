@@ -92,6 +92,27 @@ jobs:
           sed -i '1i@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)' "$TARGET/MainActivity.kt"
           echo "Prepared v42 Kotlin sources in build workspace; original ZIP remains unchanged."
 
+      - name: Fix duplicate AlertDialog parameters in V42
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          lines=p.read_text().splitlines(keepends=True)
+          titles=('Bloquear @', 'Contas bloqueadas', 'Bloquear usuário?', 'Excluir conta definitivamente?')
+          removed=0
+          for i,line in enumerate(lines):
+              if 'containerColor = QiblyTheme.card,' not in line:
+                  continue
+              window=''.join(lines[i+1:i+14])
+              if any(title in window for title in titles):
+                  lines[i]=''
+                  removed+=1
+          assert removed == 4, f'Expected four duplicate AlertDialog containerColor arguments; found {removed}'
+          p.write_text(''.join(lines))
+          print(f'Removed {removed} duplicate AlertDialog containerColor arguments.')
+          PY
+
       - name: Diagnose V42 Compose errors
         shell: bash
         run: |
