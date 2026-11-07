@@ -65,14 +65,20 @@ jobs:
           unzip -tq QINBLY-projeto-v42.zip
           mkdir -p "$RUNNER_TEMP/qinbly-v42"
           unzip -q QINBLY-projeto-v42.zip -d "$RUNNER_TEMP/qinbly-v42"
-          SOURCE="$RUNNER_TEMP/qinbly-v42/app/src/main/java/app/qinbly/android"
-          test -s "$SOURCE/MainActivity.kt"
-          test -s "$SOURCE/QinblyApi.kt"
+          # Locate Kotlin sources even when the uploaded ZIP contains a project root folder.
+          ROOT="$RUNNER_TEMP/qinbly-v42"
+          echo "Kotlin files found in uploaded V42:"
+          find "$ROOT" -type f -name '*.kt' -print | head -80
           TARGET="app/src/main/java/app/qinbly/android"
           mkdir -p "$TARGET"
           for file in MainActivity.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
-            test -s "$SOURCE/$file"
-            cp "$SOURCE/$file" "$TARGET/$file"
+            SOURCE_FILE="$(find "$ROOT" -type f -name "$file" -path '*/src/main/java/*' -print -quit)"
+            if [[ -z "$SOURCE_FILE" ]]; then
+              echo "::error::Required Kotlin source $file missing from V42 archive."
+              exit 1
+            fi
+            cp "$SOURCE_FILE" "$TARGET/$file"
+            echo "Imported $file from ${SOURCE_FILE#"$ROOT"/}"
           done
           # Match the in-app updater to the public QINBLY APK filename.
           sed -i 's/vybora-release\.apk/QINBLY-release.apk/g' "$TARGET/RemoteUiActivity.kt"
