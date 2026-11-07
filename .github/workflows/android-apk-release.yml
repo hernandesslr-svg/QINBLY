@@ -126,6 +126,22 @@ jobs:
                   print(f"{i}: {lines[i-1]}")
           PY
 
+      - name: Inspect V48 feed caption and media layout
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          lines=p.read_text().splitlines()
+          terms=('caption', 'legenda', 'Legenda', 'post.content', 'post.caption', 'publication.caption', 'contentText')
+          matches=[i for i,s in enumerate(lines) if any(t in s for t in terms)]
+          print('FEED CAPTION CANDIDATES',len(matches))
+          for n in matches[:70]:
+              print(f'=== V48 line {n+1} ===')
+              for i in range(max(0,n-7),min(len(lines),n+9)):
+                  print(f'{i+1}: {lines[i]}')
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
