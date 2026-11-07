@@ -12,7 +12,7 @@ on:
       - 'settings.gradle.kts'
       - 'gradle.properties'
       - '.github/workflows/android-apk-release.yml'
-      - 'QINBLY-projeto-v30.zip'
+      - 'QINBLY-projeto-v36.zip'
 
 permissions:
   contents: write
@@ -57,15 +57,15 @@ jobs:
           test -s app/src/main/res/drawable-nodpi/qinbly_icon.jpg
           file app/src/main/res/drawable-nodpi/qinbly_icon.jpg
 
-      - name: Prepare uploaded QINBLY v30 sources without modifying the ZIP
+      - name: Prepare uploaded QINBLY v36 sources without modifying the ZIP
         shell: bash
         run: |
           set -euo pipefail
-          test -s QINBLY-projeto-v30.zip
-          unzip -tq QINBLY-projeto-v30.zip
-          mkdir -p "$RUNNER_TEMP/qinbly-v30"
-          unzip -q QINBLY-projeto-v30.zip -d "$RUNNER_TEMP/qinbly-v30"
-          SOURCE="$RUNNER_TEMP/qinbly-v30/app/src/main/java/app/qinbly/android"
+          test -s QINBLY-projeto-v36.zip
+          unzip -tq QINBLY-projeto-v36.zip
+          mkdir -p "$RUNNER_TEMP/qinbly-v36"
+          unzip -q QINBLY-projeto-v36.zip -d "$RUNNER_TEMP/qinbly-v36"
+          SOURCE="$RUNNER_TEMP/qinbly-v36/app/src/main/java/app/qinbly/android"
           test -s "$SOURCE/MainActivity.kt"
           test -s "$SOURCE/QinblyApi.kt"
           TARGET="app/src/main/java/app/qinbly/android"
@@ -80,11 +80,11 @@ jobs:
           for file in MainActivity.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
             sed -i 's/Vybora/Qinbly/g; s/VYBORA/QINBLY/g; s/vybora/qinbly/g' "$TARGET/$file"
           done
-          # v30 references a Material icon unavailable in this project's icon set.
+          # v36 references a Material icon unavailable in this project's icon set.
           sed -i 's/Icons.Default.Delete\b/Icons.Default.DeleteForever/g' "$TARGET/MainActivity.kt"
-          # The v30 source uses a Compose Foundation API that requires explicit opt-in.
+          # The v36 source uses a Compose Foundation API that requires explicit opt-in.
           sed -i '1i@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)' "$TARGET/MainActivity.kt"
-          echo "Prepared v30 Kotlin sources in build workspace; original ZIP remains unchanged."
+          echo "Prepared v36 Kotlin sources in build workspace; original ZIP remains unchanged."
 
       - name: Compile Android Kotlin before signing validation
         shell: bash
