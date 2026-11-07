@@ -1774,11 +1774,11 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
     DisposableEffect(player) { onDispose { player.release() } }
     Box(modifier = modifier.background(Color.Black), contentAlignment = Alignment.Center) {
         if (playbackError) {
-            AsyncImage(
-                model = "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&h=700&q=85",
-                contentDescription = "Prévia do vídeo",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+            Text(
+                "Não foi possível reproduzir este vídeo.",
+                color = Color.White,
+                modifier = Modifier.align(Alignment.TopCenter).padding(16.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
             Box(Modifier.size(62.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.62f))
                 .clickable {
@@ -1796,12 +1796,12 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
                     this.player = player
                     useController = false
                     setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
-                    resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
                 } },
                 update = { view ->
                     view.player = player
                     view.useController = false
-                    view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
                 }
             )
             if (!isPlaying) {
