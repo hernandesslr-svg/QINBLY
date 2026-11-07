@@ -211,6 +211,22 @@ jobs:
                   print(str(i+1)+': '+lines[i])
           PY
 
+      - name: Inspect profile photo grid layout
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          lines=p.read_text().splitlines()
+          keys=('LazyVerticalGrid(', 'GridCells.Fixed(', 'ContentScale.Fit', 'ContentScale.Inside', 'profilePhotos', 'profileMedia', 'Fotos"', 'photoPosts', 'PhotoGrid')
+          hits=[i for i,line in enumerate(lines) if any(k in line for k in keys)]
+          print('PROFILE GRID REFERENCES:',len(hits))
+          for n in hits[:80]:
+              print('=== grid source line',n+1,'===')
+              for i in range(max(0,n-8),min(len(lines),n+17)):
+                  print(str(i+1)+': '+lines[i])
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
