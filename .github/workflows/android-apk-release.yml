@@ -82,6 +82,18 @@ jobs:
           done
           # Keep in-app update APK asset filename consistent with GitHub Releases.
           sed -i 's/vybora-release\.apk/QINBLY-release.apk/g' "$TARGET/RemoteUiActivity.kt"
+          # Fix OTA asset detection: GitHub publishes QINBLY-release.apk (uppercase).
+          # The imported updater incorrectly compares against lowercase qinbly-release.apk.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/app/qinbly/android/RemoteUiActivity.kt')
+          s = p.read_text()
+          old = 'asset.optString("name") == "qinbly-release.apk"'
+          new = 'asset.optString("name").equals("QINBLY-release.apk", ignoreCase = true)'
+          assert s.count(old) == 1, 'Expected exactly one OTA asset filename comparison'
+          p.write_text(s.replace(old, new, 1))
+          print('OTA fixed: case-insensitive release APK asset lookup.')
+          PY
           # Remove legacy identifiers from temporary Android sources.
           for file in MainActivity.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
             sed -i 's/Vybora/Qinbly/g; s/VYBORA/QINBLY/g; s/vybora/qinbly/g' "$TARGET/$file"
