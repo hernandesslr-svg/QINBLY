@@ -4462,21 +4462,19 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             if (publicationMedia.isNotBlank()) {
                                 Box(Modifier.fillMaxWidth().aspectRatio(0.85f).clip(RoundedCornerShape(8.dp))) {
                                     var mediaFailed by remember(post.id, publicationMedia) { mutableStateOf(false) }
-                                    if (mediaFailed) {
+                                    if (post.mediaType.equals("video", ignoreCase = true)) {
+                                        InlineVideoPlayer(url = publicationMedia, modifier = Modifier.fillMaxSize())
+                                    } else if (mediaFailed) {
                                         Text("Não foi possível carregar a mídia desta publicação.", modifier = Modifier.align(Alignment.Center).padding(12.dp), color = RemoteAppearance.screenTextColor)
                                     } else {
                                         AsyncImage(
-                                            model = if (post.mediaType.equals("video", ignoreCase = true)) {
-                                                coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
-                                                    .data(publicationMedia).decoderFactory(coil.decode.VideoFrameDecoder.Factory()).build()
-                                            } else publicationMedia,
+                                            model = publicationMedia,
                                             contentDescription = "Mídia da publicação",
                                             modifier = Modifier.fillMaxSize(),
                                             contentScale = ContentScale.Crop,
                                             onError = { mediaFailed = true }
                                         )
                                     }
-                                    if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.Center).size(44.dp))
                                 }
                             } else if (post.mediaType == "poll" && post.pollOptions.isNotEmpty()) {
                                 val totalVotes = post.pollVotes.sum()
@@ -6297,15 +6295,16 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                             Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 if (post.caption.isNotBlank()) Text(post.caption, color = RemoteAppearance.screenTextColor)
                                 if (post.mediaUrl.isNotBlank()) {
-                                    AsyncImage(
-                                        model = if (post.mediaType.equals("video", ignoreCase = true)) {
-                                            coil.request.ImageRequest.Builder(context).data(post.mediaUrl)
-                                                .decoderFactory(coil.decode.VideoFrameDecoder.Factory()).build()
-                                        } else post.mediaUrl,
-                                        contentDescription = "Publicação de $displayName",
-                                        modifier = Modifier.fillMaxWidth().aspectRatio(0.85f),
-                                        contentScale = ContentScale.Crop
-                                    )
+                                    if (post.mediaType.equals("video", ignoreCase = true)) {
+                                        InlineVideoPlayer(url = post.mediaUrl, modifier = Modifier.fillMaxWidth().aspectRatio(0.85f))
+                                    } else {
+                                        AsyncImage(
+                                            model = post.mediaUrl,
+                                            contentDescription = "Publicação de $displayName",
+                                            modifier = Modifier.fillMaxWidth().aspectRatio(0.85f),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
                                 }
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                     Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = RemoteAppearance.screenTextColor)
