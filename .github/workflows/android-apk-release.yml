@@ -65,7 +65,7 @@ jobs:
           unzip -tq QINBLY-projeto-v30.zip
           mkdir -p "$RUNNER_TEMP/qinbly-v30"
           unzip -q QINBLY-projeto-v30.zip -d "$RUNNER_TEMP/qinbly-v30"
-          SOURCE="$RUNNER_TEMP/qinbly-v30/QINBLY-main/app/src/main/java/app/qinbly/android"
+          SOURCE="$RUNNER_TEMP/qinbly-v30/app/src/main/java/app/qinbly/android"
           test -s "$SOURCE/MainActivity.kt"
           test -s "$SOURCE/QinblyApi.kt"
           TARGET="app/src/main/java/app/vybora/android"
