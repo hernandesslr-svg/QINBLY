@@ -12,6 +12,7 @@ on:
       - 'settings.gradle.kts'
       - 'gradle.properties'
       - '.github/workflows/android-apk-release.yml'
+      - 'QINBLY-projeto-v10.zip'
 
 permissions:
   contents: write
@@ -55,6 +56,25 @@ jobs:
           base64 --decode app/icon-assets/qinbly_icon.jpg.b64 > app/src/main/res/drawable-nodpi/qinbly_icon.jpg
           test -s app/src/main/res/drawable-nodpi/qinbly_icon.jpg
           file app/src/main/res/drawable-nodpi/qinbly_icon.jpg
+
+      - name: Prepare uploaded QINBLY v10 sources without modifying the ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s QINBLY-projeto-v10.zip
+          unzip -tq QINBLY-projeto-v10.zip
+          mkdir -p "$RUNNER_TEMP/qinbly-v10"
+          unzip -q QINBLY-projeto-v10.zip -d "$RUNNER_TEMP/qinbly-v10"
+          SOURCE="$RUNNER_TEMP/qinbly-v10/QINBLY-main/app/src/main/java/app/qinbly/android"
+          test -s "$SOURCE/MainActivity.kt"
+          test -s "$SOURCE/QinblyApi.kt"
+          TARGET="app/src/main/java/app/vybora/android"
+          mkdir -p "$TARGET"
+          for file in MainActivity.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
+            test -s "$SOURCE/$file"
+            sed 's/app\.qinbly\.android/app.vybora.android/g' "$SOURCE/$file" > "$TARGET/$file"
+          done
+          echo "Prepared v10 Kotlin sources in build workspace; original ZIP remains unchanged."
 
       - name: Compile Android Kotlin before signing validation
         shell: bash
