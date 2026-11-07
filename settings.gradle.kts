@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "VYBORA"
+rootProject.name = "QINBLY"
 include(":app")
