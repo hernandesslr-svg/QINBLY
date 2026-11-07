@@ -74,6 +74,8 @@ jobs:
             test -s "$SOURCE/$file"
             sed 's/app\.qinbly\.android/app.vybora.android/g' "$SOURCE/$file" > "$TARGET/$file"
           done
+          # Match the in-app updater to the public QINBLY APK filename.
+          sed -i 's/vybora-release\.apk/QINBLY-release.apk/g' "$TARGET/RemoteUiActivity.kt"
           # v30 references a Material icon unavailable in this project's icon set.
           sed -i 's/Icons.Default.Delete\b/Icons.Default.DeleteForever/g' "$TARGET/MainActivity.kt"
           # The v30 source uses a Compose Foundation API that requires explicit opt-in.
@@ -107,13 +109,13 @@ jobs:
           KEY_ALIAS: ${{ secrets.VYBORA_KEY_ALIAS }}
         run: |
           set -euo pipefail
-          printf "%s" "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/vybora-release.jks"
-          keytool -list -v -keystore "$RUNNER_TEMP/vybora-release.jks" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > "$RUNNER_TEMP/key-info.txt"
+          printf "%s" "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/qinbly-release.jks"
+          keytool -list -v -keystore "$RUNNER_TEMP/qinbly-release.jks" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > "$RUNNER_TEMP/key-info.txt"
           grep -Fq "4B:E4:31:84:70:0B:86:CF:3A:32:60:4F:74:09:DE:94:17:2A:CB:3A" "$RUNNER_TEMP/key-info.txt" || {
             echo "::error::The configured release keystore is not the original VYBORA OAuth signing key."
             exit 1
           }
-          echo "VYBORA_KEYSTORE_PATH=$RUNNER_TEMP/vybora-release.jks" >> "$GITHUB_ENV"
+          echo "VYBORA_KEYSTORE_PATH=$RUNNER_TEMP/qinbly-release.jks" >> "$GITHUB_ENV"
 
       - name: Calculate next app version
         env:
@@ -146,14 +148,14 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --no-daemon :app:assembleRelease -PversionCode="$VERSION_CODE" -PversionName="$VERSION_NAME"
           mkdir -p release
-          cp app/build/outputs/apk/release/app-release.apk release/vybora-release.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose release/vybora-release.apk
-          CERT_INFO="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs release/vybora-release.apk)"
+          cp app/build/outputs/apk/release/app-release.apk release/QINBLY-release.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose release/QINBLY-release.apk
+          CERT_INFO="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs release/QINBLY-release.apk)"
           printf '%s\n' "$CERT_INFO"
           ACTUAL_SHA1="$(printf '%s\n' "$CERT_INFO" | sed -n 's/.*Signer #1 certificate SHA-1 digest: *//p' | tr -d ':' | tr '[:upper:]' '[:lower:]')"
           EXPECTED_SHA1="4be43184700b86cf3a32604f7409de94172acb3a"
           test "$ACTUAL_SHA1" = "$EXPECTED_SHA1" || { echo "::error::APK SHA-1 does not match original OAuth signing key."; exit 1; }
-          sha256sum release/vybora-release.apk | tee release/SHA256SUMS.txt
+          sha256sum release/QINBLY-release.apk | tee release/SHA256SUMS.txt
           echo "Verified APK version $VERSION_NAME with the original signing certificate."
 
       - name: Publish current APK release
@@ -165,7 +167,7 @@ jobs:
           generate_release_notes: false
           make_latest: true
           files: |
-            release/vybora-release.apk
+            release/QINBLY-release.apk
             release/SHA256SUMS.txt
 
 # Rebuild release after installing ten profile-frame PNG assets.
