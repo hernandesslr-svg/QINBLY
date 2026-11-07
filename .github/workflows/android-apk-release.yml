@@ -105,7 +105,20 @@ jobs:
           p.write_text(s.replace(old, new, 1))
           print('OTA APK URL validation fixed without weakening HTTPS or GitHub checks.')
           PY
-          # Remove legacy identifiers from temporary Android sources.
+          # Profile photo thumbnails must fill their tiles on every account.
+      python3 - <<'PY'
+      from pathlib import Path
+      p = Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+      s = p.read_text()
+      old = 'contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)'
+      new = 'contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)'
+      assert s.count(old) == 1, 'Profile photo grid image renderer not found exactly once'
+      s = s.replace(old, new, 1)
+      p.write_text(s)
+      print('Profile photo grid: images fill each thumbnail, other UI unchanged.')
+      PY
+
+      # Remove legacy identifiers from temporary Android sources.
           for file in MainActivity.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
             sed -i 's/Vybora/Qinbly/g; s/VYBORA/QINBLY/g; s/vybora/qinbly/g' "$TARGET/$file"
           done
