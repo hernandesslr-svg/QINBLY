@@ -195,6 +195,22 @@ jobs:
           print('Post cards removed and edge-to-edge separators added.')
           PY
 
+      - name: Inspect shared video playback in all screens
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          lines=p.read_text().splitlines()
+          keys=('QinblyVideoPoster(', 'ExoPlayer.Builder(', 'PlayerView(', 'playWhenReady', 'MediaItem.fromUri(', 'VideoView(', 'VideoPlayer(', 'isPlaying', 'mediaType == "video"')
+          hits=[i for i,line in enumerate(lines) if any(k in line for k in keys)]
+          print('VIDEO PLAYBACK REFERENCES:',len(hits))
+          for n in hits[:85]:
+              print('=== video source line',n+1,'===')
+              for i in range(max(0,n-7),min(len(lines),n+16)):
+                  print(str(i+1)+': '+lines[i])
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
