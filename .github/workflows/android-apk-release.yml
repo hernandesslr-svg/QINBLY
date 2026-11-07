@@ -106,7 +106,7 @@ jobs:
           p.write_text(s.replace(old, new, 1))
           print('OTA APK URL validation fixed without weakening HTTPS or GitHub checks.')
           PY
-      # Remove legacy identifiers from temporary Android sources.
+          # Remove legacy identifiers from temporary Android sources.
           for file in MainActivity.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
             sed -i 's/Vybora/Qinbly/g; s/VYBORA/QINBLY/g; s/vybora/qinbly/g' "$TARGET/$file"
           done
