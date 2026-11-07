@@ -4475,10 +4475,10 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 .padding(12.dp),
                             verticalArrangement = Arrangement.spacedBy(9.dp)
                         ) {
-                            Text(post.caption.ifBlank { "Publicação" }, color = RemoteAppearance.screenTextColor, fontSize = if (post.mediaType == "poll") 18.sp else 14.sp, fontWeight = if (post.mediaType == "poll") FontWeight.Bold else FontWeight.Normal)
+                            if (post.mediaType == "poll") Text(post.caption.ifBlank { "Enquete" }, color = RemoteAppearance.screenTextColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                             val publicationMedia = post.mediaUrl.ifBlank { post.mediaUrls.firstOrNull().orEmpty() }
                             if (publicationMedia.isNotBlank()) {
-                                Box(Modifier.fillMaxWidth().aspectRatio(0.85f).clip(RoundedCornerShape(8.dp))) {
+                                Box(Modifier.fillMaxWidth().aspectRatio(0.8f).clip(RoundedCornerShape(16.dp))) {
                                     var mediaFailed by remember(post.id, publicationMedia) { mutableStateOf(false) }
                                     if (post.mediaType.equals("video", ignoreCase = true)) {
                                         QiblyPublicationVideo(url = publicationMedia, modifier = Modifier.fillMaxSize(), onFullscreen = { selectedPublicationCaption = post.caption; selectedPublication = post; expandedImage = publicationMedia; viewingPublication = true })
@@ -4494,7 +4494,9 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                         )
                                     }
                                 }
-                            } else if (post.mediaType == "poll" && post.pollOptions.isNotEmpty()) {
+                            }
+                            if (post.mediaType != "poll" && post.caption.isNotBlank()) Text(post.caption, color = RemoteAppearance.screenTextColor, fontSize = 15.sp, lineHeight = 20.sp)
+                            if (publicationMedia.isBlank() && post.mediaType == "poll" && post.pollOptions.isNotEmpty()) {
                                 val totalVotes = post.pollVotes.sum()
                                 val hasVoted = post.myPollVote >= 0
                                 Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -6315,20 +6317,20 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                             border = BorderStroke(1.dp, QiblyTheme.border)
                         ) {
                             Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                if (post.caption.isNotBlank()) Text(post.caption, color = RemoteAppearance.screenTextColor)
                                 val publicPostMedia = post.mediaUrl.ifBlank { post.mediaUrls.firstOrNull().orEmpty() }
                                 if (publicPostMedia.isNotBlank()) {
                                     if (post.mediaType.equals("video", ignoreCase = true)) {
-                                        QiblyPublicationVideo(url = publicPostMedia, modifier = Modifier.fillMaxWidth().aspectRatio(0.85f), onFullscreen = { selectedPublicationCaption = post.caption; selectedPublication = post; expandedImage = publicPostMedia; viewingPublication = true })
+                                        QiblyPublicationVideo(url = publicPostMedia, modifier = Modifier.fillMaxWidth().aspectRatio(0.8f), onFullscreen = { selectedPublicationCaption = post.caption; selectedPublication = post; expandedImage = publicPostMedia; viewingPublication = true })
                                     } else {
                                         AsyncImage(
                                             model = publicPostMedia,
                                             contentDescription = "Publicação de $displayName",
-                                            modifier = Modifier.fillMaxWidth().aspectRatio(0.85f),
+                                            modifier = Modifier.fillMaxWidth().aspectRatio(0.8f),
                                             contentScale = ContentScale.Crop
                                         )
                                     }
                                 }
+                                                                if (post.caption.isNotBlank()) Text(post.caption, color = RemoteAppearance.screenTextColor, fontSize = 15.sp, lineHeight = 20.sp)
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                     IconButton(onClick = {
                                         selectedPublication = post
