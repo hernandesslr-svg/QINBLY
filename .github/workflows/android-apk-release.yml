@@ -76,6 +76,8 @@ jobs:
           done
           # v30 references a Material icon unavailable in this project's icon set.
           sed -i 's/Icons.Default.Delete\b/Icons.Default.DeleteForever/g' "$TARGET/MainActivity.kt"
+          # The v30 source uses a Compose Foundation API that requires explicit opt-in.
+          sed -i '1i@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)' "$TARGET/MainActivity.kt"
           echo "Prepared v30 Kotlin sources in build workspace; original ZIP remains unchanged."
 
       - name: Compile Android Kotlin before signing validation
