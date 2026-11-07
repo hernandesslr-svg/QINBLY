@@ -4458,10 +4458,25 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             verticalArrangement = Arrangement.spacedBy(9.dp)
                         ) {
                             Text(post.caption.ifBlank { "Publicação" }, color = RemoteAppearance.screenTextColor, fontSize = if (post.mediaType == "poll") 18.sp else 14.sp, fontWeight = if (post.mediaType == "poll") FontWeight.Bold else FontWeight.Normal)
-                            if (post.mediaUrl.isNotBlank()) {
-                                Box(Modifier.fillMaxWidth().height(240.dp).clip(RoundedCornerShape(8.dp))) {
-                                    AsyncImage(model = post.mediaUrl, contentDescription = "Mídia da publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
-                                    if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = Color.White, modifier = Modifier.align(Alignment.Center).size(44.dp))
+                            val publicationMedia = post.mediaUrl.ifBlank { post.mediaUrls.firstOrNull().orEmpty() }
+                            if (publicationMedia.isNotBlank()) {
+                                Box(Modifier.fillMaxWidth().aspectRatio(0.85f).clip(RoundedCornerShape(8.dp))) {
+                                    var mediaFailed by remember(post.id, publicationMedia) { mutableStateOf(false) }
+                                    if (mediaFailed) {
+                                        Text("Não foi possível carregar a mídia desta publicação.", modifier = Modifier.align(Alignment.Center).padding(12.dp), color = RemoteAppearance.screenTextColor)
+                                    } else {
+                                        AsyncImage(
+                                            model = if (post.mediaType.equals("video", ignoreCase = true)) {
+                                                coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                                                    .data(publicationMedia).decoderFactory(coil.decode.VideoFrameDecoder.Factory()).build()
+                                            } else publicationMedia,
+                                            contentDescription = "Mídia da publicação",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop,
+                                            onError = { mediaFailed = true }
+                                        )
+                                    }
+                                    if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.Center).size(44.dp))
                                 }
                             } else if (post.mediaType == "poll" && post.pollOptions.isNotEmpty()) {
                                 val totalVotes = post.pollVotes.sum()
