@@ -14,7 +14,7 @@ jobs:
   repair-ota-asset:
     runs-on: ubuntu-latest
     steps:
-      - name: Add lowercase APK alias to latest published release
+      - name: Rename existing APK asset to lowercase for OTA validation
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -26,7 +26,9 @@ jobs:
           mkdir -p /tmp/qinbly-ota
           gh release download "$tag" --pattern 'QINBLY-release.apk' --dir /tmp/qinbly-ota
           test -s /tmp/qinbly-ota/QINBLY-release.apk
-          cp /tmp/qinbly-ota/QINBLY-release.apk /tmp/qinbly-ota/qinbly-release.apk
-          gh release upload "$tag" /tmp/qinbly-ota/qinbly-release.apk --clobber
+          mv /tmp/qinbly-ota/QINBLY-release.apk /tmp/qinbly-ota/qinbly-release.apk
+          asset_id="$(gh api "repos/$GH_REPO/releases/tags/$tag" --jq '.assets[] | select(.name == "QINBLY-release.apk") | .id')"
+          test -n "$asset_id"
+          gh api -X PATCH "repos/$GH_REPO/releases/assets/$asset_id" -f name='qinbly-release.apk'
           gh release view "$tag" --json assets --jq '.assets[].name'
           echo "OTA lowercase APK asset published without recompiling."
