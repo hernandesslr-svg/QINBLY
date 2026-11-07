@@ -1,0 +1,32 @@
+name: Repair QINBLY OTA release asset (no APK build)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/repair-ota-asset.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair-ota-asset:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add lowercase APK alias to latest published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="$(gh release view --json tagName --jq '.tagName')"
+          echo "Repairing OTA filename for release: $tag"
+          mkdir -p /tmp/qinbly-ota
+          gh release download "$tag" --pattern 'QINBLY-release.apk' --dir /tmp/qinbly-ota
+          test -s /tmp/qinbly-ota/QINBLY-release.apk
+          cp /tmp/qinbly-ota/QINBLY-release.apk /tmp/qinbly-ota/qinbly-release.apk
+          gh release upload "$tag" /tmp/qinbly-ota/qinbly-release.apk --clobber
+          gh release view "$tag" --json assets --jq '.assets[].name'
+          echo "OTA lowercase APK asset published without recompiling."
