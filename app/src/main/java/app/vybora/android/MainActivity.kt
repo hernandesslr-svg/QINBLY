@@ -6299,12 +6299,13 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                         ) {
                             Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 if (post.caption.isNotBlank()) Text(post.caption, color = RemoteAppearance.screenTextColor)
-                                if (post.mediaUrl.isNotBlank()) {
+                                val publicPostMedia = post.mediaUrl.ifBlank { post.mediaUrls.firstOrNull().orEmpty() }
+                                if (publicPostMedia.isNotBlank()) {
                                     if (post.mediaType.equals("video", ignoreCase = true)) {
-                                        InlineVideoPlayer(url = post.mediaUrl, modifier = Modifier.fillMaxWidth().aspectRatio(0.85f), autoplay = false)
+                                        InlineVideoPlayer(url = publicPostMedia, modifier = Modifier.fillMaxWidth().aspectRatio(0.85f), autoplay = false)
                                     } else {
                                         AsyncImage(
-                                            model = post.mediaUrl,
+                                            model = publicPostMedia,
                                             contentDescription = "Publicação de $displayName",
                                             modifier = Modifier.fillMaxWidth().aspectRatio(0.85f),
                                             contentScale = ContentScale.Crop
