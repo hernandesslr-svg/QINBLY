@@ -6288,8 +6288,8 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                                                 .decoderFactory(coil.decode.VideoFrameDecoder.Factory()).build()
                                         } else post.mediaUrl,
                                         contentDescription = "Publicação de $displayName",
-                                        modifier = Modifier.fillMaxWidth().heightIn(min = 300.dp, max = 620.dp),
-                                        contentScale = ContentScale.FillWidth
+                                        modifier = Modifier.fillMaxWidth().aspectRatio(0.85f),
+                                        contentScale = ContentScale.Crop
                                     )
                                 }
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
