@@ -74,6 +74,8 @@ jobs:
             test -s "$SOURCE/$file"
             sed 's/app\.qinbly\.android/app.vybora.android/g' "$SOURCE/$file" > "$TARGET/$file"
           done
+          # v10 references a Material icon unavailable in this project's icon set.
+          sed -i 's/Icons.Default.Delete\b/Icons.Default.DeleteForever/g' "$TARGET/MainActivity.kt"
           echo "Prepared v10 Kotlin sources in build workspace; original ZIP remains unchanged."
 
       - name: Compile Android Kotlin before signing validation
