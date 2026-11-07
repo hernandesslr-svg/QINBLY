@@ -6311,10 +6311,48 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                                     }
                                 }
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = RemoteAppearance.screenTextColor)
-                                    Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentar", tint = RemoteAppearance.screenTextColor)
-                                    Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = RemoteAppearance.screenTextColor)
-                                    Icon(Icons.Default.BookmarkBorder, contentDescription = "Salvar", tint = RemoteAppearance.screenTextColor)
+                                    IconButton(onClick = {
+                                        selectedPublication = post
+                                        val token = prefs.getString("token", null)
+                                        if (token.isNullOrBlank()) onNotice("Entre na conta para curtir.")
+                                        else Thread {
+                                            try {
+                                                val liked = VyboraApi.toggleLike(token, post.id)
+                                                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                                    postLiked = liked
+                                                    onNotice(if (liked) "Publicação curtida." else "Curtida removida.")
+                                                }
+                                            } catch (e: Exception) {
+                                                android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Erro ao curtir.") }
+                                            }
+                                        }.start()
+                                    }) { Icon(Icons.Default.FavoriteBorder, contentDescription = "Curtir", tint = RemoteAppearance.screenTextColor) }
+                                    IconButton(onClick = {
+                                        selectedPublication = post
+                                        commentsOpen = true
+                                        commentsLoading = true
+                                        Thread {
+                                            try {
+                                                val loaded = VyboraApi.getComments(post.id)
+                                                android.os.Handler(android.os.Looper.getMainLooper()).post { postComments = loaded; commentsLoading = false }
+                                            } catch (e: Exception) {
+                                                android.os.Handler(android.os.Looper.getMainLooper()).post { commentsLoading = false; onNotice(e.message ?: "Erro ao carregar comentários.") }
+                                            }
+                                        }.start()
+                                    }) { Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comentar", tint = RemoteAppearance.screenTextColor) }
+                                    IconButton(onClick = {
+                                        val share = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(android.content.Intent.EXTRA_TEXT, post.mediaUrl.ifBlank { post.caption })
+                                        }
+                                        context.startActivity(android.content.Intent.createChooser(share, "Compartilhar publicação"))
+                                    }) { Icon(Icons.Default.Send, contentDescription = "Compartilhar", tint = RemoteAppearance.screenTextColor) }
+                                    IconButton(onClick = {
+                                        val wasSaved = post.id in savedIds
+                                        savedIds = if (wasSaved) savedIds - post.id else savedIds + post.id
+                                        prefs.edit().putStringSet("saved_post_ids", savedIds).apply()
+                                        onNotice(if (wasSaved) "Publicação removida dos salvos." else "Publicação salva.")
+                                    }) { Icon(if (post.id in savedIds) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = "Salvar", tint = RemoteAppearance.screenTextColor) }
                                 }
                             }
                         }
