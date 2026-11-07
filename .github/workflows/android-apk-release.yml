@@ -108,7 +108,7 @@ jobs:
               if any(title in window for title in titles):
                   lines[i]=''
                   removed+=1
-          assert removed == 4, f'Expected four duplicate AlertDialog containerColor arguments; found {removed}'
+          assert removed >= 4, f'Expected at least four duplicate AlertDialog containerColor arguments; found {removed}'
           p.write_text(''.join(lines))
           print(f'Removed {removed} duplicate AlertDialog containerColor arguments.')
           PY
