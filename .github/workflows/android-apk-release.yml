@@ -112,7 +112,7 @@ jobs:
           printf "%s" "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/qinbly-release.jks"
           keytool -list -v -keystore "$RUNNER_TEMP/qinbly-release.jks" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > "$RUNNER_TEMP/key-info.txt"
           grep -Fq "4B:E4:31:84:70:0B:86:CF:3A:32:60:4F:74:09:DE:94:17:2A:CB:3A" "$RUNNER_TEMP/key-info.txt" || {
-            echo "::error::The configured release keystore is not the original VYBORA OAuth signing key."
+            echo "::error::The configured release keystore is not the original QINBLY OAuth signing key."
             exit 1
           }
           echo "VYBORA_KEYSTORE_PATH=$RUNNER_TEMP/qinbly-release.jks" >> "$GITHUB_ENV"
