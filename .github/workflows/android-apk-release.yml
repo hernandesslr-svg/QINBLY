@@ -12,7 +12,7 @@ on:
       - 'settings.gradle.kts'
       - 'gradle.properties'
       - '.github/workflows/android-apk-release.yml'
-      - 'QINBLY-projeto-v42.zip'
+      - 'QINBLY-projeto-v48.zip'
 
 permissions:
   contents: write
@@ -57,42 +57,42 @@ jobs:
           test -s app/src/main/res/drawable-nodpi/qinbly_icon.jpg
           file app/src/main/res/drawable-nodpi/qinbly_icon.jpg
 
-      - name: Prepare uploaded QINBLY v42 sources without modifying the ZIP
+      - name: Prepare uploaded QINBLY v48 sources without modifying the ZIP
         shell: bash
         run: |
           set -euo pipefail
-          test -s QINBLY-projeto-v42.zip
-          unzip -tq QINBLY-projeto-v42.zip
-          mkdir -p "$RUNNER_TEMP/qinbly-v42"
-          unzip -q QINBLY-projeto-v42.zip -d "$RUNNER_TEMP/qinbly-v42"
+          test -s QINBLY-projeto-v48.zip
+          unzip -tq QINBLY-projeto-v48.zip
+          mkdir -p "$RUNNER_TEMP/qinbly-v48"
+          unzip -q QINBLY-projeto-v48.zip -d "$RUNNER_TEMP/qinbly-v48"
           # Locate Kotlin sources even when the uploaded ZIP contains a project root folder.
-          ROOT="$RUNNER_TEMP/qinbly-v42"
-          echo "Kotlin files found in uploaded V42:"
+          ROOT="$RUNNER_TEMP/qinbly-v48"
+          echo "Kotlin files found in uploaded V48:"
           find "$ROOT" -type f -name '*.kt' -print | head -80
           TARGET="app/src/main/java/app/qinbly/android"
           mkdir -p "$TARGET"
           for file in MainActivity.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
             SOURCE_FILE="$(find "$ROOT" -type f -name "$file" -path '*/src/main/java/*' -print -quit)"
             if [[ -z "$SOURCE_FILE" ]]; then
-              echo "::error::Required Kotlin source $file missing from V42 archive."
+              echo "::error::Required Kotlin source $file missing from V48 archive."
               exit 1
             fi
             cp "$SOURCE_FILE" "$TARGET/$file"
             echo "Imported $file from ${SOURCE_FILE#"$ROOT"/}"
           done
-          # Match the in-app updater to the public QINBLY APK filename.
+          # Keep in-app update APK asset filename consistent with GitHub Releases.
           sed -i 's/vybora-release\.apk/QINBLY-release.apk/g' "$TARGET/RemoteUiActivity.kt"
           # Remove legacy identifiers from temporary Android sources.
           for file in MainActivity.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
             sed -i 's/Vybora/Qinbly/g; s/VYBORA/QINBLY/g; s/vybora/qinbly/g' "$TARGET/$file"
           done
-          # v42 references a Material icon unavailable in this project's icon set.
+          # v48 references a Material icon unavailable in this project's icon set.
           sed -i 's/Icons.Default.Delete\b/Icons.Default.DeleteForever/g' "$TARGET/MainActivity.kt"
-          # The v42 source uses a Compose Foundation API that requires explicit opt-in.
+          # The v48 source uses a Compose Foundation API that requires explicit opt-in.
           sed -i '1i@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)' "$TARGET/MainActivity.kt"
-          echo "Prepared v42 Kotlin sources in build workspace; original ZIP remains unchanged."
+          echo "Prepared v48 Kotlin sources in build workspace; original ZIP remains unchanged."
 
-      - name: Fix duplicate AlertDialog parameters in V42
+      - name: Fix duplicate AlertDialog parameters in V48
         shell: bash
         run: |
           python3 - <<'PY'
@@ -113,7 +113,7 @@ jobs:
           print(f'Removed {removed} duplicate AlertDialog containerColor arguments.')
           PY
 
-      - name: Diagnose V42 Compose errors
+      - name: Diagnose V48 Compose errors
         shell: bash
         run: |
           python3 - <<'PY'
