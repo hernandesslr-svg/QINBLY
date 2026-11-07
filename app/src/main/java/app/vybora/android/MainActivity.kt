@@ -4463,7 +4463,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 Box(Modifier.fillMaxWidth().aspectRatio(0.85f).clip(RoundedCornerShape(8.dp))) {
                                     var mediaFailed by remember(post.id, publicationMedia) { mutableStateOf(false) }
                                     if (post.mediaType.equals("video", ignoreCase = true)) {
-                                        InlineVideoPlayer(url = publicationMedia, modifier = Modifier.fillMaxSize())
+                                        InlineVideoPlayer(url = publicationMedia, modifier = Modifier.fillMaxSize(), autoplay = false)
                                     } else if (mediaFailed) {
                                         Text("Não foi possível carregar a mídia desta publicação.", modifier = Modifier.align(Alignment.Center).padding(12.dp), color = RemoteAppearance.screenTextColor)
                                     } else {
@@ -6296,7 +6296,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                                 if (post.caption.isNotBlank()) Text(post.caption, color = RemoteAppearance.screenTextColor)
                                 if (post.mediaUrl.isNotBlank()) {
                                     if (post.mediaType.equals("video", ignoreCase = true)) {
-                                        InlineVideoPlayer(url = post.mediaUrl, modifier = Modifier.fillMaxWidth().aspectRatio(0.85f))
+                                        InlineVideoPlayer(url = post.mediaUrl, modifier = Modifier.fillMaxWidth().aspectRatio(0.85f), autoplay = false)
                                     } else {
                                         AsyncImage(
                                             model = post.mediaUrl,
