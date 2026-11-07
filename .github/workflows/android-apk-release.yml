@@ -94,6 +94,17 @@ jobs:
           p.write_text(s.replace(old, new, 1))
           print('OTA fixed: case-insensitive release APK asset lookup.')
           PY
+          # Keep OTA download URL validation strict but case-insensitive for the published APK filename.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/app/qinbly/android/RemoteUiActivity.kt')
+          s = p.read_text()
+          old = '!uri.path.orEmpty().endsWith("/qinbly-release.apk")'
+          new = '!uri.path.orEmpty().endsWith("/QINBLY-release.apk", ignoreCase = true)'
+          assert s.count(old) == 1, 'Expected one OTA APK URL validation check'
+          p.write_text(s.replace(old, new, 1))
+          print('OTA APK URL validation fixed without weakening HTTPS or GitHub checks.')
+          PY
           # Remove legacy identifiers from temporary Android sources.
           for file in MainActivity.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
             sed -i 's/Vybora/Qinbly/g; s/VYBORA/QINBLY/g; s/vybora/qinbly/g' "$TARGET/$file"
