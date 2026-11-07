@@ -2213,7 +2213,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Text(if (selectedFeedFilter == "Perto de mim") "Publicações locais indisponíveis" else "Ainda não há publicações", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                            Text(if (selectedFeedFilter == "Perto de você") "A localização das publicações ainda não é fornecida pelo serviço. Não exibiremos resultados inventados." else "Quando as pessoas publicarem, elas aparecerão aqui.", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
+                            Text(if (selectedFeedFilter == "Perto de mim") "A localização das publicações ainda não é fornecida pelo serviço. Não exibiremos resultados inventados." else "Quando as pessoas publicarem, elas aparecerão aqui.", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
                             OutlinedButton(onClick = { refreshKey++ }) {
                                 Text("Atualizar feed")
                             }
@@ -4440,8 +4440,8 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         Column(
                             modifier = Modifier.fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (QiblyTheme.dark) Color(0xFF20242C) else Color.White)
-                                .border(1.dp, Color(0xFFE2E5EA), RoundedCornerShape(12.dp))
+                                .background(QiblyTheme.card)
+                                .border(1.dp, QiblyTheme.border, RoundedCornerShape(12.dp))
                                 .clickable(enabled = post.mediaType != "poll") {
                                     selectedPublicationCaption = post.caption
                                     selectedPublication = post
