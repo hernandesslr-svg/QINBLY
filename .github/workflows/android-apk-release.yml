@@ -183,7 +183,7 @@ jobs:
           idx = s.index(anchor, start)
           old = s[idx:s.index(') {', idx) + 1]
           assert 'shadowElevation = 5.dp' in old and 'RoundedCornerShape(22.dp)' in old, 'Unexpected post card structure'
-          new = old.replace('shape = RoundedCornerShape(22.dp)', 'shape = androidx.compose.foundation.shape.RectangleShape').replace('shadowElevation = 5.dp', 'shadowElevation = 0.dp').replace('border = BorderStroke(1.dp, QiblyTheme.border)', 'border = null').replace('Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)', 'Modifier.fillMaxWidth().drawBehind { drawLine(color = Color.Gray.copy(alpha = 0.24f), start = androidx.compose.ui.geometry.Offset(0f, size.height), end = androidx.compose.ui.geometry.Offset(size.width, size.height), strokeWidth = 1.dp.toPx()) }')
+          new = old.replace('shape = RoundedCornerShape(22.dp)', 'shape = androidx.compose.ui.graphics.RectangleShape').replace('shadowElevation = 5.dp', 'shadowElevation = 0.dp').replace('border = BorderStroke(1.dp, QiblyTheme.border)', 'border = null').replace('Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)', 'Modifier.fillMaxWidth().drawBehind { drawLine(color = Color.Gray.copy(alpha = 0.24f), start = androidx.compose.ui.geometry.Offset(0f, size.height), end = androidx.compose.ui.geometry.Offset(size.width, size.height), strokeWidth = 1.dp.toPx()) }')
           assert old != new and 'drawBehind' in new
           s = s[:idx] + new + s[idx + len(old):]
           if 'import androidx.compose.ui.draw.drawBehind' not in s:
