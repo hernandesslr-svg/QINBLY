@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "app.vybora.android"
+    namespace = "app.qinbly.android"
     compileSdk = 35
 
     signingConfigs {
@@ -19,7 +19,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "app.vybora.android"
+        applicationId = "app.qinbly.android"
         minSdk = 26
         targetSdk = 35
         versionCode = providers.gradleProperty("versionCode").orNull?.toIntOrNull() ?: 1
