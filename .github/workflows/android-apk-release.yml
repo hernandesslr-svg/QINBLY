@@ -95,10 +95,10 @@ jobs:
 
       - name: Validate release signing secrets
         env:
-          KEYSTORE_BASE64: ${{ secrets.QINBLY_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.QINBLY_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.QINBLY_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.QINBLY_KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.VYBORA_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.VYBORA_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.VYBORA_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.VYBORA_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           test -n "$KEYSTORE_BASE64" || { echo "::error::Configure QINBLY_KEYSTORE_BASE64 in repository Actions secrets."; exit 1; }
@@ -108,9 +108,9 @@ jobs:
 
       - name: Decode and verify original release signing key
         env:
-          KEYSTORE_BASE64: ${{ secrets.QINBLY_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.QINBLY_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.QINBLY_KEY_ALIAS }}
+          KEYSTORE_BASE64: ${{ secrets.VYBORA_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.VYBORA_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.VYBORA_KEY_ALIAS }}
         run: |
           set -euo pipefail
           printf "%s" "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/qinbly-release.jks"
@@ -144,9 +144,9 @@ jobs:
 
       - name: Build, sign and verify release APK
         env:
-          QINBLY_KEYSTORE_PASSWORD: ${{ secrets.QINBLY_KEYSTORE_PASSWORD }}
-          QINBLY_KEY_ALIAS: ${{ secrets.QINBLY_KEY_ALIAS }}
-          QINBLY_KEY_PASSWORD: ${{ secrets.QINBLY_KEY_PASSWORD }}
+          QINBLY_KEYSTORE_PASSWORD: ${{ secrets.VYBORA_KEYSTORE_PASSWORD }}
+          QINBLY_KEY_ALIAS: ${{ secrets.VYBORA_KEY_ALIAS }}
+          QINBLY_KEY_PASSWORD: ${{ secrets.VYBORA_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           chmod +x ./gradlew
