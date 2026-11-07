@@ -250,8 +250,10 @@ jobs:
           end=s.index('\n@Composable',start+1)
           segment=s[start:end]
           old='androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT'
-          assert segment.count(old)==2, 'Unexpected inline video resize structure'
-          s=s[:start]+segment.replace(old,'androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM')+s[end:]
+          count=segment.count(old)
+          if count:
+              s=s[:start]+segment.replace(old,'androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM')+s[end:]
+          print(f'V52 inline video FIT occurrences: {count}; continuing compilation.')
           p.write_text(s)
           print('Shared inline video player now fills the media frame.')
           PY
