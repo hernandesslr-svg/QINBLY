@@ -92,6 +92,19 @@ jobs:
           sed -i '1i@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)' "$TARGET/MainActivity.kt"
           echo "Prepared v42 Kotlin sources in build workspace; original ZIP remains unchanged."
 
+      - name: Diagnose V42 Compose errors
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          lines=p.read_text().splitlines()
+          for n in (3448,3469,5047,5075,5496,5514,7166,7202):
+              print(f"=== MainActivity.kt around {n} ===")
+              for i in range(max(1,n-22),min(len(lines),n+8)+1):
+                  print(f"{i}: {lines[i-1]}")
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
