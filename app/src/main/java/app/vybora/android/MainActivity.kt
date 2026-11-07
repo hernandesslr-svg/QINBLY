@@ -6289,7 +6289,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                                 selectedPublication = post
                                 postLiked = false
                                 savedIds = prefs.getStringSet("saved_post_ids", emptySet())?.toSet() ?: emptySet()
-                                expandedImage = post.mediaUrl.ifBlank { "publication" }
+                                expandedImage = post.mediaUrl.ifBlank { post.mediaUrls.firstOrNull().orEmpty() }
                                 viewingPublication = true
                             },
                             shape = RoundedCornerShape(16.dp),
@@ -6365,19 +6365,23 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                 Spacer(Modifier.weight(1f))
                 // A foto usa a proporção natural; não esticamos a imagem para preencher a tela.
                 // O limite vertical reserva espaço para legenda e ações, sem barras pretas artificiais.
-                AsyncImage(
-                    model = expandedImage.orEmpty(),
-                    contentDescription = "Imagem da publicação",
-                    modifier = Modifier.fillMaxWidth()
-                        .heightIn(max = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp * 0.56f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .pointerInput(viewingPublication, selectedPublication?.id, postLiked) {
-                            detectTapGestures(onDoubleTap = {
-                                if (viewingPublication) likeSelectedPublication()
-                            })
-                        },
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                )
+                if (viewingPublication && selectedPublication?.mediaType.equals("video", ignoreCase = true)) {
+                    VyboraFullscreenVideo(url = expandedImage.orEmpty(), modifier = Modifier.fillMaxWidth().heightIn(max = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp * 0.56f))
+                } else {
+                    AsyncImage(
+                        model = expandedImage.orEmpty(),
+                        contentDescription = "Imagem da publicação",
+                        modifier = Modifier.fillMaxWidth()
+                            .heightIn(max = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp * 0.56f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .pointerInput(viewingPublication, selectedPublication?.id, postLiked) {
+                                detectTapGestures(onDoubleTap = {
+                                    if (viewingPublication) likeSelectedPublication()
+                                })
+                            },
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                    )
+                }
                 if (viewingPublication) {
                     if (selectedPublicationCaption.isNotBlank()) {
                         Text(selectedPublicationCaption, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp), color = Color.White, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
