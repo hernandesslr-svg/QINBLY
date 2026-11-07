@@ -1761,7 +1761,7 @@ private fun QiblyPublicationVideo(url: String, modifier: Modifier = Modifier, on
                     .padding(8.dp)
                     .background(Color.Black.copy(alpha = 0.55f), CircleShape)
             ) {
-                Icon(Icons.Default.OpenInFull, contentDescription = "Abrir vídeo em tela cheia", tint = Color.White)
+                Icon(Icons.Default.Fullscreen, contentDescription = "Abrir vídeo em tela cheia", tint = Color.White)
             }
         }
     }
