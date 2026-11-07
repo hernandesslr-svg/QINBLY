@@ -68,14 +68,18 @@ jobs:
           SOURCE="$RUNNER_TEMP/qinbly-v30/app/src/main/java/app/qinbly/android"
           test -s "$SOURCE/MainActivity.kt"
           test -s "$SOURCE/QinblyApi.kt"
-          TARGET="app/src/main/java/app/vybora/android"
+          TARGET="app/src/main/java/app/qinbly/android"
           mkdir -p "$TARGET"
           for file in MainActivity.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
             test -s "$SOURCE/$file"
-            sed 's/app\.qinbly\.android/app.vybora.android/g' "$SOURCE/$file" > "$TARGET/$file"
+            cp "$SOURCE/$file" "$TARGET/$file"
           done
           # Match the in-app updater to the public QINBLY APK filename.
           sed -i 's/vybora-release\.apk/QINBLY-release.apk/g' "$TARGET/RemoteUiActivity.kt"
+          # Remove legacy identifiers from temporary Android sources.
+          for file in MainActivity.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
+            sed -i 's/Vybora/Qinbly/g; s/VYBORA/QINBLY/g; s/vybora/qinbly/g' "$TARGET/$file"
+          done
           # v30 references a Material icon unavailable in this project's icon set.
           sed -i 's/Icons.Default.Delete\b/Icons.Default.DeleteForever/g' "$TARGET/MainActivity.kt"
           # The v30 source uses a Compose Foundation API that requires explicit opt-in.
@@ -91,22 +95,22 @@ jobs:
 
       - name: Validate release signing secrets
         env:
-          KEYSTORE_BASE64: ${{ secrets.VYBORA_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.VYBORA_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.VYBORA_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.VYBORA_KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.QINBLY_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.QINBLY_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.QINBLY_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.QINBLY_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          test -n "$KEYSTORE_BASE64" || { echo "::error::Configure VYBORA_KEYSTORE_BASE64 in repository Actions secrets."; exit 1; }
-          test -n "$KEYSTORE_PASSWORD" || { echo "::error::Configure VYBORA_KEYSTORE_PASSWORD in repository Actions secrets."; exit 1; }
-          test -n "$KEY_ALIAS" || { echo "::error::Configure VYBORA_KEY_ALIAS in repository Actions secrets."; exit 1; }
-          test -n "$KEY_PASSWORD" || { echo "::error::Configure VYBORA_KEY_PASSWORD in repository Actions secrets."; exit 1; }
+          test -n "$KEYSTORE_BASE64" || { echo "::error::Configure QINBLY_KEYSTORE_BASE64 in repository Actions secrets."; exit 1; }
+          test -n "$KEYSTORE_PASSWORD" || { echo "::error::Configure QINBLY_KEYSTORE_PASSWORD in repository Actions secrets."; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "::error::Configure QINBLY_KEY_ALIAS in repository Actions secrets."; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "::error::Configure QINBLY_KEY_PASSWORD in repository Actions secrets."; exit 1; }
 
       - name: Decode and verify original release signing key
         env:
-          KEYSTORE_BASE64: ${{ secrets.VYBORA_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.VYBORA_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.VYBORA_KEY_ALIAS }}
+          KEYSTORE_BASE64: ${{ secrets.QINBLY_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.QINBLY_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.QINBLY_KEY_ALIAS }}
         run: |
           set -euo pipefail
           printf "%s" "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/qinbly-release.jks"
@@ -115,7 +119,7 @@ jobs:
             echo "::error::The configured release keystore is not the original QINBLY OAuth signing key."
             exit 1
           }
-          echo "VYBORA_KEYSTORE_PATH=$RUNNER_TEMP/qinbly-release.jks" >> "$GITHUB_ENV"
+          echo "QINBLY_KEYSTORE_PATH=$RUNNER_TEMP/qinbly-release.jks" >> "$GITHUB_ENV"
 
       - name: Calculate next app version
         env:
@@ -140,9 +144,9 @@ jobs:
 
       - name: Build, sign and verify release APK
         env:
-          VYBORA_KEYSTORE_PASSWORD: ${{ secrets.VYBORA_KEYSTORE_PASSWORD }}
-          VYBORA_KEY_ALIAS: ${{ secrets.VYBORA_KEY_ALIAS }}
-          VYBORA_KEY_PASSWORD: ${{ secrets.VYBORA_KEY_PASSWORD }}
+          QINBLY_KEYSTORE_PASSWORD: ${{ secrets.QINBLY_KEYSTORE_PASSWORD }}
+          QINBLY_KEY_ALIAS: ${{ secrets.QINBLY_KEY_ALIAS }}
+          QINBLY_KEY_PASSWORD: ${{ secrets.QINBLY_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           chmod +x ./gradlew
