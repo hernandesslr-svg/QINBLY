@@ -10,11 +10,11 @@ android {
 
     signingConfigs {
         create("release") {
-            val path = System.getenv("VYBORA_KEYSTORE_PATH")
+            val path = System.getenv("QINBLY_KEYSTORE_PATH")
             if (!path.isNullOrBlank()) storeFile = file(path)
-            System.getenv("VYBORA_KEYSTORE_PASSWORD")?.takeIf { it.isNotBlank() }?.let { storePassword = it }
-            System.getenv("VYBORA_KEY_ALIAS")?.takeIf { it.isNotBlank() }?.let { keyAlias = it }
-            System.getenv("VYBORA_KEY_PASSWORD")?.takeIf { it.isNotBlank() }?.let { keyPassword = it }
+            System.getenv("QINBLY_KEYSTORE_PASSWORD")?.takeIf { it.isNotBlank() }?.let { storePassword = it }
+            System.getenv("QINBLY_KEY_ALIAS")?.takeIf { it.isNotBlank() }?.let { keyAlias = it }
+            System.getenv("QINBLY_KEY_PASSWORD")?.takeIf { it.isNotBlank() }?.let { keyPassword = it }
         }
     }
 
