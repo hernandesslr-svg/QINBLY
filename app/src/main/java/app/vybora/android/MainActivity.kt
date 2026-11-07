@@ -1751,6 +1751,23 @@ private fun VyboraFullscreenVideo(url: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
+private fun QiblyPublicationVideo(url: String, modifier: Modifier = Modifier, onFullscreen: (() -> Unit)? = null) {
+    Box(modifier.clip(RoundedCornerShape(12.dp)).background(Color.Black)) {
+        InlineVideoPlayer(url = url, modifier = Modifier.fillMaxSize(), autoplay = false)
+        if (onFullscreen != null) {
+            IconButton(
+                onClick = onFullscreen,
+                modifier = Modifier.align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .background(Color.Black.copy(alpha = 0.55f), CircleShape)
+            ) {
+                Icon(Icons.Default.OpenInFull, contentDescription = "Abrir vídeo em tela cheia", tint = Color.White)
+            }
+        }
+    }
+}
+
+@Composable
 private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autoplay: Boolean = false) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var playbackError by remember(url) { mutableStateOf(false) }
@@ -2533,7 +2550,7 @@ DropdownMenuItem(
                                             modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp))
                                     }
                                     Box(Modifier.fillMaxSize().clickable { fullscreenVideoId = post.id }) {
-                                        InlineVideoPlayer(url = post.mediaUrl, modifier = Modifier.fillMaxSize(), autoplay = false)
+                                        QiblyPublicationVideo(url = post.mediaUrl, modifier = Modifier.fillMaxSize(), onFullscreen = { fullscreenVideoId = post.id })
                                     }
                                     
 
@@ -4464,7 +4481,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 Box(Modifier.fillMaxWidth().aspectRatio(0.85f).clip(RoundedCornerShape(8.dp))) {
                                     var mediaFailed by remember(post.id, publicationMedia) { mutableStateOf(false) }
                                     if (post.mediaType.equals("video", ignoreCase = true)) {
-                                        InlineVideoPlayer(url = publicationMedia, modifier = Modifier.fillMaxSize(), autoplay = false)
+                                        QiblyPublicationVideo(url = publicationMedia, modifier = Modifier.fillMaxSize(), onFullscreen = { selectedPublicationCaption = post.caption; selectedPublication = post; expandedImage = publicationMedia; viewingPublication = true })
                                     } else if (mediaFailed) {
                                         Text("Não foi possível carregar a mídia desta publicação.", modifier = Modifier.align(Alignment.Center).padding(12.dp), color = RemoteAppearance.screenTextColor)
                                     } else {
@@ -6302,7 +6319,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                                 val publicPostMedia = post.mediaUrl.ifBlank { post.mediaUrls.firstOrNull().orEmpty() }
                                 if (publicPostMedia.isNotBlank()) {
                                     if (post.mediaType.equals("video", ignoreCase = true)) {
-                                        InlineVideoPlayer(url = publicPostMedia, modifier = Modifier.fillMaxWidth().aspectRatio(0.85f), autoplay = false)
+                                        QiblyPublicationVideo(url = publicPostMedia, modifier = Modifier.fillMaxWidth().aspectRatio(0.85f), onFullscreen = { selectedPublicationCaption = post.caption; selectedPublication = post; expandedImage = publicPostMedia; viewingPublication = true })
                                     } else {
                                         AsyncImage(
                                             model = publicPostMedia,
