@@ -2240,7 +2240,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
 
                                         if (post.mediaUrl.isBlank() || (post.mediaType != "image" && post.mediaType != "video")) {
                                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().background(Color.Transparent).padding(horizontal = 14.dp, vertical = 7.dp)) {
-                                    val avatarUrl = post.avatarUrl.ifBlank { "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=240&auto=format&fit=crop&q=80" }
+                                    val avatarUrl = post.avatarUrl
                                     QiblyAccountAvatar(post.username, avatarUrl, 52.dp) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
                                     Spacer(Modifier.width(10.dp))
                                     Column(Modifier.weight(1f).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }) {
@@ -4113,7 +4113,7 @@ private val qiblyAvatarRefreshVersion = androidx.compose.runtime.mutableIntState
 private fun QiblyAccountAvatar(username: String, fallbackUrl: String, diameter: Dp, onClick: () -> Unit) {
     val avatarVersion = qiblyAvatarRefreshVersion.intValue
     var resolvedUrl by remember(username, fallbackUrl, avatarVersion) { mutableStateOf(fallbackUrl) }
-    var frame by remember(username) { mutableIntStateOf(-1) }
+    var frame by remember(username, avatarVersion) { mutableIntStateOf(-1) }
     LaunchedEffect(username, fallbackUrl, avatarVersion) {
         frame = -1
         if (username.isNotBlank() && !username.contains(".demo")) {
