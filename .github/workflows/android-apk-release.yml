@@ -159,6 +159,38 @@ jobs:
                           shown.add(i)
           PY
 
+      - name: Remove post card frames and add edge-to-edge separators
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          s = p.read_text()
+          anchor = '    Surface(\\n        color = QiblyTheme.card,\\n        shape = RoundedCornerShape(22.dp),\\n        shadowElevation = 5.dp,\\n        border = BorderStroke(1.dp, QiblyTheme.border),\\n        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)'
+          assert s.count(anchor) == 1, 'Expected exactly one shared QinblyPostCard frame'
+          replacement = '''    Surface(
+        color = QiblyTheme.card,
+        shape = androidx.compose.foundation.shape.RectangleShape,
+        shadowElevation = 0.dp,
+        border = null,
+        modifier = Modifier.fillMaxWidth().drawBehind {
+            drawLine(
+                color = Color.Gray.copy(alpha = 0.24f),
+                start = androidx.compose.ui.geometry.Offset(0f, size.height),
+                end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+        }'''
+          s = s.replace(anchor, replacement, 1)
+          if 'import androidx.compose.ui.draw.drawBehind' not in s:
+              lines = s.splitlines(keepends=True)
+              pos = next(i for i, line in enumerate(lines) if line.startswith('import '))
+              lines.insert(pos, 'import androidx.compose.ui.draw.drawBehind\\n')
+              s = ''.join(lines)
+          p.write_text(s)
+          print('Removed rounded post card, shadow and border; added full-width translucent divider.')
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
