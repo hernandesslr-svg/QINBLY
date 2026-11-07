@@ -227,6 +227,23 @@ jobs:
                   print(str(i+1)+': '+lines[i])
           PY
 
+      - name: Fill shared publication video frame without black sidebars
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          s=p.read_text()
+          start=s.index('private fun InlineVideoPlayer(')
+          end=s.index('\n@Composable',start+1)
+          segment=s[start:end]
+          old='androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT'
+          assert segment.count(old)==2, 'Unexpected inline video resize structure'
+          s=s[:start]+segment.replace(old,'androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM')+s[end:]
+          p.write_text(s)
+          print('Shared inline video player now fills the media frame.')
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
