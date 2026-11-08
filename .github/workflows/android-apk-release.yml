@@ -377,6 +377,21 @@ jobs:
           print('Replaced four invalid nonlocal returns with labeled split exits; all UI blocks retained.')
           PY
 
+      - name: Diagnose Home feed scroll loop without changing functionality
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          lines=Path('app/src/main/java/app/qinbly/android/MainActivity.kt').read_text().splitlines()
+          terms=('rememberLazyListState','LazyColumn(', 'animateScrollToItem(', 'scrollToItem(', 'firstVisibleItemIndex', 'snapshotFlow', 'nestedScroll(', 'rememberScrollState(', 'verticalScroll(', 'requestScrollToItem(', 'scrollToPage(', 'animateScrollToPage(', 'scrollable(', 'onPreScroll', 'onPostScroll')
+          hits=[i for i,x in enumerate(lines) if any(t in x for t in terms)]
+          print('HOME FEED SCROLL REFERENCES',len(hits))
+          for i in hits[:110]:
+              print('=== SCROLL SOURCE',i+1,'===')
+              for j in range(max(0,i-9),min(len(lines),i+14)):
+                  print(f'{j+1}: {lines[j]}')
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
