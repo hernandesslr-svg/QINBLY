@@ -367,6 +367,8 @@ jobs:
           docker run --rm --user "$(id -u):$(id -g)" \
             -v "$PWD:/workspace" -w /workspace \
             -v "$ANDROID_HOME:$ANDROID_HOME" -e ANDROID_HOME -e ANDROID_SDK_ROOT \
+            -v "$RUNNER_TEMP:$RUNNER_TEMP:ro" \
+            -e QINBLY_KEYSTORE_PATH -e QINBLY_KEYSTORE_PASSWORD -e QINBLY_KEY_ALIAS -e QINBLY_KEY_PASSWORD \
             -e GRADLE_USER_HOME=/workspace/.gradle-ci -e HOME=/workspace \
             gradle:8.9-jdk17 gradle --no-daemon :app:assembleRelease -PversionCode="$VERSION_CODE" -PversionName="$VERSION_NAME"
           mkdir -p release
