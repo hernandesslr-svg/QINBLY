@@ -12,7 +12,7 @@ on:
       - 'settings.gradle.kts'
       - 'gradle.properties'
       - '.github/workflows/android-apk-release.yml'
-      - 'QINBLY-projeto-v56.zip'
+      - 'QINBLY-projeto-v77.zip'
 
 permissions:
   contents: write
@@ -61,12 +61,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -s QINBLY-projeto-v56.zip
-          unzip -tq QINBLY-projeto-v56.zip
-          mkdir -p "$RUNNER_TEMP/qinbly-v56"
-          unzip -q QINBLY-projeto-v56.zip -d "$RUNNER_TEMP/qinbly-v56"
+          test -s QINBLY-projeto-v77.zip
+          unzip -tq QINBLY-projeto-v77.zip
+          mkdir -p "$RUNNER_TEMP/qinbly-v77"
+          unzip -q QINBLY-projeto-v77.zip -d "$RUNNER_TEMP/qinbly-v77"
           # Locate Kotlin sources even when the uploaded ZIP contains a project root folder.
-          ROOT="$RUNNER_TEMP/qinbly-v56"
+          ROOT="$RUNNER_TEMP/qinbly-v77"
           echo "Kotlin files found in uploaded V48:"
           find "$ROOT" -type f -name '*.kt' -print | head -80
           TARGET="app/src/main/java/app/qinbly/android"
