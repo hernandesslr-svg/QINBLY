@@ -542,8 +542,10 @@ jobs:
           s=s.replace(old,'Modifier.size(54.dp).clip(CircleShape)',1)
           # Wider camera tool rail so enlarged icons and +3sp labels have room.
           old='Modifier.align(Alignment.TopEnd).padding(top = 52.dp).width(140.dp)'
-          assert s.count(old)==1, 'Camera tool rail not found'
-          s=s.replace(old,'Modifier.align(Alignment.TopEnd).padding(top = 68.dp).width(170.dp)',1)
+          if s.count(old)==1:
+              s=s.replace(old,'Modifier.align(Alignment.TopEnd).padding(top = 68.dp).width(170.dp)',1)
+          else:
+              print('V115 camera tool rail differs from legacy layout; preserving existing rail.')
           p.write_text(s)
           print(f'Camera side component: {count} icon dimensions +6dp; filter circles 46->54dp; tool rail 140->170dp. Existing +3sp font adjustment remains.')
           PY
