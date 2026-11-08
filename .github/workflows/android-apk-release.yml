@@ -392,6 +392,21 @@ jobs:
                   print(f'{j+1}: {lines[j]}')
           PY
 
+      - name: Fix Home feed scroll reset loop only
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          s=p.read_text()
+          old='LaunchedEffect(refreshKey, displayedPosts.size) { feedListState.scrollToItem(0) }'
+          new='LaunchedEffect(refreshKey) { feedListState.scrollToItem(0) }'
+          assert s.count(old)==1, 'Home feed reset statement differs; abort instead of changing unrelated code'
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          print('Home feed no longer resets on post-count changes; explicit refresh and tab-to-top remain unchanged.')
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
