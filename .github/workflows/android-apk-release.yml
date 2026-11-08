@@ -296,6 +296,22 @@ jobs:
           print(p.read_text())
           PY
 
+      - name: Diagnose V105 Kotlin source errors
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          lines=p.read_text().splitlines()
+          for start,end in [(2377,2390),(5583,5602),(9028,9075),(10239,10253),(10725,10755)]:
+              print(f'=== Kotlin source {start}-{end} ===')
+              for n in range(start,min(end,len(lines))+1):
+                  print(f'{n}: {lines[n-1]}')
+          for term in ['QinblyNearbyPage','editorBubbles','val mic']:
+              matches=[i+1 for i,line in enumerate(lines) if term in line]
+              print(f'{term} occurrences: {matches[:50]}')
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
