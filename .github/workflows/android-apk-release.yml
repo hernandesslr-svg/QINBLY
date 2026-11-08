@@ -113,7 +113,7 @@ jobs:
           # v48 references a Material icon unavailable in this project's icon set.
           sed -i 's/Icons.Default.Delete\b/Icons.Default.DeleteForever/g' "$TARGET/MainActivity.kt"
           # The v48 source uses a Compose Foundation API that requires explicit opt-in.
-          sed -i '1i@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)' "$TARGET/MainActivity.kt"
+          sed -i '1i@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)' "$TARGET/MainActivity.kt"
           echo "Prepared v48 Kotlin sources in build workspace; original ZIP remains unchanged."
 
       - name: Fix duplicate AlertDialog parameters in V48
