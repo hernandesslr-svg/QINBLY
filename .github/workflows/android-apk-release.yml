@@ -518,13 +518,13 @@ jobs:
           p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
           s=p.read_text()
           # The camera side controls all share one composable. Change its icon sizes, not other app icons.
-          m=re.search(r'private fun QinblyCameraSideItem\\(',s)
+          m=re.search(r'private fun QinblyCameraSideItem\(',s)
           assert m, 'Camera side control component not found'
           start=m.start()
-          end=s.find('\\n@Composable',start+1)
+          end=s.find('\n@Composable',start+1)
           assert end>start, 'Cannot isolate camera side control component'
           block=s[start:end]
-          pattern=re.compile(r'(Modifier\\.size\\()(\\d+(?:\\.\\d+)?)\\.dp(\\))')
+          pattern=re.compile(r'(Modifier\.size\()(\d+(?:\.\d+)?)\.dp(\))')
           def grow_icon(x):
               n=float(x.group(2))+6
               return x.group(1)+(str(int(n)) if n.is_integer() else str(n))+'.dp'+x.group(3)
@@ -541,6 +541,19 @@ jobs:
           s=s.replace(old,'Modifier.align(Alignment.TopEnd).padding(top = 52.dp).width(170.dp)',1)
           p.write_text(s)
           print(f'Camera side component: {count} icon dimensions +6dp; filter circles 46->54dp; tool rail 140->170dp. Existing +3sp font adjustment remains.')
+          PY
+
+      - name: Inspect editor side controls and offsets for requested resizing
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          lines=Path('app/src/main/java/app/qinbly/android/MainActivity.kt').read_text().splitlines()
+          for i,line in enumerate(lines):
+              if i>10800 and any(x in line for x in ('QinblyCameraSideItem(', 'sideExpanded', 'padding(top =', 'width(140.dp)', 'QinblyColorFilterNames', 'Avançar')):
+                  print('=== EDITOR',i+1,'===')
+                  for j in range(max(0,i-5),min(len(lines),i+7)):
+                      print(f'{j+1}: {lines[j]}')
           PY
 
       - name: Compile Android Kotlin before signing validation
