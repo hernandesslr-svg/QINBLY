@@ -529,7 +529,8 @@ jobs:
               n=float(x.group(2))+6
               return x.group(1)+(str(int(n)) if n.is_integer() else str(n))+'.dp'+x.group(3)
           changed,count=pattern.subn(grow_icon,block)
-          if count==0:\n              print('Camera side component uses non-literal icon sizes; preserving component and continuing.')
+          if count==0:
+              print('Camera side component uses non-literal icon sizes; preserving component and continuing.')
           s=s[:start]+changed+s[end:]
           # Camera's horizontal filter thumbnail circle, scoped to its dedicated label component.
           old='Modifier.size(46.dp).clip(CircleShape)'
