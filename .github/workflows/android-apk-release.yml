@@ -428,6 +428,32 @@ jobs:
                   print(f'{j+1}: {lines[j]}')
           PY
 
+      - name: Fix V112 Kotlin conflicts and restore video editor dependencies
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          s=p.read_text()
+          import re
+          old='fun qinblyCount(value: Int): String'
+          assert s.count(old)==1, 'Expected exactly one V112 duplicate count formatter'
+          s=s.replace(old,'fun qinblyCountLegacy(value: Int): String',1)
+          lines=s.splitlines(keepends=True)
+          expected=(10245,10683,10785,10915)
+          for n in expected:
+              assert lines[n-1].strip()=='return', f'Unexpected V112 return at {n}: {lines[n-1]!r}'
+              lines[n-1]=lines[n-1].replace('return','return@QinblySplit',1)
+          p.write_text(''.join(lines))
+          g=Path('app/build.gradle.kts')
+          t=g.read_text()
+          anchor='    implementation("androidx.media3:media3-ui:1.5.1")'
+          assert t.count(anchor)==1
+          t=t.replace(anchor,anchor+'\n    implementation("androidx.media3:media3-effect:1.5.1")\n    implementation("androidx.media3:media3-transformer:1.5.1")',1)
+          g.write_text(t)
+          print('Preserved both count functions with unique names, fixed four split returns, and added required video editing libraries.')
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
