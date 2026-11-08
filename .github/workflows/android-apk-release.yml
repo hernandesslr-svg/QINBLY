@@ -273,18 +273,22 @@ jobs:
           print(f'Corrected {count} misspelled brand reference(s) in temporary build copy.')
           PY
 
-      - name: Install Gradle 8.9 using GitHub Actions
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
-          cache-disabled: true
+      - name: Prepare Gradle 8.9 Docker image from container registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull gradle:8.9-jdk17
 
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
           set -euo pipefail
           chmod +x ./gradlew
-          gradle :app:compileDebugKotlin --stacktrace --no-daemon
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$PWD:/workspace" -w /workspace \
+            -v "$ANDROID_HOME:$ANDROID_HOME" -e ANDROID_HOME -e ANDROID_SDK_ROOT \
+            -e GRADLE_USER_HOME=/workspace/.gradle-ci \
+            gradle:8.9-jdk17 gradle :app:compileDebugKotlin --stacktrace --no-daemon
 
       - name: Validate release signing secrets
         env:
@@ -343,7 +347,11 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x ./gradlew
-          gradle --no-daemon :app:assembleRelease -PversionCode="$VERSION_CODE" -PversionName="$VERSION_NAME"
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$PWD:/workspace" -w /workspace \
+            -v "$ANDROID_HOME:$ANDROID_HOME" -e ANDROID_HOME -e ANDROID_SDK_ROOT \
+            -e GRADLE_USER_HOME=/workspace/.gradle-ci \
+            gradle:8.9-jdk17 gradle --no-daemon :app:assembleRelease -PversionCode="$VERSION_CODE" -PversionName="$VERSION_NAME"
           mkdir -p release
           cp app/build/outputs/apk/release/app-release.apk release/QINBLY-release.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose release/QINBLY-release.apk
