@@ -312,6 +312,20 @@ jobs:
               print(f'{term} occurrences: {matches[:50]}')
           PY
 
+      - name: Inspect V107 Kotlin location and editor scope
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          lines=p.read_text().splitlines()
+          for start,end in [(5095,5120),(10635,10665),(10825,10850)]:
+              print(f'=== V107 source {start}-{end} ===')
+              for n in range(start,min(end,len(lines))+1): print(f'{n}: {lines[n-1]}')
+          for term in ('getCurrentLocation(', 'editorBubbles', 'QinblyColorFilterNames'):
+              print(term, [i+1 for i,line in enumerate(lines) if term in line][:25])
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
