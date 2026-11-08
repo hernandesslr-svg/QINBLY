@@ -454,6 +454,21 @@ jobs:
           print('Preserved both count functions with unique names, fixed four split returns, and added required video editing libraries.')
           PY
 
+      - name: Inspect V112 visible typography before changing sizes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          lines=p.read_text().splitlines()
+          terms=('Boa tarde', 'PERGUNTA DO DIA', 'Responder com uma publicação', 'Desafio da semana', 'Participar', 'Descobrir', 'Comunidades', 'Há 2 h', 'fontSize =', 'qinblyCount(')
+          for i,line in enumerate(lines):
+              if any(t in line for t in terms[:8]):
+                  print('=== TYPOGRAPHY CONTEXT',i+1,'===')
+                  for j in range(max(0,i-7),min(len(lines),i+9)):
+                      print(f'{j+1}: {lines[j]}')
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
