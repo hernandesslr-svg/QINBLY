@@ -12,7 +12,7 @@ on:
       - 'settings.gradle.kts'
       - 'gradle.properties'
       - '.github/workflows/android-apk-release.yml'
-      - 'QINBLY-projeto-v90.zip'
+      - 'QINBLY-projeto-v105.zip'
 
 permissions:
   contents: write
@@ -57,16 +57,16 @@ jobs:
           test -s app/src/main/res/drawable-nodpi/qinbly_icon.jpg
           file app/src/main/res/drawable-nodpi/qinbly_icon.jpg
 
-      - name: Prepare uploaded QINBLY v48 sources without modifying the ZIP
+      - name: Prepare uploaded QINBLY v105 sources without modifying the ZIP
         shell: bash
         run: |
           set -euo pipefail
-          test -s QINBLY-projeto-v90.zip
-          unzip -tq QINBLY-projeto-v90.zip
-          mkdir -p "$RUNNER_TEMP/qinbly-v90"
-          unzip -q QINBLY-projeto-v90.zip -d "$RUNNER_TEMP/qinbly-v90"
+          test -s QINBLY-projeto-v105.zip
+          unzip -tq QINBLY-projeto-v105.zip
+          mkdir -p "$RUNNER_TEMP/qinbly-v105"
+          unzip -q QINBLY-projeto-v105.zip -d "$RUNNER_TEMP/qinbly-v105"
           # Locate Kotlin sources even when the uploaded ZIP contains a project root folder.
-          ROOT="$RUNNER_TEMP/qinbly-v90"
+          ROOT="$RUNNER_TEMP/qinbly-v105"
           echo "Kotlin files found in uploaded V48:"
           find "$ROOT" -type f -name '*.kt' -print | head -80
           TARGET="app/src/main/java/app/qinbly/android"
@@ -74,7 +74,7 @@ jobs:
           for file in MainActivity.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
             SOURCE_FILE="$(find "$ROOT" -type f -name "$file" -path '*/src/main/java/*' -print -quit)"
             if [[ -z "$SOURCE_FILE" ]]; then
-              echo "::error::Required Kotlin source $file missing from V48 archive."
+              echo "::error::Required Kotlin source $file missing from V105 archive."
               exit 1
             fi
             cp "$SOURCE_FILE" "$TARGET/$file"
@@ -114,7 +114,7 @@ jobs:
           sed -i 's/Icons.Default.Delete\b/Icons.Default.DeleteForever/g' "$TARGET/MainActivity.kt"
           # The v48 source uses a Compose Foundation API that requires explicit opt-in.
           sed -i '1i@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)' "$TARGET/MainActivity.kt"
-          echo "Prepared v48 Kotlin sources in build workspace; original ZIP remains unchanged."
+          echo "Prepared v105 Kotlin sources in build workspace; original ZIP remains unchanged."
 
       - name: Fix duplicate AlertDialog parameters in V48
         shell: bash
@@ -260,7 +260,7 @@ jobs:
           print('Shared inline video player now fills the media frame.')
           PY
 
-      - name: Fix V90 brand typo in temporary build sources
+      - name: Fix V105 brand typo in temporary build sources
         shell: bash
         run: |
           python3 - <<'PY'
