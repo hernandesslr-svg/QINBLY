@@ -509,6 +509,40 @@ jobs:
                   print(f'{j+1}: {lines[j]}')
           PY
 
+      - name: Enlarge camera side icons and bottom filter controls only
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          s=p.read_text()
+          # The camera side controls all share one composable. Change its icon sizes, not other app icons.
+          m=re.search(r'private fun QinblyCameraSideItem\\(',s)
+          assert m, 'Camera side control component not found'
+          start=m.start()
+          end=s.find('\\n@Composable',start+1)
+          assert end>start, 'Cannot isolate camera side control component'
+          block=s[start:end]
+          pattern=re.compile(r'(Modifier\\.size\\()(\\d+(?:\\.\\d+)?)\\.dp(\\))')
+          def grow_icon(x):
+              n=float(x.group(2))+6
+              return x.group(1)+(str(int(n)) if n.is_integer() else str(n))+'.dp'+x.group(3)
+          changed,count=pattern.subn(grow_icon,block)
+          assert count>=1, 'No icon dimensions in camera side component'
+          s=s[:start]+changed+s[end:]
+          # Camera's horizontal filter thumbnail circle, scoped to its dedicated label component.
+          old='Modifier.size(46.dp).clip(CircleShape)'
+          assert s.count(old)>=1, 'Camera filter thumbnail circle not found'
+          s=s.replace(old,'Modifier.size(54.dp).clip(CircleShape)',1)
+          # Wider camera tool rail so enlarged icons and +3sp labels have room.
+          old='Modifier.align(Alignment.TopEnd).padding(top = 52.dp).width(140.dp)'
+          assert s.count(old)==1, 'Camera tool rail not found'
+          s=s.replace(old,'Modifier.align(Alignment.TopEnd).padding(top = 52.dp).width(170.dp)',1)
+          p.write_text(s)
+          print(f'Camera side component: {count} icon dimensions +6dp; filter circles 46->54dp; tool rail 140->170dp. Existing +3sp font adjustment remains.')
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
