@@ -516,17 +516,17 @@ jobs:
           p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
           s=p.read_text()
           # Isolate the Settings screen composable; never change typography elsewhere.
-          fun=re.compile(r'(?m)^(?:private\\s+)?fun\\s+(\\w*(?:Settings|Configuracoes|Configuracao|Configurac)[\\w]*)\\s*\\(')
+          fun=re.compile(r'(?m)^(?:private\s+)?fun\s+(\w*(?:Settings|Configuracoes|Configuracao|Configurac)[\w]*)\s*\(')
           matches=list(fun.finditer(s))
           print('Settings-related functions:',[m.group(1) for m in matches])
           changed=0
           for m in reversed(matches):
               start=m.start()
-              next_fun=re.search(r'(?m)^(?:private\\s+)?fun\\s+\\w+\\s*\\(',s[m.end():])
+              next_fun=re.search(r'(?m)^(?:private\s+)?fun\s+\w+\s*\(',s[m.end():])
               end=m.end()+next_fun.start() if next_fun else len(s)
               block=s[start:end]
               # Only direct Text typography declarations within the Settings function.
-              pat=re.compile(r'(\\bfontSize\\s*=\\s*)(\\d+(?:\\.\\d+)?)\\s*\\.sp\\b')
+              pat=re.compile(r'(\bfontSize\s*=\s*)(\d+(?:\.\d+)?)\s*\.sp\b')
               def smaller(x):
                   value=max(8.0,float(x.group(2))-2.0)
                   return x.group(1)+(str(int(value)) if value.is_integer() else str(value))+'.sp'
