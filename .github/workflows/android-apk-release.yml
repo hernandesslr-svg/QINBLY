@@ -123,22 +123,6 @@ jobs:
           sed -i '1i@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)' "$TARGET/MainActivity.kt"
           echo "Prepared v112 Kotlin sources in build workspace; original ZIP remains unchanged."
 
-      - name: Inspect V126 Settings screen colors before scoped brightness adjustment
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
-          lines=p.read_text().splitlines()
-          terms=('Buscar configurações', 'Gerencie sua conta', 'Alternar entre suas contas', 'Configurações')
-          hits=[i for i,line in enumerate(lines) if any(t in line for t in terms)]
-          print('SETTINGS SCREEN ANCHORS:',len(hits))
-          for i in hits[:12]:
-              print('=== SETTINGS CONTEXT',i+1,'===')
-              for j in range(max(0,i-35),min(len(lines),i+45)):
-                  print(f'{j+1}: {lines[j]}')
-          PY
-
       - name: Fix duplicate AlertDialog parameters in V48
         shell: bash
         run: |
