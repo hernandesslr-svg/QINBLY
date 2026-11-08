@@ -326,6 +326,42 @@ jobs:
               print(term, [i+1 for i,line in enumerate(lines) if term in line][:25])
           PY
 
+      - name: Fix V108 location overload and editor list scope in temporary sources
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          s=p.read_text()
+          old='androidx.core.location.LocationManagerCompat.getCurrentLocation(lm, provider, null, androidx.core.content.ContextCompat.getMainExecutor(context)) { result ->'
+          new='androidx.core.location.LocationManagerCompat.getCurrentLocation(lm, provider, null as androidx.core.os.CancellationSignal?, androidx.core.content.ContextCompat.getMainExecutor(context), androidx.core.util.Consumer<android.location.Location?> { result ->'
+          assert s.count(old)==1, 'V108 location callback changed; aborting safe patch'
+          s=s.replace(old,new,1)
+          old_end='if (cont.isActive) cont.resumeWith(Result.success(result))\n                            }'
+          assert s.count(old_end)==1, 'V108 callback closing changed'
+          s=s.replace(old_end,'if (cont.isActive) cont.resumeWith(Result.success(result))\n                            })',1)
+          declaration='            val editorBubbles = remember { QinblyColorFilterNames.map { it to false } + QinblyAnimatedEffectNames.map { it to true } }'
+          assert s.count(declaration)==1, 'V108 filter declaration changed'
+          s=s.replace(declaration+'\n','',1)
+          anchor='                    LazyRow(\n                        modifier = Modifier.fillMaxWidth(),\n                        contentPadding = PaddingValues(horizontal = 14.dp),'
+          assert s.count(anchor)==1, 'V108 filter UI changed'
+          s=s.replace(anchor,'                    val editorBubbles = remember { QinblyColorFilterNames.map { it to false } + QinblyAnimatedEffectNames.map { it to true } }\n'+anchor,1)
+          p.write_text(s)
+          print('Location and editor scope corrected; no functionality removed.')
+          PY
+
+      - name: Diagnose V108 invalid returns without removing code
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          lines=Path('app/src/main/java/app/qinbly/android/MainActivity.kt').read_text().splitlines()
+          for n in (9972,10410,10512,10609):
+              print(f'=== V108 return around {n} ===')
+              for i in range(max(1,n-22),min(len(lines),n+12)+1):
+                  print(f'{i}: {lines[i-1]}')
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
