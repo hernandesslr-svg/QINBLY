@@ -303,7 +303,7 @@ jobs:
           docker run --rm --user "$(id -u):$(id -g)" \
             -v "$PWD:/workspace" -w /workspace \
             -v "$ANDROID_HOME:$ANDROID_HOME" -e ANDROID_HOME -e ANDROID_SDK_ROOT \
-            -e GRADLE_USER_HOME=/workspace/.gradle-ci \
+            -e GRADLE_USER_HOME=/workspace/.gradle-ci -e HOME=/workspace \
             gradle:8.9-jdk17 gradle :app:compileDebugKotlin --stacktrace --no-daemon
 
       - name: Validate release signing secrets
@@ -366,7 +366,7 @@ jobs:
           docker run --rm --user "$(id -u):$(id -g)" \
             -v "$PWD:/workspace" -w /workspace \
             -v "$ANDROID_HOME:$ANDROID_HOME" -e ANDROID_HOME -e ANDROID_SDK_ROOT \
-            -e GRADLE_USER_HOME=/workspace/.gradle-ci \
+            -e GRADLE_USER_HOME=/workspace/.gradle-ci -e HOME=/workspace \
             gradle:8.9-jdk17 gradle --no-daemon :app:assembleRelease -PversionCode="$VERSION_CODE" -PversionName="$VERSION_NAME"
           mkdir -p release
           cp app/build/outputs/apk/release/app-release.apk release/QINBLY-release.apk
