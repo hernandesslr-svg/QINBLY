@@ -273,6 +273,15 @@ jobs:
           print(f'Corrected {count} misspelled brand reference(s) in temporary build copy.')
           PY
 
+      - name: Configure Gradle distribution mirror and longer timeout
+        shell: bash
+        run: |
+          set -euo pipefail
+          WRAPPER=gradle/wrapper/gradle-wrapper.properties
+          sed -i 's#services.gradle.org/distributions/gradle-8.9-bin.zip#downloads.gradle.org/distributions/gradle-8.9-bin.zip#' "$WRAPPER"
+          sed -i 's/networkTimeout=10000/networkTimeout=120000/' "$WRAPPER"
+          grep -E 'distributionUrl|networkTimeout' "$WRAPPER"
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
