@@ -440,9 +440,8 @@ jobs:
           if s.count(old) > 1:
               s=s.replace(old,'fun qinblyCountLegacy(value: Int): String',1)
           lines=s.splitlines(keepends=True)
-          import re
-          for i,line in enumerate(lines):
-              if re.match(r'^\\s*return\\s*
+          # V126 has different line positions; do not apply V115 line-number edits.
+          print('Preserving V126 Kotlin source without legacy line-number changes.')
           p.write_text(''.join(lines))
           g=Path('app/build.gradle.kts')
           t=g.read_text()
