@@ -447,8 +447,12 @@ jobs:
           if s.count(old) > 1:
               s=s.replace(old,'fun qinblyCountLegacy(value: Int): String',1)
           lines=s.splitlines(keepends=True)
-          # V126 has different line positions; do not apply V115 line-number edits.
-          print('Preserving V126 Kotlin source without legacy line-number changes.')
+          # Fix the four verified V126 nonlocal returns without deleting UI.
+          for n in (10798,11270,11372,11513):
+              if n <= len(lines) and lines[n-1].strip() == 'return':
+                  lines[n-1]=lines[n-1].replace('return','return@QinblySplit',1)
+              else:
+                  raise RuntimeError(f'V126 return at line {n} changed; inspect source before patching')
           p.write_text(''.join(lines))
           g=Path('app/build.gradle.kts')
           t=g.read_text()
@@ -457,6 +461,9 @@ jobs:
               for dep in ('androidx.media3:media3-effect:1.5.1','androidx.media3:media3-transformer:1.5.1'):
                   if dep not in t:
                       t=t.replace(anchor,anchor+chr(10)+'    implementation("'+dep+'")',1)
+          for dep in ('com.google.mlkit:face-detection:16.1.7','com.google.mlkit:segmentation-selfie:16.0.0-beta6'):
+              if dep not in t:
+                  t=t.replace(anchor,anchor+chr(10)+'    implementation("'+dep+'")',1)
           g.write_text(t)
           print('Preserved both count functions with unique names, fixed four split returns, and added required video editing libraries.')
           PY
