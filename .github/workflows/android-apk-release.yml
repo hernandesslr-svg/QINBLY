@@ -362,6 +362,21 @@ jobs:
                   print(f'{i}: {lines[i-1]}')
           PY
 
+      - name: Fix V108 split-screen early returns without deleting UI
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          lines=p.read_text().splitlines(keepends=True)
+          expected=(9972,10410,10512,10609)
+          for n in expected:
+              assert lines[n-1].strip()=='return', f'Unexpected return at line {n}: {lines[n-1]!r}'
+              lines[n-1]=lines[n-1].replace('return','return@QinblySplit',1)
+          p.write_text(''.join(lines))
+          print('Replaced four invalid nonlocal returns with labeled split exits; all UI blocks retained.')
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
