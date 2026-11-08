@@ -453,7 +453,7 @@ jobs:
           if t.count(anchor)==1:
               for dep in ('androidx.media3:media3-effect:1.5.1','androidx.media3:media3-transformer:1.5.1'):
                   if dep not in t:
-                      t=t.replace(anchor,anchor+'\\n    implementation("'+dep+'")',1)
+                      t=t.replace(anchor,anchor+chr(10)+'    implementation("'+dep+'")',1)
           g.write_text(t)
           print('Preserved both count functions with unique names, fixed four split returns, and added required video editing libraries.')
           PY
