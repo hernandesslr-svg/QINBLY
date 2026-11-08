@@ -507,6 +507,25 @@ jobs:
           print(f'Total explicit font sizes increased: {total}. Original archive and all non-font layout values preserved.')
           PY
 
+      - name: Audit facial filter names from imported V126 source
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('app/src/main/java/app/qinbly/android')
+          for filename in ('FaceFilters.kt','MainActivity.kt'):
+              p=root/filename
+              s=p.read_text()
+              print('=== FACIAL FILTER AUDIT',filename,'===')
+              lines=s.splitlines()
+              for i,line in enumerate(lines):
+                  if re.search(r'faceFilter|faceFilters|selectedFace|FaceFilter|filtroFacial|filtrosFaciais|Cachorro|Gato|Coelho',line,re.I):
+                      a=max(0,i-2);b=min(len(lines),i+5)
+                      print('LINES',a+1,'TO',b)
+                      for k in range(a,b): print(f'{k+1}: {lines[k][:350]}')
+          PY
+
       - name: Reduce Settings screen text by 2sp only
         shell: bash
         run: |
