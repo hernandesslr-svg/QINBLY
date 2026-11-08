@@ -312,6 +312,23 @@ jobs:
               print(f'{term} occurrences: {matches[:50]}')
           PY
 
+      - name: Fix V105 duplicate microphone icon and inspect filter scope
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          s=p.read_text()
+          lines=s.splitlines()
+          for n in list(range(10543,10566))+list(range(10685,10706)):
+              print(f'{n}: {lines[n-1]}')
+          duplicates=[i for i,l in enumerate(lines) if 'val mic by lazy { build("cam_mic"' in l]
+          assert len(duplicates)==2, f'Expected two mic declarations, got {len(duplicates)}'
+          lines.pop(duplicates[1])
+          p.write_text('\n'.join(lines)+'\n')
+          print('Removed only redundant second mic declaration in temporary sources')
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
