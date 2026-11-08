@@ -469,6 +469,30 @@ jobs:
                       print(f'{j+1}: {lines[j]}')
           PY
 
+      - name: Increase QINBLY typography by 3sp throughout all screens
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('app/src/main')
+          total=0
+          for p in list(root.rglob('*.kt')):
+              s=p.read_text()
+              # Only font-size declarations; do not change padding, icon dimensions, line height or layout.
+              pattern=re.compile(r'(\\bfontSize\\s*=\\s*)(\\d+(?:\\.\\d+)?)\\s*\\.sp\\b')
+              def grow(m):
+                  v=float(m.group(2))+3
+                  return m.group(1)+(str(int(v)) if v.is_integer() else str(v))+'.sp'
+              s,n=pattern.subn(grow,s)
+              if n:
+                  p.write_text(s)
+                  print(f'{p}: increased {n} font sizes by exactly 3sp')
+                  total+=n
+          assert total>0, 'No font-size declarations found; abort instead of silently publishing unchanged fonts'
+          print(f'Total explicit font sizes increased: {total}. Original archive and all non-font layout values preserved.')
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
