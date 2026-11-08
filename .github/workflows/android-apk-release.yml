@@ -351,6 +351,21 @@ jobs:
           print('Fixed location callback type and filter scope; kept both features; original ZIP unchanged.')
           PY
 
+      - name: Inspect V107 oversized PostPage for safe extraction
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('app/src/main/java/app/qinbly/android/MainActivity.kt').read_text().splitlines()
+          starts=[i for i,line in enumerate(s) if 'fun PostPage(' in line]
+          print('PostPage declarations:', [i+1 for i in starts])
+          for start in starts:
+              for i in range(max(0,start-4),min(len(s),start+120)):
+                  print(f'{i+1}: {s[i]}')
+          for term in ('private fun PostPage(', 'fun PostPage(', 'private fun Qinbly', '@Composable'):
+              print(term,'total',sum(term in line for line in s))
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
