@@ -279,7 +279,7 @@ jobs:
           set -euo pipefail
           docker pull gradle:8.9-jdk17
 
-      - name: Configure alternative Maven mirrors for Kotlin dependencies
+      - name: Configure Maven repositories for AndroidX and Kotlin
         shell: bash
         run: |
           set -euo pipefail
@@ -287,12 +287,16 @@ jobs:
           from pathlib import Path
           p = Path('settings.gradle.kts')
           s = p.read_text()
+          # Kotlin plugin resolution may use the mirror; AndroidX dependencies use Google's repository first.
           mirror = 'maven("https://maven.aliyun.com/repository/public")'
           google_mirror = 'maven("https://maven.aliyun.com/repository/google")'
-          if mirror not in s:
-              s = s.replace('repositories {', 'repositories {\n        ' + mirror + '\n        ' + google_mirror)
-          p.write_text(s)
-          print('Maven mirror configured before default repositories in temporary build workspace.')
+          s = s.replace('        ' + mirror + '\n        ' + google_mirror + '\n', '')
+          plugin, dependency = s.split('dependencyResolutionManagement {', 1)
+          plugin = plugin.replace('repositories {', 'repositories {\n        ' + mirror, 1)
+          dependency = dependency.replace('repositories {', 'repositories {\n        google()\n        mavenCentral()\n', 1)
+          dependency = dependency.replace('        google()\n        mavenCentral()\n        google()\n        mavenCentral()', '        google()\n        mavenCentral()')
+          p.write_text(plugin + 'dependencyResolutionManagement {' + dependency)
+          print(p.read_text())
           PY
 
       - name: Compile Android Kotlin before signing validation
