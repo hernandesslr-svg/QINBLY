@@ -260,27 +260,17 @@ jobs:
           print('Shared inline video player now fills the media frame.')
           PY
 
-      - name: Resolve V90 undefined brand reference during build
+      - name: Fix V90 brand typo in temporary build sources
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           p = Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
           s = p.read_text()
-          if 'QiblyBrand' in s:
-              candidates = sorted(set(re.findall(r'\\b(?:object|class)\\s+(\\w*Brand)\\b', s)) - {'QiblyBrand'})
-              print('Brand declarations:', candidates)
-              if len(candidates) == 1:
-                  s = s.replace('QiblyBrand', candidates[0])
-                  p.write_text(s)
-                  print('Resolved misspelled brand reference to', candidates[0])
-              else:
-                  print('Unresolved brand context:')
-                  for n, line in enumerate(s.splitlines(), 1):
-                      if 'QiblyBrand' in line:
-                          print(n, line[:350])
-                  raise SystemExit('Cannot safely infer brand symbol; original ZIP unchanged.')
+          count = s.count('QiblyBrand.')
+          s = s.replace('QiblyBrand.', 'QinblyBrand.')
+          p.write_text(s)
+          print(f'Corrected {count} misspelled brand reference(s) in temporary build copy.')
           PY
 
       - name: Compile Android Kotlin before signing validation
