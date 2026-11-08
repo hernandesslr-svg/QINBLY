@@ -12,7 +12,7 @@ on:
       - 'settings.gradle.kts'
       - 'gradle.properties'
       - '.github/workflows/android-apk-release.yml'
-      - 'QINBLY-projeto-v105.zip'
+      - 'QINBLY-projeto-v107.zip'
 
 permissions:
   contents: write
@@ -57,16 +57,16 @@ jobs:
           test -s app/src/main/res/drawable-nodpi/qinbly_icon.jpg
           file app/src/main/res/drawable-nodpi/qinbly_icon.jpg
 
-      - name: Prepare uploaded QINBLY v105 sources without modifying the ZIP
+      - name: Prepare uploaded QINBLY v107 sources without modifying the ZIP
         shell: bash
         run: |
           set -euo pipefail
-          test -s QINBLY-projeto-v105.zip
-          unzip -tq QINBLY-projeto-v105.zip
-          mkdir -p "$RUNNER_TEMP/qinbly-v105"
-          unzip -q QINBLY-projeto-v105.zip -d "$RUNNER_TEMP/qinbly-v105"
+          test -s QINBLY-projeto-v107.zip
+          unzip -tq QINBLY-projeto-v107.zip
+          mkdir -p "$RUNNER_TEMP/qinbly-v107"
+          unzip -q QINBLY-projeto-v107.zip -d "$RUNNER_TEMP/qinbly-v107"
           # Locate Kotlin sources even when the uploaded ZIP contains a project root folder.
-          ROOT="$RUNNER_TEMP/qinbly-v105"
+          ROOT="$RUNNER_TEMP/qinbly-v107"
           echo "Kotlin files found in uploaded V48:"
           find "$ROOT" -type f -name '*.kt' -print | head -80
           TARGET="app/src/main/java/app/qinbly/android"
@@ -74,7 +74,7 @@ jobs:
           for file in MainActivity.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
             SOURCE_FILE="$(find "$ROOT" -type f -name "$file" -path '*/src/main/java/*' -print -quit)"
             if [[ -z "$SOURCE_FILE" ]]; then
-              echo "::error::Required Kotlin source $file missing from V105 archive."
+              echo "::error::Required Kotlin source $file missing from V107 archive."
               exit 1
             fi
             cp "$SOURCE_FILE" "$TARGET/$file"
@@ -114,7 +114,7 @@ jobs:
           sed -i 's/Icons.Default.Delete\b/Icons.Default.DeleteForever/g' "$TARGET/MainActivity.kt"
           # The v48 source uses a Compose Foundation API that requires explicit opt-in.
           sed -i '1i@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)' "$TARGET/MainActivity.kt"
-          echo "Prepared v105 Kotlin sources in build workspace; original ZIP remains unchanged."
+          echo "Prepared v107 Kotlin sources in build workspace; original ZIP remains unchanged."
 
       - name: Fix duplicate AlertDialog parameters in V48
         shell: bash
@@ -260,7 +260,7 @@ jobs:
           print('Shared inline video player now fills the media frame.')
           PY
 
-      - name: Fix V105 brand typo in temporary build sources
+      - name: Fix V107 brand typo in temporary build sources
         shell: bash
         run: |
           python3 - <<'PY'
@@ -296,7 +296,7 @@ jobs:
           print(p.read_text())
           PY
 
-      - name: Diagnose V105 Kotlin source errors
+      - name: Diagnose V107 Kotlin source errors
         shell: bash
         run: |
           python3 - <<'PY'
@@ -310,40 +310,6 @@ jobs:
           for term in ['QinblyNearbyPage','editorBubbles','val mic']:
               matches=[i+1 for i,line in enumerate(lines) if term in line]
               print(f'{term} occurrences: {matches[:50]}')
-          PY
-
-      - name: Fix V105 duplicate microphone icon and inspect filter scope
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
-          s=p.read_text()
-          lines=s.splitlines()
-          for n in list(range(10543,10566))+list(range(10685,10706)):
-              print(f'{n}: {lines[n-1]}')
-          duplicates=[i for i,l in enumerate(lines) if 'val mic by lazy { build("cam_mic"' in l]
-          assert len(duplicates)==2, f'Expected two mic declarations, got {len(duplicates)}'
-          lines.pop(duplicates[1])
-          p.write_text('\n'.join(lines)+'\n')
-          print('Removed only redundant second mic declaration in temporary sources')
-          PY
-
-      - name: Fix V105 filter scope without removing app features
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
-          s=p.read_text()
-          declaration='            val editorBubbles = remember { QinblyColorFilterNames.map { it to false } + QinblyAnimatedEffectNames.map { it to true } }'
-          assert s.count(declaration)==1, 'Expected exactly one filter list declaration'
-          s=s.replace(declaration+'\n','',1)
-          anchor='                    LazyRow(\n                        modifier = Modifier.fillMaxWidth(),\n                        contentPadding = PaddingValues(horizontal = 14.dp),'
-          assert s.count(anchor)==1, 'Expected exactly one filter LazyRow'
-          s=s.replace(anchor,'                    val editorBubbles = remember { QinblyColorFilterNames.map { it to false } + QinblyAnimatedEffectNames.map { it to true } }\n'+anchor,1)
-          p.write_text(s)
-          print('V105 temporary Kotlin compile fixes applied; original ZIP unchanged.')
           PY
 
       - name: Compile Android Kotlin before signing validation
