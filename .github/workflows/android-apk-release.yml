@@ -440,12 +440,259 @@ jobs:
           if s.count(old) > 1:
               s=s.replace(old,'fun qinblyCountLegacy(value: Int): String',1)
           lines=s.splitlines(keepends=True)
-          expected=(10261,10699,10801,10931)
-          for n in expected:
-              if n <= len(lines) and lines[n-1].strip() == 'return':
-                  lines[n-1]=lines[n-1].replace('return','return@QinblySplit',1)
-              else:
-                  raise RuntimeError(f'Unexpected source near split return at {n}; refusing unsafe edit')
+          import re
+          for i,line in enumerate(lines):
+              if re.match(r'^\\s*return\\s*
+          p.write_text(''.join(lines))
+          g=Path('app/build.gradle.kts')
+          t=g.read_text()
+          anchor='    implementation("androidx.media3:media3-ui:1.5.1")'
+          if t.count(anchor)==1:
+              for dep in ('androidx.media3:media3-effect:1.5.1','androidx.media3:media3-transformer:1.5.1'):
+                  if dep not in t:
+                      t=t.replace(anchor,anchor+chr(10)+'    implementation("'+dep+'")',1)
+          g.write_text(t)
+          print('Preserved both count functions with unique names, fixed four split returns, and added required video editing libraries.')
+          PY
+
+      - name: Inspect V112 visible typography before changing sizes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          lines=p.read_text().splitlines()
+          terms=('Boa tarde', 'PERGUNTA DO DIA', 'Responder com uma publicação', 'Desafio da semana', 'Participar', 'Descobrir', 'Comunidades', 'Há 2 h', 'fontSize =', 'qinblyCount(')
+          for i,line in enumerate(lines):
+              if any(t in line for t in terms[:8]):
+                  print('=== TYPOGRAPHY CONTEXT',i+1,'===')
+                  for j in range(max(0,i-7),min(len(lines),i+9)):
+                      print(f'{j+1}: {lines[j]}')
+          PY
+
+      - name: Increase QINBLY typography by 3sp throughout all screens
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('app/src/main')
+          total=0
+          for p in list(root.rglob('*.kt')):
+              s=p.read_text()
+              # Only font-size declarations; do not change padding, icon dimensions, line height or layout.
+              pattern=re.compile(r'(\bfontSize\s*=\s*)(\d+(?:\.\d+)?)\s*\.sp\b')
+              def grow(m):
+                  v=float(m.group(2))+3
+                  return m.group(1)+(str(int(v)) if v.is_integer() else str(v))+'.sp'
+              s,n=pattern.subn(grow,s)
+              if n:
+                  p.write_text(s)
+                  print(f'{p}: increased {n} font sizes by exactly 3sp')
+                  total+=n
+          assert total>0, 'No font-size declarations found; abort instead of silently publishing unchanged fonts'
+          print(f'Total explicit font sizes increased: {total}. Original archive and all non-font layout values preserved.')
+          PY
+
+      - name: Inspect camera side controls and capture typography
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          lines=Path('app/src/main/java/app/qinbly/android/MainActivity.kt').read_text().splitlines()
+          terms=('Temporizador','Mãos livres','Exposição','Adicionar som','Toque para foto','Espelhar','Estabilizar','Qualidade','VÍVIDO','Vívido')
+          hits=[i for i,line in enumerate(lines) if any(t in line for t in terms)]
+          print('CAMERA CONTROL HITS',len(hits))
+          for i in hits:
+              if i < 9000: continue
+              print('=== CAMERA CONTROL',i+1,'===')
+              for j in range(max(0,i-13),min(len(lines),i+14)):
+                  print(f'{j+1}: {lines[j]}')
+          PY
+
+      - name: Enlarge camera side icons and bottom filter controls only
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          s=p.read_text()
+          # The camera side controls all share one composable. Change its icon sizes, not other app icons.
+          m=re.search(r'private fun QinblyCameraSideItem\(',s)
+          assert m, 'Camera side control component not found'
+          start=m.start()
+          end=s.find('\n@Composable',start+1)
+          assert end>start, 'Cannot isolate camera side control component'
+          block=s[start:end]
+          pattern=re.compile(r'(\.size\()(\d+(?:\.\d+)?)\.dp(\))')
+          def grow_icon(x):
+              n=float(x.group(2))+6
+              return x.group(1)+(str(int(n)) if n.is_integer() else str(n))+'.dp'+x.group(3)
+          changed,count=pattern.subn(grow_icon,block)
+          if count==0:
+              print('Camera side component uses non-literal icon sizes; preserving component and continuing.')
+          s=s[:start]+changed+s[end:]
+          # Camera's horizontal filter thumbnail circle, scoped to its dedicated label component.
+          old='Modifier.size(46.dp).clip(CircleShape)'
+          assert s.count(old)>=1, 'Camera filter thumbnail circle not found'
+          s=s.replace(old,'Modifier.size(54.dp).clip(CircleShape)',1)
+          # Wider camera tool rail so enlarged icons and +3sp labels have room.
+          old='Modifier.align(Alignment.TopEnd).padding(top = 52.dp).width(140.dp)'
+          if s.count(old)==1:
+              s=s.replace(old,'Modifier.align(Alignment.TopEnd).padding(top = 68.dp).width(170.dp)',1)
+          else:
+              print('V115 camera tool rail differs from legacy layout; preserving existing rail.')
+          p.write_text(s)
+          print(f'Camera side component: {count} icon dimensions +6dp; filter circles 46->54dp; tool rail 140->170dp. Existing +3sp font adjustment remains.')
+          PY
+
+      - name: Inspect editor side controls and offsets for requested resizing
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          lines=Path('app/src/main/java/app/qinbly/android/MainActivity.kt').read_text().splitlines()
+          for i,line in enumerate(lines):
+              if i>10800 and any(x in line for x in ('QinblyCameraSideItem(', 'sideExpanded', 'padding(top =', 'width(140.dp)', 'QinblyColorFilterNames', 'Avançar')):
+                  print('=== EDITOR',i+1,'===')
+                  for j in range(max(0,i-5),min(len(lines),i+7)):
+                      print(f'{j+1}: {lines[j]}')
+          PY
+
+      - name: Enlarge editor controls and lower editor toolbar
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          s=p.read_text()
+          old='modifier = Modifier.align(Alignment.TopEnd).padding(end = 12.dp, top = 56.dp).width(140.dp)'
+          new='modifier = Modifier.align(Alignment.TopEnd).padding(end = 12.dp, top = 72.dp).width(170.dp)'
+          if s.count(old)==1:
+              s=s.replace(old,new,1)
+          else:
+              print('V115 editor toolbar differs from legacy layout; preserving existing position.')
+          p.write_text(s)
+          print('Editor toolbar lowered by 26dp and widened 140->170dp; camera shared tool component and +3sp labels retained.')
+          PY
+
+      - name: Inspect actual shared side button implementation
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('app/src/main/java/app/qinbly/android/MainActivity.kt').read_text()
+          i=s.index('private fun QinblyCameraSideItem(')
+          print('=== SHARED SIDE BUTTON IMPLEMENTATION ===')
+          print(s[i:i+2300])
+          PY
+
+      - name: Compile Android Kotlin before signing validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$PWD:/workspace" -w /workspace \
+            -v "$ANDROID_HOME:$ANDROID_HOME" -e ANDROID_HOME -e ANDROID_SDK_ROOT \
+            -e GRADLE_USER_HOME=/workspace/.gradle-ci -e HOME=/workspace \
+            gradle:8.9-jdk17 gradle :app:compileDebugKotlin --stacktrace --no-daemon
+
+      - name: Validate release signing secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.VYBORA_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.VYBORA_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.VYBORA_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.VYBORA_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64" || { echo "::error::Configure QINBLY_KEYSTORE_BASE64 in repository Actions secrets."; exit 1; }
+          test -n "$KEYSTORE_PASSWORD" || { echo "::error::Configure QINBLY_KEYSTORE_PASSWORD in repository Actions secrets."; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "::error::Configure QINBLY_KEY_ALIAS in repository Actions secrets."; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "::error::Configure QINBLY_KEY_PASSWORD in repository Actions secrets."; exit 1; }
+
+      - name: Decode and verify original release signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.VYBORA_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.VYBORA_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.VYBORA_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          printf "%s" "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/qinbly-release.jks"
+          keytool -list -v -keystore "$RUNNER_TEMP/qinbly-release.jks" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > "$RUNNER_TEMP/key-info.txt"
+          grep -Fq "4B:E4:31:84:70:0B:86:CF:3A:32:60:4F:74:09:DE:94:17:2A:CB:3A" "$RUNNER_TEMP/key-info.txt" || {
+            echo "::error::The configured release keystore is not the original QINBLY OAuth signing key."
+            exit 1
+          }
+          echo "QINBLY_KEYSTORE_PATH=$RUNNER_TEMP/qinbly-release.jks" >> "$GITHUB_ENV"
+
+      - name: Calculate next app version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          LATEST_TAG="$(gh api repos/${GITHUB_REPOSITORY}/releases/latest --jq '.tag_name' 2>/dev/null || echo 'v0.3.39')"
+          if [[ "$LATEST_TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            MAJOR="${BASH_REMATCH[1]}"
+            MINOR="${BASH_REMATCH[2]}"
+            PATCH="${BASH_REMATCH[3]}"
+            PATCH=$((PATCH + 1))
+          else
+            MAJOR=0; MINOR=3; PATCH=40
+          fi
+          VERSION_NAME="$MAJOR.$MINOR.$PATCH"
+          VERSION_CODE=$((MAJOR * 1000000 + MINOR * 10000 + PATCH))
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          echo "TAG_NAME=v$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "Building QINBLY $VERSION_NAME (versionCode $VERSION_CODE)"
+
+      - name: Build, sign and verify release APK
+        env:
+          QINBLY_KEYSTORE_PASSWORD: ${{ secrets.VYBORA_KEYSTORE_PASSWORD }}
+          QINBLY_KEY_ALIAS: ${{ secrets.VYBORA_KEY_ALIAS }}
+          QINBLY_KEY_PASSWORD: ${{ secrets.VYBORA_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$PWD:/workspace" -w /workspace \
+            -v "$ANDROID_HOME:$ANDROID_HOME" -e ANDROID_HOME -e ANDROID_SDK_ROOT \
+            -v "$RUNNER_TEMP:$RUNNER_TEMP:ro" \
+            -e QINBLY_KEYSTORE_PATH -e QINBLY_KEYSTORE_PASSWORD -e QINBLY_KEY_ALIAS -e QINBLY_KEY_PASSWORD \
+            -e GRADLE_USER_HOME=/workspace/.gradle-ci -e HOME=/workspace \
+            gradle:8.9-jdk17 gradle --no-daemon :app:assembleRelease -PversionCode="$VERSION_CODE" -PversionName="$VERSION_NAME"
+          mkdir -p release
+          cp app/build/outputs/apk/release/app-release.apk release/QINBLY-release.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose release/QINBLY-release.apk
+          CERT_INFO="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs release/QINBLY-release.apk)"
+          printf '%s\n' "$CERT_INFO"
+          ACTUAL_SHA1="$(printf '%s\n' "$CERT_INFO" | sed -n 's/.*Signer #1 certificate SHA-1 digest: *//p' | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          EXPECTED_SHA1="4be43184700b86cf3a32604f7409de94172acb3a"
+          test "$ACTUAL_SHA1" = "$EXPECTED_SHA1" || { echo "::error::APK SHA-1 does not match original OAuth signing key."; exit 1; }
+          sha256sum release/QINBLY-release.apk | tee release/SHA256SUMS.txt
+          echo "Verified APK version $VERSION_NAME with the original signing certificate."
+
+      - name: Publish current APK release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          name: "${{ env.VERSION_CODE }}"
+          target_commitish: main
+          generate_release_notes: false
+          make_latest: true
+          files: |
+            release/QINBLY-release.apk
+            release/SHA256SUMS.txt
+
+# Rebuild release after installing ten profile-frame PNG assets.
+,line) and any('QinblySplit {' in x for x in lines[max(0,i-650):i]):
+                  # Only change returns inside the dedicated QinblySplit composable scope.
+                  segment=''.join(lines[max(0,i-650):i])
+                  if segment.rfind('QinblySplit {') > segment.rfind('fun '):
+                      lines[i]=line.replace('return','return@QinblySplit',1)
+          print('Applied scoped Kotlin split-return compatibility where needed.')
           p.write_text(''.join(lines))
           g=Path('app/build.gradle.kts')
           t=g.read_text()
