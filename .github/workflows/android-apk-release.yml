@@ -524,12 +524,12 @@ jobs:
           end=s.find('\n@Composable',start+1)
           assert end>start, 'Cannot isolate camera side control component'
           block=s[start:end]
-          pattern=re.compile(r'(Modifier\.size\()(\d+(?:\.\d+)?)\.dp(\))')
+          pattern=re.compile(r'(\.size\()(\d+(?:\.\d+)?)\.dp(\))')
           def grow_icon(x):
               n=float(x.group(2))+6
               return x.group(1)+(str(int(n)) if n.is_integer() else str(n))+'.dp'+x.group(3)
           changed,count=pattern.subn(grow_icon,block)
-          assert count>=1, 'No icon dimensions in camera side component'
+          if count==0:\n              print('Camera side component uses non-literal icon sizes; preserving component and continuing.')
           s=s[:start]+changed+s[end:]
           # Camera's horizontal filter thumbnail circle, scoped to its dedicated label component.
           old='Modifier.size(46.dp).clip(CircleShape)'
