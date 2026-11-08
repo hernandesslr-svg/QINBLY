@@ -80,6 +80,13 @@ jobs:
             cp "$SOURCE_FILE" "$TARGET/$file"
             echo "Imported $file from ${SOURCE_FILE#"$ROOT"/}"
           done
+          # Import every Kotlin sibling of the uploaded MainActivity, including
+          # face filters, video processing, collage, and tagging helpers.
+          MAIN_SOURCE="$(find "$ROOT" -type f -name MainActivity.kt -path '*/src/main/java/*' -print -quit)"
+          SOURCE_DIR="$(dirname "$MAIN_SOURCE")"
+          find "$SOURCE_DIR" -maxdepth 1 -type f -name '*.kt' -exec cp -t "$TARGET" {} +
+          echo "Imported all Kotlin source siblings from V126:"
+          find "$SOURCE_DIR" -maxdepth 1 -type f -name '*.kt' -printf '%f\\n' | sort
           # Keep in-app update APK asset filename consistent with GitHub Releases.
           sed -i 's/vybora-release\.apk/QINBLY-release.apk/g' "$TARGET/RemoteUiActivity.kt"
           sed -i 's/contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)/contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)/' "$TARGET/MainActivity.kt"
