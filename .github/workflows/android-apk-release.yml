@@ -440,12 +440,12 @@ jobs:
           if s.count(old) > 1:
               s=s.replace(old,'fun qinblyCountLegacy(value: Int): String',1)
           lines=s.splitlines(keepends=True)
-          expected=(10245,10683,10785,10915)
-          if all(n <= len(lines) and lines[n-1].strip()=='return' for n in expected):
-              for n in expected:
+          expected=(10261,10699,10801,10931)
+          for n in expected:
+              if n <= len(lines) and lines[n-1].strip() == 'return':
                   lines[n-1]=lines[n-1].replace('return','return@QinblySplit',1)
-          else:
-              print('V115 layout differs from V112; skipping obsolete line-number patches.')
+              else:
+                  raise RuntimeError(f'Unexpected source near split return at {n}; refusing unsafe edit')
           p.write_text(''.join(lines))
           g=Path('app/build.gradle.kts')
           t=g.read_text()
