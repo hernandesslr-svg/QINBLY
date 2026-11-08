@@ -480,7 +480,7 @@ jobs:
           for p in list(root.rglob('*.kt')):
               s=p.read_text()
               # Only font-size declarations; do not change padding, icon dimensions, line height or layout.
-              pattern=re.compile(r'(\\bfontSize\\s*=\\s*)(\\d+(?:\\.\\d+)?)\\s*\\.sp\\b')
+              pattern=re.compile(r'(\bfontSize\s*=\s*)(\d+(?:\.\d+)?)\s*\.sp\b')
               def grow(m):
                   v=float(m.group(2))+3
                   return m.group(1)+(str(int(v)) if v.is_integer() else str(v))+'.sp'
