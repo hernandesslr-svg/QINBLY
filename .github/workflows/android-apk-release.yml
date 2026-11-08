@@ -572,6 +572,17 @@ jobs:
           print('Editor toolbar lowered by 26dp and widened 140->170dp; camera shared tool component and +3sp labels retained.')
           PY
 
+      - name: Inspect actual shared side button implementation
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('app/src/main/java/app/qinbly/android/MainActivity.kt').read_text()
+          i=s.index('private fun QinblyCameraSideItem(')
+          print('=== SHARED SIDE BUTTON IMPLEMENTATION ===')
+          print(s[i:i+2300])
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
