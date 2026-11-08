@@ -71,7 +71,7 @@ jobs:
           find "$ROOT" -type f -name '*.kt' -print | head -80
           TARGET="app/src/main/java/app/qinbly/android"
           mkdir -p "$TARGET"
-          for file in MainActivity.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
+          for file in MainActivity.kt PhotoVideoEditor.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
             SOURCE_FILE="$(find "$ROOT" -type f -name "$file" -path '*/src/main/java/*' -print -quit)"
             if [[ -z "$SOURCE_FILE" ]]; then
               echo "::error::Required Kotlin source $file missing from V112 archive."
