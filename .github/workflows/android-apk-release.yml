@@ -329,6 +329,31 @@ jobs:
           print('Removed only redundant second mic declaration in temporary sources')
           PY
 
+      - name: Fix remaining V105 Kotlin references in temporary sources
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/app/qinbly/android/MainActivity.kt')
+          s=p.read_text()
+          declaration='            val editorBubbles = remember { QinblyColorFilterNames.map { it to false } + QinblyAnimatedEffectNames.map { it to true } }'
+          assert s.count(declaration)==1, 'Expected exactly one filter list declaration'
+          s=s.replace(declaration+'\n','',1)
+          anchor='                    LazyRow(\n                        modifier = Modifier.fillMaxWidth(),\n                        contentPadding = PaddingValues(horizontal = 14.dp),'
+          assert s.count(anchor)==1, 'Expected exactly one filter LazyRow'
+          s=s.replace(anchor,'                    val editorBubbles = remember { QinblyColorFilterNames.map { it to false } + QinblyAnimatedEffectNames.map { it to true } }\n'+anchor,1)
+          nearby='            QinblyNearbyPage(onNotice)'
+          assert s.count(nearby)==1, 'Expected exactly one missing nearby page call'
+          s=s.replace(nearby,'''            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+              Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Perto de mim", fontWeight = FontWeight.SemiBold)
+                Text("Esta seção ainda não está disponível nesta versão.", color = Muted)
+              }
+            }''',1)
+          p.write_text(s)
+          print('V105 temporary Kotlin compile fixes applied; original ZIP unchanged.')
+          PY
+
       - name: Compile Android Kotlin before signing validation
         shell: bash
         run: |
