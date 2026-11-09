@@ -144,11 +144,11 @@
     const card = element("article", "post-card");
     const head = element("div", "post-head");
     const author = post.author || {};
-    const name = author.displayName || author.display_name || author.username || "VYBORA";
+    const name = author.displayName || author.display_name || author.username || "QINBLY";
     head.append(avatar(name, author.avatarUrl || author.avatar_url));
     const authorText = element("div", "author");
     authorText.append(element("strong", "", name));
-    authorText.append(element("small", "", author.username ? "@" + author.username : "Comunidade VYBORA"));
+    authorText.append(element("small", "", author.username ? "@" + author.username : "Comunidade QINBLY"));
     head.append(authorText);
     card.append(head);
     if (post.caption) card.append(element("p", "post-caption", post.caption));

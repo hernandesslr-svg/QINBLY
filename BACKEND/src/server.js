@@ -67,7 +67,7 @@ const auth = asyncRoute(async (req,res,next) => {
   if (!rows[0]) return res.status(401).json({ error: 'Sessão inválida.' });
   req.user = rows[0]; next();
 });
-app.get('/health', asyncRoute(async (_req,res) => { await pool.query('SELECT 1'); res.json({ status: 'ok', service: 'vybora-api', database: 'connected' }); }));
+app.get('/health', asyncRoute(async (_req,res) => { await pool.query('SELECT 1'); res.json({ status: 'ok', service: 'qinbly-api', database: 'connected' }); }));
 
 // Configuração pública remota do aplicativo. Nunca incluir segredos neste endpoint.
 app.get('/api/app-config', (_req, res) => {
@@ -589,7 +589,7 @@ app.get('/api/users/me/export', auth, asyncRoute(async (req,res) => {
     pool.query("SELECT id,category,original_name,content_type,size_bytes,created_at FROM user_files WHERE owner_id=$1 AND deleted_at IS NULL AND status='ready' ORDER BY created_at",[id]),
     pool.query('SELECT id,kind,entity_id,read_at,created_at FROM notifications WHERE recipient_id=$1 ORDER BY created_at',[id])
   ]);
-  res.set('Content-Disposition', 'attachment; filename="vybora-dados-pessoais.json"');
+  res.set('Content-Disposition', 'attachment; filename="qinbly-dados-pessoais.json"');
   res.json({ formatVersion: 1, exportedAt: new Date().toISOString(), profile: queries[0].rows[0], privateProfile: queries[1].rows[0] || null, posts: queries[2].rows, likes: queries[3].rows, following: queries[4].rows, comments: queries[5].rows, messages: queries[6].rows, files: queries[7].rows, notifications: queries[8].rows });
 }));
 
@@ -658,6 +658,6 @@ app.use((err,req,res,_next) => { console.error('API error:', err?.message || err
 // Banco atualizado explicitamente com `npm run migrate` durante o deploy;
 // a API não altera o schema automaticamente ao iniciar.
 
-app.listen(port, '0.0.0.0', () => console.log(`VYBORA API listening on ${port}`));
+app.listen(port, '0.0.0.0', () => console.log(`QINBLY API listening on ${port}`));
 process.on('SIGTERM', async () => { await pool.end(); process.exit(0); });
 process.on('SIGINT', async () => { await pool.end(); process.exit(0); });

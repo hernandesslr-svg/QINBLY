@@ -1,7 +1,7 @@
-# VYBORA — Supabase seguro (SQL inicial)
+# QINBLY — Supabase seguro (SQL inicial)
 
 ## Conteúdo
-- `01_vybora_supabase_seguro.sql`: schema inicial, tabelas, RLS, permissões mínimas e buckets do Storage.
+- `01_schema.sql`: schema inicial, tabelas, RLS, permissões mínimas e buckets do Storage.
 
 ## Antes de executar
 1. Confirme que está no projeto Supabase correto.

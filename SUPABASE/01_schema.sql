@@ -1,4 +1,4 @@
--- VYBORA / Supabase PostgreSQL schema
+-- QINBLY / Supabase PostgreSQL schema
 -- Version: 1.0.0
 -- IMPORTANT:
 -- 1) Review and run only in the intended Supabase project.

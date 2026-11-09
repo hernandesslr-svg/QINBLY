@@ -1,11 +1,11 @@
-# Configurar Supabase para a VYBORA
+# Configurar Supabase para a QINBLY
 
 Este pacote deixa o projeto preparado para usar PostgreSQL gerenciado pelo Supabase. **Ele não cria uma conta nem um projeto Supabase automaticamente**: isso exige entrar na sua conta e aceitar os termos no painel.
 
 ## 1. Criar o banco
 
 1. Abra https://supabase.com/dashboard e entre/crie sua conta.
-2. Clique em **New project**, dê o nome `VYBORA` e escolha uma senha forte para o banco.
+2. Clique em **New project**, dê o nome `QINBLY` e escolha uma senha forte para o banco.
 3. Escolha uma região próxima dos usuários iniciais. Guarde a senha em local seguro.
 4. Aguarde o projeto terminar de provisionar.
 
@@ -44,7 +44,7 @@ Depois de publicar a API, configure a URL HTTPS pública no `API_BASE_URL` do ap
 
 ## 6. Preparar para trocar de fornecedor
 
-O app usa a API VYBORA, não endpoints específicos do Supabase. PostgreSQL pode ser migrado para outro PostgreSQL compatível e arquivos podem ser copiados entre armazenamentos S3-compatíveis mudando as variáveis `S3_*`. Leia `BACKEND/docs/ARQUITETURA_PORTATIL.md`. Faça e teste exportação/backup antes de qualquer migração.
+O app usa a API QINBLY, não endpoints específicos do Supabase. PostgreSQL pode ser migrado para outro PostgreSQL compatível e arquivos podem ser copiados entre armazenamentos S3-compatíveis mudando as variáveis `S3_*`. Leia `BACKEND/docs/ARQUITETURA_PORTATIL.md`. Faça e teste exportação/backup antes de qualquer migração.
 
 ## 7. Segurança antes de abrir ao público
 
