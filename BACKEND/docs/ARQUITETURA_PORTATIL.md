@@ -1,8 +1,8 @@
-# VYBORA — arquitetura portátil (banco, arquivos e migração)
+# QINBLY — arquitetura portátil (banco, arquivos e migração)
 
 ## Regra estrutural
 
-O Android fala exclusivamente com a API VYBORA. A API fala com PostgreSQL e com armazenamento privado S3-compatível. Não coloque SDK/chaves de fornecedor no APK nem espalhe chamadas específicas do Supabase pelas telas.
+O Android fala exclusivamente com a API QINBLY. A API fala com PostgreSQL e com armazenamento privado S3-compatível. Não coloque SDK/chaves de fornecedor no APK nem espalhe chamadas específicas do Supabase pelas telas.
 
 - **Banco:** PostgreSQL padrão. O Supabase é apenas um fornecedor PostgreSQL, não uma dependência obrigatória do app.
 - **Arquivos:** bucket privado S3-compatível. `S3_ENDPOINT`, região, bucket e credenciais são configuração do servidor; a API gera URLs temporárias e autorizadas.

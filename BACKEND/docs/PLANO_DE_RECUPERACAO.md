@@ -1,4 +1,4 @@
-# VYBORA — plano operacional de recuperação
+# QINBLY — plano operacional de recuperação
 
 Este documento é um checklist operacional. Os passos dependentes do provedor não ficam ativos automaticamente ao instalar o código.
 

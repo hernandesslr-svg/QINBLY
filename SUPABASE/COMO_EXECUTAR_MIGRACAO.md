@@ -4,7 +4,7 @@ A rotina é manual e tem travas: não apaga registros, recusa qualquer tabela de
 
 ## 1. Configurar segredos no GitHub
 
-No repositório `hernandesslr-svg/VYBORA`, abra **Settings → Secrets and variables → Actions → New repository secret** e crie:
+No repositório `hernandesslr-svg/QINBLY`, abra **Settings → Secrets and variables → Actions → New repository secret** e crie:
 
 - `RAILWAY_DATABASE_URL`: URL PostgreSQL do banco Railway de produção, com acesso de rede permitido a partir do GitHub Actions.
 - `SUPABASE_DATABASE_URL`: URL de conexão PostgreSQL do projeto Supabase `jqomgrdlocdqaarfqkay`, com SSL.
@@ -13,7 +13,7 @@ Use credenciais de banco restritas ao necessário para leitura da origem e escri
 
 ## 2. Rodar a transferência
 
-Abra **Actions → Prepare VYBORA database migration → Run workflow**, informe exatamente `MIGRATE` e execute. O workflow:
+Abra **Actions → Prepare QINBLY database migration → Run workflow**, informe exatamente `MIGRATE` e execute. O workflow:
 - confere as tabelas esperadas na origem e no destino;
 - recusa destino com qualquer uma dessas tabelas já preenchida;
 - copia IDs, hashes de senha, datas e relações;
@@ -23,6 +23,6 @@ Leia os logs e só considere a cópia do banco aprovada se o job terminar em `SU
 
 ## 3. Depois da cópia — ainda obrigatório
 
-A cópia do banco não transfere mídia do bucket Railway `vybora-media`. Antes de trocar o backend de produção, copiar e validar os objetos e metadados do armazenamento, conferir URLs assinadas, validar login (senha e Google), feed, perfis/capa, curtidas, comentários, seguidores, mensagens e notificações. Só então planejar uma implantação de corte com rollback.
+A cópia do banco não transfere mídia do bucket Railway `qinbly-media`. Antes de trocar o backend de produção, copiar e validar os objetos e metadados do armazenamento, conferir URLs assinadas, validar login (senha e Google), feed, perfis/capa, curtidas, comentários, seguidores, mensagens e notificações. Só então planejar uma implantação de corte com rollback.
 
 **Não altere a variável de produção `DATABASE_URL` para o Supabase antes de concluir e validar todas as etapas.** O backend legado usa JWT próprio; esta rotina não migra identidades para Supabase Auth e não deve fazê-lo automaticamente.
