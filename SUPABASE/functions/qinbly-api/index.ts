@@ -78,7 +78,7 @@ Deno.serve(async (req: Request) => {
     // Supabase gateway versions may expose the function slug in the pathname differently.
     // Normalize to the API route so /api/auth/google cannot fall through into the authenticated profile guard.
     const apiRouteIndex = url.pathname.indexOf("/api/");
-    const normalizedPath = apiRouteIndex >= 0 ? url.pathname.slice(apiRouteIndex) : url.pathname.replace(/^\/functions\/v1\/vybora-api/, "");
+    const normalizedPath = apiRouteIndex >= 0 ? url.pathname.slice(apiRouteIndex) : url.pathname.replace(/^\/functions\/v1\/qinbly-api/, "");
     const path = normalizedPath.replace(/\/$/, "") || "/";
     const token = tokenOf(req);
     const body = ["POST","PATCH","PUT","DELETE"].includes(req.method) ? await req.json().catch(() => ({})) : {};
