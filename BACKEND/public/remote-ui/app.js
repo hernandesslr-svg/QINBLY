@@ -4,7 +4,7 @@
   const content = $("#page-content");
   const heading = $("#page-heading");
   const toastNode = $("#toast");
-  const tokenKey = "vybora_token";
+  const tokenKey = "vybora_token"; // Preserve existing signed-in sessions during the brand transition.
   let page = "feed";
   let manifestVersion = "";
   let manifestPoll = null;
@@ -24,14 +24,14 @@
   function getToken() { return sessionStorage.getItem(tokenKey) || ""; }
   function setToken(token, username) {
     if (token) sessionStorage.setItem(tokenKey, token);
-    if (window.VyboraNative && token) {
-      try { window.VyboraNative.saveSession(token, username || ""); } catch (_) {}
+    if (window.QinblyNative && token) {
+      try { window.QinblyNative.saveSession(token, username || ""); } catch (_) {}
     }
   }
   function clearToken() {
     sessionStorage.removeItem(tokenKey);
-    if (window.VyboraNative) {
-      try { window.VyboraNative.clearSession(); } catch (_) {}
+    if (window.QinblyNative) {
+      try { window.QinblyNative.clearSession(); } catch (_) {}
     }
   }
   async function api(path, options = {}) {
@@ -110,7 +110,7 @@
     } catch (error) { list.replaceChildren(element("div", "empty-card error-text", error.message)); }
   }
   function followButton(user, compact = false) {
-    const button = element("button", compact ? "vybora-player-action" : "primary-button", compact ? "⊕" : "Seguir");
+    const button = element("button", compact ? "qinbly-player-action" : "primary-button", compact ? "⊕" : "Seguir");
     button.type = "button";
     let following = Boolean(user.isFollowing);
     const sync = () => {
@@ -129,11 +129,11 @@
         following = Boolean(response.following);
         user.isFollowing = following;
         sync();
-        document.dispatchEvent(new CustomEvent("vybora:follow-changed", { detail: { id: user.id, following } }));
+        document.dispatchEvent(new CustomEvent("qinbly:follow-changed", { detail: { id: user.id, following } }));
       } catch (error) { toast(error.message || "Não foi possível atualizar o seguimento."); }
       finally { button.disabled = false; }
     });
-    document.addEventListener("vybora:follow-changed", event => {
+    document.addEventListener("qinbly:follow-changed", event => {
       if (event.detail && event.detail.id === user.id) {
         following = Boolean(event.detail.following); sync();
       }
@@ -161,45 +161,45 @@
       } else if (String(post.mediaType).startsWith("video")) {
         const video = element("video", "post-media");
         video.src = mediaUrl; video.controls = false; video.preload = "metadata"; video.playsInline = true;
-        const openPlayer = element("button", "vybora-open-player", "▶ Assistir vídeo");
+        const openPlayer = element("button", "qinbly-open-player", "▶ Assistir vídeo");
         openPlayer.type = "button";
         openPlayer.addEventListener("click", () => {
-          const overlay = element("div", "vybora-player-overlay");
+          const overlay = element("div", "qinbly-player-overlay");
           overlay.setAttribute("role", "dialog");
           overlay.setAttribute("aria-label", "Reprodução de vídeo");
-          const player = element("video", "vybora-player-video");
+          const player = element("video", "qinbly-player-video");
           player.src = mediaUrl; player.playsInline = true; player.autoplay = true; player.loop = true;
-          const close = element("button", "vybora-player-close", "‹");
+          const close = element("button", "qinbly-player-close", "‹");
           close.type = "button"; close.setAttribute("aria-label", "Fechar vídeo");
-          const pause = element("button", "vybora-player-pause", "❚❚");
+          const pause = element("button", "qinbly-player-pause", "❚❚");
           pause.type = "button"; pause.setAttribute("aria-label", "Pausar vídeo");
-          const rail = element("div", "vybora-player-rail");
-          const profile = element("button", "vybora-player-avatar");
+          const rail = element("div", "qinbly-player-rail");
+          const profile = element("button", "qinbly-player-avatar");
           profile.type = "button"; profile.setAttribute("aria-label", "Perfil do autor");
           profile.append(avatar(name, author.avatarUrl || author.avatar_url));
           const follow = followButton(author, true);
-          const likeVideo = element("button", "vybora-player-action", "♡");
+          const likeVideo = element("button", "qinbly-player-action", "♡");
           likeVideo.type = "button"; likeVideo.setAttribute("aria-label", "Curtir");
           likeVideo.addEventListener("click", () => { overlay.remove(); player.pause(); like.click(); });
-          const commentVideo = element("button", "vybora-player-action", "♧");
+          const commentVideo = element("button", "qinbly-player-action", "♧");
           commentVideo.type = "button"; commentVideo.setAttribute("aria-label", "Comentários");
           commentVideo.addEventListener("click", () => { overlay.remove(); player.pause(); renderComments(post); });
-          const share = element("button", "vybora-player-action", "↗");
+          const share = element("button", "qinbly-player-action", "↗");
           share.type = "button"; share.setAttribute("aria-label", "Compartilhar");
           share.addEventListener("click", async () => {
             try { if (navigator.share) await navigator.share({url: mediaUrl}); else if (navigator.clipboard) { await navigator.clipboard.writeText(mediaUrl); toast("Link copiado."); } }
             catch (_) {}
           });
-          const save = element("button", "vybora-player-action", "♧");
+          const save = element("button", "qinbly-player-action", "♧");
           save.type = "button"; save.setAttribute("aria-label", "Salvar vídeo");
           save.addEventListener("click", () => toast("Opção de salvar indisponível."));
-          const more = element("button", "vybora-player-action", "⋯");
+          const more = element("button", "qinbly-player-action", "⋯");
           more.type = "button"; more.setAttribute("aria-label", "Mais opções");
           more.addEventListener("click", () => toast("Mais opções"));
           rail.append(profile, follow, likeVideo, commentVideo, share, save, more);
-          const timeline = element("div", "vybora-player-timeline");
+          const timeline = element("div", "qinbly-player-timeline");
           const time = element("span", "", "0:00 / 0:00");
-          const seek = element("input", "vybora-player-seek");
+          const seek = element("input", "qinbly-player-seek");
           seek.type = "range"; seek.min = "0"; seek.max = "1000"; seek.value = "0";
           seek.setAttribute("aria-label", "Avançar ou voltar no vídeo");
           const format = seconds => { const n = Math.floor(Number(seconds) || 0); return Math.floor(n / 60) + ":" + String(n % 60).padStart(2, "0"); };
@@ -249,7 +249,7 @@
     return card;
   }
   async function renderFeed() {
-    page = "feed"; setHeading("Seu feed", "Publicações públicas da comunidade VYBORA.", "A COMUNIDADE");
+    page = "feed"; setHeading("Seu feed", "Publicações públicas da comunidade QINBLY.", "A COMUNIDADE");
     content.replaceChildren();
     if (getToken()) {
       const composer = element("form", "composer");
@@ -352,7 +352,7 @@
       });
       card.append(stats);
       const followersCount = stats.children[1] && stats.children[1].querySelector("strong");
-      document.addEventListener("vybora:follow-changed", event => {
+      document.addEventListener("qinbly:follow-changed", event => {
         if (event.detail && event.detail.id === user.id && followersCount) {
           const next = Number(user.followers || 0) + (event.detail.following ? 1 : -1);
           user.followers = Math.max(0, next);
@@ -386,7 +386,7 @@
     content.replaceChildren();
     const card = element("section", "form-card");
     card.append(element("p", "eyebrow", "SUA CONTA"));
-    card.append(element("h2", "", authMode === "login" ? "Entre no VYBORA" : "Crie sua conta"));
+    card.append(element("h2", "", authMode === "login" ? "Entre no QINBLY" : "Crie sua conta"));
     card.append(element("p", "", "Esta interface experimental usa login por e-mail e senha. O login Google nativo continua disponível na tela original do aplicativo."));
     const form = element("form");
     if (authMode === "register") {
@@ -543,7 +543,7 @@
     try {
       const config = await api("/api/app-config");
       const card = element("section", "rail-card gradient-card");
-      card.append(element("p", "eyebrow", "VYBORA LIVE"));
+      card.append(element("p", "eyebrow", "QINBLY LIVE"));
       card.append(element("h2", "", config.livesEnabled ? "Lives habilitadas no servidor" : "Transmissões ainda não habilitadas"));
       card.append(element("p", "", config.livesEnabled ? "A interface remota está pronta para receber a tela de transmissões quando o serviço de mídia for conectado e validado." : "O servidor ainda não sinalizou que o serviço de mídia está pronto. Ativar um botão visual não inicia uma transmissão real."));
       card.append(element("p", "muted tiny", "Esta área e seu design poderão ser atualizados pelo OTA sem publicar um APK."));
@@ -608,13 +608,13 @@
       $("#ota-status").textContent = version ? "Interface v" + version : "OTA conectado";
       $("#version-label").textContent = "Versão da interface: " + (version || "desconhecida");
       manifestVersion = version;
-      const previousVersion = sessionStorage.getItem("vybora_ui_version");
+      const previousVersion = sessionStorage.getItem("qinbly_ui_version");
       if (version && previousVersion && previousVersion !== version) {
-        sessionStorage.setItem("vybora_ui_version", version);
+        sessionStorage.setItem("qinbly_ui_version", version);
         toast("Nova interface publicada. Atualizando…");
         window.setTimeout(() => window.location.reload(), 900);
       } else if (version) {
-        sessionStorage.setItem("vybora_ui_version", version);
+        sessionStorage.setItem("qinbly_ui_version", version);
       }
       if (initial && manifest.entrypoint !== "/remote-ui/") {
         toast("Manifesto OTA validado; endereço de entrada inesperado.");
@@ -638,7 +638,7 @@
       const config = await api("/api/app-config");
       $("#connection-state").textContent = "API conectada · versão de configuração " + (config.configVersion || 1);
       if (config.announcement) { $("#announcement").textContent = config.announcement; $("#announcement").hidden = false; }
-      if (config.maintenanceMode) { $("#announcement").textContent = config.maintenanceMessage || "O VYBORA está em manutenção."; $("#announcement").hidden = false; }
+      if (config.maintenanceMode) { $("#announcement").textContent = config.maintenanceMessage || "O QINBLY está em manutenção."; $("#announcement").hidden = false; }
     } catch (error) {
       $("#connection-state").textContent = "A API pode estar indisponível. " + error.message;
     }
