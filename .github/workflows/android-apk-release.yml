@@ -57,36 +57,15 @@ jobs:
           test -s app/src/main/res/drawable-nodpi/qinbly_icon.jpg
           file app/src/main/res/drawable-nodpi/qinbly_icon.jpg
 
-      - name: Prepare uploaded QINBLY v126 sources without modifying the ZIP
+      - name: Prepare checked-in QINBLY Android sources
         shell: bash
         run: |
           set -euo pipefail
-          test -s QINBLY-projeto-v126.zip
-          unzip -tq QINBLY-projeto-v126.zip
-          mkdir -p "$RUNNER_TEMP/qinbly-v126"
-          unzip -q QINBLY-projeto-v126.zip -d "$RUNNER_TEMP/qinbly-v126"
-          # Locate Kotlin sources even when the uploaded ZIP contains a project root folder.
-          ROOT="$RUNNER_TEMP/qinbly-v126"
-          echo "Kotlin files found in uploaded V48:"
-          find "$ROOT" -type f -name '*.kt' -print | head -80
           TARGET="app/src/main/java/app/qinbly/android"
-          mkdir -p "$TARGET"
           for file in MainActivity.kt PhotoVideoEditor.kt GoogleSignIn.kt RemoteUiActivity.kt QinblyApi.kt; do
-            SOURCE_FILE="$(find "$ROOT" -type f -name "$file" -path '*/src/main/java/*' -print -quit)"
-            if [[ -z "$SOURCE_FILE" ]]; then
-              echo "::error::Required Kotlin source $file missing from V112 archive."
-              exit 1
-            fi
-            cp "$SOURCE_FILE" "$TARGET/$file"
-            echo "Imported $file from ${SOURCE_FILE#"$ROOT"/}"
+            test -s "$TARGET/$file" || { echo "::error::Missing tracked Kotlin source: $file"; exit 1; }
           done
-          # Import every Kotlin sibling of the uploaded MainActivity, including
-          # face filters, video processing, collage, and tagging helpers.
-          MAIN_SOURCE="$(find "$ROOT" -type f -name MainActivity.kt -path '*/src/main/java/*' -print -quit)"
-          SOURCE_DIR="$(dirname "$MAIN_SOURCE")"
-          find "$SOURCE_DIR" -maxdepth 1 -type f -name '*.kt' -exec cp -t "$TARGET" {} +
-          echo "Imported all Kotlin source siblings from V126:"
-          find "$SOURCE_DIR" -maxdepth 1 -type f -name '*.kt' -printf '%f\\n' | sort
+          echo "Building from tracked Kotlin files; ZIP archive is not required."
           # Keep in-app update APK asset filename consistent with GitHub Releases.
           sed -i 's/vybora-release\.apk/QINBLY-release.apk/g' "$TARGET/RemoteUiActivity.kt"
           sed -i 's/contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)/contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)/' "$TARGET/MainActivity.kt"
@@ -121,7 +100,7 @@ jobs:
           sed -i 's/Icons.Default.Delete\b/Icons.Default.DeleteForever/g' "$TARGET/MainActivity.kt"
           # The v48 source uses a Compose Foundation API that requires explicit opt-in.
           sed -i '1i@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)' "$TARGET/MainActivity.kt"
-          echo "Prepared v112 Kotlin sources in build workspace; original ZIP remains unchanged."
+          echo "Prepared checked-in QINBLY Kotlin sources for Android build."
 
       - name: Fix duplicate AlertDialog parameters in V48
         shell: bash
