@@ -3,7 +3,7 @@ import pg from "pg";
 const { Client } = pg;
 const sourceUrl = process.env.RAILWAY_DATABASE_URL;
 const targetUrl = process.env.SUPABASE_DATABASE_URL;
-const targetSchema = process.env.DB_SCHEMA || "vybora_backend";
+const targetSchema = process.env.DB_SCHEMA || "qinbly_backend";
 
 if (!sourceUrl || !targetUrl) throw new Error("Configure RAILWAY_DATABASE_URL and SUPABASE_DATABASE_URL as GitHub Actions secrets.");
 if (!/^[a-z_][a-z0-9_]*$/.test(targetSchema)) throw new Error("Invalid DB_SCHEMA.");

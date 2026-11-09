@@ -3,13 +3,13 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: vybora
-      POSTGRES_USER: vybora
+      POSTGRES_DB: qinbly
+      POSTGRES_USER: qinbly
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
-      - vybora_pgdata:/var/lib/postgresql/data
+      - qinbly_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vybora -d vybora"]
+      test: ["CMD-SHELL", "pg_isready -U qinbly -d qinbly"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -20,7 +20,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 8080
-      DATABASE_URL: postgresql://vybora:${POSTGRES_PASSWORD}@db:5432/vybora
+      DATABASE_URL: postgresql://qinbly:${POSTGRES_PASSWORD}@db:5432/qinbly
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       DATABASE_SSL: ${DATABASE_SSL:-false}
@@ -40,4 +40,4 @@ services:
 networks:
   internal:
 volumes:
-  vybora_pgdata:
+  qinbly_pgdata:
