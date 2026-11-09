@@ -1,0 +1,43 @@
+name: Import v126 Kotlin sources once
+on:
+  push:
+    paths:
+      - '.github/workflows/import-v126-sources-once.yml'
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Extract v126 Kotlin sources into tracked main files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path, PurePosixPath
+          from zipfile import ZipFile
+          archive=Path("QINBLY-projeto-v126.zip")
+          if not archive.is_file():
+              raise SystemExit("Archive missing; no source files changed")
+          with ZipFile(archive) as z:
+              members=[i for i in z.infolist() if not i.is_dir() and i.filename.startswith("app/src/main/java/") and i.filename.endswith(".kt")]
+              if len(members)<10:
+                  raise SystemExit(f"Unexpected archive: only {len(members)} Kotlin files")
+              for i in members:
+                  p=PurePosixPath(i.filename)
+                  if ".." in p.parts:
+                      raise SystemExit("Unsafe archive path")
+                  target=Path(*p.parts)
+                  target.parent.mkdir(parents=True,exist_ok=True)
+                  target.write_bytes(z.read(i))
+                  print("Imported",target)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/
+          git rm -- .github/workflows/import-v126-sources-once.yml
+          git commit -m "Import v126 Kotlin sources as editable repository files"
+          git push origin HEAD:main
