@@ -13,7 +13,7 @@
     status.setAttribute('data-state', isError ? 'error' : 'ok');
   }
 
-  window.qinblyOtaNativeStatus = (message, isError) => {
+  window.qinblyOtaNativeStatus = window.vyboraOtaNativeStatus = (message, isError) => {
     setStatus(String(message || 'Atualização em andamento.'), Boolean(isError));
     if (!isError) updateButton.textContent = 'Atualizar';
     updateButton.disabled = !latestManifest;

@@ -24,14 +24,14 @@
   function getToken() { return sessionStorage.getItem(tokenKey) || ""; }
   function setToken(token, username) {
     if (token) sessionStorage.setItem(tokenKey, token);
-    if (window.QinblyNative && token) {
-      try { window.QinblyNative.saveSession(token, username || ""); } catch (_) {}
+    if ((window.QinblyNative || window.VyboraNative) && token) {
+      try { (window.QinblyNative || window.VyboraNative).saveSession(token, username || ""); } catch (_) {}
     }
   }
   function clearToken() {
     sessionStorage.removeItem(tokenKey);
-    if (window.QinblyNative) {
-      try { window.QinblyNative.clearSession(); } catch (_) {}
+    if ((window.QinblyNative || window.VyboraNative)) {
+      try { (window.QinblyNative || window.VyboraNative).clearSession(); } catch (_) {}
     }
   }
   async function api(path, options = {}) {
