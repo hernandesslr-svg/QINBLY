@@ -347,7 +347,7 @@ Deno.serve(async (req: Request) => {
     return reply({error:"Rota ainda não implementada no gateway Supabase.",path},404);
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
-    console.error("VYBORA Supabase gateway:", detail);
+    console.error("QINBLY Supabase gateway:", detail);
     // Return the actual Supabase/PostgREST failure so the app can show the real reason.
     return reply({error: detail || "Erro desconhecido no gateway Supabase."},500);
   }

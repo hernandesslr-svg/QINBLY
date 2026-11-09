@@ -1,4 +1,4 @@
-name: Validate VYBORA self-hosted OTA
+name: Validate QINBLY self-hosted OTA
 
 on:
   push:
