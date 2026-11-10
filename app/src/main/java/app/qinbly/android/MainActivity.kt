@@ -10148,9 +10148,11 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var stabilizeOn by remember { mutableStateOf(false) }
     var stabilizeSupported by remember { mutableStateOf(false) }
     val faceState = remember { QinblyFaceState() }
-    val faceAnalyzer = remember { QinblyFaceAnalyzer(faceState) }
+    val faceTracker = remember { QinblyFaceTracker3D(context, faceState.track) }
+    val faceAnalyzer = remember { QinblyFaceAnalyzer(faceState, faceTracker) }
     val faceExecutor = remember { java.util.concurrent.Executors.newSingleThreadExecutor() }
     faceAnalyzer.enabled = selectedFace != "Nenhum"
+    faceAnalyzer.use3d = selectedFace == "Cachorro"
     var activeCameraPanel by remember { mutableStateOf("") }
     var selectedCameraFormat by remember { mutableStateOf("9:16") }
     var selectedVideoSpeed by remember { mutableStateOf("1×") }

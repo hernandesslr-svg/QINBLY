@@ -85,6 +85,15 @@ internal class QinblyFaceTracker3D(
 
     override fun analyze(image: ImageProxy) {
         try {
+            feed(image)
+        } finally {
+            image.close()
+        }
+    }
+
+    /** Envia o quadro ao MediaPipe sem fechá-lo (quem chama fecha). */
+    fun feed(image: ImageProxy) {
+        try {
             if (!enabled) {
                 if (state.face != null) state.face = null
                 return
@@ -99,8 +108,6 @@ internal class QinblyFaceTracker3D(
             lm.detectAsync(mp, opts, SystemClock.uptimeMillis())
         } catch (t: Throwable) {
             state.face = null
-        } finally {
-            image.close()
         }
     }
 

@@ -90,7 +90,9 @@ private fun starPath(cx: Float, cy: Float, r: Float): Path {
  * Tudo é desenhado numa unidade em que 1,0 = distância entre os olhos, origem no meio dos olhos
  * e Y para baixo; o conjunto é girado conforme a inclinação da cabeça.
  */
-internal fun DrawScope.qinblyDrawFaceFilter(name: String, eyeA: Offset, eyeB: Offset) {
+internal const val QINBLY_DOG_YAW_SIGN = 1f
+
+internal fun DrawScope.qinblyDrawFaceFilter(name: String, eyeA: Offset, eyeB: Offset, extra: QinblyFace3d? = null) {
     val left = if (eyeA.x <= eyeB.x) eyeA else eyeB
     val right = if (eyeA.x <= eyeB.x) eyeB else eyeA
     val dist = hypot(right.x - left.x, right.y - left.y)
@@ -105,17 +107,27 @@ internal fun DrawScope.qinblyDrawFaceFilter(name: String, eyeA: Offset, eyeB: Of
         val line = Stroke(width = 0.05f, cap = StrokeCap.Round)
         when (name) {
             "Cachorro" -> {
+                val turn = if (extra != null) (extra.yaw * QINBLY_DOG_YAW_SIGN / 40f).coerceIn(-1f, 1f) else 0f
+                val open = (extra?.jawOpen ?: 0f).coerceIn(0f, 1f)
                 for (sg in listOf(-1f, 1f)) {
-                    rotate(sg * 12f, Offset(sg * 1.3f, -0.6f)) {
-                        fOvalB(Brush.verticalGradient(listOf(Color(0xFFA56A3B), Color(0xFF5A3418)), -1.5f, 0.3f), sg * 1.3f, -0.6f, 0.42f, 0.88f)
-                        fOval(Color(0x33000000), sg * 1.3f, -0.45f, 0.22f, 0.55f)
+                    val away = (sg * turn).coerceIn(-1f, 1f)
+                    val w = 0.30f * (1f - 0.35f * away)
+                    val cx = sg * 0.98f + turn * 0.25f
+                    rotate(-sg * 18f, Offset(cx, -1.05f)) {
+                        fOvalB(Brush.verticalGradient(listOf(Color(0xFFA56A3B), Color(0xFF5A3418)), -1.1f, 0.1f), cx, -0.5f, w, 0.58f)
+                        drawOval(Color(0xFF3E220F), Offset(cx - w, -1.08f), Size(w * 2f, 1.16f), style = Stroke(width = 0.025f))
+                        fOval(Color(0xAAE8A5A5), cx, -0.42f, w * 0.55f, 0.36f)
                     }
                 }
-                fOval(Color(0xFF1B1B1F), 0f, 0.85f, 0.34f, 0.24f)
-                fOval(Color(0x77FFFFFF), -0.1f, 0.78f, 0.1f, 0.05f)
-                drawLine(Color(0xFF6B3B4A), Offset(0f, 1.05f), Offset(0f, 1.4f), 0.04f, StrokeCap.Round)
-                fOvalB(Brush.verticalGradient(listOf(Color(0xFFF0728A), Color(0xFFD94A66)), 1.4f, 2.0f), 0f, 1.7f, 0.22f, 0.3f)
-                drawLine(Color(0x55A03048), Offset(0f, 1.45f), Offset(0f, 1.9f), 0.03f, StrokeCap.Round)
+                fOval(Color(0xFF1B1B1F), 0f, 0.62f, 0.17f, 0.12f)
+                fOval(Color(0x99FFFFFF), -0.05f, 0.58f, 0.06f, 0.03f)
+                drawLine(Color(0xFF3E2A2A), Offset(0f, 0.74f), Offset(0f, 0.92f), 0.03f, StrokeCap.Round)
+                if (open > 0.2f) {
+                    val top = 1.2f + 0.1f * open
+                    val len = 0.18f + 0.35f * open
+                    fOvalB(Brush.verticalGradient(listOf(Color(0xFFF0728A), Color(0xFFD94A66)), top, top + len), 0f, top + len / 2f, 0.16f, len / 2f)
+                    drawLine(Color(0x55A03048), Offset(0f, top + 0.02f), Offset(0f, top + len * 0.8f), 0.02f, StrokeCap.Round)
+                }
             }
             "Coroa" -> {
                 val p = Path().apply {
@@ -230,6 +242,7 @@ internal fun DrawScope.qinblyDrawFaceFilter(name: String, eyeA: Offset, eyeB: Of
 // ───────────────────────── Detecção ─────────────────────────
 
 internal class QinblyFaceState {
+    val track = QinblyFaceTrackerState()
     var eyes by mutableStateOf<List<Pair<Offset, Offset>>>(emptyList())
     var width by mutableIntStateOf(1)
     var height by mutableIntStateOf(1)
@@ -245,8 +258,9 @@ private fun qinblyEyesOf(face: Face): Pair<Offset, Offset>? {
 }
 
 /** Recebe os quadros da câmera e atualiza [state] com a posição dos olhos de cada rosto. Só trabalha se [enabled]. */
-internal class QinblyFaceAnalyzer(private val state: QinblyFaceState) : ImageAnalysis.Analyzer {
+internal class QinblyFaceAnalyzer(private val state: QinblyFaceState, private val tracker: QinblyFaceTracker3D? = null) : ImageAnalysis.Analyzer {
     @Volatile var enabled: Boolean = false
+    @Volatile var use3d: Boolean = false
     private val detector by lazy {
         FaceDetection.getClient(
             FaceDetectorOptions.Builder()
@@ -264,6 +278,10 @@ internal class QinblyFaceAnalyzer(private val state: QinblyFaceState) : ImageAna
             if (state.eyes.isNotEmpty()) state.eyes = emptyList()
             image.close()
             return
+        }
+        tracker?.let {
+            it.enabled = use3d
+            if (use3d) it.feed(image)
         }
         val rot = image.imageInfo.rotationDegrees
         val upW = if (rot == 90 || rot == 270) image.height else image.width
@@ -291,7 +309,8 @@ internal fun QinblyFaceOverlay(filter: String, state: QinblyFaceState, mirror: B
             val x = p.x * sc + offX
             return Offset(if (mirror) size.width - x else x, p.y * sc + offY)
         }
-        state.eyes.forEach { (a, b) -> qinblyDrawFaceFilter(filter, map(a), map(b)) }
+        val f3 = if (filter == "Cachorro") state.track.face else null
+        state.eyes.forEach { (a, b) -> qinblyDrawFaceFilter(filter, map(a), map(b), f3) }
     }
 }
 
@@ -392,10 +411,12 @@ internal fun QinblyFaceCameraPreview(
     val context = LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val state = remember { QinblyFaceState() }
-    val analyzer = remember { QinblyFaceAnalyzer(state) }
+    val tracker = remember { QinblyFaceTracker3D(context, state.track) }
+    val analyzer = remember { QinblyFaceAnalyzer(state, tracker) }
     val executor = remember { Executors.newSingleThreadExecutor() }
     var view by remember { mutableStateOf<PreviewView?>(null) }
     analyzer.enabled = faceFilter != "Nenhum"
+    analyzer.use3d = faceFilter == "Cachorro"
     DisposableEffect(view, front) {
         val pv = view
         var provider: ProcessCameraProvider? = null
