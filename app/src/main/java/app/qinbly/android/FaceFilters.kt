@@ -111,22 +111,22 @@ internal fun DrawScope.qinblyDrawFaceFilter(name: String, eyeA: Offset, eyeB: Of
                 val open = (extra?.jawOpen ?: 0f).coerceIn(0f, 1f)
                 for (sg in listOf(-1f, 1f)) {
                     val away = (sg * turn).coerceIn(-1f, 1f)
-                    val w = 0.30f * (1f - 0.35f * away)
-                    val cx = sg * 0.98f + turn * 0.25f
-                    rotate(-sg * 18f, Offset(cx, -1.05f)) {
-                        fOvalB(Brush.verticalGradient(listOf(Color(0xFFA56A3B), Color(0xFF5A3418)), -1.1f, 0.1f), cx, -0.5f, w, 0.58f)
-                        drawOval(Color(0xFF3E220F), Offset(cx - w, -1.08f), Size(w * 2f, 1.16f), style = Stroke(width = 0.025f))
-                        fOval(Color(0xAAE8A5A5), cx, -0.42f, w * 0.55f, 0.36f)
+                    val w = 0.22f * (1f - 0.35f * away)
+                    val cx = sg * 0.78f + turn * 0.2f
+                    rotate(-sg * 15f, Offset(cx, -1.15f)) {
+                        fOvalB(Brush.verticalGradient(listOf(Color(0xFFA56A3B), Color(0xFF5A3418)), -1.2f, -0.4f), cx, -0.8f, w, 0.4f)
+                        drawOval(Color(0xFF3E220F), Offset(cx - w, -1.2f), Size(w * 2f, 0.8f), style = Stroke(width = 0.02f))
+                        fOval(Color(0xAAE8A5A5), cx, -0.74f, w * 0.55f, 0.24f)
                     }
                 }
-                fOval(Color(0xFF1B1B1F), 0f, 0.62f, 0.17f, 0.12f)
-                fOval(Color(0x99FFFFFF), -0.05f, 0.58f, 0.06f, 0.03f)
-                drawLine(Color(0xFF3E2A2A), Offset(0f, 0.74f), Offset(0f, 0.92f), 0.03f, StrokeCap.Round)
+                fOval(Color(0xFF1B1B1F), 0f, 0.44f, 0.13f, 0.09f)
+                fOval(Color(0x99FFFFFF), -0.04f, 0.41f, 0.045f, 0.022f)
+                drawLine(Color(0xFF3E2A2A), Offset(0f, 0.53f), Offset(0f, 0.68f), 0.025f, StrokeCap.Round)
                 if (open > 0.2f) {
-                    val top = 1.2f + 0.1f * open
-                    val len = 0.18f + 0.35f * open
-                    fOvalB(Brush.verticalGradient(listOf(Color(0xFFF0728A), Color(0xFFD94A66)), top, top + len), 0f, top + len / 2f, 0.16f, len / 2f)
-                    drawLine(Color(0x55A03048), Offset(0f, top + 0.02f), Offset(0f, top + len * 0.8f), 0.02f, StrokeCap.Round)
+                    val top = 0.8f + 0.1f * open
+                    val len = 0.15f + 0.3f * open
+                    fOvalB(Brush.verticalGradient(listOf(Color(0xFFF0728A), Color(0xFFD94A66)), top, top + len), 0f, top + len / 2f, 0.13f, len / 2f)
+                    drawLine(Color(0x55A03048), Offset(0f, top + 0.02f), Offset(0f, top + len * 0.8f), 0.018f, StrokeCap.Round)
                 }
             }
             "Coroa" -> {
