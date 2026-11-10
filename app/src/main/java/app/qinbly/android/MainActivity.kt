@@ -10797,7 +10797,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             ) { Text(if (publishing) "Publicando…" else "Publicar", fontWeight = FontWeight.Bold) }
          }
 }
-        return
+        return@QinblySplit
      }
 }
 
@@ -11269,7 +11269,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
 }
          }
 }
-        return
+        return@QinblySplit
      }
 }
 
@@ -11371,7 +11371,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             ) { Text(if (gallerySelection.isEmpty()) "Avançar" else "Avançar (${gallerySelection.size}/10)", fontWeight = FontWeight.Bold) }
          }
 }
-        return
+        return@QinblySplit
      }
 }
 
@@ -11512,7 +11512,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             }
          }
 }
-        return
+        return@QinblySplit
      }
 }
 

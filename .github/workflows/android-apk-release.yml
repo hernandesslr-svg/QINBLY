@@ -427,11 +427,10 @@ jobs:
               s=s.replace(old,'fun qinblyCountLegacy(value: Int): String',1)
           lines=s.splitlines(keepends=True)
           # Fix the four verified V126 nonlocal returns without deleting UI.
+          # Os returns ja foram corrigidos direto no codigo (return@QinblySplit); aqui so corrige se ainda restar algum antigo.
           for n in (10798,11270,11372,11513):
               if n <= len(lines) and lines[n-1].strip() == 'return':
                   lines[n-1]=lines[n-1].replace('return','return@QinblySplit',1)
-              else:
-                  raise RuntimeError(f'V126 return at line {n} changed; inspect source before patching')
           p.write_text(''.join(lines))
           g=Path('app/build.gradle.kts')
           t=g.read_text()
