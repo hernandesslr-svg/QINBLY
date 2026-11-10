@@ -9146,7 +9146,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                 Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.screenTextColor)
             }
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = RemoteAppearance.screenTextColor)
+                Text(title, fontSize = 19.sp, fontWeight = FontWeight.Bold, color = RemoteAppearance.screenTextColor)
                 Text(if (section == "home") "Gerencie sua conta e sua experiência" else "Personalize sua experiência no ${QinblyBrand.Name}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
             }
         }
@@ -9348,15 +9348,15 @@ private fun SettingsLink(title: String, subtitle: String, icon: androidx.compose
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
-                .padding(horizontal = 8.dp, vertical = 14.dp),
+                .padding(horizontal = 8.dp, vertical = 11.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(Modifier.size(38.dp), contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = QiblyTheme.text, modifier = Modifier.size(27.dp)) }
+            Box(Modifier.size(34.dp), contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = QiblyTheme.text, modifier = Modifier.size(24.dp)) }
             Column(Modifier.weight(1f).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(title, fontWeight = FontWeight.Medium, color = QiblyTheme.text)
-                Text(subtitle, color = Muted, style = MaterialTheme.typography.bodySmall)
+                Text(title, fontWeight = FontWeight.Medium, color = QiblyTheme.text, fontSize = 15.sp)
+                Text(subtitle, color = Muted, fontSize = 12.sp, lineHeight = 15.sp)
             }
-            Text("›", color = Muted, style = MaterialTheme.typography.headlineMedium)
+            Text("›", color = Muted, fontSize = 22.sp)
         }
         androidx.compose.material3.HorizontalDivider(color = QiblyTheme.border, thickness = 0.5.dp)
     }
@@ -9379,10 +9379,10 @@ private fun SettingSwitch(title: String, description: String, checked: Boolean, 
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(Modifier.size(38.dp), contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = QiblyTheme.text, modifier = Modifier.size(27.dp)) }
+            Box(Modifier.size(38.dp), contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = QiblyTheme.text, modifier = Modifier.size(24.dp)) }
             Column(Modifier.weight(1f).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(title, fontWeight = FontWeight.Medium, color = QiblyTheme.text)
-                Text(description, color = Muted, style = MaterialTheme.typography.bodySmall)
+                Text(title, fontWeight = FontWeight.Medium, color = QiblyTheme.text, fontSize = 15.sp)
+                Text(description, color = Muted, fontSize = 12.sp, lineHeight = 15.sp)
             }
             Switch(checked = checked, onCheckedChange = onChange, colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = Color(0xFF168CFA), checkedThumbColor = Color.White, uncheckedTrackColor = if (QiblyTheme.dark) Color(0xFF3A4458) else Color(0xFFC9CED6)))
         }
