@@ -361,6 +361,10 @@ internal class QinblyFaceAnalyzer(private val state: QinblyFaceState, private va
 @Composable
 internal fun QinblyFaceOverlay(filter: String, state: QinblyFaceState, mirror: Boolean, modifier: Modifier = Modifier) {
     QinblyDogSprites.ensure(LocalContext.current)
+    if (filter == "Cachorro" && state.track.available && !qinblyDog3DFailed) {
+        QinblyDog3DOverlay(state, mirror, modifier)
+        return
+    }
     Canvas(modifier) {
         if (filter == "Nenhum" || state.eyes.isEmpty()) return@Canvas
         val sc = max(size.width / state.width, size.height / state.height)

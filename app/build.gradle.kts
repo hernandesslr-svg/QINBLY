@@ -78,5 +78,7 @@ dependencies {
     implementation("com.google.mlkit:face-detection:16.1.7")
     implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta6")
     implementation("com.google.mediapipe:tasks-vision:0.10.18")
+    implementation("com.google.android.filament:filament-android:1.70.0")
+    implementation("com.google.android.filament:gltfio-android:1.70.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
