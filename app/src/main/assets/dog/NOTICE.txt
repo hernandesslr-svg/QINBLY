@@ -1,0 +1,4 @@
+cachorro.glb usa malhas e texturas (orelhas, focinho e lingua) da demo "dog_face" do projeto
+jeelizFaceFilter (https://github.com/jeeliz/jeelizFaceFilter), licenca Apache 2.0.
+Os modelos foram convertidos para glTF (.glb), com texturas reduzidas, e reposicionados para o QINBLY.
+Texto da licenca: LICENSE-jeeliz-apache-2.0.txt
