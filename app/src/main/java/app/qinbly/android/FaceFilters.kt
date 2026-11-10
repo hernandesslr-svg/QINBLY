@@ -92,6 +92,49 @@ private fun starPath(cx: Float, cy: Float, r: Float): Path {
  */
 internal const val QINBLY_DOG_YAW_SIGN = 1f
 
+/** Peças realistas do Cachorro (PNG em assets/dog). Se faltar alguma, o filtro usa o desenho simples. */
+internal object QinblyDogSprites {
+    @Volatile var ear: ImageBitmap? = null
+    @Volatile var nose: ImageBitmap? = null
+    @Volatile var tongue: ImageBitmap? = null
+    @Volatile private var tried = false
+
+    fun ensure(context: android.content.Context) {
+        if (tried) return
+        tried = true
+        try {
+            fun load(name: String): ImageBitmap? =
+                context.assets.open("dog/$name").use { BitmapFactory.decodeStream(it)?.asImageBitmap() }
+            ear = load("dog_ear.png")
+            nose = load("dog_nose.png")
+            tongue = load("dog_tongue.png")
+        } catch (_: Throwable) { }
+    }
+}
+
+private fun DrawScope.fSprite(img: ImageBitmap, cx: Float, cy: Float, w: Float, h: Float, flip: Boolean = false) {
+    val kx = w / img.width
+    val ky = h / img.height
+    withTransform({
+        translate(cx, cy)
+        scale(if (flip) -kx else kx, ky, Offset.Zero)
+        translate(-img.width / 2f, -img.height / 2f)
+    }) {
+        drawImage(
+            img,
+            androidx.compose.ui.unit.IntOffset.Zero,
+            androidx.compose.ui.unit.IntSize(img.width, img.height),
+            androidx.compose.ui.unit.IntOffset.Zero,
+            androidx.compose.ui.unit.IntSize(img.width, img.height),
+            1f,
+            androidx.compose.ui.graphics.drawscope.Fill,
+            null,
+            androidx.compose.ui.graphics.BlendMode.SrcOver,
+            androidx.compose.ui.graphics.FilterQuality.High
+        )
+    }
+}
+
 internal fun DrawScope.qinblyDrawFaceFilter(name: String, eyeA: Offset, eyeB: Offset, extra: QinblyFace3d? = null) {
     val left = if (eyeA.x <= eyeB.x) eyeA else eyeB
     val right = if (eyeA.x <= eyeB.x) eyeB else eyeA
@@ -109,7 +152,22 @@ internal fun DrawScope.qinblyDrawFaceFilter(name: String, eyeA: Offset, eyeB: Of
             "Cachorro" -> {
                 val turn = if (extra != null) (extra.yaw * QINBLY_DOG_YAW_SIGN / 40f).coerceIn(-1f, 1f) else 0f
                 val open = (extra?.jawOpen ?: 0f).coerceIn(0f, 1f)
-                for (sg in listOf(-1f, 1f)) {
+                val sEar = QinblyDogSprites.ear
+                val sNose = QinblyDogSprites.nose
+                val sTongue = QinblyDogSprites.tongue
+                if (sEar != null && sNose != null && sTongue != null) {
+                    for (sg in listOf(-1f, 1f)) {
+                        val cx = sg * 0.80f + turn * 0.2f
+                        rotate(-sg * 15f, Offset(cx, -1.15f)) {
+                            fSprite(sEar, cx, -0.78f, 0.52f, 0.81f, flip = sg < 0f)
+                        }
+                    }
+                    fSprite(sNose, 0f, 0.47f, 0.36f, 0.26f)
+                    if (open > 0.2f) {
+                        val len = 0.30f + 0.35f * open
+                        fSprite(sTongue, 0f, 0.82f + len / 2f, len * 0.4f, len)
+                    }
+                } else for (sg in listOf(-1f, 1f)) {
                     val away = (sg * turn).coerceIn(-1f, 1f)
                     val w = 0.22f * (1f - 0.35f * away)
                     val cx = sg * 0.78f + turn * 0.2f
@@ -119,6 +177,7 @@ internal fun DrawScope.qinblyDrawFaceFilter(name: String, eyeA: Offset, eyeB: Of
                         fOval(Color(0xAAE8A5A5), cx, -0.74f, w * 0.55f, 0.24f)
                     }
                 }
+                if (sEar == null || sNose == null || sTongue == null) {
                 fOval(Color(0xFF1B1B1F), 0f, 0.44f, 0.13f, 0.09f)
                 fOval(Color(0x99FFFFFF), -0.04f, 0.41f, 0.045f, 0.022f)
                 drawLine(Color(0xFF3E2A2A), Offset(0f, 0.53f), Offset(0f, 0.68f), 0.025f, StrokeCap.Round)
@@ -127,6 +186,7 @@ internal fun DrawScope.qinblyDrawFaceFilter(name: String, eyeA: Offset, eyeB: Of
                     val len = 0.15f + 0.3f * open
                     fOvalB(Brush.verticalGradient(listOf(Color(0xFFF0728A), Color(0xFFD94A66)), top, top + len), 0f, top + len / 2f, 0.13f, len / 2f)
                     drawLine(Color(0x55A03048), Offset(0f, top + 0.02f), Offset(0f, top + len * 0.8f), 0.018f, StrokeCap.Round)
+                }
                 }
             }
             "Coroa" -> {
@@ -300,6 +360,7 @@ internal class QinblyFaceAnalyzer(private val state: QinblyFaceState, private va
 /** Camada por cima da prévia da câmera: desenha o filtro em cada rosto encontrado. */
 @Composable
 internal fun QinblyFaceOverlay(filter: String, state: QinblyFaceState, mirror: Boolean, modifier: Modifier = Modifier) {
+    QinblyDogSprites.ensure(LocalContext.current)
     Canvas(modifier) {
         if (filter == "Nenhum" || state.eyes.isEmpty()) return@Canvas
         val sc = max(size.width / state.width, size.height / state.height)
@@ -317,6 +378,7 @@ internal fun QinblyFaceOverlay(filter: String, state: QinblyFaceState, mirror: B
 /** Miniatura da bolinha: rosto neutro com o filtro desenhado. */
 @Composable
 internal fun QinblyFaceThumb(name: String, modifier: Modifier = Modifier) {
+    QinblyDogSprites.ensure(LocalContext.current)
     Canvas(modifier) {
         drawRect(Color(0xFFDCE6F2))
         val w = size.width
@@ -356,6 +418,7 @@ private fun qinblyExifMatrix(path: String): Matrix {
  */
 internal fun qinblyBakeFaceFilter(context: android.content.Context, file: File, filter: String, onDone: (Uri) -> Unit) {
     val main = Handler(Looper.getMainLooper())
+    QinblyDogSprites.ensure(context)
     Thread {
         var result: Uri = Uri.fromFile(file)
         try {
