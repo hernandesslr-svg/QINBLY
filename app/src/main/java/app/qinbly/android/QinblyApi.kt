@@ -57,6 +57,12 @@ object QinblyApi {
     fun isUsernameAvailable(username: String): Boolean =
         request("GET", "/api/users/username-available?u=" + java.net.URLEncoder.encode(username.trim().lowercase(), "UTF-8")).optBoolean("available", false)
 
+    /** Estado do selo: {verified, request:{status: pending|approved|rejected, review_note}}. */
+    fun getVerificationStatus(token: String): JSONObject = request("GET", "/verify/status", null, token)
+
+    fun requestVerification(token: String, reason: String): JSONObject =
+        request("POST", "/verify/request", JSONObject().put("reason", reason.trim()), token)
+
     fun getNavigationAppearance(): JSONObject = request("GET", "/api/ui/navigation")
 
     fun getMyProfile(token: String): JSONObject = request("GET", "/api/auth/me", null, token)
@@ -879,7 +885,11 @@ object QinblyApi {
     }
 
     private fun request(method: String, path: String, body: JSONObject? = null, token: String? = null, allowRefresh: Boolean = true): JSONObject {
-        val base = BuildConfig.API_BASE_URL.trim().trimEnd('/')
+        val configuredBase = BuildConfig.API_BASE_URL.trim().trimEnd('/')
+        // Rotas "/verify/..." ficam em outra função do Supabase (qinbly-verify), irmã da qinbly-api.
+        val isVerify = path.startsWith("/verify/")
+        val base = if (isVerify) configuredBase.replace("/qinbly-api", "/qinbly-verify") else configuredBase
+        val path = if (isVerify) path.removePrefix("/verify") else path
         require(!base.contains("configure-your-qinbly-api.example") && (base.startsWith("https://") || base.startsWith("http://10.0.2.2"))) {
             "Backend ainda não configurado. Defina API_BASE_URL no app/build.gradle.kts com a URL HTTPS publicada."
         }

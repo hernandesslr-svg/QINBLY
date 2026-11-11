@@ -410,6 +410,81 @@ private fun QinblyPullRefresh(enabled: Boolean = true, content: @androidx.compos
     }
 }
 
+/** Cartão "Selo de verificado" na edição de perfil: mostra o estado do pedido e deixa pedir a verificação (aprovação manual). */
+@androidx.compose.runtime.Composable
+private fun QinblyVerificationCard(token: String, onNotice: (String) -> Unit) {
+    var verified by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
+    var loaded by remember { mutableStateOf(false) }
+    var dialog by remember { mutableStateOf(false) }
+    var reason by remember { mutableStateOf("") }
+    var sending by remember { mutableStateOf(false) }
+    val reload = remember { mutableIntStateOf(0) }
+    LaunchedEffect(token, reload.intValue) {
+        if (token.isBlank()) return@LaunchedEffect
+        Thread {
+            try {
+                val r = QinblyApi.getVerificationStatus(token)
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    verified = r.optBoolean("verified")
+                    val req = r.optJSONObject("request")
+                    status = req?.optString("status").orEmpty()
+                    note = req?.optString("review_note").orEmpty().takeUnless { it == "null" }.orEmpty()
+                    loaded = true
+                }
+            } catch (_: Exception) { android.os.Handler(android.os.Looper.getMainLooper()).post { loaded = true } }
+        }.start()
+    }
+    if (token.isBlank() || !loaded) return
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(QiblyTheme.card).border(1.dp, QiblyTheme.border, RoundedCornerShape(14.dp)).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            QinblyVerifiedBadge(20.dp)
+            Text("Selo de verificado", color = QiblyTheme.text, fontWeight = FontWeight.Bold)
+        }
+        when {
+            verified -> Text("Sua conta é verificada.", color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall)
+            status == "pending" -> Text("Seu pedido está em análise. Avisaremos você por notificação.", color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall)
+            else -> {
+                if (status == "rejected") Text("Seu último pedido não foi aprovado." + if (note.isNotBlank()) " Motivo: $note" else "", color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall)
+                else Text("Peça o selo para mostrar que sua conta é autêntica. Não há número mínimo de seguidores: cada pedido é analisado por nós.", color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall)
+                Button(onClick = { dialog = true }, colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)) {
+                    Text(if (status == "rejected") "Pedir de novo" else "Pedir verificação")
+                }
+            }
+        }
+    }
+    if (dialog) {
+        AlertDialog(
+            onDismissRequest = { if (!sending) dialog = false },
+            title = { Text("Pedir verificação") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Conte quem você é e por que sua conta deve ser verificada. Você precisa ter foto, bio e ao menos uma publicação.", style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(value = reason, onValueChange = { reason = it.take(1000) }, modifier = Modifier.fillMaxWidth(), minLines = 3, maxLines = 6, label = { Text("Motivo") })
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = !sending && reason.trim().length >= 10, onClick = {
+                    sending = true
+                    Thread {
+                        try {
+                            QinblyApi.requestVerification(token, reason)
+                            android.os.Handler(android.os.Looper.getMainLooper()).post { sending = false; dialog = false; reason = ""; reload.intValue++; onNotice("Pedido enviado. Vamos analisar.") }
+                        } catch (e: Exception) {
+                            android.os.Handler(android.os.Looper.getMainLooper()).post { sending = false; onNotice(e.message ?: "Não foi possível enviar o pedido.") }
+                        }
+                    }.start()
+                }) { Text(if (sending) "Enviando…" else "Enviar") }
+            },
+            dismissButton = { TextButton(enabled = !sending, onClick = { dialog = false }) { Text("Cancelar") } }
+        )
+    }
+}
+
 /** Selo de conta verificada (aparece ao lado do nome): selo ondulado violeta-rosa com check branco. */
 @androidx.compose.runtime.Composable
 private fun QinblyVerifiedBadge(size: Dp = 16.dp) {
@@ -439,6 +514,8 @@ private fun QinblyVerifiedBadge(size: Dp = 16.dp) {
 
 /** Texto curto de cada tipo de notificação (usado na lista e na notificação do sistema). */
 private fun qinblyNotificationText(kind: String): String = when (kind) {
+    "verification_approved" -> "Sua conta foi verificada! Parabéns."
+    "verification_rejected" -> "Seu pedido de verificação não foi aprovado."
     "follow" -> "começou a seguir você"
     "like" -> "curtiu sua publicação"
     "comment" -> "comentou na sua publicação"
@@ -8851,6 +8928,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                     }
                 }
             }
+            QinblyVerificationCard(prefs.getString("token", "").orEmpty(), onNotice)
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("CATEGORIAS", color = Muted, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
                 Text("${selectedCategories.size} de 5", color = QinblyBrand.Accent, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.labelMedium)
