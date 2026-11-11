@@ -65,6 +65,16 @@ import java.io.FileOutputStream
 
 private enum class MsgKind { TEXT, STICKER, AUDIO, IMAGE, FILE, POLL }
 
+private val ALL_REACTIONS = listOf("👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "👏", "😍", "🎉", "🤔", "😡", "🥳", "😎", "💯", "👎", "🤣", "😭", "🙌", "💔")
+
+/** Emojis do mais usado para o menos usado (empate mantém a ordem padrão). */
+private fun reactionOrder(prefs: android.content.SharedPreferences): List<String> =
+    ALL_REACTIONS.sortedByDescending { prefs.getInt("react_count_$it", 0) }
+
+private fun countReaction(prefs: android.content.SharedPreferences, e: String) {
+    prefs.edit().putInt("react_count_$e", prefs.getInt("react_count_$e", 0) + 1).apply()
+}
+
 private fun pathOf(url: String) = url.substringAfter("/post-media/")
 
 /** Texto "bruto" da mensagem (com a marca interna) para encaminhar. Enquete não encaminha. */
@@ -178,10 +188,10 @@ internal fun QinblyMessageSheet(
                 Modifier.width(barW).clip(RoundedCornerShape(30.dp)).background(Color(0xFF1B1727)).horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                listOf("👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "👏", "😍", "🎉", "🤔", "😡", "🥳", "😎", "💯", "👎", "🤣", "😭", "🙌", "💔").forEach { e ->
+                reactionOrder(prefs).forEach { e ->
                     Text(e, fontSize = 24.sp, modifier = Modifier.clip(androidx.compose.foundation.shape.CircleShape)
                         .background(if (myReaction == e) accent.copy(alpha = 0.35f) else Color.Transparent)
-                        .clickable { onReact(if (myReaction == e) "" else e); onDismiss() }.padding(horizontal = 6.dp, vertical = 3.dp))
+                        .clickable { if (myReaction != e) countReaction(prefs, e); onReact(if (myReaction == e) "" else e); onDismiss() }.padding(horizontal = 6.dp, vertical = 3.dp))
                 }
             }
         Column(Modifier.width(cardW).clip(RoundedCornerShape(18.dp)).background(Color(0xFF1B1727)).verticalScroll(rememberScrollState()).padding(vertical = 4.dp), horizontalAlignment = Alignment.Start) {

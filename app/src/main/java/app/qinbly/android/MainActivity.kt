@@ -7244,6 +7244,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var reportingMessageId by remember { mutableStateOf<String?>(null) }
     var replyingTo by remember { mutableStateOf<QinblyApi.MessageSummary?>(null) }
     var menuAnchor by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+    var showSharedMedia by remember { mutableStateOf(false) }
     var reactions by remember { mutableStateOf<Map<String, List<Pair<String, String>>>>(emptyMap()) }
     var reactionsNonce by remember { mutableStateOf(0) }
     LaunchedEffect(messages.size, reactionsNonce) {
@@ -7448,6 +7449,8 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             }.start()
         }
     }
+
+    if (showSharedMedia) QinblyChatSharedMedia(recipientUsername, messages, QiblyTheme.background, QiblyTheme.text, QiblyTheme.secondary, QinblyBrand.Accent) { showSharedMedia = false }
 
     // Pessoas para seguir: autores do feed que a pessoa ainda não segue (lista fixada ao abrir, para o botão virar "Seguindo" sem sumir).
     var suggestionSource by remember { mutableStateOf(QinblyCache.feed) }
@@ -7723,9 +7726,9 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         }
                     }
                 }
-                Column(Modifier.weight(1f).clickable { onOpenProfile(recipientUsername) }) {
+                Column(Modifier.weight(1f).clickable { showSharedMedia = true }) {
                     Text(recipientUsername.removePrefix("@"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Text("Ver perfil", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall)
+                    Text("Mídia, links e documentos", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall)
                 }
                 IconButton(onClick = { conversationSearch = !conversationSearch; if (!conversationSearch) messageSearch = "" }) {
                     Icon(Icons.Default.Search, contentDescription = "Pesquisar nesta conversa", tint = RemoteAppearance.screenSecondaryTextColor)
