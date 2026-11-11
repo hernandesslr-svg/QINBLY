@@ -1566,12 +1566,6 @@ private fun QinblyApp() {
                         ?: fetchJson("https://raw.githubusercontent.com/hernandesslr-svg/QINBLY/main/remote-config/android-ui.json?refresh=" + nonce, false)
                 } catch (_: Exception) { null }
             }
-            if (manualRefresh && firstRequest) {
-                val message = if (config?.optInt("schemaVersion") == 1)
-                    "Configuração visual recebida: revisão " + config.optInt("revision")
-                else "Falha ao buscar configuração visual no GitHub"
-                android.widget.Toast.makeText(appContext, message, android.widget.Toast.LENGTH_SHORT).show()
-            }
             firstRequest = false
             if (config?.optInt("schemaVersion") == 1) {
                 val navigation = config.optJSONObject("navigation")
