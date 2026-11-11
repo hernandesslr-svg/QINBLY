@@ -273,7 +273,7 @@ private object QinblyBrand {
 }
 
 private val Night = Color.White
-private val Panel = Color.White
+private val Panel: Color get() = QiblyTheme.card
 private val Violet = QinblyBrand.Accent
 private val Pink = QinblyBrand.Accent
 private val Muted: Color get() = if (QiblyTheme.dark) Color(0xFFA9B5C8) else Color(0xFF333333)
@@ -1327,7 +1327,7 @@ private fun AccountSwitcherDialog(
   Box(Modifier.fillMaxSize().padding(bottom = 92.dp), contentAlignment = Alignment.BottomCenter) {
    Surface(
     modifier = Modifier.fillMaxWidth().wrapContentHeight(),
-    color = Color.White,
+    color = QiblyTheme.card,
     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
    ) {
    Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 18.dp)) {
@@ -4590,7 +4590,7 @@ private fun QinblyPostCard(
                         val pollShape = RoundedCornerShape(14.dp)
                         Row(
                             Modifier.fillMaxWidth().height(52.dp)
-                                .background(if (selected) QiblyTheme.soft else Color.White, pollShape)
+                                .background(if (selected) QiblyTheme.soft else QiblyTheme.card, pollShape)
                                 .border(
                                     width = if (selected) 1.5.dp else 1.dp,
                                     color = if (selected) QinblyBrand.Accent else QiblyTheme.border,
@@ -7848,7 +7848,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         }) { Text("Limpar visualização", color = Pink) }
                     },
                     dismissButton = { TextButton(onClick = { showClearConfirm = false }) { Text("Cancelar") } },
-                    containerColor = Panel, titleContentColor = Color.White, textContentColor = Muted
+                    containerColor = Panel, titleContentColor = QiblyTheme.text, textContentColor = Muted
                 )
             }
             if (showBlockConfirm) {
@@ -10699,7 +10699,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         val maxChars = if (initialMode == "poll") 200 else 5000
         val ownUsername = prefs.getString("username", "").orEmpty().removePrefix("@")
         Column(
-            Modifier.fillMaxSize().background(Color.White).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+            Modifier.fillMaxSize().background(QiblyTheme.background).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
  QinblySplit {
@@ -10818,7 +10818,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     // A tela intermediária foi removida. Se o seletor do Android for cancelado,
     // voltamos ao início em vez de deixar uma página vazia.
     if (initialMode == "gallery" && !showComposer && !galleryOpen) {
-        Box(Modifier.fillMaxSize().background(Color.White))
+        Box(Modifier.fillMaxSize().background(QiblyTheme.background))
         return
     }
 
