@@ -1,5 +1,11 @@
 package app.qinbly.android
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Icon
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -167,5 +173,59 @@ internal fun QinblyCustomStickerRow(accent: Color, textColor: Color, refreshKey:
                 }
             }
         }
+    }
+}
+
+/** Painel de figurinhas (estilo WhatsApp): grade com o "+" para criar e todas as suas figurinhas salvas. Segurar pede confirmação para excluir. */
+@Composable
+internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color, refreshKey: Int, onCreate: () -> Unit, onPick: (QinblyApi.CustomSticker) -> Unit, onNotice: (String) -> Unit, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    var list by remember { mutableStateOf<List<QinblyApi.CustomSticker>>(emptyList()) }
+    var toDelete by remember { mutableStateOf<QinblyApi.CustomSticker?>(null) }
+    LaunchedEffect(refreshKey) {
+        val token = prefs.getString("token", null)
+        if (!token.isNullOrBlank()) {
+            try { list = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getMyStickers(token) } }
+            catch (_: Exception) { onNotice("Não foi possível carregar suas figurinhas.") }
+        }
+    }
+    androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+        columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(4),
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(14.dp)).background(cardColor).border(1.5.dp, accent, RoundedCornerShape(14.dp)).clickable { onCreate() }, contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.Add, contentDescription = "Criar figurinha", tint = accent, modifier = Modifier.size(30.dp))
+            }
+        }
+        items(list.size, key = { list[it].id }) { i ->
+            val sticker = list[i]
+            Box(
+                Modifier.aspectRatio(1f).clip(RoundedCornerShape(14.dp)).pointerInput(sticker.id) {
+                    detectTapGestures(onTap = { onPick(sticker) }, onLongPress = { toDelete = sticker })
+                }.padding(2.dp),
+                contentAlignment = Alignment.Center
+            ) { AsyncImage(model = sticker.url, contentDescription = "Figurinha", modifier = Modifier.fillMaxSize()) }
+        }
+    }
+    toDelete?.let { st ->
+        AlertDialog(
+            onDismissRequest = { toDelete = null },
+            title = { Text("Excluir figurinha?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    toDelete = null
+                    val token = prefs.getString("token", null) ?: return@TextButton
+                    list = list.filterNot { it.id == st.id }
+                    Thread {
+                        try { QinblyApi.deleteSticker(token, st.id) }
+                        catch (_: Exception) { Handler(Looper.getMainLooper()).post { onNotice("Não foi possível excluir a figurinha.") } }
+                    }.start()
+                }) { Text("Excluir", color = accent, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = { TextButton(onClick = { toDelete = null }) { Text("Cancelar") } }
+        )
     }
 }

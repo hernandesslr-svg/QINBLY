@@ -7930,17 +7930,13 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                 }
             }
             if (showEmojiPicker) {
-                Row(Modifier.fillMaxWidth().height(300.dp).background(QiblyTheme.soft).padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.size(64.dp).clip(RoundedCornerShape(12.dp)).background(QiblyTheme.card).border(1.5.dp, QinblyBrand.Accent, RoundedCornerShape(12.dp)).clickable { showStickerCreator = true }, contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Add, contentDescription = "Criar figurinha", tint = QinblyBrand.Accent, modifier = Modifier.size(30.dp))
-                    }
-                    Box(Modifier.weight(1f)) {
-                        QinblyCustomStickerRow(QinblyBrand.Accent, QiblyTheme.text, stickerRefresh, { sticker ->
-                            showEmojiPicker = false
-                            sendWith { token -> QinblyApi.sendStickerMessage(token, recipientUsername, sticker) }
-                        }, onNotice, Modifier)
-                    }
-                }
+                QinblyStickerGrid(QinblyBrand.Accent, QiblyTheme.card, QiblyTheme.text, stickerRefresh,
+                    onCreate = { showStickerCreator = true },
+                    onPick = { sticker ->
+                        showEmojiPicker = false
+                        sendWith { token -> QinblyApi.sendStickerMessage(token, recipientUsername, sticker) }
+                    }, onNotice = onNotice,
+                    modifier = Modifier.fillMaxWidth().height(300.dp).background(QiblyTheme.soft).padding(10.dp))
             }
             if (showClearConfirm) {
                 AlertDialog(
