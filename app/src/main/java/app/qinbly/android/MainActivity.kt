@@ -6663,6 +6663,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
     var showMenu by remember { mutableStateOf(false) }
     var showInfo by remember { mutableStateOf(false) }
     var showEmoji by remember { mutableStateOf(false) }
+    BackHandler(enabled = showEmoji) { showEmoji = false }
     val cKb = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     val cFocus = androidx.compose.ui.platform.LocalFocusManager.current
     var showAttach by remember { mutableStateOf(false) }
@@ -7212,6 +7213,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     LaunchedEffect(scrollToTopRequest) { if (scrollToTopRequest > 0) inboxListState.animateScrollToItem(0) }
     var draft by remember { mutableStateOf("") }
     var showEmojiPicker by remember { mutableStateOf(false) }
+    BackHandler(enabled = showEmojiPicker) { showEmojiPicker = false }
     val stickerKb = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     val stickerFocus = androidx.compose.ui.platform.LocalFocusManager.current
     var showAttachPanel by remember { mutableStateOf(false) }
