@@ -7245,6 +7245,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var replyingTo by remember { mutableStateOf<QinblyApi.MessageSummary?>(null) }
     var menuAnchor by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     var showSharedMedia by remember { mutableStateOf(false) }
+    var chatPhotoUrl by remember { mutableStateOf<String?>(null) }
     var reactions by remember { mutableStateOf<Map<String, List<Pair<String, String>>>>(emptyMap()) }
     var reactionsNonce by remember { mutableStateOf(0) }
     LaunchedEffect(messages.size, reactionsNonce) {
@@ -7450,6 +7451,13 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
         }
     }
 
+    chatPhotoUrl?.let { u ->
+        androidx.compose.ui.window.Dialog(onDismissRequest = { chatPhotoUrl = null }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+            Box(Modifier.fillMaxSize().background(Color.Black).clickable { chatPhotoUrl = null }, contentAlignment = Alignment.Center) {
+                AsyncImage(model = u, contentDescription = "Foto", modifier = Modifier.fillMaxWidth(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
+            }
+        }
+    }
     if (showSharedMedia) QinblyChatSharedMedia(recipientUsername, messages, QiblyTheme.background, QiblyTheme.text, QiblyTheme.secondary, QinblyBrand.Accent) { showSharedMedia = false }
 
     // Pessoas para seguir: autores do feed que a pessoa ainda não segue (lista fixada ao abrir, para o botão virar "Seguindo" sem sumir).
@@ -7830,8 +7838,8 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         val bubbleShape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = if (isOwn) 18.dp else 4.dp, bottomEnd = if (isOwn) 4.dp else 18.dp)
                         val bubbleColor = if (isOwn) QinblyBrand.Accent else if (QiblyTheme.dark) QiblyTheme.soft else Color(0xFFF0F2F6)
                         val textColor = if (isOwn) Color.White else if (QiblyTheme.dark) Color.White else Color(0xFF111827)
-                        Surface(color = if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) Color.Transparent else bubbleColor, shape = bubbleShape, modifier = Modifier.widthIn(max = 300.dp).onGloballyPositioned { bubbleRect[0] = it.boundsInWindow() }.clip(bubbleShape).combinedClickable(onClick = { if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) { menuAnchor = bubbleRect[0]; menuMessage = message } }, onLongClick = { menuAnchor = bubbleRect[0]; menuMessage = message })) {
-                            Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                        Surface(color = if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) Color.Transparent else bubbleColor, shape = bubbleShape, modifier = Modifier.widthIn(max = 300.dp).onGloballyPositioned { bubbleRect[0] = it.boundsInWindow() }.clip(bubbleShape).combinedClickable(onClick = { if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) { menuAnchor = bubbleRect[0]; menuMessage = message } else if (message.poll == null && message.fileUrl.isBlank() && message.imageUrl.isNotBlank()) { chatPhotoUrl = message.imageUrl } }, onLongClick = { menuAnchor = bubbleRect[0]; menuMessage = message })) {
+                            Column(Modifier.padding(horizontal = if (message.imageUrl.isNotBlank() && message.poll == null && message.fileUrl.isBlank() && message.stickerUrl.isBlank()) 3.dp else 12.dp, vertical = if (message.imageUrl.isNotBlank() && message.poll == null && message.fileUrl.isBlank() && message.stickerUrl.isBlank()) 3.dp else 8.dp)) {
                                 val sharedPostId = remember(message.body) { Regex("post/([0-9a-fA-F-]{36})").find(message.body)?.groupValues?.get(1) }
                                 val stickerId = remember(message.body) { QinblyStickers.idOf(message.body) }
                                 if (message.poll != null) {
@@ -7841,7 +7849,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                                 } else if (message.fileUrl.isNotBlank()) {
                                     QinblyFileBubble(message.fileUrl, message.fileName, QinblyBrand.Accent, textColor)
                                 } else if (message.imageUrl.isNotBlank()) {
-                                    coil.compose.AsyncImage(model = message.imageUrl, contentDescription = "Foto enviada", modifier = Modifier.width(220.dp).heightIn(max = 320.dp).clip(RoundedCornerShape(12.dp)), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
+                                    coil.compose.AsyncImage(model = message.imageUrl, contentDescription = "Foto enviada", modifier = Modifier.width(294.dp).heightIn(min = 160.dp, max = 400.dp).clip(RoundedCornerShape(15.dp)), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                                 } else if (message.audioUrl.isNotBlank()) {
                                     QinblyAudioBubble(message.audioUrl, message.audioSeconds, QinblyBrand.Accent, isOwn, textColor)
                                 } else if (stickerId != null) {
