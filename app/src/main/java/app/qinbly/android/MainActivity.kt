@@ -7208,6 +7208,12 @@ private fun BlockedAccountsDialog(prefs: android.content.SharedPreferences, onDi
 @Composable
 private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onSearch: () -> Unit, onOpenConversation: (String) -> Unit, onOpenProfile: (String) -> Unit, onNotice: (String) -> Unit, onConversationRead: (Int) -> Unit = {}) {
     val readLocally = remember { mutableStateListOf<String>() }
+    var inboxMenu by remember { mutableStateOf<QinblyApi.InboxSummary?>(null) }
+    var inboxAnchor by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+    var inboxPrefsTick by remember { mutableStateOf(0) }
+    var confirmDeleteConv by remember { mutableStateOf<QinblyApi.InboxSummary?>(null) }
+    var confirmBlockConv by remember { mutableStateOf<String?>(null) }
+    var reportConvUser by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
     val inboxListState = androidx.compose.foundation.lazy.rememberLazyListState()
@@ -7384,6 +7390,63 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
         // A API atual só retorna conversas individuais; ainda não classifica grupos nem solicitações.
         "Solicitações" -> emptyList()
         else -> filteredInbox
+    }.filter { c -> inboxPrefsTick >= 0 && (prefs.getString("inbox_hidden_" + c.username, "") ?: "").let { h -> h.isEmpty() || c.createdAt > h } }
+        .sortedByDescending { c -> if (inboxPrefsTick >= 0 && prefs.getBoolean("pinned_" + c.username, false)) 1 else 0 }
+
+    inboxMenu?.let { cv ->
+        val cvUnread = cv.unreadCount > 0 && cv.username !in readLocally
+        QinblyInboxMenu(inboxAnchor, cvUnread, prefs.getBoolean("pinned_" + cv.username, false), prefs.getBoolean("muted_" + cv.username, false), QiblyTheme.text, QinblyBrand.Accent,
+            onDismiss = { inboxMenu = null },
+            onProfile = { onOpenProfile(cv.username) },
+            onMarkRead = {
+                readLocally.add(cv.username); onConversationRead(cv.unreadCount)
+                val token = prefs.getString("token", null)
+                if (!token.isNullOrBlank()) Thread { try { QinblyApi.getMessages(token, cv.username) } catch (_: Exception) { } }.start()
+            },
+            onTogglePin = { prefs.edit().putBoolean("pinned_" + cv.username, !prefs.getBoolean("pinned_" + cv.username, false)).apply(); inboxPrefsTick++ },
+            onToggleMute = { val nv = !prefs.getBoolean("muted_" + cv.username, false); prefs.edit().putBoolean("muted_" + cv.username, nv).apply(); inboxPrefsTick++; onNotice(if (nv) "Notificações silenciadas." else "Notificações reativadas.") },
+            onDelete = { confirmDeleteConv = cv },
+            onBlock = { confirmBlockConv = cv.username },
+            onReport = { reportConvUser = cv.username })
+    }
+    confirmDeleteConv?.let { cv ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirmDeleteConv = null },
+            title = { Text("Apagar conversa?") },
+            text = { Text("A conversa some da sua lista neste aparelho e volta se chegar uma mensagem nova. As mensagens continuam com a outra pessoa.") },
+            confirmButton = { TextButton(onClick = { prefs.edit().putString("inbox_hidden_" + cv.username, cv.createdAt).apply(); inboxPrefsTick++; confirmDeleteConv = null }) { Text("Apagar", color = Color(0xFFE5484D)) } },
+            dismissButton = { TextButton(onClick = { confirmDeleteConv = null }) { Text("Cancelar") } }
+        )
+    }
+    confirmBlockConv?.let { who ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirmBlockConv = null },
+            title = { Text("Bloquear @$who?") },
+            text = { Text("Vocês não verão mais as publicações um do outro nem poderão trocar mensagens. Dá para desbloquear em Configurações > Contas bloqueadas.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmBlockConv = null
+                    val token = prefs.getString("token", null)
+                    if (token.isNullOrBlank()) onNotice("Entre na sua conta para bloquear.")
+                    else Thread {
+                        try { QinblyApi.blockByUsername(token, who); android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice("@$who bloqueado.") } }
+                        catch (e: Exception) { android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível bloquear.") } }
+                    }.start()
+                }) { Text("Bloquear", color = Color(0xFFE5484D)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmBlockConv = null }) { Text("Cancelar") } }
+        )
+    }
+    reportConvUser?.let { who ->
+        ReportReasonDialog(title = "Denunciar @$who: qual o motivo?", onDismiss = { reportConvUser = null }) { reason ->
+            reportConvUser = null
+            val token = prefs.getString("token", null)
+            if (token.isNullOrBlank()) onNotice("Entre na sua conta para denunciar.")
+            else Thread {
+                try { QinblyApi.reportUserByUsername(token, who, reason); android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice("Denúncia enviada. Obrigado por ajudar.") } }
+                catch (e: Exception) { android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível enviar a denúncia.") } }
+            }.start()
+        }
     }
 
     // Pessoas para seguir: autores do feed que a pessoa ainda não segue (lista fixada ao abrir, para o botão virar "Seguindo" sem sumir).
@@ -7582,11 +7645,12 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                 visibleInbox.isNotEmpty() -> LazyColumn(Modifier.fillMaxSize(), state = inboxListState, verticalArrangement = Arrangement.spacedBy(0.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
                     items(visibleInbox, key = { it.username }) { conversation ->
                         val unread = conversation.unreadCount > 0 && conversation.username !in readLocally
+                        val inboxRowRect = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
                         Row(
                             Modifier.fillMaxWidth().padding(vertical = 3.dp)
                                 .clip(RoundedCornerShape(18.dp))
                                 .background(if (unread) QinblyBrand.Accent.copy(alpha = 0.12f) else Color.Transparent)
-                                .clickable { if (unread) { readLocally.add(conversation.username); onConversationRead(conversation.unreadCount) }; onOpenConversation(conversation.username) }.padding(horizontal = 10.dp, vertical = 11.dp),
+                                .onGloballyPositioned { inboxRowRect[0] = it.boundsInWindow() }.combinedClickable(onClick = { if (unread) { readLocally.add(conversation.username); onConversationRead(conversation.unreadCount) }; onOpenConversation(conversation.username) }, onLongClick = { inboxAnchor = inboxRowRect[0]; inboxMenu = conversation }).padding(horizontal = 10.dp, vertical = 11.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
