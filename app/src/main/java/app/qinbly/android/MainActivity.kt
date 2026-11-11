@@ -1762,6 +1762,7 @@ private fun QinblyApp() {
     var showSearchDialog by remember { mutableStateOf(false) }
     var publicProfileUsername by remember { mutableStateOf("") }
     var messageRecipient by remember { mutableStateOf("") }
+    LaunchedEffect(tab) { if (tab != 1 && messageRecipient.isNotEmpty()) messageRecipient = "" }
     QinblyApi.initialize(appContext)
     val appPrefs = remember { appContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
     var loggedInUser by remember { mutableStateOf(appPrefs.getString("username", "") ?: "") }
