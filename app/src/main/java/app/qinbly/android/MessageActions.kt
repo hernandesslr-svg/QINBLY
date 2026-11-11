@@ -30,6 +30,9 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Reply
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.ContentCopy
@@ -107,12 +110,12 @@ internal fun QinblyMessageSheet(
     }
     val raw = rawBodyOf(message)
     @Composable
-    fun Option(icon: ImageVector, label: String, tint: Color, labelColor: Color = textColor, onClick: () -> Unit) {
+    fun Option(icon: ImageVector, label: String, tint: Color, labelColor: Color = textColor, flip: Boolean = false, onClick: () -> Unit) {
         Row(
             Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 24.dp, vertical = 13.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp).graphicsLayer(scaleX = if (flip) -1f else 1f))
             Text(label, color = labelColor, fontSize = 16.sp)
         }
     }
@@ -168,16 +171,15 @@ internal fun QinblyMessageSheet(
                 }
             }
         Column(Modifier.width(cardW).heightIn(max = cardH).clip(RoundedCornerShape(18.dp)).background(Color(0xFF1B1727)).verticalScroll(rememberScrollState()).padding(vertical = 4.dp), horizontalAlignment = Alignment.Start) {
-                Option(Icons.Default.Share, "Responder", accent) { onReply(message); onDismiss() }
-                if (raw != null) Option(Icons.Default.OpenInNew, "Encaminhar", accent) { showForward = true }
+                Option(Icons.Default.Reply, "Responder", accent) { onReply(message); onDismiss() }
+                if (raw != null) Option(Icons.Default.Reply, "Encaminhar", accent, flip = true) { showForward = true }
                 if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank()) {
-                    Option(Icons.Default.OpenInNew, "Ver figurinha", accent) { showBig = true }
-                    Option(Icons.Default.Star, "Favoritar figurinha", Color(0xFFFFD60A)) { onDismiss(); ensureSticker(true) }
+                    Option(Icons.Default.Star, "Favoritar", Color(0xFFFFD60A)) { onDismiss(); ensureSticker(true) }
                 }
                 Option(Icons.Default.VisibilityOff, "Apagar para mim", textColor) { onHide(message.id); onDismiss(); onNotice("Mensagem apagada só para você.") }
                 if (isOwn) Option(Icons.Default.Delete, "Cancelar envio", Color(0xFFE5484D), Color(0xFFE5484D)) { confirmCancel = true }
-                Option(Icons.Default.Info, "Dados da mensagem", accent) { showInfo = true }
-                Option(Icons.Default.Star, if (pinned) "Desafixar" else "Fixar no topo", accent) { onTogglePin(message.id); onDismiss() }
+                Option(Icons.Default.Info, "Sobre a mensagem", accent) { showInfo = true }
+                Option(Icons.Default.PushPin, if (pinned) "Desafixar" else "Fixar no topo", accent) { onTogglePin(message.id); onDismiss() }
                 Option(if (showMore) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, "Mais", textColor) { showMore = !showMore }
                 if (showMore) {
                     if (kind == MsgKind.TEXT) Option(Icons.Outlined.ContentCopy, "Copiar texto", accent) {
@@ -239,8 +241,13 @@ internal fun QinblyMessageSheet(
         val tipo = when (kind) { MsgKind.TEXT -> "Texto"; MsgKind.STICKER -> "Figurinha"; MsgKind.AUDIO -> "Mensagem de voz"; MsgKind.IMAGE -> "Foto"; MsgKind.FILE -> "Documento"; MsgKind.POLL -> "Enquete" }
         AlertDialog(
             onDismissRequest = { showInfo = false },
-            title = { Text("Dados da mensagem") },
-            text = { Text("Tipo: $tipo\nEnviada por: ${if (isOwn) "você" else "a outra pessoa"}\nData: $whenSent") },
+            title = { Text("Sobre a mensagem") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                    if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank()) AsyncImage(model = message.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.size(200.dp).padding(bottom = 12.dp))
+                    Text("Tipo: $tipo\nEnviada por: ${if (isOwn) "você" else "a outra pessoa"}\nData: $whenSent")
+                }
+            },
             confirmButton = { TextButton(onClick = { showInfo = false }) { Text("Fechar") } }
         )
     }
