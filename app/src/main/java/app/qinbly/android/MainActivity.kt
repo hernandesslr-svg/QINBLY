@@ -5225,6 +5225,7 @@ private fun QinblyHomeHeader(
                     .clickable { onCreateWith("camera", "#" + challenge.first + " ") }.padding(horizontal = 14.dp, vertical = 7.dp))
         }
     }
+    Box(Modifier.fillMaxWidth().height(1.dp).background(RemoteAppearance.feedDividerColor.copy(alpha = 0.45f)))
 }
 
 private fun qinblyHotScore(post: QinblyApi.PostSummary): Int = QinblyEngagement.likeCount(post) + post.comments * 2 + QinblyEngagement.repostCount(post) * 2
