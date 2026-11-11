@@ -60,7 +60,7 @@ import kotlin.math.sin
 
 /** Filtros de rosto próprios do QINBLY (desenhados em código, sem arquivos externos). */
 internal val QinblyFaceFilterNames = listOf(
-    "Cachorro", "Coroa", "Gato", "Coelho", "Óculos de sol", "Estrelas",
+    "Coroa", "Gato", "Coelho", "Óculos de sol", "Estrelas",
     "Urso", "Palhaço", "Festa", "Bigode", "Flores", "Anjo"
 )
 
