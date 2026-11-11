@@ -1519,7 +1519,7 @@ private fun QinblyApp() {
     val uiPreferences = remember { appContext.getSharedPreferences("qinbly_remote_ui", android.content.Context.MODE_PRIVATE) }
     val themePrefs = remember { appContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
     LaunchedEffect(Unit) {
-        QiblyTheme.dark = themePrefs.getString("setting_theme", "light") == "dark"
+        QiblyTheme.dark = themePrefs.getString("setting_theme", "dark") == "dark"
         QiblyTheme.largeText = themePrefs.getBoolean("setting_large_text", false)
         QiblyTheme.reduceMotion = themePrefs.getBoolean("setting_reduce_motion", false)
     }
