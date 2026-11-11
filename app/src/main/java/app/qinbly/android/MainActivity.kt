@@ -1453,6 +1453,7 @@ private fun AccountSwitcherDialog(
        shape = RoundedCornerShape(17.dp),
        border = BorderStroke(if (active) 1.5.dp else 1.dp, if (active) blue else QiblyTheme.border)
       ) {
+       Box(Modifier.fillMaxWidth()) {
        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
         QiblyAccountAvatar(account.username, "", 66.dp) { if (!active) onSelect(account) }
         Spacer(Modifier.width(12.dp))
@@ -1463,8 +1464,11 @@ private fun AccountSwitcherDialog(
         }
         if (active) Icon(Icons.Default.CheckCircle, "Conta atual", tint = blue)
         else Icon(Icons.Default.ChevronRight, "Trocar para esta conta", tint = Color(0xFF667085))
-        IconButton(onClick = { confirmRemove = account.username }, modifier = Modifier.size(34.dp)) {
-         Icon(Icons.Filled.DeleteForever, contentDescription = "Remover conta deste aparelho", tint = Color(0xFF667085), modifier = Modifier.size(22.dp))
+       }
+       }
+       Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) {
+        IconButton(onClick = { confirmRemove = account.username }, modifier = Modifier.padding(2.dp).size(30.dp)) {
+         Icon(Icons.Default.Close, contentDescription = "Remover conta deste aparelho", tint = Color(0xFF667085), modifier = Modifier.size(18.dp))
         }
        }
       }
