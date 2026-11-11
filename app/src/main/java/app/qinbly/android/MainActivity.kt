@@ -7914,7 +7914,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         showEmojiPicker = false
                         sendWith { token -> QinblyApi.sendStickerMessage(token, recipientUsername, sticker) }
                     }, onNotice = onNotice,
-                    modifier = Modifier.fillMaxWidth().height(300.dp).background(QiblyTheme.soft).padding(10.dp))
+                    modifier = Modifier.fillMaxWidth().height(300.dp).background(QiblyTheme.soft).padding(10.dp), bleed = 16.dp)
             }
             if (showClearConfirm) {
                 AlertDialog(
