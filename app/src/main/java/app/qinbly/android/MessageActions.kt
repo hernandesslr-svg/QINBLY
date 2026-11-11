@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -145,26 +146,28 @@ internal fun QinblyMessageSheet(
             val density = androidx.compose.ui.platform.LocalDensity.current
             val screenW = maxWidth
             val screenH = maxHeight
+            val navBottomDp = with(density) { androidx.compose.foundation.layout.WindowInsets.navigationBars.getBottom(density).toDp() }
+            val usableH = screenH - maxOf(navBottomDp, 40.dp)
             val cardW = 262.dp
             val barW = 262.dp
             val topDp = with(density) { (anchor?.top ?: 0f).toDp() }
             val bottomDp = with(density) { (anchor?.bottom ?: 0f).toDp() }
             val hasAnchor = anchor != null
             val rows = 5 + (if (raw != null) 1 else 0) + (if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank()) 2 else 0) + (if (isOwn) 1 else 0) + (if (showMore) 4 else 0)
-            val cardH = (rows * 46 + 8).dp.coerceAtMost(screenH - 150.dp)
+            val cardH = (rows * 46 + 8).dp.coerceAtMost(usableH - 150.dp)
             val stackH = 52.dp + 6.dp + cardH
-            val stackY = if (!hasAnchor) ((screenH - stackH) / 2) else {
+            val stackY = if (!hasAnchor) ((usableH - stackH) / 2) else {
                 val below = bottomDp + 8.dp
                 val above = topDp - stackH - 8.dp
-                val y = if (below + stackH <= screenH - 16.dp) below else if (above >= 70.dp) above else screenH - stackH - 16.dp
+                val y = if (below + stackH <= usableH - 8.dp) below else if (above >= 70.dp) above else usableH - stackH - 8.dp
                 y.coerceAtLeast(70.dp)
             }
             Column(Modifier.offset(x = if (isOwn) screenW - cardW - 12.dp else 12.dp, y = stackY).width(cardW), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
-                Modifier.width(barW).clip(RoundedCornerShape(30.dp)).background(Color(0xFF1B1727)).padding(horizontal = 8.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                Modifier.width(barW).clip(RoundedCornerShape(30.dp)).background(Color(0xFF1B1727)).horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                listOf("👍", "❤️", "😂", "😮", "😢", "🙏").forEach { e ->
+                listOf("👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "👏", "😍", "🎉", "🤔", "😡", "🥳", "😎", "💯", "👎", "🤣", "😭", "🙌", "💔").forEach { e ->
                     Text(e, fontSize = 24.sp, modifier = Modifier.clip(androidx.compose.foundation.shape.CircleShape)
                         .background(if (myReaction == e) accent.copy(alpha = 0.35f) else Color.Transparent)
                         .clickable { onReact(if (myReaction == e) "" else e); onDismiss() }.padding(horizontal = 6.dp, vertical = 3.dp))

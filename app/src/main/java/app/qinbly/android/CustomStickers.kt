@@ -191,7 +191,7 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
     val local = remember { context.getSharedPreferences("qinbly_stickers", Context.MODE_PRIVATE) }
     var list by remember { mutableStateOf<List<QinblyApi.CustomSticker>>(emptyList()) }
     var toDelete by remember { mutableStateOf<QinblyApi.CustomSticker?>(null) }
-    var tab by remember { mutableStateOf(2) }
+    var tab by remember { mutableStateOf(0) }
     var recents by remember { mutableStateOf((local.getString("recents", "") ?: "").split(",").filter { it.isNotBlank() }) }
     var favs by remember { mutableStateOf(local.getStringSet("favs", emptySet()) ?: emptySet()) }
     LaunchedEffect(refreshKey) {
