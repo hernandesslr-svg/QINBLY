@@ -4047,6 +4047,10 @@ private fun QinblyCommentsDialog(
         mutableStateOf(commentEmojiPrefs.getString("recent", "")!!.split("|").filter { it.isNotBlank() })
     }
     var showCommentEmojis by remember { mutableStateOf(false) }
+    var showCommentStickerCreator by remember { mutableStateOf(false) }
+    var commentStickerRefresh by remember { mutableStateOf(0) }
+    val commentKb = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    val commentFocus = androidx.compose.ui.platform.LocalFocusManager.current
     var selectedCommentEmojiCategory by remember { mutableStateOf("Emoções") }
     BackHandler(enabled = showCommentEmojis) {
         showCommentEmojis = false
@@ -4216,7 +4220,8 @@ private fun QinblyCommentsDialog(
                                     )
                                     Text(if (comment.createdAt.isBlank()) "agora" else postRelativeTime(comment.createdAt, System.currentTimeMillis()), color = RemoteAppearance.commentSecondaryTextColor, fontSize = 14.sp, modifier = Modifier.padding(top = 2.dp))
                                     val commentSticker = QinblyStickers.idOf(comment.body)
-                                    if (commentSticker != null) Box(Modifier.padding(top = 8.dp).combinedClickable(onClick = {}, onLongClick = { menuFor = comment.id })) { QinblyStickerView(commentSticker, 96.dp) }
+                                    if (comment.stickerUrl.isNotBlank()) Box(Modifier.padding(top = 8.dp).combinedClickable(onClick = {}, onLongClick = { menuFor = comment.id })) { AsyncImage(model = comment.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.size(96.dp)) }
+                                    else if (commentSticker != null) Box(Modifier.padding(top = 8.dp).combinedClickable(onClick = {}, onLongClick = { menuFor = comment.id })) { QinblyStickerView(commentSticker, 96.dp) }
                                     else QinblyRichText(comment.body, RemoteAppearance.commentTextColor, Modifier.padding(top = 8.dp), fontSize = 16.sp, onLongClick = { menuFor = comment.id })
                                     Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                                         Text(
@@ -4287,34 +4292,6 @@ private fun QinblyCommentsDialog(
                             // Use a small, explicit lift for the composer only; sheet/header stay fixed.
                             .padding(bottom = if (dialogKeyboardVisible) 0.dp else 48.dp)
                     ) {
-                        if (showCommentEmojis) {
-                            QinblyStickerPanel(
-                                modifier = Modifier.background(RemoteAppearance.commentBackgroundColor).padding(horizontal = 10.dp, vertical = 6.dp),
-                                onPick = { id ->
-                                    val token = prefs.getString("token", null)
-                                    if (token.isNullOrBlank()) onNotice("Entre na sua conta para comentar.")
-                                    else if (!commentsLoading) {
-                                        commentsLoading = true
-                                        Thread {
-                                            try {
-                                                QinblyApi.addComment(token, activePost.id, QinblyStickers.bodyOf(id), replyTo?.id)
-                                                val loadedComments = QinblyApi.getComments(activePost.id)
-                                                android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                                    comments = loadedComments
-                                                    onCountChanged(activePost.id, loadedComments.size)
-                                                    replyTo = null
-                                                    showCommentEmojis = false
-                                                    commentsLoading = false
-                                                }
-                                            } catch (e: Exception) {
-                                                android.os.Handler(android.os.Looper.getMainLooper()).post { commentsLoading = false; onNotice(e.message ?: "Não foi possível enviar a figurinha.") }
-                                            }
-                                        }.start()
-                                    }
-                                },
-                                onCreate = { onNotice("Crie figurinhas pelas conversas; elas aparecem lá, em Minhas figurinhas.") }
-                            )
-                        }
                         editingComment?.let { target ->
                             AlertDialog(
         shape = RoundedCornerShape(28.dp),
@@ -4375,7 +4352,7 @@ private fun QinblyCommentsDialog(
                                 .offset(y = if (dialogKeyboardVisible) 0.dp else 0.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                        Box(Modifier.size(48.dp).clip(CircleShape).clickable { showCommentEmojis = !showCommentEmojis }, contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(48.dp).clip(CircleShape).clickable { showCommentEmojis = !showCommentEmojis; if (showCommentEmojis) { commentKb?.hide(); commentFocus.clearFocus() } else commentKb?.show() }, contentAlignment = Alignment.Center) {
                             Icon(QinblyCreateIcons.sticker, contentDescription = "Emojis e figurinhas", tint = if (showCommentEmojis) QinblyBrand.Accent else RemoteAppearance.commentSecondaryTextColor, modifier = Modifier.size(28.dp))
                         }
                         OutlinedTextField(
@@ -4383,7 +4360,7 @@ private fun QinblyCommentsDialog(
                             onValueChange = { commentDraft = it.take(1200) },
                             visualTransformation = QinblyTagTransformation,
                             placeholder = { Text("Adicione um comentário...", color = RemoteAppearance.commentSecondaryTextColor) },
-                            modifier = Modifier.weight(1f).padding(start = 10.dp),
+                            modifier = Modifier.weight(1f).padding(start = 10.dp).onFocusChanged { if (it.isFocused) showCommentEmojis = false },
                             shape = RoundedCornerShape(28.dp),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
@@ -4434,6 +4411,34 @@ private fun QinblyCommentsDialog(
                             Icon(Icons.Default.Send, contentDescription = "Enviar comentário", tint = RemoteAppearance.commentTextColor)
                         }
                     }
+                    if (showCommentEmojis) {
+                        QinblyStickerGrid(QinblyBrand.Accent, RemoteAppearance.commentInputBackgroundColor, RemoteAppearance.commentTextColor, commentStickerRefresh,
+                            onCreate = { showCommentStickerCreator = true },
+                            onPick = { sticker ->
+                                val token = prefs.getString("token", null)
+                                if (token.isNullOrBlank()) onNotice("Entre na sua conta para comentar.")
+                                else if (!commentsLoading) {
+                                    commentsLoading = true
+                                    Thread {
+                                        try {
+                                            QinblyApi.addComment(token, activePost.id, "qinbly:sticker:" + sticker.path, replyTo?.id)
+                                            val loadedComments = QinblyApi.getComments(activePost.id)
+                                            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                                comments = loadedComments
+                                                onCountChanged(activePost.id, loadedComments.size)
+                                                replyTo = null
+                                                showCommentEmojis = false
+                                                commentsLoading = false
+                                            }
+                                        } catch (e: Exception) {
+                                            android.os.Handler(android.os.Looper.getMainLooper()).post { commentsLoading = false; onNotice(e.message ?: "Não foi possível enviar a figurinha.") }
+                                        }
+                                    }.start()
+                                }
+                            }, onNotice = onNotice,
+                            modifier = Modifier.fillMaxWidth().height(300.dp).background(RemoteAppearance.commentInputBackgroundColor).padding(10.dp))
+                    }
+                    if (showCommentStickerCreator) QinblyStickerCreateDialog(QinblyBrand.Accent, onNotice, onDismiss = { showCommentStickerCreator = false }, onCreated = { commentStickerRefresh++ })
                     }
             }
         }
@@ -6671,6 +6676,8 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
     var showMenu by remember { mutableStateOf(false) }
     var showInfo by remember { mutableStateOf(false) }
     var showEmoji by remember { mutableStateOf(false) }
+    val cKb = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    val cFocus = androidx.compose.ui.platform.LocalFocusManager.current
     var showAttach by remember { mutableStateOf(false) }
     var refresh by remember { mutableIntStateOf(0) }
     var mutedFlag by remember { mutableStateOf(prefs.getBoolean("community_muted_$communityId", false)) }
@@ -6983,28 +6990,6 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                         }
                     }
                     if (c.joined || c.isOwner) {
-                        if (showEmoji) {
-                            QinblyCustomStickerRow(QinblyBrand.Accent, QiblyTheme.text, cStickerRefresh, { sticker ->
-                                showEmoji = false
-                                sendCWith { token, cid -> QinblyApi.sendCommunitySticker(token, cid, sticker) }
-                            }, onNotice, Modifier.padding(top = 4.dp))
-                            QinblyStickerPanel(
-                                modifier = Modifier.padding(horizontal = 10.dp),
-                                onPick = { id ->
-                                    val token = prefs.getString("token", null)
-                                    if (token != null && !sending) {
-                                        sending = true
-                                        Thread {
-                                            try {
-                                                QinblyApi.addCommunityPost(token, c.id, QinblyStickers.bodyOf(id))
-                                                mainHandler.post { sending = false; showEmoji = false; refresh++ }
-                                            } catch (e: Exception) { mainHandler.post { sending = false; onNotice(e.message ?: "Não foi possível enviar a figurinha.") } }
-                                        }.start()
-                                    }
-                                },
-                                onCreate = { showCStickerCreator = true }
-                            )
-                        }
                         if (showAttach) {
                             val attachOptions = listOf(
                                 Triple("Documento", Icons.Outlined.Description, Color(0xFF5B6CF0)),
@@ -7044,7 +7029,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                         } else {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             androidx.compose.material3.TextField(
-                                value = text, onValueChange = { text = it.take(2000) }, modifier = Modifier.weight(1f),
+                                value = text, onValueChange = { text = it.take(2000) }, modifier = Modifier.weight(1f).onFocusChanged { if (it.isFocused) showEmoji = false },
                                 placeholder = { Text("Mensagem…", maxLines = 1) }, shape = RoundedCornerShape(26.dp),
                                 colors = androidx.compose.material3.TextFieldDefaults.colors(
                                     focusedContainerColor = QiblyTheme.soft, unfocusedContainerColor = QiblyTheme.soft,
@@ -7053,7 +7038,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                                 ),
                                 maxLines = 4,
                                 leadingIcon = {
-                                    IconButton(onClick = { showAttach = false; showEmoji = !showEmoji }, modifier = Modifier.size(44.dp)) {
+                                    IconButton(onClick = { showAttach = false; showEmoji = !showEmoji; if (showEmoji) { cKb?.hide(); cFocus.clearFocus() } else cKb?.show() }, modifier = Modifier.size(44.dp)) {
                                         Icon(QinblyCreateIcons.sticker, contentDescription = "Emojis e figurinhas", tint = if (showEmoji) QinblyBrand.Accent else Muted, modifier = Modifier.size(30.dp))
                                     }
                                 },
@@ -7076,6 +7061,15 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                                 else Icon(Icons.Default.Send, contentDescription = "Enviar mensagem", tint = Color.White, modifier = Modifier.size(25.dp))
                             }
                         }
+                        }
+                        if (showEmoji) {
+                            QinblyStickerGrid(QinblyBrand.Accent, QiblyTheme.card, QiblyTheme.text, cStickerRefresh,
+                                onCreate = { showCStickerCreator = true },
+                                onPick = { sticker ->
+                                    showEmoji = false
+                                    sendCWith { token, cid -> QinblyApi.sendCommunitySticker(token, cid, sticker) }
+                                }, onNotice = onNotice,
+                                modifier = Modifier.fillMaxWidth().height(300.dp).background(QiblyTheme.soft).padding(10.dp))
                         }
                     } else {
                         Button(onClick = { toggleJoin(c) }, shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent), modifier = Modifier.fillMaxWidth().padding(12.dp).height(50.dp)) {

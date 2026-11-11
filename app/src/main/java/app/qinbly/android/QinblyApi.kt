@@ -678,7 +678,10 @@ object QinblyApi {
     data class CommentSummary(
         val id: String, val body: String, val username: String, val displayName: String,
         val parentId: String = "", val likes: Int = 0, val likedByMe: Boolean = false, val createdAt: String = ""
-    )
+    ) {
+        /** Figurinha própria enviada como comentário: "qinbly:sticker:<caminho>". */
+        val stickerUrl: String get() = if (body.startsWith("qinbly:sticker:")) "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/" + body.removePrefix("qinbly:sticker:") else ""
+    }
 
     fun getComments(postId: String): List<CommentSummary> {
         val response = request("GET", "/api/posts/" + postId + "/comments", null, storedAccessToken())
