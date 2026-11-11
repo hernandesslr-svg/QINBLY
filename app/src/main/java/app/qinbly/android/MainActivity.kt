@@ -6954,7 +6954,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                                         Column(
                                             Modifier.widthIn(max = 280.dp)
                                                 .clip(RoundedCornerShape(topStart = if (mine) 14.dp else 4.dp, topEnd = if (mine) 4.dp else 14.dp, bottomStart = 14.dp, bottomEnd = 14.dp))
-                                                .background(if (mine) QinblyBrand.Accent.copy(alpha = if (QiblyTheme.dark) 0.35f else 0.22f) else QiblyTheme.card)
+                                                .background(if (p.stickerUrl.isNotBlank() || QinblyStickers.idOf(p.body) != null) Color.Transparent else if (mine) QinblyBrand.Accent.copy(alpha = if (QiblyTheme.dark) 0.35f else 0.22f) else QiblyTheme.card)
                                                 .padding(horizontal = 10.dp, vertical = 6.dp)
                                         ) {
                                             if (!mine) Text(p.displayName.ifBlank { p.username } + if (p.username == c.ownerUsername) " · dono" else "", color = qinblyNameColor(p.username), fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -7756,7 +7756,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         val bubbleShape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = if (isOwn) 18.dp else 4.dp, bottomEnd = if (isOwn) 4.dp else 18.dp)
                         val bubbleColor = if (isOwn) QinblyBrand.Accent else if (QiblyTheme.dark) QiblyTheme.soft else Color(0xFFF0F2F6)
                         val textColor = if (isOwn) Color.White else if (QiblyTheme.dark) Color.White else Color(0xFF111827)
-                        Surface(color = bubbleColor, shape = bubbleShape, modifier = Modifier.widthIn(max = 300.dp)) {
+                        Surface(color = if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) Color.Transparent else bubbleColor, shape = bubbleShape, modifier = Modifier.widthIn(max = 300.dp)) {
                             Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                                 val sharedPostId = remember(message.body) { Regex("post/([0-9a-fA-F-]{36})").find(message.body)?.groupValues?.get(1) }
                                 val stickerId = remember(message.body) { QinblyStickers.idOf(message.body) }
