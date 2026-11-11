@@ -798,7 +798,7 @@ private fun QinblyHashtagField(state: QinblyCaptionState, onChange: (String) -> 
     }
     val partial = draft.trim().removePrefix("#").lowercase()
     Column(Modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(QinblyBrand.Accent.copy(alpha = 0.06f)).padding(12.dp)) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background((if (QiblyTheme.dark) Color.Transparent else QinblyBrand.Accent.copy(alpha = 0.06f))).padding(12.dp)) {
             Row(Modifier.fillMaxWidth()) {
                 Text("Hashtags", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.weight(1f))
                 Text("${state.tags.size} / 30", color = Color.Gray, fontSize = 12.sp)
@@ -1513,7 +1513,7 @@ private object QiblyTheme {
     var reduceMotion by androidx.compose.runtime.mutableStateOf(false)
     // Tema escuro "azul-noite": fundo azul bem escuro, cartões um tom mais claros e texto sempre legível.
     val background: Color get() = if (dark) Color(0xFF130F1D) else Color(0xFFFBF9FF)
-    val card: Color get() = if (dark) Color(0xFF1D1830) else Color.White
+    val card: Color get() = if (dark) Color(0xFF130F1D) else Color.White
     val soft: Color get() = if (dark) Color(0xFF282240) else Color(0xFFF3F0FA)
     val text: Color get() = if (dark) Color(0xFFF2F4F8) else Color.Black
     val secondary: Color get() = if (dark) Color(0xFFA9B5C8) else Color(0xFF555555)
@@ -5152,7 +5152,7 @@ private fun QiblyShareDialog(
             }
             // Prévia da publicação que será enviada
             Row(
-                Modifier.fillMaxWidth().background(QinblyBrand.Accent.copy(alpha = 0.08f), RoundedCornerShape(16.dp)).padding(10.dp),
+                Modifier.fillMaxWidth().background((if (QiblyTheme.dark) Color.Transparent else QinblyBrand.Accent.copy(alpha = 0.08f)), RoundedCornerShape(16.dp)).padding(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(Modifier.size(56.dp).clip(RoundedCornerShape(12.dp)).background(QiblyTheme.secondary.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
@@ -6921,7 +6921,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                     }
                     HorizontalDivider(color = QiblyTheme.border)
                     // Mensagem fixada: a descrição da comunidade
-                    if (c.description.isNotBlank()) Row(Modifier.fillMaxWidth().background(QinblyBrand.Accent.copy(alpha = 0.08f)).clickable { showInfo = true }.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (c.description.isNotBlank()) Row(Modifier.fillMaxWidth().background((if (QiblyTheme.dark) Color.Transparent else QinblyBrand.Accent.copy(alpha = 0.08f))).clickable { showInfo = true }.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.PushPin, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(16.dp))
                         Text(c.description, color = QiblyTheme.text, fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(start = 8.dp))
                     }
