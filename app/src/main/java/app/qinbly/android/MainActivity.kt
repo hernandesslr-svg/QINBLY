@@ -1895,7 +1895,7 @@ private fun QinblyApp() {
                     }
                 }
                 NavigationBar(
-                    containerColor = if (QiblyTheme.dark) QiblyTheme.card else navigationBackgroundColor,
+                    containerColor = if (QiblyTheme.dark) QiblyTheme.background else navigationBackgroundColor,
                     contentColor = if (QiblyTheme.dark) Color.White else Color.Black,
                     tonalElevation = 0.dp
                 ) {
@@ -5310,7 +5310,7 @@ private fun QinblyHomeHeader(
                 color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
         }
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(QinblyBrand.Accent.copy(alpha = 0.10f))
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).border(1.dp, RemoteAppearance.feedDividerColor, RoundedCornerShape(16.dp))
                 .clickable { onCreateWith("text", "#perguntadodia ") }.padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
             Text("PERGUNTA DO DIA", color = QinblyBrand.Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
