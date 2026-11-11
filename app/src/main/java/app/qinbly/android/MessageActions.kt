@@ -12,19 +12,24 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,17 +50,45 @@ import java.io.FileOutputStream
 
 private enum class MsgKind { TEXT, STICKER, AUDIO, IMAGE, FILE, POLL }
 
-/** Menu de uma mensagem (segurar o balão): as opções mudam conforme o tipo e conforme quem enviou. */
+private fun pathOf(url: String) = url.substringAfter("/post-media/")
+
+/** Texto "bruto" da mensagem (com a marca interna) para encaminhar. Enquete não encaminha. */
+private fun rawBodyOf(m: QinblyApi.MessageSummary): String? = when {
+    m.poll != null -> null
+    m.stickerUrl.isNotBlank() -> "qinbly:sticker:" + pathOf(m.stickerUrl)
+    m.imageUrl.isNotBlank() -> "qinbly:img:" + pathOf(m.imageUrl)
+    m.audioUrl.isNotBlank() -> "qinbly:audio:" + pathOf(m.audioUrl) + ":" + m.audioSeconds
+    m.fileUrl.isNotBlank() -> "qinbly:file:" + pathOf(m.fileUrl) + ":" + java.net.URLEncoder.encode(m.fileName.ifBlank { "documento" }, "UTF-8")
+    m.body.isNotBlank() -> m.body
+    else -> null
+}
+
+/** Resumo curto para citar numa resposta. */
+internal fun qinblyMessageSnippet(m: QinblyApi.MessageSummary): String = when {
+    m.poll != null -> "Enquete"
+    m.stickerUrl.isNotBlank() || QinblyStickers.idOf(m.body) != null -> "Figurinha"
+    m.imageUrl.isNotBlank() -> "Foto"
+    m.audioUrl.isNotBlank() -> "Mensagem de voz"
+    m.fileUrl.isNotBlank() -> m.fileName.ifBlank { "Documento" }
+    else -> m.body.replace("\n", " ").take(80)
+}
+
+/** Menu de uma mensagem (segurar o balão), no estilo do WhatsApp: as opções mudam com o tipo e com quem enviou. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun QinblyMessageSheet(
-    message: QinblyApi.MessageSummary, isOwn: Boolean, accent: Color, bg: Color, textColor: Color,
-    onDismiss: () -> Unit, onCanceled: (String) -> Unit, onHide: (String) -> Unit, onReport: (String) -> Unit, onSavedSticker: () -> Unit, onNotice: (String) -> Unit
+    message: QinblyApi.MessageSummary, isOwn: Boolean, pinned: Boolean, accent: Color, bg: Color, textColor: Color,
+    onDismiss: () -> Unit, onCanceled: (String) -> Unit, onHide: (String) -> Unit, onReport: (String) -> Unit,
+    onReply: (QinblyApi.MessageSummary) -> Unit, onTogglePin: (String) -> Unit, onSavedSticker: () -> Unit, onNotice: (String) -> Unit
 ) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     var confirmCancel by remember { mutableStateOf(false) }
     var showInfo by remember { mutableStateOf(false) }
+    var showMore by remember { mutableStateOf(false) }
+    var showForward by remember { mutableStateOf(false) }
+    var forwardTo by remember { mutableStateOf("") }
+    var showBig by remember { mutableStateOf(false) }
     val kind = when {
         message.poll != null -> MsgKind.POLL
         message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null -> MsgKind.STICKER
@@ -64,67 +97,111 @@ internal fun QinblyMessageSheet(
         message.fileUrl.isNotBlank() -> MsgKind.FILE
         else -> MsgKind.TEXT
     }
+    val raw = rawBodyOf(message)
     @Composable
     fun Option(icon: ImageVector, label: String, tint: Color, labelColor: Color = textColor, onClick: () -> Unit) {
         Row(
-            Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 24.dp, vertical = 14.dp),
+            Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 24.dp, vertical = 13.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
             Text(label, color = labelColor, fontSize = 16.sp)
         }
     }
+    fun ensureSticker(favorite: Boolean) {
+        val token = prefs.getString("token", null) ?: return
+        Thread {
+            val main = Handler(Looper.getMainLooper())
+            try {
+                val path = pathOf(message.stickerUrl)
+                var found = QinblyApi.getMyStickers(token).firstOrNull { it.path == path }
+                val existed = found != null
+                if (found == null) {
+                    val tmp = File(context.cacheDir, "saved-sticker-${System.currentTimeMillis()}.png")
+                    java.net.URL(message.stickerUrl).openStream().use { i -> FileOutputStream(tmp).use { o -> i.copyTo(o) } }
+                    found = try { QinblyApi.createSticker(context, token, tmp, "image/png") } finally { tmp.delete() }
+                }
+                if (favorite) {
+                    val local = context.getSharedPreferences("qinbly_stickers", Context.MODE_PRIVATE)
+                    local.edit().putStringSet("favs", (local.getStringSet("favs", emptySet()) ?: emptySet()) + found.id).apply()
+                }
+                main.post { onNotice(if (favorite) "Figurinha nos favoritos." else if (existed) "Essa figurinha já está nas suas." else "Figurinha salva nas suas figurinhas."); onSavedSticker() }
+            } catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível salvar a figurinha.") } }
+        }.start()
+    }
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = bg, contentColor = textColor) {
-        Column(Modifier.fillMaxWidth().padding(bottom = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             when (kind) {
-                MsgKind.STICKER -> AsyncImage(model = message.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.size(150.dp).padding(bottom = 10.dp))
-                MsgKind.IMAGE -> AsyncImage(model = message.imageUrl, contentDescription = "Foto", modifier = Modifier.size(150.dp).padding(bottom = 10.dp))
+                MsgKind.STICKER -> if (message.stickerUrl.isNotBlank()) AsyncImage(model = message.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.size(130.dp).padding(bottom = 8.dp))
+                MsgKind.IMAGE -> AsyncImage(model = message.imageUrl, contentDescription = "Foto", modifier = Modifier.size(130.dp).padding(bottom = 8.dp))
                 MsgKind.TEXT -> Text(message.body.take(140), color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, maxLines = 3, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
                 MsgKind.AUDIO -> Text("Mensagem de voz · ${message.audioSeconds}s", color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
                 MsgKind.FILE -> Text(message.fileName.ifBlank { "Documento" }, color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
                 MsgKind.POLL -> Text("Enquete", color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
             }
-            if (kind == MsgKind.TEXT) Option(Icons.Outlined.ContentCopy, "Copiar texto", accent) {
-                (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("mensagem", message.body))
-                onNotice("Texto copiado."); onDismiss()
+            Option(Icons.Default.Share, "Responder", accent) { onReply(message); onDismiss() }
+            if (raw != null) Option(Icons.Default.OpenInNew, "Encaminhar", accent) { showForward = true }
+            if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank()) {
+                Option(Icons.Default.OpenInNew, "Ver figurinha", accent) { showBig = true }
+                Option(Icons.Default.Star, "Favoritar figurinha", Color(0xFFFFD60A)) { onDismiss(); ensureSticker(true) }
             }
-            if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank() && !isOwn) Option(Icons.Default.Star, "Salvar nas minhas figurinhas", Color(0xFFFFD60A)) {
-                val token = prefs.getString("token", null)
-                onDismiss()
-                if (token != null) Thread {
-                    val main = Handler(Looper.getMainLooper())
-                    try {
-                        val tmp = File(context.cacheDir, "saved-sticker-${System.currentTimeMillis()}.png")
-                        java.net.URL(message.stickerUrl).openStream().use { i -> FileOutputStream(tmp).use { o -> i.copyTo(o) } }
-                        try { QinblyApi.createSticker(context, token, tmp, "image/png") } finally { tmp.delete() }
-                        main.post { onNotice("Figurinha salva nas suas figurinhas."); onSavedSticker() }
-                    } catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível salvar a figurinha.") } }
-                }.start()
-            }
-            val shareText = when (kind) {
-                MsgKind.TEXT -> message.body
-                MsgKind.STICKER -> message.stickerUrl.ifBlank { message.body }
-                MsgKind.AUDIO -> message.audioUrl
-                MsgKind.IMAGE -> message.imageUrl
-                MsgKind.FILE -> message.fileUrl
-                MsgKind.POLL -> ""
-            }
-            val openUrl = when (kind) { MsgKind.AUDIO -> message.audioUrl; MsgKind.IMAGE -> message.imageUrl; MsgKind.FILE -> message.fileUrl; else -> "" }
-            if (openUrl.isNotBlank()) Option(Icons.Default.OpenInNew, when (kind) { MsgKind.AUDIO -> "Abrir áudio"; MsgKind.IMAGE -> "Abrir foto"; else -> "Abrir documento" }, accent) {
-                onDismiss()
-                try { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(openUrl)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                catch (_: Exception) { onNotice("Não foi possível abrir.") }
-            }
-            if (shareText.isNotBlank()) Option(Icons.Default.Share, "Compartilhar", accent) {
-                onDismiss()
-                val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, shareText)
-                context.startActivity(android.content.Intent.createChooser(send, "Compartilhar").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
-            }
-            Option(Icons.Default.Info, "Dados da mensagem", accent) { showInfo = true }
             Option(Icons.Default.VisibilityOff, "Apagar para mim", textColor) { onHide(message.id); onDismiss(); onNotice("Mensagem apagada só para você.") }
             if (isOwn) Option(Icons.Default.Delete, "Cancelar envio", Color(0xFFE5484D), Color(0xFFE5484D)) { confirmCancel = true }
-            else Option(Icons.Default.Flag, "Denunciar mensagem", Color(0xFFE5484D), Color(0xFFE5484D)) { onReport(message.id) }
+            Option(Icons.Default.Info, "Dados da mensagem", accent) { showInfo = true }
+            Option(Icons.Default.Star, if (pinned) "Desafixar" else "Fixar no topo", accent) { onTogglePin(message.id); onDismiss() }
+            Option(if (showMore) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, "Mais", textColor) { showMore = !showMore }
+            if (showMore) {
+                if (kind == MsgKind.TEXT) Option(Icons.Outlined.ContentCopy, "Copiar texto", accent) {
+                    (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("mensagem", message.body))
+                    onNotice("Texto copiado."); onDismiss()
+                }
+                val shareText = when (kind) {
+                    MsgKind.TEXT -> message.body; MsgKind.STICKER -> message.stickerUrl; MsgKind.AUDIO -> message.audioUrl
+                    MsgKind.IMAGE -> message.imageUrl; MsgKind.FILE -> message.fileUrl; MsgKind.POLL -> ""
+                }
+                val openUrl = when (kind) { MsgKind.AUDIO -> message.audioUrl; MsgKind.IMAGE -> message.imageUrl; MsgKind.FILE -> message.fileUrl; else -> "" }
+                if (openUrl.isNotBlank()) Option(Icons.Default.OpenInNew, when (kind) { MsgKind.AUDIO -> "Abrir áudio"; MsgKind.IMAGE -> "Abrir foto"; else -> "Abrir documento" }, accent) {
+                    onDismiss()
+                    try { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(openUrl)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                    catch (_: Exception) { onNotice("Não foi possível abrir.") }
+                }
+                if (shareText.isNotBlank()) Option(Icons.Default.Share, "Compartilhar", accent) {
+                    onDismiss()
+                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                    context.startActivity(android.content.Intent.createChooser(send, "Compartilhar").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                }
+                if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank() && !isOwn) Option(Icons.Default.Star, "Salvar nas minhas figurinhas", Color(0xFFFFD60A)) { onDismiss(); ensureSticker(false) }
+                if (!isOwn) Option(Icons.Default.Flag, "Denunciar mensagem", Color(0xFFE5484D), Color(0xFFE5484D)) { onReport(message.id) }
+            }
         }
+    }
+    if (showBig) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { showBig = false }) {
+            AsyncImage(model = message.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.fillMaxWidth().padding(16.dp).clickable { showBig = false })
+        }
+    }
+    if (showForward) {
+        AlertDialog(
+            onDismissRequest = { showForward = false },
+            title = { Text("Encaminhar para") },
+            text = {
+                OutlinedTextField(value = forwardTo, onValueChange = { forwardTo = it.take(40) }, singleLine = true, placeholder = { Text("@usuário") })
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val token = prefs.getString("token", null)
+                    val to = forwardTo.trim().removePrefix("@")
+                    val body = raw
+                    showForward = false; onDismiss()
+                    if (token != null && to.isNotBlank() && body != null) Thread {
+                        val main = Handler(Looper.getMainLooper())
+                        try { QinblyApi.sendMessage(token, to, body); main.post { onNotice("Mensagem encaminhada para @$to.") } }
+                        catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível encaminhar.") } }
+                    }.start()
+                }) { Text("Encaminhar", color = accent) }
+            },
+            dismissButton = { TextButton(onClick = { showForward = false }) { Text("Cancelar") } }
+        )
     }
     if (showInfo) {
         val whenSent = try { java.time.Instant.parse(message.createdAt).atZone(java.time.ZoneId.systemDefault()).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm")) } catch (_: Exception) { message.createdAt }

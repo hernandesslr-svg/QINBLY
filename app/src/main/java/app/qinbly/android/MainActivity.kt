@@ -7233,6 +7233,8 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var menuMessage by remember { mutableStateOf<QinblyApi.MessageSummary?>(null) }
     var hiddenMsgIds by remember { mutableStateOf(context.getSharedPreferences("qinbly_hidden", android.content.Context.MODE_PRIVATE).getStringSet("ids", emptySet()) ?: emptySet()) }
     var reportingMessageId by remember { mutableStateOf<String?>(null) }
+    var replyingTo by remember { mutableStateOf<QinblyApi.MessageSummary?>(null) }
+    var pinnedId by remember(recipientUsername) { mutableStateOf(context.getSharedPreferences("qinbly_pins", android.content.Context.MODE_PRIVATE).getString("pin_" + recipientUsername, "") ?: "") }
     var showBlockConfirm by remember { mutableStateOf(false) }
     var showReportConfirm by remember { mutableStateOf(false) }
     // Envia algo na conversa (foto, local, contato) e recarrega as mensagens.
@@ -7711,6 +7713,15 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             }
 
 
+            messages.firstOrNull { it.id == pinnedId }?.let { pm ->
+                Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(12.dp)).background(QiblyTheme.soft).padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Fixada: " + qinblyMessageSnippet(pm), color = QiblyTheme.text, fontSize = 13.sp, maxLines = 1, modifier = Modifier.weight(1f))
+                    Text("✕", color = QiblyTheme.secondary, modifier = Modifier.clickable {
+                        pinnedId = ""
+                        context.getSharedPreferences("qinbly_pins", android.content.Context.MODE_PRIVATE).edit().putString("pin_" + recipientUsername, "").apply()
+                    }.padding(start = 10.dp))
+                }
+            }
             val chatListState = androidx.compose.foundation.lazy.rememberLazyListState()
             LaunchedEffect(visibleMessages.size) { if (visibleMessages.isNotEmpty()) chatListState.scrollToItem(visibleMessages.lastIndex) }
             LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = chatListState, verticalArrangement = Arrangement.spacedBy(6.dp), contentPadding = PaddingValues(horizontal = 4.dp, vertical = 14.dp)) {
@@ -7756,6 +7767,12 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                                 } else if (stickerId != null) {
                                     QinblyStickerView(stickerId)
                                 } else if (sharedPostId == null) {
+                                    if (message.body.startsWith("> ") && message.body.contains("\n")) {
+                                        Column(Modifier.padding(bottom = 6.dp).clip(RoundedCornerShape(8.dp)).background(Color.Black.copy(alpha = 0.18f)).padding(horizontal = 8.dp, vertical = 5.dp)) {
+                                            Text(message.body.substringBefore("\n").removePrefix("> "), color = textColor.copy(alpha = 0.75f), fontSize = 13.sp, maxLines = 2)
+                                        }
+                                        Text(message.body.substringAfter("\n"), color = textColor, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 21.sp))
+                                    } else
                                     Text(message.body, color = textColor, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 21.sp))
                                 } else {
                                     // Publicação compartilhada: cartão com miniatura, autor e legenda no lugar do link comprido.
@@ -7821,6 +7838,12 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                             Text(label, color = QiblyTheme.text, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                         }
                     }
+                }
+            }
+            replyingTo?.let { rt ->
+                Row(Modifier.fillMaxWidth().padding(top = 6.dp).clip(RoundedCornerShape(12.dp)).background(QiblyTheme.soft).padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Respondendo: " + qinblyMessageSnippet(rt), color = QiblyTheme.text, fontSize = 13.sp, maxLines = 1, modifier = Modifier.weight(1f))
+                    Text("✕", color = QiblyTheme.secondary, modifier = Modifier.clickable { replyingTo = null }.padding(start = 10.dp))
                 }
             }
             if (recordingVoice) {
@@ -7892,12 +7915,12 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                             if (token.isNullOrBlank()) onNotice("Entre na sua conta para enviar mensagens.")
                             else {
                                 sending = true
-                                val body = draft.trim()
+                                val body = (replyingTo?.let { "> " + qinblyMessageSnippet(it) + "\n" } ?: "") + draft.trim()
                                 Thread {
                                     try {
                                         QinblyApi.sendMessage(token, recipientUsername, body)
                                         val loaded = QinblyApi.getMessages(token, recipientUsername)
-                                        android.os.Handler(android.os.Looper.getMainLooper()).post { messages = loaded; draft = ""; showEmojiPicker = false; sending = false }
+                                        android.os.Handler(android.os.Looper.getMainLooper()).post { messages = loaded; draft = ""; replyingTo = null; sending = false }
                                     } catch (e: Exception) {
                                         android.os.Handler(android.os.Looper.getMainLooper()).post { sending = false; onNotice(e.message ?: "Não foi possível enviar a mensagem.") }
                                     }
@@ -7922,11 +7945,16 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             }
             menuMessage?.let { mm ->
                 val own = (ownUserId.isNotBlank() && mm.senderId == ownUserId) || mm.senderId.equals(prefs.getString("username", "") ?: "", ignoreCase = true)
-                QinblyMessageSheet(mm, own, QinblyBrand.Accent, QiblyTheme.card, QiblyTheme.text,
+                QinblyMessageSheet(mm, own, pinnedId == mm.id, QinblyBrand.Accent, QiblyTheme.card, QiblyTheme.text,
                     onDismiss = { menuMessage = null },
                     onCanceled = { id -> messages = messages.filterNot { it.id == id } },
                     onHide = { id -> hiddenMsgIds = hiddenMsgIds + id; context.getSharedPreferences("qinbly_hidden", android.content.Context.MODE_PRIVATE).edit().putStringSet("ids", hiddenMsgIds).apply() },
                     onReport = { id -> menuMessage = null; reportingMessageId = id },
+                    onReply = { replyingTo = it },
+                    onTogglePin = { id ->
+                        pinnedId = if (pinnedId == id) "" else id
+                        context.getSharedPreferences("qinbly_pins", android.content.Context.MODE_PRIVATE).edit().putString("pin_" + recipientUsername, pinnedId).apply()
+                    },
                     onSavedSticker = { stickerRefresh++ },
                     onNotice = onNotice)
             }
