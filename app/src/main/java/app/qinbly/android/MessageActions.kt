@@ -14,6 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.ContentCopy
@@ -46,11 +50,12 @@ private enum class MsgKind { TEXT, STICKER, AUDIO, IMAGE, FILE, POLL }
 @Composable
 internal fun QinblyMessageSheet(
     message: QinblyApi.MessageSummary, isOwn: Boolean, accent: Color, bg: Color, textColor: Color,
-    onDismiss: () -> Unit, onCanceled: (String) -> Unit, onReport: (String) -> Unit, onSavedSticker: () -> Unit, onNotice: (String) -> Unit
+    onDismiss: () -> Unit, onCanceled: (String) -> Unit, onHide: (String) -> Unit, onReport: (String) -> Unit, onSavedSticker: () -> Unit, onNotice: (String) -> Unit
 ) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     var confirmCancel by remember { mutableStateOf(false) }
+    var showInfo by remember { mutableStateOf(false) }
     val kind = when {
         message.poll != null -> MsgKind.POLL
         message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null -> MsgKind.STICKER
@@ -96,9 +101,40 @@ internal fun QinblyMessageSheet(
                     } catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível salvar a figurinha.") } }
                 }.start()
             }
+            val shareText = when (kind) {
+                MsgKind.TEXT -> message.body
+                MsgKind.STICKER -> message.stickerUrl.ifBlank { message.body }
+                MsgKind.AUDIO -> message.audioUrl
+                MsgKind.IMAGE -> message.imageUrl
+                MsgKind.FILE -> message.fileUrl
+                MsgKind.POLL -> ""
+            }
+            val openUrl = when (kind) { MsgKind.AUDIO -> message.audioUrl; MsgKind.IMAGE -> message.imageUrl; MsgKind.FILE -> message.fileUrl; else -> "" }
+            if (openUrl.isNotBlank()) Option(Icons.Default.OpenInNew, when (kind) { MsgKind.AUDIO -> "Abrir áudio"; MsgKind.IMAGE -> "Abrir foto"; else -> "Abrir documento" }, accent) {
+                onDismiss()
+                try { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(openUrl)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                catch (_: Exception) { onNotice("Não foi possível abrir.") }
+            }
+            if (shareText.isNotBlank()) Option(Icons.Default.Share, "Compartilhar", accent) {
+                onDismiss()
+                val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                context.startActivity(android.content.Intent.createChooser(send, "Compartilhar").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+            Option(Icons.Default.Info, "Dados da mensagem", accent) { showInfo = true }
+            Option(Icons.Default.VisibilityOff, "Apagar para mim", textColor) { onHide(message.id); onDismiss(); onNotice("Mensagem apagada só para você.") }
             if (isOwn) Option(Icons.Default.Delete, "Cancelar envio", Color(0xFFE5484D), Color(0xFFE5484D)) { confirmCancel = true }
             else Option(Icons.Default.Flag, "Denunciar mensagem", Color(0xFFE5484D), Color(0xFFE5484D)) { onReport(message.id) }
         }
+    }
+    if (showInfo) {
+        val whenSent = try { java.time.Instant.parse(message.createdAt).atZone(java.time.ZoneId.systemDefault()).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm")) } catch (_: Exception) { message.createdAt }
+        val tipo = when (kind) { MsgKind.TEXT -> "Texto"; MsgKind.STICKER -> "Figurinha"; MsgKind.AUDIO -> "Mensagem de voz"; MsgKind.IMAGE -> "Foto"; MsgKind.FILE -> "Documento"; MsgKind.POLL -> "Enquete" }
+        AlertDialog(
+            onDismissRequest = { showInfo = false },
+            title = { Text("Dados da mensagem") },
+            text = { Text("Tipo: $tipo\nEnviada por: ${if (isOwn) "você" else "a outra pessoa"}\nData: $whenSent") },
+            confirmButton = { TextButton(onClick = { showInfo = false }) { Text("Fechar") } }
+        )
     }
     if (confirmCancel) {
         AlertDialog(

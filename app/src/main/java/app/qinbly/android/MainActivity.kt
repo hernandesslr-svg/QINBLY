@@ -4396,7 +4396,7 @@ private fun QinblyCommentsDialog(
                         }
                     }
                     if (showCommentEmojis) {
-                        QinblyStickerGrid(QinblyBrand.Accent, RemoteAppearance.commentInputBackgroundColor, RemoteAppearance.commentTextColor, commentStickerRefresh,
+                        QinblyStickerGrid(QinblyBrand.Accent, QiblyTheme.soft, RemoteAppearance.commentTextColor, commentStickerRefresh,
                             onCreate = { showCommentStickerCreator = true },
                             onPick = { sticker ->
                                 val token = prefs.getString("token", null)
@@ -4411,7 +4411,6 @@ private fun QinblyCommentsDialog(
                                                 comments = loadedComments
                                                 onCountChanged(activePost.id, loadedComments.size)
                                                 replyTo = null
-                                                showCommentEmojis = false
                                                 commentsLoading = false
                                             }
                                         } catch (e: Exception) {
@@ -4420,7 +4419,7 @@ private fun QinblyCommentsDialog(
                                     }.start()
                                 }
                             }, onNotice = onNotice,
-                            modifier = Modifier.fillMaxWidth().height(300.dp).background(RemoteAppearance.commentInputBackgroundColor).padding(10.dp))
+                            modifier = Modifier.fillMaxWidth().height(300.dp).background(RemoteAppearance.commentBackgroundColor).padding(10.dp))
                     }
                     if (showCommentStickerCreator) QinblyStickerCreateDialog(QinblyBrand.Accent, onNotice, onDismiss = { showCommentStickerCreator = false }, onCreated = { commentStickerRefresh++ })
                     }
@@ -7047,13 +7046,12 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                         }
                         }
                         if (showEmoji) {
-                            QinblyStickerGrid(QinblyBrand.Accent, QiblyTheme.card, QiblyTheme.text, cStickerRefresh,
+                            QinblyStickerGrid(QinblyBrand.Accent, QiblyTheme.soft, QiblyTheme.text, cStickerRefresh,
                                 onCreate = { showCStickerCreator = true },
                                 onPick = { sticker ->
-                                    showEmoji = false
                                     sendCWith { token, cid -> QinblyApi.sendCommunitySticker(token, cid, sticker) }
                                 }, onNotice = onNotice,
-                                modifier = Modifier.fillMaxWidth().height(300.dp).background(QiblyTheme.soft).padding(10.dp))
+                                modifier = Modifier.fillMaxWidth().height(300.dp).background(QiblyTheme.background).padding(10.dp))
                         }
                     } else {
                         Button(onClick = { toggleJoin(c) }, shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent), modifier = Modifier.fillMaxWidth().padding(12.dp).height(50.dp)) {
@@ -7229,6 +7227,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var messageSearch by remember { mutableStateOf("") }
     var showClearConfirm by remember { mutableStateOf(false) }
     var menuMessage by remember { mutableStateOf<QinblyApi.MessageSummary?>(null) }
+    var hiddenMsgIds by remember { mutableStateOf(context.getSharedPreferences("qinbly_hidden", Context.MODE_PRIVATE).getStringSet("ids", emptySet()) ?: emptySet()) }
     var reportingMessageId by remember { mutableStateOf<String?>(null) }
     var showBlockConfirm by remember { mutableStateOf(false) }
     var showReportConfirm by remember { mutableStateOf(false) }
@@ -7360,7 +7359,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var isPinned by remember(recipientUsername) { mutableStateOf(prefs.getBoolean("pinned_$recipientUsername", false)) }
     var ownUserId by remember { mutableStateOf(prefs.getString("user_id", "") ?: "") }
     var recipientAvatarUrl by remember(recipientUsername) { mutableStateOf("") }
-    val visibleMessages = if (messageSearch.isBlank()) messages else messages.filter { it.body.contains(messageSearch, ignoreCase = true) }
+    val visibleMessages = messages.filter { it.id !in hiddenMsgIds }.let { base -> if (messageSearch.isBlank()) base else base.filter { it.body.contains(messageSearch, ignoreCase = true) } }
     val filteredInbox = inbox.filter { inboxSearch.isBlank() || it.displayName.contains(inboxSearch, ignoreCase = true) || it.username.contains(inboxSearch, ignoreCase = true) || it.body.contains(inboxSearch, ignoreCase = true) }
     val visibleInbox = when (selectedFilter) {
         "Não lidas" -> filteredInbox.filter { it.unreadCount > 0 }
@@ -7910,19 +7909,19 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                 }
             }
             if (showEmojiPicker) {
-                QinblyStickerGrid(QinblyBrand.Accent, QiblyTheme.card, QiblyTheme.text, stickerRefresh,
+                QinblyStickerGrid(QinblyBrand.Accent, QiblyTheme.soft, QiblyTheme.text, stickerRefresh,
                     onCreate = { showStickerCreator = true },
                     onPick = { sticker ->
-                        showEmojiPicker = false
                         sendWith { token -> QinblyApi.sendStickerMessage(token, recipientUsername, sticker) }
                     }, onNotice = onNotice,
-                    modifier = Modifier.fillMaxWidth().height(300.dp).background(QiblyTheme.soft).padding(10.dp), bleed = 16.dp)
+                    modifier = Modifier.fillMaxWidth().height(300.dp).background(QiblyTheme.background).padding(10.dp), bleed = 16.dp)
             }
             menuMessage?.let { mm ->
                 val own = (ownUserId.isNotBlank() && mm.senderId == ownUserId) || mm.senderId.equals(prefs.getString("username", "") ?: "", ignoreCase = true)
                 QinblyMessageSheet(mm, own, QinblyBrand.Accent, QiblyTheme.card, QiblyTheme.text,
                     onDismiss = { menuMessage = null },
                     onCanceled = { id -> messages = messages.filterNot { it.id == id } },
+                    onHide = { id -> hiddenMsgIds = hiddenMsgIds + id; context.getSharedPreferences("qinbly_hidden", Context.MODE_PRIVATE).edit().putStringSet("ids", hiddenMsgIds).apply() },
                     onReport = { id -> menuMessage = null; reportingMessageId = id },
                     onSavedSticker = { stickerRefresh++ },
                     onNotice = onNotice)
