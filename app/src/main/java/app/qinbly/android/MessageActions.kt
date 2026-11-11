@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
@@ -146,7 +148,7 @@ internal fun QinblyMessageSheet(
             val density = androidx.compose.ui.platform.LocalDensity.current
             val screenW = maxWidth
             val screenH = maxHeight
-            val navBottomDp = with(density) { androidx.compose.foundation.layout.WindowInsets.navigationBars.getBottom(density).toDp() }
+            val navBottomDp = with(density) { WindowInsets.navigationBars.getBottom(density).toDp() }
             val usableH = screenH - maxOf(navBottomDp, 40.dp)
             val cardW = 262.dp
             val barW = 262.dp
