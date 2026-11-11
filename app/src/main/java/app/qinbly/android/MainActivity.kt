@@ -410,14 +410,30 @@ private fun QinblyPullRefresh(enabled: Boolean = true, content: @androidx.compos
     }
 }
 
-/** Selo de conta verificada (aparece ao lado do nome). */
+/** Selo de conta verificada (aparece ao lado do nome): selo ondulado violeta-rosa com check branco. */
 @androidx.compose.runtime.Composable
 private fun QinblyVerifiedBadge(size: Dp = 16.dp) {
-    Box(
-        Modifier.size(size).clip(CircleShape).background(Brush.linearGradient(listOf(QinblyBrand.Accent, QinblyBrand.Pink))),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(Icons.Default.Check, contentDescription = "Conta verificada", tint = Color.White, modifier = Modifier.size(size * 0.66f))
+    androidx.compose.foundation.Canvas(Modifier.size(size)) {
+        val w = this.size.minDimension
+        val c = androidx.compose.ui.geometry.Offset(w / 2f, w / 2f)
+        val lobes = 8
+        val base = w * 0.45f
+        val amp = w * 0.055f
+        val path = androidx.compose.ui.graphics.Path()
+        val steps = 96
+        for (i in 0..steps) {
+            val t = (i.toFloat() / steps) * (2f * Math.PI.toFloat())
+            val r = base + amp * kotlin.math.cos(lobes * t)
+            val x = c.x + r * kotlin.math.cos(t)
+            val y = c.y + r * kotlin.math.sin(t)
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        path.close()
+        drawPath(path, Brush.linearGradient(listOf(QinblyBrand.Accent, QinblyBrand.Pink), start = androidx.compose.ui.geometry.Offset(0f, 0f), end = androidx.compose.ui.geometry.Offset(w, w)))
+        val check = androidx.compose.ui.graphics.Path().apply {
+            moveTo(w * 0.30f, w * 0.52f); lineTo(w * 0.44f, w * 0.66f); lineTo(w * 0.71f, w * 0.36f)
+        }
+        drawPath(check, Color.White, style = androidx.compose.ui.graphics.drawscope.Stroke(width = w * 0.11f, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
     }
 }
 
