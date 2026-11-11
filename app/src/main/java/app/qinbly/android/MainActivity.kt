@@ -7234,6 +7234,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var hiddenMsgIds by remember { mutableStateOf(context.getSharedPreferences("qinbly_hidden", android.content.Context.MODE_PRIVATE).getStringSet("ids", emptySet()) ?: emptySet()) }
     var reportingMessageId by remember { mutableStateOf<String?>(null) }
     var replyingTo by remember { mutableStateOf<QinblyApi.MessageSummary?>(null) }
+    var menuAnchor by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     var reactions by remember { mutableStateOf<Map<String, List<Pair<String, String>>>>(emptyMap()) }
     var reactionsNonce by remember { mutableStateOf(0) }
     LaunchedEffect(messages.size, reactionsNonce) {
@@ -7755,10 +7756,11 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         message.senderId.equals(prefs.getString("username", "") ?: "", ignoreCase = true)
                     val sameSenderAsPrev = index > 0 && visibleMessages[index - 1].senderId == message.senderId && (day == null || dayOf(visibleMessages[index - 1]) == day)
                     Row(Modifier.fillMaxWidth().padding(top = if (sameSenderAsPrev) 0.dp else 6.dp), horizontalArrangement = if (isOwn) Arrangement.End else Arrangement.Start) {
+                        val bubbleRect = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
                         val bubbleShape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = if (isOwn) 18.dp else 4.dp, bottomEnd = if (isOwn) 4.dp else 18.dp)
                         val bubbleColor = if (isOwn) QinblyBrand.Accent else if (QiblyTheme.dark) QiblyTheme.soft else Color(0xFFF0F2F6)
                         val textColor = if (isOwn) Color.White else if (QiblyTheme.dark) Color.White else Color(0xFF111827)
-                        Surface(color = if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) Color.Transparent else bubbleColor, shape = bubbleShape, modifier = Modifier.widthIn(max = 300.dp).clip(bubbleShape).combinedClickable(onClick = { if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) menuMessage = message }, onLongClick = { menuMessage = message })) {
+                        Surface(color = if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) Color.Transparent else bubbleColor, shape = bubbleShape, modifier = Modifier.widthIn(max = 300.dp).onGloballyPositioned { bubbleRect[0] = it.boundsInWindow() }.clip(bubbleShape).combinedClickable(onClick = { if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) { menuAnchor = bubbleRect[0]; menuMessage = message } }, onLongClick = { menuAnchor = bubbleRect[0]; menuMessage = message })) {
                             Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                                 val sharedPostId = remember(message.body) { Regex("post/([0-9a-fA-F-]{36})").find(message.body)?.groupValues?.get(1) }
                                 val stickerId = remember(message.body) { QinblyStickers.idOf(message.body) }
@@ -7961,7 +7963,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             }
             menuMessage?.let { mm ->
                 val own = (ownUserId.isNotBlank() && mm.senderId == ownUserId) || mm.senderId.equals(prefs.getString("username", "") ?: "", ignoreCase = true)
-                QinblyMessageSheet(mm, own, pinnedId == mm.id,
+                QinblyMessageSheet(mm, menuAnchor, own, pinnedId == mm.id,
                     reactions[mm.id]?.firstOrNull { it.first == ownUserId }?.second ?: "",
                     { emoji ->
                         val token = prefs.getString("token", null)

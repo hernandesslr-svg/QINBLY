@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
@@ -84,7 +85,7 @@ internal fun qinblyMessageSnippet(m: QinblyApi.MessageSummary): String = when {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun QinblyMessageSheet(
-    message: QinblyApi.MessageSummary, isOwn: Boolean, pinned: Boolean, myReaction: String, onReact: (String) -> Unit, accent: Color, bg: Color, textColor: Color,
+    message: QinblyApi.MessageSummary, anchor: androidx.compose.ui.geometry.Rect?, isOwn: Boolean, pinned: Boolean, myReaction: String, onReact: (String) -> Unit, accent: Color, bg: Color, textColor: Color,
     onDismiss: () -> Unit, onCanceled: (String) -> Unit, onHide: (String) -> Unit, onReport: (String) -> Unit,
     onReply: (QinblyApi.MessageSummary) -> Unit, onTogglePin: (String) -> Unit, onSavedSticker: () -> Unit, onNotice: (String) -> Unit
 ) {
@@ -136,26 +137,30 @@ internal fun QinblyMessageSheet(
             } catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível salvar a figurinha.") } }
         }.start()
     }
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
-        Box(Modifier.fillMaxSize().clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }.padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = if (isOwn) Alignment.End else Alignment.Start, modifier = Modifier.fillMaxWidth()) {
-                Row(Modifier.clip(RoundedCornerShape(30.dp)).background(Color(0xFF1B1727)).padding(horizontal = 10.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    listOf("👍", "❤️", "😂", "😮", "😢", "🙏").forEach { e ->
-                        Text(e, fontSize = 26.sp, modifier = Modifier.clip(androidx.compose.foundation.shape.CircleShape)
-                            .background(if (myReaction == e) accent.copy(alpha = 0.35f) else Color.Transparent)
-                            .clickable { onReact(if (myReaction == e) "" else e); onDismiss() }.padding(horizontal = 7.dp, vertical = 4.dp))
-                    }
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+        androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }) {
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            val screenW = maxWidth
+            val screenH = maxHeight
+            val cardW = 236.dp
+            val barW = 290.dp
+            val topDp = with(density) { (anchor?.top ?: 0f).toDp() }
+            val bottomDp = with(density) { (anchor?.bottom ?: 0f).toDp() }
+            val hasAnchor = anchor != null
+            val barY = if (hasAnchor) (topDp - 58.dp).coerceIn(70.dp, screenH - 140.dp) else screenH / 4
+            val cardY = if (hasAnchor) (maxOf(bottomDp, barY + 54.dp) + 8.dp).coerceAtMost(screenH - 60.dp) else barY + 62.dp
+            val cardMaxH = (screenH - cardY - 16.dp).coerceAtLeast(160.dp)
+            Row(
+                Modifier.offset(x = if (isOwn) screenW - barW - 12.dp else 12.dp, y = barY).width(barW).clip(RoundedCornerShape(30.dp)).background(Color(0xFF1B1727)).padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                listOf("👍", "❤️", "😂", "😮", "😢", "🙏").forEach { e ->
+                    Text(e, fontSize = 24.sp, modifier = Modifier.clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(if (myReaction == e) accent.copy(alpha = 0.35f) else Color.Transparent)
+                        .clickable { onReact(if (myReaction == e) "" else e); onDismiss() }.padding(horizontal = 6.dp, vertical = 3.dp))
                 }
-                Box(Modifier.padding(top = 8.dp)) {
-        Column(Modifier.width(270.dp).heightIn(max = 520.dp).clip(RoundedCornerShape(20.dp)).background(Color(0xFF1B1727)).verticalScroll(rememberScrollState()).padding(vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                when (kind) {
-                    MsgKind.STICKER -> if (message.stickerUrl.isNotBlank()) AsyncImage(model = message.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.size(130.dp).padding(bottom = 8.dp))
-                    MsgKind.IMAGE -> AsyncImage(model = message.imageUrl, contentDescription = "Foto", modifier = Modifier.size(130.dp).padding(bottom = 8.dp))
-                    MsgKind.TEXT -> Text(message.body.take(140), color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, maxLines = 3, modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp))
-                    MsgKind.AUDIO -> Text("Mensagem de voz · ${message.audioSeconds}s", color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
-                    MsgKind.FILE -> Text(message.fileName.ifBlank { "Documento" }, color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
-                    MsgKind.POLL -> Text("Enquete", color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
-                }
+            }
+        Column(Modifier.offset(x = if (isOwn) screenW - cardW - 12.dp else 12.dp, y = cardY).width(cardW).heightIn(max = cardMaxH).clip(RoundedCornerShape(18.dp)).background(Color(0xFF1B1727)).verticalScroll(rememberScrollState()).padding(vertical = 4.dp), horizontalAlignment = Alignment.Start) {
                 Option(Icons.Default.Share, "Responder", accent) { onReply(message); onDismiss() }
                 if (raw != null) Option(Icons.Default.OpenInNew, "Encaminhar", accent) { showForward = true }
                 if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank()) {
@@ -189,8 +194,6 @@ internal fun QinblyMessageSheet(
                     }
                     if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank() && !isOwn) Option(Icons.Default.Star, "Salvar nas minhas figurinhas", Color(0xFFFFD60A)) { onDismiss(); ensureSticker(false) }
                     if (!isOwn) Option(Icons.Default.Flag, "Denunciar mensagem", Color(0xFFE5484D), Color(0xFFE5484D)) { onReport(message.id) }
-                }
-            }
                 }
             }
         }
