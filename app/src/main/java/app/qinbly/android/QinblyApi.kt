@@ -199,13 +199,15 @@ object QinblyApi {
         val authorId: String = "",
         val savedByMe: Boolean = false, val repostedByMe: Boolean = false, val reposts: Int = 0,
         val pinned: Boolean = false, val archived: Boolean = false,
-        val taggedUsers: List<String> = emptyList()
+        val taggedUsers: List<String> = emptyList(),
+        val verified: Boolean = false
     )
 
     /** Converte uma publicação do JSON da API. `fallback` (dono do perfil) preenche o autor quando a lista não o traz. */
     private fun parsePost(post: JSONObject, fallback: JSONObject? = null): PostSummary {
         val author = post.optJSONObject("author") ?: JSONObject()
         return PostSummary(
+        verified = author.optBoolean("verified", fallback?.optBoolean("verified") ?: false),
         authorId = author.optString("id").ifBlank { fallback?.optString("id").orEmpty() },
         id = post.optString("id"),
         caption = post.optString("caption"),

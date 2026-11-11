@@ -31,6 +31,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -406,6 +407,17 @@ private fun QinblyPullRefresh(enabled: Boolean = true, content: @androidx.compos
         modifier = Modifier.fillMaxSize()
     ) {
         androidx.compose.runtime.key(nonce) { content() }
+    }
+}
+
+/** Selo de conta verificada (aparece ao lado do nome). */
+@androidx.compose.runtime.Composable
+private fun QinblyVerifiedBadge(size: Dp = 16.dp) {
+    Box(
+        Modifier.size(size).clip(CircleShape).background(Brush.linearGradient(listOf(QinblyBrand.Accent, QinblyBrand.Pink))),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(Icons.Default.Check, contentDescription = "Conta verificada", tint = Color.White, modifier = Modifier.size(size * 0.66f))
     }
 }
 
@@ -2460,7 +2472,7 @@ private fun NotificationsPage(
                             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 QiblyAccountAvatar(person.username, person.avatarUrl, 46.dp) { onOpenProfile(person.username) }
                                 Column(Modifier.weight(1f).clickable { onOpenProfile(person.username) }) {
-                                    Text(person.displayName.ifBlank { person.username }, color = QiblyTheme.text, fontWeight = FontWeight.Bold, maxLines = 1)
+                                    Row(verticalAlignment = Alignment.CenterVertically) { Text(person.displayName.ifBlank { person.username }, color = QiblyTheme.text, fontWeight = FontWeight.Bold, maxLines = 1); if (person.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) } }
                                     Text("@" + person.username, color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall, maxLines = 1)
                                 }
                                 QinblyFollowButton(
@@ -4424,7 +4436,7 @@ private fun QinblyPostCard(
                     QiblyAccountAvatar(post.username, avatarUrl, 52.dp) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }) {
-                        Text(post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name }, color = RemoteAppearance.feedTextColor, fontSize = 17.sp, fontWeight = if (nameFontStyle == "Elegante") FontWeight.Medium else FontWeight.Bold, fontFamily = nameFontFamily(nameFontStyle))
+                        Row(verticalAlignment = Alignment.CenterVertically) { Text(post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name }, color = RemoteAppearance.feedTextColor, fontSize = 17.sp, fontWeight = if (nameFontStyle == "Elegante") FontWeight.Medium else FontWeight.Bold, fontFamily = nameFontFamily(nameFontStyle)); if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(16.dp) } }
                         LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor)
                     }
                     QinblyCardFollow(post, prefs, onNotice)
@@ -4440,11 +4452,14 @@ private fun QinblyPostCard(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                         QiblyAccountAvatar(post.username, post.avatarUrl, 52.dp) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
                         Column(Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name },
                                 color = RemoteAppearance.feedTextColor, fontSize = 15.sp, fontWeight = FontWeight.Bold,
                                 modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }
                             )
+                            if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) }
+                            }
                             LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor)
                         }
                     QinblyCardFollow(post, prefs, onNotice)
@@ -7312,7 +7327,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 QiblyAccountAvatar(person.username, person.avatarUrl, 46.dp) { onOpenProfile(person.username) }
                 Column(Modifier.weight(1f).clickable { onOpenProfile(person.username) }) {
-                    Text(person.displayName.ifBlank { person.username }, color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Row(verticalAlignment = Alignment.CenterVertically) { Text(person.displayName.ifBlank { person.username }, color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, maxLines = 1); if (person.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) } }
                     Text("@" + person.username, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall, maxLines = 1)
                 }
                 QinblyFollowButton(
@@ -8036,6 +8051,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     var loadingPosts by remember { mutableStateOf(snap == null || snap.posts.isEmpty()) }
     var avatarUrl by remember { mutableStateOf(snap?.avatarUrl ?: "") }
     var profilePhotoUrl by remember { mutableStateOf(snap?.profilePhotoUrl ?: "") }
+    var profileVerified by remember { mutableStateOf(false) }
     var originalCoverUrl by remember { mutableStateOf(snap?.originalCoverUrl ?: "") }
     var expandedImage by remember { mutableStateOf("") }
     var photoMenuOpen by remember { mutableStateOf(false) }
@@ -8097,6 +8113,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                                 val months = listOf("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro")
                                 if (month in 1..12) "${months[month - 1]} de ${created.substring(0, 4)}" else ""
                             } else ""
+                            profileVerified = user.optBoolean("verified")
                             postsCount = user.optInt("posts_count")
                             followersCount = user.optInt("followers")
                             followingCount = user.optInt("following")
@@ -8175,6 +8192,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         ) {
         Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+            if (profileVerified) QinblyVerifiedBadge(22.dp)
         }
         Text(if (username.isBlank()) "Entre ou crie sua conta" else "@${username.removePrefix("@")}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
         if (shownBio.startsWith("✦ ")) {
@@ -9535,7 +9553,10 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                 }
             }
         }
-        Text(displayName, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            Text(displayName, textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            if (user.optBoolean("verified")) { Spacer(Modifier.width(6.dp)); QinblyVerifiedBadge(22.dp) }
+        }
         Text("@$publicUsername", modifier = Modifier.fillMaxWidth().padding(top = 2.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
         val publicCategories = bio.lineSequence().firstOrNull { it.startsWith("✦ ") }?.removePrefix("✦ ").orEmpty()
         val publicCountry = bio.lineSequence().firstOrNull { it.startsWith("🌍 ") }?.removePrefix("🌍 ").orEmpty()
