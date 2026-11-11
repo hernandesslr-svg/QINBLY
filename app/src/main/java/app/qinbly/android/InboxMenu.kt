@@ -69,14 +69,14 @@ internal fun QinblyInboxMenu(
             val gapPx = with(density) { 4.dp.roundToPx() }
             val anchorBottom = anchor?.bottom
             Column(
-                Modifier.width(270.dp).layout { measurable, c ->
+                Modifier.layout { measurable, c ->
                     val p = measurable.measure(c.copy(minHeight = 0, maxHeight = (c.maxHeight - marginPx - topMinPx).coerceAtLeast(0)))
                     layout(c.maxWidth, c.maxHeight) {
                         val desired = if (anchorBottom != null) anchorBottom.toInt() + gapPx else (c.maxHeight - p.height) / 2
                         val y = desired.coerceAtMost(c.maxHeight - p.height - marginPx).coerceAtLeast(topMinPx)
                         p.place(sidePx, y)
                     }
-                }.clip(RoundedCornerShape(18.dp)).background(Color(0xFF1B1727)).padding(vertical = 4.dp)
+                }.width(270.dp).clip(RoundedCornerShape(18.dp)).background(Color(0xFF1B1727)).padding(vertical = 4.dp)
             ) {
                 Option(Icons.Default.Person, "Ver perfil", accent) { onDismiss(); onProfile() }
                 if (unread) Option(Icons.Default.Check, "Marcar como lida", accent) { onDismiss(); onMarkRead() }

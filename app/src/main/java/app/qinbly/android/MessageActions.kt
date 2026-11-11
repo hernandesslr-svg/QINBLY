@@ -173,7 +173,7 @@ internal fun QinblyMessageSheet(
             val gapPx = with(density) { 8.dp.roundToPx() }
             val anchorBottom = anchor?.bottom
             Column(
-                Modifier.width(cardW).layout { measurable, c ->
+                Modifier.layout { measurable, c ->
                     val p = measurable.measure(c.copy(minHeight = 0, maxHeight = (c.maxHeight - marginPx - topMinPx).coerceAtLeast(0)))
                     layout(c.maxWidth, c.maxHeight) {
                         val x = if (isOwn) c.maxWidth - p.width - sidePx else sidePx
@@ -181,7 +181,7 @@ internal fun QinblyMessageSheet(
                         val y = desired.coerceAtMost(c.maxHeight - p.height - marginPx).coerceAtLeast(topMinPx)
                         p.place(x, y)
                     }
-                },
+                }.width(cardW),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
             Row(
