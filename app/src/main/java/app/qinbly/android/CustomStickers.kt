@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import android.content.Context
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.StarBorder
@@ -226,7 +227,7 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
             }
         }
         androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
-            columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(4),
+            columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(5),
             modifier = Modifier.weight(1f).fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -246,7 +247,20 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
                         }, onLongPress = { toDelete = sticker })
                     }.padding(2.dp),
                     contentAlignment = Alignment.Center
-                ) { AsyncImage(model = sticker.url, contentDescription = "Figurinha", modifier = Modifier.fillMaxSize()) }
+                ) {
+                    AsyncImage(model = sticker.url, contentDescription = "Figurinha", modifier = Modifier.fillMaxSize())
+                    Box(
+                        Modifier.align(Alignment.TopEnd).size(26.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color(0x66000000))
+                            .clickable {
+                                favs = if (sticker.id in favs) favs - sticker.id else favs + sticker.id
+                                local.edit().putStringSet("favs", favs).apply()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(if (sticker.id in favs) Icons.Filled.Star else Icons.Outlined.StarBorder, contentDescription = "Favoritar",
+                            tint = if (sticker.id in favs) Color(0xFFFFD60A) else Color.White, modifier = Modifier.size(16.dp))
+                    }
+                }
             }
         }
     }
