@@ -259,12 +259,13 @@ private fun LivePostTime(createdAt: String, color: androidx.compose.ui.graphics.
 private object QinblyBrand {
     /** Nome do app mostrado nas telas. Para renomear a rede, troque só este valor (e app_name em res/values/strings.xml). */
     const val Name = "QINBLY"
-    val Accent = Color(0xFF1677E8)
-    val AccentDeep = Color(0xFF1976D2)
-    val AccentLight = Color(0xFF70A9FF)
-    val AccentLine = Color(0xFFBFD5F5)
-    val AccentSoft = Color(0xFFE8F2FF)
+    val Accent = Color(0xFF7C4DFF)
+    val AccentDeep = Color(0xFF5E35E0)
+    val AccentLight = Color(0xFFB39DFF)
+    val AccentLine = Color(0xFFDDD2FF)
+    val AccentSoft = Color(0xFFF1ECFF)
     val Highlight = Color(0xFFFFB020)
+    val Pink = Color(0xFFFF4F9A)
     val Ink = Color(0xFF0B1F2A)
 }
 
@@ -1407,12 +1408,12 @@ private object QiblyTheme {
     var largeText by androidx.compose.runtime.mutableStateOf(false)
     var reduceMotion by androidx.compose.runtime.mutableStateOf(false)
     // Tema escuro "azul-noite": fundo azul bem escuro, cartões um tom mais claros e texto sempre legível.
-    val background: Color get() = if (dark) Color(0xFF10151E) else Color.White
-    val card: Color get() = if (dark) Color(0xFF1A2230) else Color.White
-    val soft: Color get() = if (dark) Color(0xFF222C3D) else Color(0xFFF3F5F8)
+    val background: Color get() = if (dark) Color(0xFF130F1D) else Color(0xFFFBF9FF)
+    val card: Color get() = if (dark) Color(0xFF1D1830) else Color.White
+    val soft: Color get() = if (dark) Color(0xFF282240) else Color(0xFFF3F0FA)
     val text: Color get() = if (dark) Color(0xFFF2F4F8) else Color.Black
     val secondary: Color get() = if (dark) Color(0xFFA9B5C8) else Color(0xFF555555)
-    val border: Color get() = if (dark) Color(0xFF2A3446) else Color(0xFFE4E4E4)
+    val border: Color get() = if (dark) Color(0xFF332C4D) else Color(0xFFE9E4F5)
 }
 
 private object RemoteAppearance {
@@ -1763,7 +1764,7 @@ private fun QinblyApp() {
     MaterialTheme(
         colorScheme = if (QiblyTheme.dark)
             darkColorScheme(primary = QinblyBrand.AccentLight, secondary = QinblyBrand.AccentLight, background = QiblyTheme.background, surface = QiblyTheme.card, onBackground = QiblyTheme.text, onSurface = QiblyTheme.text)
-        else androidx.compose.material3.lightColorScheme(primary = QinblyBrand.Accent, secondary = QinblyBrand.Accent, background = Color.White, surface = Color.White, onBackground = Color.Black, onSurface = Color.Black),
+        else androidx.compose.material3.lightColorScheme(primary = QinblyBrand.Accent, secondary = QinblyBrand.Accent, background = Color(0xFFFBF9FF), surface = Color.White, onBackground = Color.Black, onSurface = Color.Black),
         // Padrão de legibilidade para todas as telas e abas.
         typography = Typography(
             bodyLarge = androidx.compose.ui.text.TextStyle(fontFamily = nameFontFamily(appFontStyle), fontSize = 18.sp, lineHeight = 26.sp),
@@ -6017,7 +6018,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             }
     ) {
         Box(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 6.dp).heightIn(min = 42.dp)) {
-            Text(QinblyBrand.Name, color = QinblyBrand.Accent, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, modifier = Modifier.align(Alignment.Center))
+            Text(QinblyBrand.Name, style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(QinblyBrand.Accent, QinblyBrand.Pink))), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, modifier = Modifier.align(Alignment.Center))
             Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onSearch, modifier = Modifier.size(42.dp)) {
                 Icon(Icons.Default.Search, contentDescription = "Buscar", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(26.dp))
@@ -9384,7 +9385,7 @@ private fun SettingSwitch(title: String, description: String, checked: Boolean, 
                 Text(title, fontWeight = FontWeight.Medium, color = QiblyTheme.text, fontSize = 15.sp)
                 Text(description, color = Muted, fontSize = 12.sp, lineHeight = 15.sp)
             }
-            Switch(checked = checked, onCheckedChange = onChange, colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = Color(0xFF168CFA), checkedThumbColor = Color.White, uncheckedTrackColor = if (QiblyTheme.dark) Color(0xFF3A4458) else Color(0xFFC9CED6)))
+            Switch(checked = checked, onCheckedChange = onChange, colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = QinblyBrand.Accent, checkedThumbColor = Color.White, uncheckedTrackColor = if (QiblyTheme.dark) Color(0xFF3A4458) else Color(0xFFC9CED6)))
         }
         androidx.compose.material3.HorizontalDivider(color = QiblyTheme.border, thickness = 0.5.dp)
     }
