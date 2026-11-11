@@ -632,22 +632,6 @@ private fun QinblyStickerView(id: String, size: Dp = 104.dp) {
     androidx.compose.foundation.Image(v, contentDescription = "Figurinha", modifier = Modifier.size(size))
 }
 
-/** Painel de figurinhas: mesmo painel azul clarinho de antes; o primeiro quadrado "+" cria uma figurinha. */
-@Composable
-private fun QinblyStickerPanel(modifier: Modifier = Modifier, onPick: (String) -> Unit, onCreate: () -> Unit) {
-    androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
-        columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(4),
-        modifier = modifier.fillMaxWidth().heightIn(max = 210.dp).padding(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        item {
-            Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(14.dp)).background(QiblyTheme.card).clickable { onCreate() }, contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.Add, contentDescription = "Criar figurinha", tint = QinblyBrand.Accent, modifier = Modifier.size(30.dp))
-            }
-        }
-    }
-}
-
 /** Contador de toques na tecla "aumentar volume" do celular; vídeos mudos observam e ligam o som. */
 private object QinblyVolumeKey { var upTicks by mutableIntStateOf(0) }
 
