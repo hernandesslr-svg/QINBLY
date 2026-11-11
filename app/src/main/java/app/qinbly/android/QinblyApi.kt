@@ -375,6 +375,22 @@ object QinblyApi {
     }
 
     /** targetType: post, comment, user ou message. reason: spam, harassment, hate, violence, sexual, minor_safety, self_harm, illegal ou other. */
+    /** Cancelar envio: apaga a mensagem de verdade (some para as duas pessoas). Só quem enviou consegue. */
+    fun deleteMessage(token: String, id: String) {
+        val c = (URL("https://jqomgrdlocdqaarfqkay.supabase.co/rest/v1/messages?id=eq." + java.net.URLEncoder.encode(id, "UTF-8")).openConnection() as HttpURLConnection).apply {
+            requestMethod = "DELETE"; connectTimeout = 20000; readTimeout = 30000
+            setRequestProperty("apikey", BuildConfig.SUPABASE_PUBLISHABLE_KEY)
+            setRequestProperty("Authorization", "Bearer $token")
+            setRequestProperty("Prefer", "return=representation")
+        }
+        try {
+            val status = c.responseCode
+            val text = (if (status >= 400) c.errorStream else c.inputStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
+            if (status !in 200..299) throw IllegalStateException("Não foi possível cancelar o envio (HTTP $status).")
+            if ((try { org.json.JSONArray(text).length() } catch (_: Exception) { 0 }) == 0) throw IllegalStateException("Só quem enviou pode cancelar o envio.")
+        } finally { c.disconnect() }
+    }
+
     fun reportContent(token: String, targetType: String, targetId: String, reason: String) {
         request("POST", "/api/reports", JSONObject().put("targetType", targetType).put("targetId", targetId).put("reason", reason), token)
     }

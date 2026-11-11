@@ -7228,6 +7228,8 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var conversationSearch by remember { mutableStateOf(false) }
     var messageSearch by remember { mutableStateOf("") }
     var showClearConfirm by remember { mutableStateOf(false) }
+    var menuMessage by remember { mutableStateOf<QinblyApi.MessageSummary?>(null) }
+    var reportingMessageId by remember { mutableStateOf<String?>(null) }
     var showBlockConfirm by remember { mutableStateOf(false) }
     var showReportConfirm by remember { mutableStateOf(false) }
     // Envia algo na conversa (foto, local, contato) e recarrega as mensagens.
@@ -7734,7 +7736,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         val bubbleShape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = if (isOwn) 18.dp else 4.dp, bottomEnd = if (isOwn) 4.dp else 18.dp)
                         val bubbleColor = if (isOwn) QinblyBrand.Accent else if (QiblyTheme.dark) QiblyTheme.soft else Color(0xFFF0F2F6)
                         val textColor = if (isOwn) Color.White else if (QiblyTheme.dark) Color.White else Color(0xFF111827)
-                        Surface(color = if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) Color.Transparent else bubbleColor, shape = bubbleShape, modifier = Modifier.widthIn(max = 300.dp)) {
+                        Surface(color = if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) Color.Transparent else bubbleColor, shape = bubbleShape, modifier = Modifier.widthIn(max = 300.dp).clip(bubbleShape).combinedClickable(onClick = { if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) menuMessage = message }, onLongClick = { menuMessage = message })) {
                             Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                                 val sharedPostId = remember(message.body) { Regex("post/([0-9a-fA-F-]{36})").find(message.body)?.groupValues?.get(1) }
                                 val stickerId = remember(message.body) { QinblyStickers.idOf(message.body) }
@@ -7915,6 +7917,26 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         sendWith { token -> QinblyApi.sendStickerMessage(token, recipientUsername, sticker) }
                     }, onNotice = onNotice,
                     modifier = Modifier.fillMaxWidth().height(300.dp).background(QiblyTheme.soft).padding(10.dp), bleed = 16.dp)
+            }
+            menuMessage?.let { mm ->
+                val own = (ownUserId.isNotBlank() && mm.senderId == ownUserId) || mm.senderId.equals(prefs.getString("username", "") ?: "", ignoreCase = true)
+                QinblyMessageSheet(mm, own, QinblyBrand.Accent, QiblyTheme.card, QiblyTheme.text,
+                    onDismiss = { menuMessage = null },
+                    onCanceled = { id -> messages = messages.filterNot { it.id == id } },
+                    onReport = { id -> menuMessage = null; reportingMessageId = id },
+                    onSavedSticker = { stickerRefresh++ },
+                    onNotice = onNotice)
+            }
+            reportingMessageId?.let { rid ->
+                ReportReasonDialog(title = "Denunciar mensagem: qual o motivo?", onDismiss = { reportingMessageId = null }) { reason ->
+                    reportingMessageId = null
+                    val token = prefs.getString("token", null)
+                    if (token.isNullOrBlank()) onNotice("Entre na sua conta para denunciar.")
+                    else Thread {
+                        try { QinblyApi.reportContent(token, "message", rid, reason); android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice("Denúncia enviada. Obrigado por ajudar.") } }
+                        catch (e: Exception) { android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível enviar a denúncia.") } }
+                    }.start()
+                }
             }
             if (showClearConfirm) {
                 AlertDialog(
