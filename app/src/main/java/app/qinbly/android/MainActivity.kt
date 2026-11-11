@@ -256,6 +256,9 @@ private fun LivePostTime(createdAt: String, color: androidx.compose.ui.graphics.
 
 
 /** Paleta do QINBLY (azul). Para mudar a cor da marca inteira, troque só estes valores. */
+/** Guarda a proporção de cada foto já carregada: ao voltar para um post, a altura já está certa e a lista não pula. */
+private object QinblyImageRatioCache { val map = java.util.concurrent.ConcurrentHashMap<String, Float>() }
+
 private object QinblyBrand {
     /** Nome do app mostrado nas telas. Para renomear a rede, troque só este valor (e app_name em res/values/strings.xml). */
     const val Name = "QINBLY"
@@ -4455,7 +4458,7 @@ private fun QinblyPostCard(
                 }
                 var photoIndex by remember(post.id) { mutableIntStateOf(0) }
                 val shownPhoto = demoGallery[photoIndex.coerceIn(0, demoGallery.lastIndex)]
-                var imageAspectRatio by remember(shownPhoto) { mutableFloatStateOf(0.8f) }
+                var imageAspectRatio by remember(shownPhoto) { mutableFloatStateOf(QinblyImageRatioCache.map[shownPhoto] ?: 0.8f) }
                 var dragDistance by remember(post.id) { mutableFloatStateOf(0f) }
                 var likeBurst by remember(post.id) { mutableIntStateOf(0) }
                 Box(
@@ -4484,6 +4487,7 @@ private fun QinblyPostCard(
                             val drawable = result.result.drawable
                             if (drawable.intrinsicWidth > 0 && drawable.intrinsicHeight > 0) {
                                 imageAspectRatio = drawable.intrinsicWidth.toFloat() / drawable.intrinsicHeight.toFloat()
+                                QinblyImageRatioCache.map[shownPhoto] = imageAspectRatio
                             }
                         },
                         modifier = Modifier.fillMaxSize()
