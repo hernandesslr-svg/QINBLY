@@ -392,6 +392,23 @@ class MainActivity : ComponentActivity() {
 }
 
 /** Links de publicação (https://qinbly.com/post/<id> ou qinbly://post/<id>) abrem a publicação dentro do app. */
+/** Puxar para atualizar em todo o app: recarrega a tela atual (refaz o carregamento de dados da página). */
+@androidx.compose.runtime.Composable
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+private fun QinblyPullRefresh(enabled: Boolean = true, content: @androidx.compose.runtime.Composable () -> Unit) {
+    if (!enabled) { content(); return }
+    var nonce by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var refreshing by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    LaunchedEffect(refreshing) { if (refreshing) { kotlinx.coroutines.delay(900); refreshing = false } }
+    androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+        isRefreshing = refreshing,
+        onRefresh = { refreshing = true; nonce++ },
+        modifier = Modifier.fillMaxSize()
+    ) {
+        androidx.compose.runtime.key(nonce) { content() }
+    }
+}
+
 /** Texto curto de cada tipo de notificação (usado na lista e na notificação do sistema). */
 private fun qinblyNotificationText(kind: String): String = when (kind) {
     "follow" -> "começou a seguir você"
@@ -1911,6 +1928,7 @@ private fun QinblyApp() {
                         }
                     )
                 } else if (showNotifications) {
+                    QinblyPullRefresh {
                     NotificationsPage(
                         token = appPrefs.getString("token", null) ?: "",
                         onOpenProfile = { showNotifications = false; publicProfileUsername = it },
@@ -1928,6 +1946,7 @@ private fun QinblyApp() {
                         },
                         onNotice = { notice = it }
                     )
+                    }
                 } else if (showEditProfilePhoto) {
                     EditProfilePhotoPage(
                         onBack = { showEditProfilePhoto = false },
@@ -1975,13 +1994,15 @@ private fun QinblyApp() {
                         onNotice = { notice = it }
                     )
                 } else if (publicProfileUsername.isNotBlank()) {
+                    QinblyPullRefresh {
                     PublicProfilePage(
                         username = publicProfileUsername,
                         onBack = { publicProfileUsername = "" },
                         onMessage = { recipient -> publicProfileUsername = ""; messageRecipient = recipient; tab = 1 },
                         onNotice = { notice = it }
                     )
-                } else androidx.compose.runtime.key(accountSessionVersion) { when (tab) {
+                    }
+                } else androidx.compose.runtime.key(accountSessionVersion) { QinblyPullRefresh(enabled = tab != 0 && tab != 2) { when (tab) {
                     0 -> FeedPage(scrollToTopRequest = navTopRequest, onlineUsers = onlineUsers, currentUsername = loggedInUser, photoRefreshKey = profilePhotoRefreshKey, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true }, onCreateWith = { mode, seed -> QinblyComposeSeed.text = seed; createEntryMode = mode; tab = 2 })
                     1 -> MessagesPage(scrollToTopRequest = navTopRequest, recipientUsername = messageRecipient, onSearch = { showSearchDialog = true }, onOpenConversation = { messageRecipient = it }, onConversationRead = { n -> unreadMessages = (unreadMessages - n).coerceAtLeast(0) }, onOpenProfile = { publicProfileUsername = it }, onNotice = { notice = it })
                     2 -> PostPage(onNotice = { notice = it }, onCameraCancelled = { tab = 0 }, initialMode = createEntryMode, onSwitchMode = { createEntryMode = it })
@@ -2035,7 +2056,7 @@ private fun QinblyApp() {
                             }.start()
                         } else profileStatLoading = false
                     }, onAuth = { showAuth = true }, onEdit = { showEditProfile = true; showSettings = false; showEditProfilePhoto = false; publicProfileUsername = "" }, onEditProfilePhoto = { showEditProfilePhoto = true; showEditProfile = false; showSettings = false; publicProfileUsername = "" }, onSettings = { showSettings = true })
-                } }
+                } } }
             }
         }
         }
