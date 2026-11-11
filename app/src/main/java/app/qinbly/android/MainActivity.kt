@@ -7227,7 +7227,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var messageSearch by remember { mutableStateOf("") }
     var showClearConfirm by remember { mutableStateOf(false) }
     var menuMessage by remember { mutableStateOf<QinblyApi.MessageSummary?>(null) }
-    var hiddenMsgIds by remember { mutableStateOf(context.getSharedPreferences("qinbly_hidden", Context.MODE_PRIVATE).getStringSet("ids", emptySet()) ?: emptySet()) }
+    var hiddenMsgIds by remember { mutableStateOf(context.getSharedPreferences("qinbly_hidden", android.content.Context.MODE_PRIVATE).getStringSet("ids", emptySet()) ?: emptySet()) }
     var reportingMessageId by remember { mutableStateOf<String?>(null) }
     var showBlockConfirm by remember { mutableStateOf(false) }
     var showReportConfirm by remember { mutableStateOf(false) }
@@ -7921,7 +7921,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                 QinblyMessageSheet(mm, own, QinblyBrand.Accent, QiblyTheme.card, QiblyTheme.text,
                     onDismiss = { menuMessage = null },
                     onCanceled = { id -> messages = messages.filterNot { it.id == id } },
-                    onHide = { id -> hiddenMsgIds = hiddenMsgIds + id; context.getSharedPreferences("qinbly_hidden", Context.MODE_PRIVATE).edit().putStringSet("ids", hiddenMsgIds).apply() },
+                    onHide = { id -> hiddenMsgIds = hiddenMsgIds + id; context.getSharedPreferences("qinbly_hidden", android.content.Context.MODE_PRIVATE).edit().putStringSet("ids", hiddenMsgIds).apply() },
                     onReport = { id -> menuMessage = null; reportingMessageId = id },
                     onSavedSticker = { stickerRefresh++ },
                     onNotice = onNotice)
