@@ -637,11 +637,11 @@ private fun QinblyStickerView(id: String, size: Dp = 104.dp) {
 private fun QinblyStickerPanel(modifier: Modifier = Modifier, onPick: (String) -> Unit, onCreate: () -> Unit) {
     androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
         columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(4),
-        modifier = modifier.fillMaxWidth().heightIn(max = 210.dp).clip(RoundedCornerShape(16.dp)).background(QinblyBrand.Accent.copy(alpha = 0.07f)).padding(8.dp),
+        modifier = modifier.fillMaxWidth().heightIn(max = 210.dp).padding(8.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         item {
-            Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(14.dp)).background(QiblyTheme.card).border(1.5.dp, QinblyBrand.Accent, RoundedCornerShape(14.dp)).clickable { onCreate() }, contentAlignment = Alignment.Center) {
+            Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(14.dp)).background(QiblyTheme.card).clickable { onCreate() }, contentAlignment = Alignment.Center) {
                 Icon(Icons.Default.Add, contentDescription = "Criar figurinha", tint = QinblyBrand.Accent, modifier = Modifier.size(30.dp))
             }
         }
