@@ -1811,11 +1811,11 @@ private fun QinblyApp() {
                         unselectedIconColor = if (QiblyTheme.dark) Color.White else navigationUnselectedColor,
                         unselectedTextColor = if (QiblyTheme.dark) Color.White else navigationUnselectedColor
                     )
-                    NavigationBarItem(selected = tab == 0 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; messageRecipient = ""; showAuth = false; if (tab == 0) navTopRequest++; tab = 0 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Home, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 0 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text(RemoteAppearance.navigationLabels[0], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
-                    NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 3) navTopRequest++; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Groups, contentDescription = "Comunidades"); if (RemoteAppearance.navigationUnderlineVisible && tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text("Comunidades", fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
+                    NavigationBarItem(selected = tab == 0 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; messageRecipient = ""; showAuth = false; if (tab == 0) navTopRequest++; tab = 0 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Home, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 0 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.Accent)) } }, label = { Text(RemoteAppearance.navigationLabels[0], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
+                    NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 3) navTopRequest++; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Groups, contentDescription = "Comunidades"); if (RemoteAppearance.navigationUnderlineVisible && tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.Accent)) } }, label = { Text("Comunidades", fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                     NavigationBarItem(selected = false, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; showCreateOptions = true }, icon = {
                         Box(
-                            Modifier.size(36.dp).clip(CircleShape).background(QinblyBrand.Accent),
+                            Modifier.size(36.dp).clip(CircleShape).background(Brush.linearGradient(listOf(QinblyBrand.Accent, QinblyBrand.Pink))),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(Icons.Default.Add, contentDescription = "Criar publicação", modifier = Modifier.size(24.dp), tint = Color.White)
@@ -1826,7 +1826,7 @@ private fun QinblyApp() {
                         onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 1) navTopRequest++; tab = 1 },
                         icon = {
                             Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
-                                if (RemoteAppearance.navigationUnderlineVisible && tab == 1 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor))
+                                if (RemoteAppearance.navigationUnderlineVisible && tab == 1 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.Accent))
                                 Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Mensagens")
                                 if (unreadMessages > 0) {
                                     Box(
@@ -1852,7 +1852,7 @@ private fun QinblyApp() {
                         label = { Text(RemoteAppearance.navigationLabels[3], fontSize = RemoteAppearance.navigationLabelSize.sp) },
                         colors = navColors
                     )
-                    NavigationBarItem(selected = tab == 4 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 4) navTopRequest++; tab = 4 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Person, contentDescription = "Perfil"); if (RemoteAppearance.navigationUnderlineVisible && tab == 4 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(navigationIndicatorColor)) } }, label = { Text(RemoteAppearance.navigationLabels[4], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
+                    NavigationBarItem(selected = tab == 4 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 4) navTopRequest++; tab = 4 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Person, contentDescription = "Perfil"); if (RemoteAppearance.navigationUnderlineVisible && tab == 4 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.Accent)) } }, label = { Text(RemoteAppearance.navigationLabels[4], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                 }
             }
             }
@@ -3498,12 +3498,21 @@ private fun QinblyActionButton(
 
 @Composable
 private fun QinblyLikeButton(liked: Boolean, count: Int, onClick: () -> Unit, tone: QinblyTone, vertical: Boolean = false) {
+    val pop = remember { androidx.compose.animation.core.Animatable(1f) }
+    var firstLikeFrame by remember { mutableStateOf(true) }
+    LaunchedEffect(liked) {
+        if (firstLikeFrame) { firstLikeFrame = false }
+        else if (liked && !QiblyTheme.reduceMotion) {
+            pop.animateTo(1.4f, androidx.compose.animation.core.tween(110))
+            pop.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.45f, stiffness = 500f))
+        }
+    }
     QinblyActionButton(if (liked) "Descurtir" else "Curtir", onClick, tone, vertical, qinblyCount(count)) {
         Icon(
             if (liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
             contentDescription = if (liked) "Descurtir" else "Curtir",
-            tint = if (liked) Color(0xFFFF3045) else qinblyIconTint(tone),
-            modifier = Modifier.size(24.dp)
+            tint = if (liked) QinblyBrand.Pink else qinblyIconTint(tone),
+            modifier = Modifier.size(24.dp).graphicsLayer { scaleX = pop.value; scaleY = pop.value }
         )
     }
 }
