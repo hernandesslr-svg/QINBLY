@@ -272,7 +272,7 @@ private object QinblyBrand {
     val Ink = Color(0xFF0B1F2A)
 }
 
-private val Night = Color.White
+private val Night: Color get() = QiblyTheme.background
 private val Panel: Color get() = QiblyTheme.card
 private val Violet = QinblyBrand.Accent
 private val Pink = QinblyBrand.Accent
@@ -8527,9 +8527,9 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
                         enabled = !loading,
                         shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Pink, unfocusedBorderColor = Color.White.copy(alpha = 0.22f),
-                            focusedLabelColor = Pink, cursorColor = Pink, focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White, focusedContainerColor = Night, unfocusedContainerColor = Night
+                            focusedBorderColor = Pink, unfocusedBorderColor = QiblyTheme.border,
+                            focusedLabelColor = Pink, cursorColor = Pink, focusedTextColor = QiblyTheme.text,
+                            unfocusedTextColor = QiblyTheme.text, focusedContainerColor = Night, unfocusedContainerColor = Night
                         )
                     )
                 }
@@ -8542,9 +8542,9 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
                     enabled = !loading,
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Pink, unfocusedBorderColor = Color.White.copy(alpha = 0.22f),
-                        focusedLabelColor = Pink, cursorColor = Pink, focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White, focusedContainerColor = Night, unfocusedContainerColor = Night
+                        focusedBorderColor = Pink, unfocusedBorderColor = QiblyTheme.border,
+                        focusedLabelColor = Pink, cursorColor = Pink, focusedTextColor = QiblyTheme.text,
+                        unfocusedTextColor = QiblyTheme.text, focusedContainerColor = Night, unfocusedContainerColor = Night
                     )
                 )
                 OutlinedTextField(
@@ -8557,9 +8557,9 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
                     enabled = !loading,
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Pink, unfocusedBorderColor = Color.White.copy(alpha = 0.22f),
-                        focusedLabelColor = Pink, cursorColor = Pink, focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White, focusedContainerColor = Night, unfocusedContainerColor = Night
+                        focusedBorderColor = Pink, unfocusedBorderColor = QiblyTheme.border,
+                        focusedLabelColor = Pink, cursorColor = Pink, focusedTextColor = QiblyTheme.text,
+                        unfocusedTextColor = QiblyTheme.text, focusedContainerColor = Night, unfocusedContainerColor = Night
                     )
                 )
 
@@ -8768,7 +8768,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
             fun editCard(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String, hint: String, onValue: (String) -> Unit, singleLine: Boolean = true, max: Int = 80, centered: Boolean = false) {
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
-                        .border(BorderStroke(1.dp, Color(0xFFD9DEE6)), RoundedCornerShape(14.dp))
+                        .border(BorderStroke(1.dp, QiblyTheme.border), RoundedCornerShape(14.dp))
                         .padding(horizontal = 14.dp, vertical = if (singleLine) 10.dp else 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
