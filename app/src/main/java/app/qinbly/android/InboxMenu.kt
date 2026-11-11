@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -61,20 +62,21 @@ internal fun QinblyInboxMenu(
         BoxWithConstraints(Modifier.fillMaxSize().clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }) {
             val density = LocalDensity.current
             val screenH = maxHeight
-            val navBottom = with(density) { WindowInsets.navigationBars.getBottom(density).toDp() }
-            val usableH = screenH - maxOf(navBottom, 40.dp)
-            val cardW = 270.dp
-            val rows = 6 + (if (unread) 1 else 0)
-            val cardH = (rows * 46 + 8).dp
-            val topDp = with(density) { (anchor?.top ?: 0f).toDp() }
-            val bottomDp = with(density) { (anchor?.bottom ?: 0f).toDp() }
-            val y = if (anchor == null) (usableH - cardH) / 2 else {
-                val below = bottomDp + 4.dp
-                val above = topDp - cardH - 4.dp
-                (if (below + cardH <= usableH - 8.dp) below else if (above >= 70.dp) above else usableH - cardH - 8.dp).coerceAtLeast(70.dp)
-            }
+            val navPx = WindowInsets.navigationBars.getBottom(density)
+            val marginPx = maxOf(navPx, with(density) { 48.dp.roundToPx() }) + with(density) { 12.dp.roundToPx() }
+            val topMinPx = with(density) { 70.dp.roundToPx() }
+            val sidePx = with(density) { 24.dp.roundToPx() }
+            val gapPx = with(density) { 4.dp.roundToPx() }
+            val anchorBottom = anchor?.bottom
             Column(
-                Modifier.offset(x = 24.dp, y = y).width(cardW).clip(RoundedCornerShape(18.dp)).background(Color(0xFF1B1727)).padding(vertical = 4.dp)
+                Modifier.width(270.dp).layout { measurable, c ->
+                    val p = measurable.measure(c.copy(minHeight = 0, maxHeight = (c.maxHeight - marginPx - topMinPx).coerceAtLeast(0)))
+                    layout(c.maxWidth, c.maxHeight) {
+                        val desired = if (anchorBottom != null) anchorBottom.toInt() + gapPx else (c.maxHeight - p.height) / 2
+                        val y = desired.coerceAtMost(c.maxHeight - p.height - marginPx).coerceAtLeast(topMinPx)
+                        p.place(sidePx, y)
+                    }
+                }.clip(RoundedCornerShape(18.dp)).background(Color(0xFF1B1727)).padding(vertical = 4.dp)
             ) {
                 Option(Icons.Default.Person, "Ver perfil", accent) { onDismiss(); onProfile() }
                 if (unread) Option(Icons.Default.Check, "Marcar como lida", accent) { onDismiss(); onMarkRead() }
