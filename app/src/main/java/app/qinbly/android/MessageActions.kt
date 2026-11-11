@@ -142,16 +142,23 @@ internal fun QinblyMessageSheet(
             val density = androidx.compose.ui.platform.LocalDensity.current
             val screenW = maxWidth
             val screenH = maxHeight
-            val cardW = 236.dp
-            val barW = 290.dp
+            val cardW = 262.dp
+            val barW = 262.dp
             val topDp = with(density) { (anchor?.top ?: 0f).toDp() }
             val bottomDp = with(density) { (anchor?.bottom ?: 0f).toDp() }
             val hasAnchor = anchor != null
-            val barY = if (hasAnchor) (topDp - 58.dp).coerceIn(70.dp, screenH - 140.dp) else screenH / 4
-            val cardY = if (hasAnchor) (maxOf(bottomDp, barY + 54.dp) + 8.dp).coerceAtMost(screenH - 60.dp) else barY + 62.dp
-            val cardMaxH = (screenH - cardY - 16.dp).coerceAtLeast(160.dp)
+            val rows = 5 + (if (raw != null) 1 else 0) + (if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank()) 2 else 0) + (if (isOwn) 1 else 0) + (if (showMore) 4 else 0)
+            val cardH = (rows * 46 + 8).dp.coerceAtMost(screenH - 150.dp)
+            val stackH = 52.dp + 6.dp + cardH
+            val stackY = if (!hasAnchor) ((screenH - stackH) / 2) else {
+                val below = bottomDp + 8.dp
+                val above = topDp - stackH - 8.dp
+                val y = if (below + stackH <= screenH - 16.dp) below else if (above >= 70.dp) above else screenH - stackH - 16.dp
+                y.coerceAtLeast(70.dp)
+            }
+            Column(Modifier.offset(x = if (isOwn) screenW - cardW - 12.dp else 12.dp, y = stackY).width(cardW), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
-                Modifier.offset(x = if (isOwn) screenW - barW - 12.dp else 12.dp, y = barY).width(barW).clip(RoundedCornerShape(30.dp)).background(Color(0xFF1B1727)).padding(horizontal = 8.dp, vertical = 6.dp),
+                Modifier.width(barW).clip(RoundedCornerShape(30.dp)).background(Color(0xFF1B1727)).padding(horizontal = 8.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 listOf("👍", "❤️", "😂", "😮", "😢", "🙏").forEach { e ->
@@ -160,7 +167,7 @@ internal fun QinblyMessageSheet(
                         .clickable { onReact(if (myReaction == e) "" else e); onDismiss() }.padding(horizontal = 6.dp, vertical = 3.dp))
                 }
             }
-        Column(Modifier.offset(x = if (isOwn) screenW - cardW - 12.dp else 12.dp, y = cardY).width(cardW).heightIn(max = cardMaxH).clip(RoundedCornerShape(18.dp)).background(Color(0xFF1B1727)).verticalScroll(rememberScrollState()).padding(vertical = 4.dp), horizontalAlignment = Alignment.Start) {
+        Column(Modifier.width(cardW).heightIn(max = cardH).clip(RoundedCornerShape(18.dp)).background(Color(0xFF1B1727)).verticalScroll(rememberScrollState()).padding(vertical = 4.dp), horizontalAlignment = Alignment.Start) {
                 Option(Icons.Default.Share, "Responder", accent) { onReply(message); onDismiss() }
                 if (raw != null) Option(Icons.Default.OpenInNew, "Encaminhar", accent) { showForward = true }
                 if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank()) {
@@ -198,6 +205,7 @@ internal fun QinblyMessageSheet(
             }
         }
     }
+            }
     if (showBig) {
         androidx.compose.ui.window.Dialog(onDismissRequest = { showBig = false }) {
             AsyncImage(model = message.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.fillMaxWidth().padding(16.dp).clickable { showBig = false })
