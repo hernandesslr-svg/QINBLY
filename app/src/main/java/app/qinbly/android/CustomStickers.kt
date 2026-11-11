@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import android.content.Context
+import androidx.compose.ui.layout.layout
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color as AColor
@@ -178,7 +179,7 @@ internal fun QinblyCustomStickerRow(accent: Color, textColor: Color, refreshKey:
 
 /** Painel de figurinhas (estilo WhatsApp): abas Recentes, Favoritas e Todas; o "+" cria; segurar abre Favoritar/Remover. */
 @Composable
-internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color, refreshKey: Int, onCreate: () -> Unit, onPick: (QinblyApi.CustomSticker) -> Unit, onNotice: (String) -> Unit, modifier: Modifier = Modifier) {
+internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color, refreshKey: Int, onCreate: () -> Unit, onPick: (QinblyApi.CustomSticker) -> Unit, onNotice: (String) -> Unit, modifier: Modifier = Modifier, bleed: androidx.compose.ui.unit.Dp = 0.dp) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     val local = remember { context.getSharedPreferences("qinbly_stickers", Context.MODE_PRIVATE) }
@@ -199,7 +200,14 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
         1 -> list.filter { it.id in favs }
         else -> list
     }
-    Column(modifier) {
+    Column(
+        Modifier.layout { measurable, constraints ->
+            val extra = bleed.roundToPx()
+            val w = constraints.maxWidth + 2 * extra
+            val p = measurable.measure(constraints.copy(minWidth = w, maxWidth = w))
+            layout(constraints.maxWidth, p.height) { p.place(-extra, 0) }
+        }.clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).then(modifier)
+    ) {
         Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf(
                 androidx.compose.material.icons.Icons.Outlined.History to "Recentes",
