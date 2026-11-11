@@ -232,7 +232,7 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
             modifier = Modifier.weight(1f).fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            if (tab == 2) item {
+            item {
                 Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(14.dp)).background(cardColor).clickable { onCreate() }, contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.Add, contentDescription = "Criar figurinha", tint = accent, modifier = Modifier.size(30.dp))
                 }
