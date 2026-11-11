@@ -2,7 +2,8 @@
     <style name="Theme.Qinbly" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:statusBarColor">#050711</item>
+        <item name="android:statusBarColor">#130F1D</item>
+        <item name="android:windowBackground">#130F1D</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:enforceNavigationBarContrast">false</item>
         <item name="android:windowLightNavigationBar">false</item>
