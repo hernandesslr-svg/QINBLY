@@ -176,13 +176,17 @@ internal fun QinblyCustomStickerRow(accent: Color, textColor: Color, refreshKey:
     }
 }
 
-/** Painel de figurinhas (estilo WhatsApp): grade com o "+" para criar e todas as suas figurinhas salvas. Segurar pede confirmação para excluir. */
+/** Painel de figurinhas (estilo WhatsApp): abas Recentes, Favoritas e Todas; o "+" cria; segurar abre Favoritar/Remover. */
 @Composable
 internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color, refreshKey: Int, onCreate: () -> Unit, onPick: (QinblyApi.CustomSticker) -> Unit, onNotice: (String) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val local = remember { context.getSharedPreferences("qinbly_stickers", Context.MODE_PRIVATE) }
     var list by remember { mutableStateOf<List<QinblyApi.CustomSticker>>(emptyList()) }
     var toDelete by remember { mutableStateOf<QinblyApi.CustomSticker?>(null) }
+    var tab by remember { mutableStateOf(2) }
+    var recents by remember { mutableStateOf((local.getString("recents", "") ?: "").split(",").filter { it.isNotBlank() }) }
+    var favs by remember { mutableStateOf(local.getStringSet("favs", emptySet()) ?: emptySet()) }
     LaunchedEffect(refreshKey) {
         val token = prefs.getString("token", null)
         if (!token.isNullOrBlank()) {
@@ -190,41 +194,73 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
             catch (_: Exception) { onNotice("Não foi possível carregar suas figurinhas.") }
         }
     }
-    androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
-        columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(4),
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        item {
-            Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(14.dp)).background(cardColor).border(1.5.dp, accent, RoundedCornerShape(14.dp)).clickable { onCreate() }, contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.Add, contentDescription = "Criar figurinha", tint = accent, modifier = Modifier.size(30.dp))
+    val shown = when (tab) {
+        0 -> recents.mapNotNull { id -> list.firstOrNull { it.id == id } }
+        1 -> list.filter { it.id in favs }
+        else -> list
+    }
+    Column(modifier) {
+        Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf(
+                androidx.compose.material.icons.Icons.Outlined.History to "Recentes",
+                androidx.compose.material.icons.Icons.Outlined.StarBorder to "Favoritas",
+                androidx.compose.material.icons.Icons.Outlined.EmojiEmotions to "Figurinhas"
+            ).forEachIndexed { i, (icon, label) ->
+                Box(
+                    Modifier.size(width = 52.dp, height = 40.dp).clip(RoundedCornerShape(12.dp))
+                        .background(if (tab == i) accent.copy(alpha = 0.22f) else Color.Transparent).clickable { tab = i },
+                    contentAlignment = Alignment.Center
+                ) { Icon(icon, contentDescription = label, tint = if (tab == i) accent else textColor.copy(alpha = 0.6f), modifier = Modifier.size(24.dp)) }
             }
         }
-        items(list.size, key = { list[it].id }) { i ->
-            val sticker = list[i]
-            Box(
-                Modifier.aspectRatio(1f).clip(RoundedCornerShape(14.dp)).pointerInput(sticker.id) {
-                    detectTapGestures(onTap = { onPick(sticker) }, onLongPress = { toDelete = sticker })
-                }.padding(2.dp),
-                contentAlignment = Alignment.Center
-            ) { AsyncImage(model = sticker.url, contentDescription = "Figurinha", modifier = Modifier.fillMaxSize()) }
+        androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+            columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(4),
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (tab == 2) item {
+                Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(14.dp)).background(cardColor).clickable { onCreate() }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Add, contentDescription = "Criar figurinha", tint = accent, modifier = Modifier.size(30.dp))
+                }
+            }
+            items(shown.size, key = { shown[it].id }) { i ->
+                val sticker = shown[i]
+                Box(
+                    Modifier.aspectRatio(1f).clip(RoundedCornerShape(14.dp)).pointerInput(sticker.id) {
+                        detectTapGestures(onTap = {
+                            recents = (listOf(sticker.id) + recents.filter { it != sticker.id }).take(30)
+                            local.edit().putString("recents", recents.joinToString(",")).apply()
+                            onPick(sticker)
+                        }, onLongPress = { toDelete = sticker })
+                    }.padding(2.dp),
+                    contentAlignment = Alignment.Center
+                ) { AsyncImage(model = sticker.url, contentDescription = "Figurinha", modifier = Modifier.fillMaxSize()) }
+            }
         }
     }
     toDelete?.let { st ->
         AlertDialog(
             onDismissRequest = { toDelete = null },
             title = { Text("Figurinha") },
-            confirmButton = {
-                TextButton(onClick = {
-                    toDelete = null
-                    val token = prefs.getString("token", null) ?: return@TextButton
-                    list = list.filterNot { it.id == st.id }
-                    Thread {
-                        try { QinblyApi.deleteSticker(token, st.id) }
-                        catch (_: Exception) { Handler(Looper.getMainLooper()).post { onNotice("Não foi possível excluir a figurinha.") } }
-                    }.start()
-                }) { Text("Remover", color = Color(0xFFE5484D), fontWeight = FontWeight.Bold) }
+            text = {
+                Column {
+                    TextButton(onClick = {
+                        favs = if (st.id in favs) favs - st.id else favs + st.id
+                        local.edit().putStringSet("favs", favs).apply()
+                        toDelete = null
+                    }) { Text(if (st.id in favs) "Tirar das favoritas" else "Favoritar", color = accent) }
+                    TextButton(onClick = {
+                        toDelete = null
+                        val token = prefs.getString("token", null) ?: return@TextButton
+                        list = list.filterNot { it.id == st.id }
+                        Thread {
+                            try { QinblyApi.deleteSticker(token, st.id) }
+                            catch (_: Exception) { Handler(Looper.getMainLooper()).post { onNotice("Não foi possível excluir a figurinha.") } }
+                        }.start()
+                    }) { Text("Remover", color = Color(0xFFE5484D)) }
+                }
             },
+            confirmButton = {},
             dismissButton = { TextButton(onClick = { toDelete = null }) { Text("Cancelar") } }
         )
     }
