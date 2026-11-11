@@ -7234,6 +7234,14 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var hiddenMsgIds by remember { mutableStateOf(context.getSharedPreferences("qinbly_hidden", android.content.Context.MODE_PRIVATE).getStringSet("ids", emptySet()) ?: emptySet()) }
     var reportingMessageId by remember { mutableStateOf<String?>(null) }
     var replyingTo by remember { mutableStateOf<QinblyApi.MessageSummary?>(null) }
+    var reactions by remember { mutableStateOf<Map<String, List<Pair<String, String>>>>(emptyMap()) }
+    var reactionsNonce by remember { mutableStateOf(0) }
+    LaunchedEffect(messages.size, reactionsNonce) {
+        val token = prefs.getString("token", null)
+        if (!token.isNullOrBlank() && messages.isNotEmpty()) {
+            try { reactions = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getReactions(token, messages.takeLast(100).map { it.id }) } } catch (_: Exception) { }
+        }
+    }
     var pinnedId by remember(recipientUsername) { mutableStateOf(context.getSharedPreferences("qinbly_pins", android.content.Context.MODE_PRIVATE).getString("pin_" + recipientUsername, "") ?: "") }
     var showBlockConfirm by remember { mutableStateOf(false) }
     var showReportConfirm by remember { mutableStateOf(false) }
@@ -7809,6 +7817,14 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                                     Text(timeLabel, color = textColor.copy(alpha = 0.65f), style = MaterialTheme.typography.labelSmall)
                                     if (isOwn) Icon(Icons.Default.CheckCircle, contentDescription = "Enviada", tint = Color.White.copy(alpha = 0.75f), modifier = Modifier.size(12.dp))
                                 }
+                                val reacts = reactions[message.id].orEmpty()
+                                if (reacts.isNotEmpty()) {
+                                    Row(Modifier.align(Alignment.End).padding(top = 4.dp).clip(RoundedCornerShape(12.dp)).background(Color.Black.copy(alpha = 0.22f)).padding(horizontal = 6.dp, vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        reacts.groupBy { it.second }.forEach { (emoji, list) ->
+                                            Text(if (list.size > 1) emoji + " " + list.size else emoji, fontSize = 13.sp, color = textColor)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -7945,7 +7961,15 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             }
             menuMessage?.let { mm ->
                 val own = (ownUserId.isNotBlank() && mm.senderId == ownUserId) || mm.senderId.equals(prefs.getString("username", "") ?: "", ignoreCase = true)
-                QinblyMessageSheet(mm, own, pinnedId == mm.id, QinblyBrand.Accent, QiblyTheme.card, QiblyTheme.text,
+                QinblyMessageSheet(mm, own, pinnedId == mm.id,
+                    reactions[mm.id]?.firstOrNull { it.first == ownUserId }?.second ?: "",
+                    { emoji ->
+                        val token = prefs.getString("token", null)
+                        if (!token.isNullOrBlank()) Thread {
+                            try { QinblyApi.setReaction(token, mm.id, emoji); android.os.Handler(android.os.Looper.getMainLooper()).post { reactionsNonce++ } }
+                            catch (e: Exception) { android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível reagir.") } }
+                        }.start()
+                    }, QinblyBrand.Accent, QiblyTheme.card, QiblyTheme.text,
                     onDismiss = { menuMessage = null },
                     onCanceled = { id -> messages = messages.filterNot { it.id == id } },
                     onHide = { id -> hiddenMsgIds = hiddenMsgIds + id; context.getSharedPreferences("qinbly_hidden", android.content.Context.MODE_PRIVATE).edit().putStringSet("ids", hiddenMsgIds).apply() },

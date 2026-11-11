@@ -375,6 +375,42 @@ object QinblyApi {
     }
 
     /** targetType: post, comment, user ou message. reason: spam, harassment, hate, violence, sexual, minor_safety, self_harm, illegal ou other. */
+    private fun restCall(token: String, method: String, pathAndQuery: String, body: String? = null, prefer: String? = null): String {
+        val c = (URL("https://jqomgrdlocdqaarfqkay.supabase.co/rest/v1/" + pathAndQuery).openConnection() as HttpURLConnection).apply {
+            requestMethod = method; connectTimeout = 20000; readTimeout = 30000
+            setRequestProperty("apikey", BuildConfig.SUPABASE_PUBLISHABLE_KEY)
+            setRequestProperty("Authorization", "Bearer $token")
+            if (prefer != null) setRequestProperty("Prefer", prefer)
+            if (body != null) { doOutput = true; setRequestProperty("Content-Type", "application/json") }
+        }
+        try {
+            if (body != null) c.outputStream.use { it.write(body.toByteArray()) }
+            val status = c.responseCode
+            val text = (if (status >= 400) c.errorStream else c.inputStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
+            if (status !in 200..299) throw IllegalStateException("Não foi possível concluir (HTTP $status).")
+            return text
+        } finally { c.disconnect() }
+    }
+
+    /** Reação (emoji) a uma mensagem; emoji vazio remove a sua reação. */
+    fun setReaction(token: String, messageId: String, emoji: String) {
+        if (emoji.isBlank()) restCall(token, "DELETE", "message_reactions?message_id=eq." + messageId)
+        else restCall(token, "POST", "message_reactions?on_conflict=message_id,user_id", JSONObject().put("message_id", messageId).put("emoji", emoji).toString(), "resolution=merge-duplicates,return=minimal")
+    }
+
+    /** message_id -> lista de (user_id, emoji). */
+    fun getReactions(token: String, messageIds: List<String>): Map<String, List<Pair<String, String>>> {
+        if (messageIds.isEmpty()) return emptyMap()
+        val text = restCall(token, "GET", "message_reactions?select=message_id,user_id,emoji&message_id=in.(" + messageIds.joinToString(",") + ")")
+        val arr = org.json.JSONArray(text)
+        val out = HashMap<String, MutableList<Pair<String, String>>>()
+        for (i in 0 until arr.length()) {
+            val o = arr.optJSONObject(i) ?: continue
+            out.getOrPut(o.optString("message_id")) { mutableListOf() }.add(o.optString("user_id") to o.optString("emoji"))
+        }
+        return out
+    }
+
     /** Cancelar envio: apaga a mensagem de verdade (some para as duas pessoas). Só quem enviou consegue. */
     fun deleteMessage(token: String, id: String) {
         val c = (URL("https://jqomgrdlocdqaarfqkay.supabase.co/rest/v1/messages?id=eq." + java.net.URLEncoder.encode(id, "UTF-8")).openConnection() as HttpURLConnection).apply {

@@ -11,6 +11,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -77,7 +84,7 @@ internal fun qinblyMessageSnippet(m: QinblyApi.MessageSummary): String = when {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun QinblyMessageSheet(
-    message: QinblyApi.MessageSummary, isOwn: Boolean, pinned: Boolean, accent: Color, bg: Color, textColor: Color,
+    message: QinblyApi.MessageSummary, isOwn: Boolean, pinned: Boolean, myReaction: String, onReact: (String) -> Unit, accent: Color, bg: Color, textColor: Color,
     onDismiss: () -> Unit, onCanceled: (String) -> Unit, onHide: (String) -> Unit, onReport: (String) -> Unit,
     onReply: (QinblyApi.MessageSummary) -> Unit, onTogglePin: (String) -> Unit, onSavedSticker: () -> Unit, onNotice: (String) -> Unit
 ) {
@@ -129,49 +136,62 @@ internal fun QinblyMessageSheet(
             } catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível salvar a figurinha.") } }
         }.start()
     }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = bg, contentColor = textColor) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            when (kind) {
-                MsgKind.STICKER -> if (message.stickerUrl.isNotBlank()) AsyncImage(model = message.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.size(130.dp).padding(bottom = 8.dp))
-                MsgKind.IMAGE -> AsyncImage(model = message.imageUrl, contentDescription = "Foto", modifier = Modifier.size(130.dp).padding(bottom = 8.dp))
-                MsgKind.TEXT -> Text(message.body.take(140), color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, maxLines = 3, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-                MsgKind.AUDIO -> Text("Mensagem de voz · ${message.audioSeconds}s", color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
-                MsgKind.FILE -> Text(message.fileName.ifBlank { "Documento" }, color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
-                MsgKind.POLL -> Text("Enquete", color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        Box(Modifier.fillMaxSize().clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }.padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = if (isOwn) Alignment.End else Alignment.Start, modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.clip(RoundedCornerShape(30.dp)).background(Color(0xFF1B1727)).padding(horizontal = 10.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    listOf("👍", "❤️", "😂", "😮", "😢", "🙏").forEach { e ->
+                        Text(e, fontSize = 26.sp, modifier = Modifier.clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(if (myReaction == e) accent.copy(alpha = 0.35f) else Color.Transparent)
+                            .clickable { onReact(if (myReaction == e) "" else e); onDismiss() }.padding(horizontal = 7.dp, vertical = 4.dp))
+                    }
+                }
+                Box(Modifier.padding(top = 8.dp)) {
+        Column(Modifier.width(270.dp).heightIn(max = 520.dp).clip(RoundedCornerShape(20.dp)).background(Color(0xFF1B1727)).verticalScroll(rememberScrollState()).padding(vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                when (kind) {
+                    MsgKind.STICKER -> if (message.stickerUrl.isNotBlank()) AsyncImage(model = message.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.size(130.dp).padding(bottom = 8.dp))
+                    MsgKind.IMAGE -> AsyncImage(model = message.imageUrl, contentDescription = "Foto", modifier = Modifier.size(130.dp).padding(bottom = 8.dp))
+                    MsgKind.TEXT -> Text(message.body.take(140), color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, maxLines = 3, modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp))
+                    MsgKind.AUDIO -> Text("Mensagem de voz · ${message.audioSeconds}s", color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
+                    MsgKind.FILE -> Text(message.fileName.ifBlank { "Documento" }, color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
+                    MsgKind.POLL -> Text("Enquete", color = textColor.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.padding(8.dp))
+                }
+                Option(Icons.Default.Share, "Responder", accent) { onReply(message); onDismiss() }
+                if (raw != null) Option(Icons.Default.OpenInNew, "Encaminhar", accent) { showForward = true }
+                if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank()) {
+                    Option(Icons.Default.OpenInNew, "Ver figurinha", accent) { showBig = true }
+                    Option(Icons.Default.Star, "Favoritar figurinha", Color(0xFFFFD60A)) { onDismiss(); ensureSticker(true) }
+                }
+                Option(Icons.Default.VisibilityOff, "Apagar para mim", textColor) { onHide(message.id); onDismiss(); onNotice("Mensagem apagada só para você.") }
+                if (isOwn) Option(Icons.Default.Delete, "Cancelar envio", Color(0xFFE5484D), Color(0xFFE5484D)) { confirmCancel = true }
+                Option(Icons.Default.Info, "Dados da mensagem", accent) { showInfo = true }
+                Option(Icons.Default.Star, if (pinned) "Desafixar" else "Fixar no topo", accent) { onTogglePin(message.id); onDismiss() }
+                Option(if (showMore) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, "Mais", textColor) { showMore = !showMore }
+                if (showMore) {
+                    if (kind == MsgKind.TEXT) Option(Icons.Outlined.ContentCopy, "Copiar texto", accent) {
+                        (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("mensagem", message.body))
+                        onNotice("Texto copiado."); onDismiss()
+                    }
+                    val shareText = when (kind) {
+                        MsgKind.TEXT -> message.body; MsgKind.STICKER -> message.stickerUrl; MsgKind.AUDIO -> message.audioUrl
+                        MsgKind.IMAGE -> message.imageUrl; MsgKind.FILE -> message.fileUrl; MsgKind.POLL -> ""
+                    }
+                    val openUrl = when (kind) { MsgKind.AUDIO -> message.audioUrl; MsgKind.IMAGE -> message.imageUrl; MsgKind.FILE -> message.fileUrl; else -> "" }
+                    if (openUrl.isNotBlank()) Option(Icons.Default.OpenInNew, when (kind) { MsgKind.AUDIO -> "Abrir áudio"; MsgKind.IMAGE -> "Abrir foto"; else -> "Abrir documento" }, accent) {
+                        onDismiss()
+                        try { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(openUrl)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                        catch (_: Exception) { onNotice("Não foi possível abrir.") }
+                    }
+                    if (shareText.isNotBlank()) Option(Icons.Default.Share, "Compartilhar", accent) {
+                        onDismiss()
+                        val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                        context.startActivity(android.content.Intent.createChooser(send, "Compartilhar").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
+                    if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank() && !isOwn) Option(Icons.Default.Star, "Salvar nas minhas figurinhas", Color(0xFFFFD60A)) { onDismiss(); ensureSticker(false) }
+                    if (!isOwn) Option(Icons.Default.Flag, "Denunciar mensagem", Color(0xFFE5484D), Color(0xFFE5484D)) { onReport(message.id) }
+                }
             }
-            Option(Icons.Default.Share, "Responder", accent) { onReply(message); onDismiss() }
-            if (raw != null) Option(Icons.Default.OpenInNew, "Encaminhar", accent) { showForward = true }
-            if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank()) {
-                Option(Icons.Default.OpenInNew, "Ver figurinha", accent) { showBig = true }
-                Option(Icons.Default.Star, "Favoritar figurinha", Color(0xFFFFD60A)) { onDismiss(); ensureSticker(true) }
-            }
-            Option(Icons.Default.VisibilityOff, "Apagar para mim", textColor) { onHide(message.id); onDismiss(); onNotice("Mensagem apagada só para você.") }
-            if (isOwn) Option(Icons.Default.Delete, "Cancelar envio", Color(0xFFE5484D), Color(0xFFE5484D)) { confirmCancel = true }
-            Option(Icons.Default.Info, "Dados da mensagem", accent) { showInfo = true }
-            Option(Icons.Default.Star, if (pinned) "Desafixar" else "Fixar no topo", accent) { onTogglePin(message.id); onDismiss() }
-            Option(if (showMore) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, "Mais", textColor) { showMore = !showMore }
-            if (showMore) {
-                if (kind == MsgKind.TEXT) Option(Icons.Outlined.ContentCopy, "Copiar texto", accent) {
-                    (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("mensagem", message.body))
-                    onNotice("Texto copiado."); onDismiss()
                 }
-                val shareText = when (kind) {
-                    MsgKind.TEXT -> message.body; MsgKind.STICKER -> message.stickerUrl; MsgKind.AUDIO -> message.audioUrl
-                    MsgKind.IMAGE -> message.imageUrl; MsgKind.FILE -> message.fileUrl; MsgKind.POLL -> ""
-                }
-                val openUrl = when (kind) { MsgKind.AUDIO -> message.audioUrl; MsgKind.IMAGE -> message.imageUrl; MsgKind.FILE -> message.fileUrl; else -> "" }
-                if (openUrl.isNotBlank()) Option(Icons.Default.OpenInNew, when (kind) { MsgKind.AUDIO -> "Abrir áudio"; MsgKind.IMAGE -> "Abrir foto"; else -> "Abrir documento" }, accent) {
-                    onDismiss()
-                    try { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(openUrl)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                    catch (_: Exception) { onNotice("Não foi possível abrir.") }
-                }
-                if (shareText.isNotBlank()) Option(Icons.Default.Share, "Compartilhar", accent) {
-                    onDismiss()
-                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, shareText)
-                    context.startActivity(android.content.Intent.createChooser(send, "Compartilhar").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
-                }
-                if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank() && !isOwn) Option(Icons.Default.Star, "Salvar nas minhas figurinhas", Color(0xFFFFD60A)) { onDismiss(); ensureSticker(false) }
-                if (!isOwn) Option(Icons.Default.Flag, "Denunciar mensagem", Color(0xFFE5484D), Color(0xFFE5484D)) { onReport(message.id) }
             }
         }
     }
