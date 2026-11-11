@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import android.content.Context
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.outlined.History
@@ -265,29 +266,43 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
         }
     }
     toDelete?.let { st ->
-        AlertDialog(
+        @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+        androidx.compose.material3.ModalBottomSheet(
             onDismissRequest = { toDelete = null },
-            title = { Text("Figurinha") },
-            text = {
-                Column {
-                    TextButton(onClick = {
+            containerColor = cardColor.copy(alpha = 1f).let { if (it == Color.Transparent) Color(0xFF1E1A2B) else it },
+            contentColor = textColor
+        ) {
+            Column(Modifier.fillMaxWidth().padding(bottom = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                AsyncImage(model = st.url, contentDescription = "Figurinha", modifier = Modifier.size(170.dp).padding(bottom = 12.dp))
+                Row(
+                    Modifier.fillMaxWidth().clickable {
                         favs = if (st.id in favs) favs - st.id else favs + st.id
                         local.edit().putStringSet("favs", favs).apply()
                         toDelete = null
-                    }) { Text(if (st.id in favs) "Tirar das favoritas" else "Favoritar", color = accent) }
-                    TextButton(onClick = {
-                        toDelete = null
-                        val token = prefs.getString("token", null) ?: return@TextButton
-                        list = list.filterNot { it.id == st.id }
-                        Thread {
-                            try { QinblyApi.deleteSticker(token, st.id) }
-                            catch (_: Exception) { Handler(Looper.getMainLooper()).post { onNotice("Não foi possível excluir a figurinha.") } }
-                        }.start()
-                    }) { Text("Remover", color = Color(0xFFE5484D)) }
+                    }.padding(horizontal = 24.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Icon(if (st.id in favs) Icons.Filled.Star else Icons.Outlined.StarBorder, contentDescription = null, tint = if (st.id in favs) Color(0xFFFFD60A) else accent)
+                    Text(if (st.id in favs) "Tirar das favoritas" else "Adicionar às favoritas", color = textColor, fontSize = 16.sp)
                 }
-            },
-            confirmButton = {},
-            dismissButton = { TextButton(onClick = { toDelete = null }) { Text("Cancelar") } }
-        )
+                Row(
+                    Modifier.fillMaxWidth().clickable {
+                        toDelete = null
+                        val token = prefs.getString("token", null)
+                        if (token != null) {
+                            list = list.filterNot { it.id == st.id }
+                            Thread {
+                                try { QinblyApi.deleteSticker(token, st.id) }
+                                catch (_: Exception) { Handler(Looper.getMainLooper()).post { onNotice("Não foi possível excluir a figurinha.") } }
+                            }.start()
+                        }
+                    }.padding(horizontal = 24.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFE5484D))
+                    Text("Remover figurinha", color = Color(0xFFE5484D), fontSize = 16.sp)
+                }
+            }
+        }
     }
 }
