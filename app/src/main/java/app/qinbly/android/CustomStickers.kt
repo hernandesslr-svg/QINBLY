@@ -104,50 +104,29 @@ internal fun qinblyMakeSticker(context: Context, uri: Uri, removeBackground: Boo
 internal fun QinblyStickerCreateDialog(accent: Color, onNotice: (String) -> Unit, onDismiss: () -> Unit, onCreated: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
-    var picked by remember { mutableStateOf<Uri?>(null) }
-    var removeBg by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) picked = uri }
-    AlertDialog(
-        onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("Criar figurinha") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Escolha uma foto. Ela vira uma figurinha quadrada que você usa nas conversas.", fontSize = 14.sp)
-                Button(onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, enabled = !busy,
-                    colors = ButtonDefaults.buttonColors(containerColor = accent)) { Text(if (picked == null) "Escolher foto" else "Trocar foto", color = Color.White) }
-                if (picked != null) {
-                    AsyncImage(model = picked, contentDescription = "Foto escolhida", modifier = Modifier.size(110.dp).clip(RoundedCornerShape(16.dp)).background(Color(0x11000000)))
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = removeBg, onCheckedChange = { removeBg = it }, enabled = !busy, colors = CheckboxDefaults.colors(checkedColor = accent))
-                    Text("Tirar o fundo (deixa só a pessoa)", fontSize = 14.sp)
-                }
-                if (busy) CircularProgressIndicator(color = accent, modifier = Modifier.size(26.dp))
-            }
-        },
-        confirmButton = {
-            TextButton(enabled = picked != null && !busy, onClick = {
-                val source = picked ?: return@TextButton
-                val token = prefs.getString("token", null)
-                if (token.isNullOrBlank()) { onNotice("Entre na sua conta para criar figurinhas."); return@TextButton }
-                busy = true
-                qinblyMakeSticker(context, source, removeBg) { file, info ->
-                    if (file == null) { busy = false; onNotice(info.ifBlank { "Não foi possível criar a figurinha." }); return@qinblyMakeSticker }
-                    Thread {
-                        val main = Handler(Looper.getMainLooper())
-                        try {
-                            QinblyApi.createSticker(context, token, file, "image/png")
-                            main.post { busy = false; onNotice(if (info.isNotBlank()) "Figurinha criada. $info" else "Figurinha criada."); onCreated(); onDismiss() }
-                        } catch (e: Exception) {
-                            main.post { busy = false; onNotice(e.message ?: "Não foi possível salvar a figurinha.") }
-                        } finally { file.delete() }
-                    }.start()
-                }
-            }) { Text("Criar", color = accent, fontWeight = FontWeight.Bold) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancelar") } }
-    )
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { source ->
+        if (source == null) { onDismiss(); return@rememberLauncherForActivityResult }
+        val token = prefs.getString("token", null)
+        if (token.isNullOrBlank()) { onNotice("Entre na sua conta para criar figurinhas."); onDismiss(); return@rememberLauncherForActivityResult }
+        busy = true
+        qinblyMakeSticker(context, source, false) { file, info ->
+            if (file == null) { busy = false; onNotice(info.ifBlank { "Não foi possível criar a figurinha." }); onDismiss(); return@qinblyMakeSticker }
+            Thread {
+                val main = Handler(Looper.getMainLooper())
+                try {
+                    QinblyApi.createSticker(context, token, file, "image/png")
+                    main.post { busy = false; onNotice("Figurinha criada."); onCreated(); onDismiss() }
+                } catch (e: Exception) {
+                    main.post { busy = false; onNotice(e.message ?: "Não foi possível salvar a figurinha."); onDismiss() }
+                } finally { file.delete() }
+            }.start()
+        }
+    }
+    LaunchedEffect(Unit) { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+    if (busy) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = {}) { CircularProgressIndicator(color = accent, modifier = Modifier.size(36.dp)) }
+    }
 }
 
 /** Faixa "Minhas figurinhas": toque para enviar, segure para excluir. Some se você ainda não criou nenhuma. */

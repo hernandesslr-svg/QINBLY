@@ -215,6 +215,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -634,7 +635,6 @@ private fun QinblyStickerView(id: String, size: Dp = 104.dp) {
 /** Painel de figurinhas: mesmo painel azul clarinho de antes; o primeiro quadrado "+" cria uma figurinha. */
 @Composable
 private fun QinblyStickerPanel(modifier: Modifier = Modifier, onPick: (String) -> Unit, onCreate: () -> Unit) {
-    val items = QinblyStickers.all
     androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
         columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(4),
         modifier = modifier.fillMaxWidth().heightIn(max = 210.dp).clip(RoundedCornerShape(16.dp)).background(QinblyBrand.Accent.copy(alpha = 0.07f)).padding(8.dp),
@@ -643,11 +643,6 @@ private fun QinblyStickerPanel(modifier: Modifier = Modifier, onPick: (String) -
         item {
             Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(14.dp)).background(QiblyTheme.card).border(1.5.dp, QinblyBrand.Accent, RoundedCornerShape(14.dp)).clickable { onCreate() }, contentAlignment = Alignment.Center) {
                 Icon(Icons.Default.Add, contentDescription = "Criar figurinha", tint = QinblyBrand.Accent, modifier = Modifier.size(30.dp))
-            }
-        }
-        items(items.size) { i ->
-            Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(14.dp)).clickable { onPick(items[i].first) }.padding(4.dp), contentAlignment = Alignment.Center) {
-                androidx.compose.foundation.Image(items[i].second, contentDescription = items[i].first, modifier = Modifier.fillMaxSize())
             }
         }
     }
@@ -7237,6 +7232,8 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     LaunchedEffect(scrollToTopRequest) { if (scrollToTopRequest > 0) inboxListState.animateScrollToItem(0) }
     var draft by remember { mutableStateOf("") }
     var showEmojiPicker by remember { mutableStateOf(false) }
+    val stickerKb = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    val stickerFocus = androidx.compose.ui.platform.LocalFocusManager.current
     var showAttachPanel by remember { mutableStateOf(false) }
     var recordingVoice by remember { mutableStateOf(false) }
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -7818,32 +7815,6 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                     }
                 }
             }
-            if (showEmojiPicker) {
-                QinblyCustomStickerRow(QinblyBrand.Accent, QiblyTheme.text, stickerRefresh, { sticker ->
-                    showEmojiPicker = false
-                    sendWith { token -> QinblyApi.sendStickerMessage(token, recipientUsername, sticker) }
-                }, onNotice, Modifier.padding(top = 8.dp))
-                QinblyStickerPanel(
-                    modifier = Modifier.padding(top = 8.dp),
-                    onPick = { id ->
-                        val token = prefs.getString("token", null)
-                        if (token.isNullOrBlank()) onNotice("Entre na sua conta para enviar figurinhas.")
-                        else if (!sending) {
-                            sending = true
-                            Thread {
-                                try {
-                                    QinblyApi.sendMessage(token, recipientUsername, QinblyStickers.bodyOf(id))
-                                    val loaded = QinblyApi.getMessages(token, recipientUsername)
-                                    android.os.Handler(android.os.Looper.getMainLooper()).post { messages = loaded; showEmojiPicker = false; sending = false }
-                                } catch (e: Exception) {
-                                    android.os.Handler(android.os.Looper.getMainLooper()).post { sending = false; onNotice(e.message ?: "Não foi possível enviar a figurinha.") }
-                                }
-                            }.start()
-                        }
-                    },
-                    onCreate = { showStickerCreator = true }
-                )
-            }
             if (showAttachPanel) {
                 val attachOptions = listOf(
                     Triple("Documento", Icons.Outlined.Description, Color(0xFF5B6CF0)),
@@ -7899,7 +7870,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                 androidx.compose.material3.TextField(
                     value = draft,
                     onValueChange = { draft = it.take(2000) },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).onFocusChanged { if (it.isFocused) showEmojiPicker = false },
                     placeholder = { Text("Mensagem…", maxLines = 1) },
                     shape = RoundedCornerShape(26.dp),
                     colors = androidx.compose.material3.TextFieldDefaults.colors(
@@ -7912,7 +7883,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                     ),
                     maxLines = 4,
                     leadingIcon = {
-                        IconButton(onClick = { showAttachPanel = false; showEmojiPicker = !showEmojiPicker }, modifier = Modifier.size(44.dp)) {
+                        IconButton(onClick = { showAttachPanel = false; showEmojiPicker = !showEmojiPicker; if (showEmojiPicker) { stickerKb?.hide(); stickerFocus.clearFocus() } else stickerKb?.show() }, modifier = Modifier.size(44.dp)) {
                             Icon(QinblyCreateIcons.sticker, contentDescription = "Emojis e figurinhas", tint = if (showEmojiPicker) QinblyBrand.Accent else Muted, modifier = Modifier.size(30.dp))
                         }
                     },
@@ -7956,6 +7927,19 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                 ) {
                     if (draft.isBlank()) Icon(Icons.Outlined.Mic, contentDescription = "Gravar áudio", tint = Color.White, modifier = Modifier.size(26.dp))
                     else Icon(Icons.Default.Send, contentDescription = "Enviar mensagem", tint = Color.White, modifier = Modifier.size(25.dp))
+                }
+            }
+            if (showEmojiPicker) {
+                Row(Modifier.fillMaxWidth().height(300.dp).background(QiblyTheme.soft).padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(Modifier.size(64.dp).clip(RoundedCornerShape(12.dp)).background(QiblyTheme.card).border(1.5.dp, QinblyBrand.Accent, RoundedCornerShape(12.dp)).clickable { showStickerCreator = true }, contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Add, contentDescription = "Criar figurinha", tint = QinblyBrand.Accent, modifier = Modifier.size(30.dp))
+                    }
+                    Box(Modifier.weight(1f)) {
+                        QinblyCustomStickerRow(QinblyBrand.Accent, QiblyTheme.text, stickerRefresh, { sticker ->
+                            showEmojiPicker = false
+                            sendWith { token -> QinblyApi.sendStickerMessage(token, recipientUsername, sticker) }
+                        }, onNotice, Modifier)
+                    }
                 }
             }
             if (showClearConfirm) {
