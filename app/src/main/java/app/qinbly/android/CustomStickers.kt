@@ -7,6 +7,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import android.content.Context
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.ui.layout.layout
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -210,9 +214,9 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
     ) {
         Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf(
-                androidx.compose.material.icons.Icons.Outlined.History to "Recentes",
-                androidx.compose.material.icons.Icons.Outlined.StarBorder to "Favoritas",
-                androidx.compose.material.icons.Icons.Outlined.EmojiEmotions to "Figurinhas"
+                Icons.Outlined.History to "Recentes",
+                Icons.Outlined.StarBorder to "Favoritas",
+                Icons.Outlined.EmojiEmotions to "Figurinhas"
             ).forEachIndexed { i, (icon, label) ->
                 Box(
                     Modifier.size(width = 52.dp, height = 40.dp).clip(RoundedCornerShape(12.dp))
