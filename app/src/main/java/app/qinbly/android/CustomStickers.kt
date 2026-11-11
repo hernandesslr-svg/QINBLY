@@ -7,6 +7,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import android.content.Context
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.fillMaxSize
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color as AColor
@@ -64,7 +66,7 @@ import kotlin.math.min
  * Sem tirar o fundo, a figurinha fica com cantos arredondados e uma borda branca.
  * O arquivo volta em [onDone] na thread principal; [info] traz um aviso (por exemplo, "não achei uma pessoa").
  */
-internal fun qinblyMakeSticker(context: Context, uri: Uri, removeBackground: Boolean, onDone: (File?, String) -> Unit) {
+internal fun qinblyMakeSticker(context: Context, uri: Uri, removeBackground: Boolean, caption: String = "", captionColor: Int = AColor.WHITE, onDone: (File?, String) -> Unit) {
     val main = Handler(Looper.getMainLooper())
     Thread {
         var file: File? = null
@@ -94,6 +96,14 @@ internal fun qinblyMakeSticker(context: Context, uri: Uri, removeBackground: Boo
                 result = out
             }
             square.recycle()
+            if (caption.isNotBlank()) {
+                val c = Canvas(result)
+                val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = captionColor; typeface = android.graphics.Typeface.DEFAULT_BOLD; textAlign = Paint.Align.CENTER; textSize = 62f }
+                while (fill.measureText(caption) > 440f && fill.textSize > 18f) fill.textSize -= 2f
+                val stroke = Paint(fill).apply { style = Paint.Style.STROKE; strokeWidth = 9f; color = AColor.BLACK; strokeJoin = Paint.Join.ROUND }
+                c.drawText(caption, 256f, 462f, stroke)
+                c.drawText(caption, 256f, 462f, fill)
+            }
             val f = File(context.cacheDir, "qinbly-sticker-${System.currentTimeMillis()}.png")
             FileOutputStream(f).use { result.compress(Bitmap.CompressFormat.PNG, 100, it) }
             result.recycle()
@@ -105,33 +115,87 @@ internal fun qinblyMakeSticker(context: Context, uri: Uri, removeBackground: Boo
     }.start()
 }
 
-/** Janela "Criar figurinha": escolhe uma foto, decide se tira o fundo e salva na sua coleção. */
+/** Editor "Criar figurinha" (estilo WhatsApp): escolhe a foto (ou parte de uma figurinha existente), escreve um texto e salva. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-internal fun QinblyStickerCreateDialog(accent: Color, onNotice: (String) -> Unit, onDismiss: () -> Unit, onCreated: () -> Unit) {
+internal fun QinblyStickerCreateDialog(accent: Color, onNotice: (String) -> Unit, onDismiss: () -> Unit, onCreated: () -> Unit, editing: QinblyApi.CustomSticker? = null) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     var busy by remember { mutableStateOf(false) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { source ->
-        if (source == null) { onDismiss(); return@rememberLauncherForActivityResult }
-        val token = prefs.getString("token", null)
-        if (token.isNullOrBlank()) { onNotice("Entre na sua conta para criar figurinhas."); onDismiss(); return@rememberLauncherForActivityResult }
-        busy = true
-        qinblyMakeSticker(context, source, false) { file, info ->
-            if (file == null) { busy = false; onNotice(info.ifBlank { "Não foi possível criar a figurinha." }); onDismiss(); return@qinblyMakeSticker }
-            Thread {
-                val main = Handler(Looper.getMainLooper())
-                try {
-                    QinblyApi.createSticker(context, token, file, "image/png")
-                    main.post { busy = false; onNotice("Figurinha criada."); onCreated(); onDismiss() }
-                } catch (e: Exception) {
-                    main.post { busy = false; onNotice(e.message ?: "Não foi possível salvar a figurinha."); onDismiss() }
-                } finally { file.delete() }
-            }.start()
+    var picked by remember { mutableStateOf<Uri?>(null) }
+    var caption by remember { mutableStateOf("") }
+    var colorIdx by remember { mutableStateOf(0) }
+    val palette = listOf(AColor.WHITE, 0xFFFFD60A.toInt(), 0xFFFF4F9A.toInt(), 0xFF22D3EE.toInt(), 0xFF7C4DFF.toInt(), AColor.BLACK)
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) onDismiss() else picked = uri
+    }
+    LaunchedEffect(Unit) {
+        if (editing == null) picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        else {
+            try {
+                val f = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    val tmp = File(context.cacheDir, "edit-sticker-${System.currentTimeMillis()}.png")
+                    java.net.URL(editing.url).openStream().use { i -> FileOutputStream(tmp).use { o -> i.copyTo(o) } }
+                    tmp
+                }
+                picked = Uri.fromFile(f)
+            } catch (_: Exception) { onNotice("Não foi possível abrir a figurinha."); onDismiss() }
         }
     }
-    LaunchedEffect(Unit) { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
-    if (busy) {
-        androidx.compose.ui.window.Dialog(onDismissRequest = {}) { CircularProgressIndicator(color = accent, modifier = Modifier.size(36.dp)) }
+    val src = picked
+    if (src != null) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { if (!busy) onDismiss() }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+            Column(Modifier.fillMaxSize().background(Color(0xFF130F1D)).imePadding().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(Modifier.fillMaxWidth().padding(top = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.IconButton(onClick = { if (!busy) onDismiss() }) { Icon(androidx.compose.material.icons.Icons.Default.Close, contentDescription = "Fechar", tint = Color.White) }
+                    Text(if (editing != null) "Editar figurinha" else "Criar figurinha", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp))
+                }
+                Box(Modifier.padding(top = 24.dp).size(300.dp).clip(RoundedCornerShape(36.dp)).background(Color(0x22FFFFFF)), contentAlignment = Alignment.BottomCenter) {
+                    AsyncImage(model = src, contentDescription = "Prévia", contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    if (caption.isNotBlank()) Box(Modifier.padding(bottom = 22.dp)) {
+                        val sz = (300 * 0.12f).sp
+                        Text(caption, color = Color.Black, fontSize = sz, fontWeight = FontWeight.Bold, maxLines = 1, style = androidx.compose.ui.text.TextStyle(drawStyle = androidx.compose.ui.graphics.drawscope.Stroke(width = 14f, join = androidx.compose.ui.graphics.StrokeJoin.Round)))
+                        Text(caption, color = Color(palette[colorIdx]), fontSize = sz, fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
+                }
+                androidx.compose.material3.OutlinedTextField(
+                    value = caption, onValueChange = { caption = it.take(40) }, singleLine = true, enabled = !busy,
+                    placeholder = { Text("Escreva algo na figurinha…") },
+                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = accent, unfocusedBorderColor = Color(0x55FFFFFF), cursorColor = accent),
+                    modifier = Modifier.padding(top = 20.dp).fillMaxWidth()
+                )
+                Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    palette.forEachIndexed { i, c ->
+                        Box(Modifier.size(34.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color(c))
+                            .border(if (i == colorIdx) 3.dp else 1.dp, if (i == colorIdx) accent else Color(0x66FFFFFF), androidx.compose.foundation.shape.CircleShape)
+                            .clickable { colorIdx = i })
+                    }
+                }
+                Box(Modifier.weight(1f))
+                Button(
+                    enabled = !busy, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = accent),
+                    onClick = {
+                        val token = prefs.getString("token", null)
+                        if (token.isNullOrBlank()) { onNotice("Entre na sua conta para criar figurinhas."); return@Button }
+                        busy = true
+                        qinblyMakeSticker(context, src, false, caption.trim(), palette[colorIdx]) { file, info ->
+                            if (file == null) { busy = false; onNotice(info.ifBlank { "Não foi possível criar a figurinha." }); return@qinblyMakeSticker }
+                            Thread {
+                                val main = Handler(Looper.getMainLooper())
+                                try {
+                                    QinblyApi.createSticker(context, token, file, "image/png")
+                                    if (editing != null) try { QinblyApi.deleteSticker(token, editing.id) } catch (_: Exception) {}
+                                    main.post { busy = false; onNotice("Figurinha salva."); onCreated(); onDismiss() }
+                                } catch (e: Exception) {
+                                    main.post { busy = false; onNotice(e.message ?: "Não foi possível salvar a figurinha.") }
+                                } finally { file.delete() }
+                            }.start()
+                        }
+                    }
+                ) { if (busy) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp)) else Text("Salvar figurinha", color = Color.White, fontWeight = FontWeight.Bold) }
+            }
+        }
     }
 }
 
@@ -149,7 +213,7 @@ internal fun QinblyCustomStickerRow(accent: Color, textColor: Color, refreshKey:
     }
     if (list.isEmpty()) return
     Column(modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
-        Text("Minhas figurinhas (segure para excluir)", color = textColor.copy(alpha = 0.65f), fontSize = 11.sp, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
+        Text("Minhas figurinhas", color = textColor.copy(alpha = 0.65f), fontSize = 11.sp, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             items(list, key = { it.id }) { sticker ->
                 Box(
@@ -183,7 +247,9 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     var list by remember { mutableStateOf<List<QinblyApi.CustomSticker>>(emptyList()) }
     var toDelete by remember { mutableStateOf<QinblyApi.CustomSticker?>(null) }
-    LaunchedEffect(refreshKey) {
+    var editSticker by remember { mutableStateOf<QinblyApi.CustomSticker?>(null) }
+    var reload by remember { mutableStateOf(0) }
+    LaunchedEffect(refreshKey, reload) {
         val token = prefs.getString("token", null)
         if (!token.isNullOrBlank()) {
             try { list = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getMyStickers(token) } }
@@ -210,21 +276,26 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
             ) { AsyncImage(model = sticker.url, contentDescription = "Figurinha", modifier = Modifier.fillMaxSize()) }
         }
     }
+    editSticker?.let { es -> QinblyStickerCreateDialog(accent, onNotice, onDismiss = { editSticker = null }, onCreated = { reload++ }, editing = es) }
     toDelete?.let { st ->
         AlertDialog(
             onDismissRequest = { toDelete = null },
-            title = { Text("Excluir figurinha?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    toDelete = null
-                    val token = prefs.getString("token", null) ?: return@TextButton
-                    list = list.filterNot { it.id == st.id }
-                    Thread {
-                        try { QinblyApi.deleteSticker(token, st.id) }
-                        catch (_: Exception) { Handler(Looper.getMainLooper()).post { onNotice("Não foi possível excluir a figurinha.") } }
-                    }.start()
-                }) { Text("Excluir", color = accent, fontWeight = FontWeight.Bold) }
+            title = { Text("Figurinha") },
+            text = {
+                Column {
+                    TextButton(onClick = { editSticker = st; toDelete = null }) { Text("Editar (adicionar texto)", color = accent) }
+                    TextButton(onClick = {
+                        toDelete = null
+                        val token = prefs.getString("token", null) ?: return@TextButton
+                        list = list.filterNot { it.id == st.id }
+                        Thread {
+                            try { QinblyApi.deleteSticker(token, st.id) }
+                            catch (_: Exception) { Handler(Looper.getMainLooper()).post { onNotice("Não foi possível excluir a figurinha.") } }
+                        }.start()
+                    }) { Text("Remover", color = Color(0xFFE5484D)) }
+                }
             },
+            confirmButton = {},
             dismissButton = { TextButton(onClick = { toDelete = null }) { Text("Cancelar") } }
         )
     }
