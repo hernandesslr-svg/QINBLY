@@ -584,7 +584,7 @@ private object QinblyCreateIcons {
 // ---------- Figurinhas (stickers) ----------
 // Uma figurinha viaja como mensagem de texto "::sticker:ID::" e é desenhada como imagem grande em
 // mensagens, comunidades e comentários. Figurinhas criadas pelas pessoas dependem do servidor.
-private object QinblyStickers {
+internal object QinblyStickers {
     private data class P(val d: String, val fill: Long? = null, val stroke: Long? = null, val w: Float = 2f)
     private fun build(name: String, vararg paths: P): androidx.compose.ui.graphics.vector.ImageVector {
         val b = androidx.compose.ui.graphics.vector.ImageVector.Builder(name, 56.dp, 56.dp, 48f, 48f)
