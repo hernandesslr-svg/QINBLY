@@ -370,8 +370,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             // Ícones da barra de cima/de baixo (hora, bateria, sinal) escuros quando o fundo do app é claro, claros quando é escuro.
             val barView = androidx.compose.ui.platform.LocalView.current
+            val lightBackground = QiblyTheme.background.luminance() > 0.5f
             SideEffect {
-                val lightBackground = QiblyTheme.background.luminance() > 0.5f
                 val controller = androidx.core.view.WindowCompat.getInsetsController(window, barView)
                 controller.isAppearanceLightStatusBars = lightBackground
                 controller.isAppearanceLightNavigationBars = lightBackground
