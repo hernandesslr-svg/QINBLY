@@ -7896,16 +7896,18 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                                     java.time.Instant.parse(message.createdAt).atZone(zone).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
                                 } catch (_: Exception) { message.createdAt.take(16).replace("T", " ") }
                                 Row(Modifier.align(Alignment.End).padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text(timeLabel, color = textColor.copy(alpha = 0.65f), style = MaterialTheme.typography.labelSmall)
-                                    if (isOwn) Icon(Icons.Default.CheckCircle, contentDescription = "Enviada", tint = Color.White.copy(alpha = 0.75f), modifier = Modifier.size(12.dp))
-                                }
-                                val reacts = reactions[message.id].orEmpty()
-                                if (reacts.isNotEmpty()) {
-                                    Row(Modifier.align(Alignment.End).padding(top = 4.dp).clip(RoundedCornerShape(12.dp)).background(Color.Black.copy(alpha = 0.22f)).padding(horizontal = 6.dp, vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        reacts.groupBy { it.second }.forEach { (emoji, list) ->
-                                            Text(if (list.size > 1) emoji + " " + list.size else emoji, fontSize = 13.sp, color = textColor)
+                                    val reacts = reactions[message.id].orEmpty()
+                                    val reactChip: @Composable () -> Unit = {
+                                        if (reacts.isNotEmpty()) Row(Modifier.padding(horizontal = 2.dp).clip(RoundedCornerShape(12.dp)).background(Color.Black.copy(alpha = 0.22f)).padding(horizontal = 6.dp, vertical = 1.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            reacts.groupBy { it.second }.forEach { (emoji, list) ->
+                                                Text(if (list.size > 1) emoji + " " + list.size else emoji, fontSize = 13.sp, color = textColor)
+                                            }
                                         }
                                     }
+                                    if (isOwn) reactChip()
+                                    Text(timeLabel, color = textColor.copy(alpha = 0.65f), style = MaterialTheme.typography.labelSmall)
+                                    if (isOwn) Icon(Icons.Default.CheckCircle, contentDescription = "Enviada", tint = Color.White.copy(alpha = 0.75f), modifier = Modifier.size(12.dp))
+                                    if (!isOwn) reactChip()
                                 }
                             }
                         }
