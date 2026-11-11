@@ -1407,7 +1407,7 @@ private fun AccountSwitcherDialog(
 }
 
 private object QiblyTheme {
-    var dark by androidx.compose.runtime.mutableStateOf(false)
+    var dark by androidx.compose.runtime.mutableStateOf(true)
     var largeText by androidx.compose.runtime.mutableStateOf(false)
     var reduceMotion by androidx.compose.runtime.mutableStateOf(false)
     // Tema escuro "azul-noite": fundo azul bem escuro, cartões um tom mais claros e texto sempre legível.
