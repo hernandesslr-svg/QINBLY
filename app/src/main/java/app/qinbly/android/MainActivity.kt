@@ -485,7 +485,7 @@ private fun QinblyVerificationCard(token: String, onNotice: (String) -> Unit) {
     }
 }
 
-/** Selo de conta verificada (aparece ao lado do nome): selo ondulado violeta-rosa com check branco. */
+/** Selo de conta verificada (aparece ao lado do nome): selo ondulado azul com check branco. */
 @androidx.compose.runtime.Composable
 private fun QinblyVerifiedBadge(size: Dp = 16.dp) {
     androidx.compose.foundation.Canvas(Modifier.size(size)) {
@@ -504,7 +504,7 @@ private fun QinblyVerifiedBadge(size: Dp = 16.dp) {
             if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
         }
         path.close()
-        drawPath(path, Brush.linearGradient(listOf(QinblyBrand.Accent, QinblyBrand.Pink), start = androidx.compose.ui.geometry.Offset(0f, 0f), end = androidx.compose.ui.geometry.Offset(w, w)))
+        drawPath(path, Color(0xFF1D9BF0))
         val check = androidx.compose.ui.graphics.Path().apply {
             moveTo(w * 0.30f, w * 0.52f); lineTo(w * 0.44f, w * 0.66f); lineTo(w * 0.71f, w * 0.36f)
         }
