@@ -7678,6 +7678,8 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                                     Box(Modifier.weight(1f)) {
                                         Text((if (QinblyStickers.idOf(conversation.body) != null) "Figurinha" else conversation.body).ifBlank { "@${conversation.username}" }, color = if (unread) RemoteAppearance.screenTextColor else RemoteAppearance.screenSecondaryTextColor, fontWeight = if (unread) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium)
                                     }
+                                    if (inboxPrefsTick >= 0 && prefs.getBoolean("muted_" + conversation.username, false)) Icon(Icons.Outlined.NotificationsOff, contentDescription = "Silenciada", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.padding(start = 8.dp).size(18.dp))
+                                    if (inboxPrefsTick >= 0 && prefs.getBoolean("pinned_" + conversation.username, false)) Icon(Icons.Outlined.PushPin, contentDescription = "Fixada", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.padding(start = 8.dp).size(18.dp))
                                     if (unread) Box(
                                         Modifier.padding(start = 8.dp).sizeIn(minWidth = 20.dp, minHeight = 20.dp)
                                             .clip(CircleShape)
@@ -7717,7 +7719,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                 }
                 IconButton(onClick = { onOpenProfile(recipientUsername) }, modifier = Modifier.size(48.dp)) {
                     Box(
-                        Modifier.size(42.dp).clip(CircleShape).background(QinblyBrand.Accent).padding(2.dp),
+                        Modifier.size(42.dp).clip(CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         if (recipientAvatarUrl.isNotBlank()) {
