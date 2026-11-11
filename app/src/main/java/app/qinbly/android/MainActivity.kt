@@ -1430,7 +1430,7 @@ private object RemoteAppearance {
         set(value) { feedSecondaryTextColorBase = value }
     private var feedActionBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color(0x66030711))
     var feedActionBackgroundColor: Color
-        get() = if (QiblyTheme.dark) QiblyTheme.card else feedActionBackgroundColorBase
+        get() = if (QiblyTheme.dark) QiblyTheme.background else feedActionBackgroundColorBase
         set(value) { feedActionBackgroundColorBase = value }
     private var feedDividerColorBase by androidx.compose.runtime.mutableStateOf(Color(0xFF252525))
     var feedDividerColor: Color
@@ -2436,7 +2436,7 @@ private fun NotificationsPage(
                     if (selectedFilter == "Todas" && followBackList.isNotEmpty()) {
                         item(key = "fb_header") {
                             Column(Modifier.fillMaxWidth().padding(top = 16.dp)) {
-                                Box(Modifier.fillMaxWidth().height(3.dp).background(RemoteAppearance.feedDividerColor))
+                                Box(Modifier.fillMaxWidth().padding(top = 6.dp).height(1.dp).background(RemoteAppearance.feedDividerColor.copy(alpha = 0.45f)))
                                 Text("Seguir de volta", color = QiblyTheme.text, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp))
                                 Text("Pessoas que seguem você e que você não segue ainda.", color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 2.dp, bottom = 4.dp))
                             }
@@ -4677,7 +4677,7 @@ private fun QinblyPostCard(
             }
             // Faixa fina (3 dp) separando uma publicação da outra; sem cartão em volta.
             Spacer(Modifier.height(6.dp))
-            Box(Modifier.fillMaxWidth().height(3.dp).background(RemoteAppearance.feedDividerColor))
+            Box(Modifier.fillMaxWidth().padding(top = 6.dp).height(1.dp).background(RemoteAppearance.feedDividerColor.copy(alpha = 0.45f)))
         }
     }
 }
@@ -7285,7 +7285,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
         if (suggestedPeople.isEmpty()) return
         item(key = "suggestions-header") {
             Column(Modifier.fillMaxWidth().padding(top = 10.dp)) {
-                Box(Modifier.fillMaxWidth().height(3.dp).background(RemoteAppearance.feedDividerColor))
+                Box(Modifier.fillMaxWidth().padding(top = 6.dp).height(1.dp).background(RemoteAppearance.feedDividerColor.copy(alpha = 0.45f)))
                 Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("Pessoas para seguir", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.weight(1f))
                     if (suggestedPeople.size > 5) Text(if (moreSuggestions) "Ver menos" else "Ver mais", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable { moreSuggestions = !moreSuggestions }.padding(6.dp))
