@@ -228,9 +228,9 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
             }
         }
         androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
-            columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(5),
+            columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(6),
             modifier = Modifier.weight(1f).fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             if (tab == 2) item {
                 Box(Modifier.aspectRatio(1f).clip(RoundedCornerShape(14.dp)).background(cardColor).clickable { onCreate() }, contentAlignment = Alignment.Center) {
@@ -251,7 +251,7 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
                 ) {
                     AsyncImage(model = sticker.url, contentDescription = "Figurinha", modifier = Modifier.fillMaxSize())
                     Box(
-                        Modifier.align(Alignment.TopEnd).size(26.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color(0x66000000))
+                        Modifier.align(Alignment.TopEnd).size(20.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color(0x66000000))
                             .clickable {
                                 favs = if (sticker.id in favs) favs - sticker.id else favs + sticker.id
                                 local.edit().putStringSet("favs", favs).apply()
@@ -259,7 +259,7 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(if (sticker.id in favs) Icons.Filled.Star else Icons.Outlined.StarBorder, contentDescription = "Favoritar",
-                            tint = if (sticker.id in favs) Color(0xFFFFD60A) else Color.White, modifier = Modifier.size(16.dp))
+                            tint = if (sticker.id in favs) Color(0xFFFFD60A) else Color.White, modifier = Modifier.size(13.dp))
                     }
                 }
             }
