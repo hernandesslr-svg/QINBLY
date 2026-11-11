@@ -1348,7 +1348,7 @@ private fun AccountSwitcherDialog(
       val active = account.username.equals(currentUsername, ignoreCase = true)
       Surface(
        modifier = Modifier.fillMaxWidth().clickable { if (!active) onSelect(account) },
-       color = if (active) QiblyTheme.soft else Color.White,
+       color = if (active) QiblyTheme.soft else QiblyTheme.card,
        shape = RoundedCornerShape(17.dp),
        border = BorderStroke(if (active) 1.5.dp else 1.dp, if (active) blue else QiblyTheme.border)
       ) {
@@ -1372,7 +1372,7 @@ private fun AccountSwitcherDialog(
       onClick = onAddAccount,
       modifier = Modifier.fillMaxWidth().height(56.dp),
       shape = RoundedCornerShape(16.dp),
-      border = BorderStroke(1.dp, Color(0xFFDCE9FA))
+      border = BorderStroke(1.dp, QiblyTheme.border)
      ) {
       Icon(Icons.Default.Add, null, tint = blue)
       Spacer(Modifier.width(8.dp))
@@ -2390,7 +2390,7 @@ private fun NotificationsPage(
                             if (item.actorUsername.isNotBlank()) QiblyAccountAvatar(item.actorUsername, item.actorAvatarUrl, 52.dp) { markRead(item); onOpen(item) }
                             else Box(Modifier.size(52.dp).clip(CircleShape).background(QinblyBrand.Accent), contentAlignment = Alignment.Center) { Icon(Icons.Default.Info, contentDescription = null, tint = Color.White) }
                             Box(
-                                Modifier.align(Alignment.BottomEnd).size(22.dp).border(2.dp, Color.White, CircleShape).clip(CircleShape).background(kindColor),
+                                Modifier.align(Alignment.BottomEnd).size(22.dp).border(2.dp, QiblyTheme.card, CircleShape).clip(CircleShape).background(kindColor),
                                 contentAlignment = Alignment.Center
                             ) { Icon(kindIcon, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp)) }
                         }
@@ -7402,7 +7402,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         Box(Modifier.size(64.dp).then(if (hasMyStory) Modifier.border(2.dp, Color.Gray.copy(alpha = 0.6f), CircleShape) else Modifier), contentAlignment = Alignment.Center) {
                             Box(Modifier.size(58.dp)) {
                                 QiblyAccountAvatar(ownHandle, "", 56.dp) { showStoryMenu = true }
-                                Box(Modifier.align(Alignment.BottomEnd).size(20.dp).clip(CircleShape).background(QinblyBrand.Accent).border(2.dp, Color.White, CircleShape), contentAlignment = Alignment.Center) {
+                                Box(Modifier.align(Alignment.BottomEnd).size(20.dp).clip(CircleShape).background(QinblyBrand.Accent).border(2.dp, QiblyTheme.background, CircleShape), contentAlignment = Alignment.Center) {
                                     Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
                                 }
                             }
@@ -10705,22 +10705,22 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         ) {
  QinblySplit {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onCameraCancelled) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.Black) }
+                IconButton(onClick = onCameraCancelled) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
                 Text(if (initialMode == "poll") "Criar enquete" else "Nova publicação",
-                    color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.weight(1f))
+                    color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.weight(1f))
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (ownUsername.isNotBlank()) QiblyAccountAvatar(ownUsername, "", 46.dp) { }
                 else Icon(Icons.Default.Person, contentDescription = null, tint = Color.DarkGray, modifier = Modifier.size(46.dp))
                 Column {
-                    Text(if (ownUsername.isBlank()) "Meu perfil" else "@$ownUsername", fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text(if (ownUsername.isBlank()) "Meu perfil" else "@$ownUsername", fontWeight = FontWeight.Bold, color = QiblyTheme.text)
                     Text("Todos podem ver", color = Color.DarkGray, style = MaterialTheme.typography.labelMedium)
                 }
             }
             val capState = remember { QinblyCaptionState(caption) }
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(QinblyBrand.Accent.copy(alpha = 0.06f)).padding(16.dp)) {
                 QinblyLegendField(
-                    capState, maxChars, if (initialMode == "poll") "Qual é a sua pergunta?" else "No que você está pensando?", Color.Black,
+                    capState, maxChars, if (initialMode == "poll") "Qual é a sua pergunta?" else "No que você está pensando?", QiblyTheme.text,
                     if (initialMode == "poll") 20.sp else 18.sp,
                     Modifier.fillMaxWidth().heightIn(min = if (initialMode == "text") 200.dp else 70.dp)
                 ) { caption = it }
@@ -10729,7 +10729,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             QinblyHashtagField(capState) { caption = it }
             if (initialMode == "poll") {
  QinblySplit {
-                Text("Opções", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("Opções", color = QiblyTheme.text, fontWeight = FontWeight.Bold)
                 pollOptions.forEachIndexed { index, option ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Box(Modifier.size(28.dp).clip(CircleShape).background(QinblyBrand.Accent.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
@@ -10751,22 +10751,22 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     Icon(Icons.Default.Add, contentDescription = null, tint = QinblyBrand.Accent)
                     Text("Adicionar opção", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold)
                 }
-                Text("Duração", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("Duração", color = QiblyTheme.text, fontWeight = FontWeight.Bold)
                 val pollDurations = listOf(1 to "1 h", 6 to "6 h", 24 to "24 h", 72 to "3 dias", 168 to "7 dias")
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     pollDurations.forEach { (hours, label) ->
                         val on = pollDurationHours == hours
-                        Text(label, color = if (on) Color.White else Color.Black, fontWeight = FontWeight.SemiBold,
+                        Text(label, color = if (on) Color.White else QiblyTheme.text, fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (on) QinblyBrand.Accent else QinblyBrand.Accent.copy(alpha = 0.10f))
                                 .clickable { pollDurationHours = hours }.padding(horizontal = 16.dp, vertical = 9.dp))
                     }
                 }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Permitir múltiplas respostas", modifier = Modifier.weight(1f), color = Color.Black)
+                    Text("Permitir múltiplas respostas", modifier = Modifier.weight(1f), color = QiblyTheme.text)
                     Switch(checked = pollMultipleAnswers, onCheckedChange = { pollMultipleAnswers = it })
                 }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Mostrar resultados ao votar", modifier = Modifier.weight(1f), color = Color.Black)
+                    Text("Mostrar resultados ao votar", modifier = Modifier.weight(1f), color = QiblyTheme.text)
                     Switch(checked = pollShowResults, onCheckedChange = { pollShowResults = it })
                 }
                 Text("Os votos são anônimos. A enquete continua no feed depois de encerrar.", color = Color.Gray, style = MaterialTheme.typography.labelSmall)
@@ -11294,13 +11294,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
  QinblySplit {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { galleryOpen = false; gallerySelection.clear() }) {
-                    Icon(Icons.Default.Close, contentDescription = "Fechar galeria", tint = Color.Black)
+                    Icon(Icons.Default.Close, contentDescription = "Fechar galeria", tint = Color.White)
                 }
                 Column(Modifier.weight(1f)) {
-                    Text("Recentes", color = Color.Black, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("Recentes", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text("Escolha uma foto ou vídeo", color = Color.LightGray, style = MaterialTheme.typography.bodySmall)
                 }
-                TextButton(onClick = { galleryFilter = "Todos" }) { Text("▾", color = Color.Black) }
+                TextButton(onClick = { galleryFilter = "Todos" }) { Text("▾", color = Color.White) }
             }
             Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("Todos", "Fotos", "Vídeos").forEach { filter ->
@@ -11321,7 +11321,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 else -> true
             } }
             if (galleryLoading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color.Black) }
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color.White) }
             } else if (visibleAssets.isEmpty()) {
                 Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Text("Nenhuma mídia encontrada.", color = Color.LightGray)
@@ -11357,13 +11357,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 Row(Modifier.align(Alignment.BottomStart).fillMaxWidth().background(Color(0x66000000)).padding(5.dp),
                                     verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
-                                    Text("VÍDEO", color = Color.Black, style = MaterialTheme.typography.labelSmall)
+                                    Text("VÍDEO", color = Color.White, style = MaterialTheme.typography.labelSmall)
                                 }
                             }
                             Box(Modifier.align(Alignment.TopEnd).padding(6.dp).size(23.dp).border(1.5.dp, Color.White, CircleShape)
                                 .background(if (selectedIndex >= 0) Color(0xFFB12AFF) else Color(0x55000000), CircleShape),
                                 contentAlignment = Alignment.Center) {
-                                if (selectedIndex >= 0) Text("${selectedIndex + 1}", color = Color.Black, style = MaterialTheme.typography.labelSmall)
+                                if (selectedIndex >= 0) Text("${selectedIndex + 1}", color = Color.White, style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -12242,7 +12242,7 @@ private fun LivePage(scrollToTopRequest: Int, onNotice: (String) -> Unit) {
                     border = androidx.compose.foundation.BorderStroke(1.dp, if (selectedCategory == category) Pink else Color(0xFF292D48)),
                     modifier = Modifier.clickable { selectedCategory = category }
                 ) {
-                    Text(category, Modifier.padding(horizontal = 10.dp, vertical = 10.dp), color = Color.Black, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                    Text(category, Modifier.padding(horizontal = 10.dp, vertical = 10.dp), color = QiblyTheme.text, style = MaterialTheme.typography.labelMedium, maxLines = 1)
                 }
             }
         }
@@ -12255,9 +12255,9 @@ private fun LivePage(scrollToTopRequest: Int, onNotice: (String) -> Unit) {
             Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF140D31), Color(0xFF5E155D), Color(0xFF10182D))))) {
                 Column(Modifier.align(Alignment.Center).padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Box(Modifier.size(58.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Pink, Violet))), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Radio, contentDescription = null, tint = Color.Black, modifier = Modifier.size(31.dp))
+                        Icon(Icons.Default.Radio, contentDescription = null, tint = Color.White, modifier = Modifier.size(31.dp))
                     }
-                    Text("Entre no universo das Lives", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text("Entre no universo das Lives", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
                     Text("Descubra criadores, jogos, música e conversas ao vivo.", color = Muted, style = MaterialTheme.typography.bodyMedium)
                     Button(onClick = { onNotice("As transmissões e a reprodução ao vivo ainda precisam ser conectadas ao servidor de mídia.") }, colors = ButtonDefaults.buttonColors(containerColor = Pink), shape = RoundedCornerShape(14.dp)) {
                         Text("Explorar transmissões")
