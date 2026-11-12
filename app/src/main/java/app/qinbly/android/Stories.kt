@@ -38,6 +38,11 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material.icons.outlined.TextFields
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.AddBox
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -118,33 +123,59 @@ internal fun QinblyStoryMenu(
     }
 
     when (step) {
-        "menu" -> Dialog(onDismissRequest = onDismiss) {
-            val textC = Color.White
+        "menu" -> Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+            val soon: (String) -> Unit = { onNotice("$it: em breve.") }
+            val card = Color(0xFF241D38)
             val red = Color(0xFFE5484D)
-            @Composable fun Row2(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, tint: Color, color: Color, onClick: () -> Unit) {
-                Row(Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 18.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
-                    Spacer(Modifier.width(16.dp))
-                    Text(label, color = color, fontSize = 16.sp)
+            @Composable fun Big(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, sub: String, modifier: Modifier, onClick: () -> Unit) {
+                Column(modifier.clip(RoundedCornerShape(18.dp)).background(card).clickable { onClick() }.padding(horizontal = 8.dp, vertical = 14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(34.dp))
+                    Text(title, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                    Text(sub, color = Color(0xFFA9B5C8), fontSize = 12.sp, lineHeight = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
-            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF1B1727)).padding(vertical = 6.dp)) {
-                if (hasNote && currentNote.isNotBlank()) {
-                    Text(currentNote, color = textC, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0x22FFFFFF)))
+            @Composable fun Short(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, sub: String, tint: Color = Color.White, onClick: () -> Unit) {
+                Row(Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF2E2745)), contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(26.dp)) }
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(title, color = tint, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(sub, color = Color(0xFFA9B5C8), fontSize = 13.sp)
+                    }
+                    Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = Color.White)
                 }
-                if (hasStory) Row2(Icons.Outlined.Visibility, "Ver meu story", accent, textC) { onDismiss(); onViewMine() }
-                Row2(Icons.Outlined.Edit, if (hasNote) "Mudar nota" else "Escrever uma nota", accent, textC) { step = "note" }
-                Row2(Icons.Outlined.PhotoCamera, "Adicionar story", accent, textC) { onDismiss(); onAddStory() }
-                Row2(Icons.Outlined.MusicNote, "Adicionar música", accent, textC) { onNotice("Música: em breve (precisa da chave da API de músicas).") }
-                if (hasNote) Row2(Icons.Outlined.Delete, "Apagar nota", red, red) {
-                    val token = prefs.getString("token", null)
-                    if (token.isNullOrBlank()) { onNotice("Entre na sua conta."); return@Row2 }
-                    Thread {
-                        val main = Handler(Looper.getMainLooper())
-                        try { QinblyApi.deleteNote(token); main.post { onNotice("Nota apagada."); onChanged(); onDismiss() } }
-                        catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível apagar a nota.") } }
-                    }.start()
+            }
+            Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }, contentAlignment = Alignment.BottomCenter) {
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)).background(Color(0xFF1B1727))
+                    .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { }
+                    .verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 28.dp)) {
+                    Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Color(0x55FFFFFF)))
+                    Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Criar", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.White, modifier = Modifier.size(28.dp).clip(CircleShape).clickable { onDismiss() })
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Big(Icons.Outlined.AddBox, "Story", "Compartilhe fotos e vídeos", Modifier.weight(1f)) { onDismiss(); onAddStory() }
+                        Big(Icons.Outlined.ChatBubbleOutline, "Nota", if (hasNote) "Mudar o seu recado" else "Um recado rápido para seus amigos", Modifier.weight(1f)) { step = "note" }
+                        Big(Icons.Outlined.MusicNote, "Música", "Compartilhe uma música no seu perfil", Modifier.weight(1f)) { soon("Música") }
+                    }
+                    Text("Atalhos", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 6.dp))
+                    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFF211A33))) {
+                        if (hasStory) Short(Icons.Outlined.Visibility, "Ver meu story", "Abrir o story que está no ar") { onDismiss(); onViewMine() }
+                        Short(Icons.Outlined.PhotoLibrary, "Galeria", "Selecionar fotos e vídeos") { galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }
+                        Short(Icons.Outlined.PhotoCamera, "Câmera", "Gravar um novo story") { onDismiss(); onAddStory() }
+                        Short(Icons.Outlined.TextFields, "Texto", "Criar um story somente com texto") { soon("Story só com texto") }
+                        Short(Icons.Outlined.MusicNote, "Escolher música", "Adicionar uma música ao seu story") { soon("Música") }
+                        if (hasNote) Short(Icons.Outlined.Delete, "Apagar nota", "Remover o seu recado atual", red) {
+                            val token = prefs.getString("token", null)
+                            if (token.isNullOrBlank()) { onNotice("Entre na sua conta."); return@Short }
+                            Thread {
+                                val main = Handler(Looper.getMainLooper())
+                                try { QinblyApi.deleteNote(token); main.post { onNotice("Nota apagada."); onChanged(); onDismiss() } }
+                                catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível apagar a nota.") } }
+                            }.start()
+                        }
+                    }
                 }
             }
         }
