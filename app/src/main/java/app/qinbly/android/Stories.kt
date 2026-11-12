@@ -126,7 +126,7 @@ internal fun QinblyStoryMenu(
     }
 
     when (step) {
-        "menu" -> QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false, smallText = true) {
+        "menu" -> QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
             val soon: (String) -> Unit = { onNotice("$it: em breve.") }
             val card = Color(0xFF241D38)
             val red = Color(0xFFE5484D)
@@ -312,7 +312,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
         next()
     }
 
-    QinblyDialog(onDismissRequest = { closeSafe() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false, smallText = true) {
+    QinblyDialog(onDismissRequest = { closeSafe() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
         Box(
             Modifier.fillMaxSize().background(Color.Black).pointerInput(current.id) {
                 detectTapGestures { offset -> if (!tooSoon()) { if (offset.x < size.width / 3f) previous() else next() } }

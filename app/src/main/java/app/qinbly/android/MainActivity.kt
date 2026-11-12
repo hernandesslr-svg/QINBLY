@@ -6264,7 +6264,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     }
                 }
                 if (selectedFeedTab == "Descobrir") item(key = "home-stories") {
-                    QinblySmallText { QinblyStoriesRow(onNotice, onOpenProfile, onOpenConversation, onAddStory) }
+                    QinblyStoriesRow(onNotice, onOpenProfile, onOpenConversation, onAddStory)
                 }
                 if (selectedFeedTab == "Descobrir") item(key = "home-header") {
                     QinblyHomeHeader(allFeedPosts, prefs, onCreateWith)
