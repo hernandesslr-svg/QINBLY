@@ -81,7 +81,8 @@ internal fun qinblyNavBarPadding(): androidx.compose.ui.unit.Dp {
         val sys = if (id > 0) res.getDimensionPixelSize(id) / d else 0f
         maxOf(fromWindow, if (gesture) minOf(sys, 24f) else sys)
     }
-    return maxOf(fromCompose, measured.dp)
+    // Mínimo fixo: em alguns aparelhos todas as medições chegam zeradas dentro de janelas flutuantes.
+    return maxOf(fromCompose, measured.dp, 48.dp)
 }
 
 /** Igual ao Dialog do Compose, mas as telas que ocupam a janela inteira terminam sempre acima dos botões do celular. */
