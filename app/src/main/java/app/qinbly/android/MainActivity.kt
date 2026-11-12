@@ -7946,10 +7946,10 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                             }.start()
                         }
                     },
-                    modifier = Modifier.padding(bottom = if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0) 4.dp else 16.dp, top = 8.dp)
+                    modifier = Modifier.padding(bottom = if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0) 4.dp else 2.dp, top = 8.dp)
                 )
             } else
-            Row(Modifier.fillMaxWidth().padding(bottom = if (showEmojiPicker) 0.dp else if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0) 4.dp else 16.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().padding(bottom = if (showEmojiPicker) 0.dp else if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0) 4.dp else 2.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 androidx.compose.material3.TextField(
                     value = draft,
                     onValueChange = { draft = it.take(2000) },
