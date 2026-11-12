@@ -37,7 +37,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.PhotoCamera
-import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -85,7 +85,7 @@ import kotlinx.coroutines.withContext
 @Composable
 internal fun QinblyStoryMenu(
     accent: Color, hasStory: Boolean, hasNote: Boolean, currentNote: String = "",
-    onDismiss: () -> Unit, onNotice: (String) -> Unit, onChanged: () -> Unit, onViewMine: () -> Unit
+    onDismiss: () -> Unit, onNotice: (String) -> Unit, onChanged: () -> Unit, onViewMine: () -> Unit, onAddStory: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
@@ -135,11 +135,8 @@ internal fun QinblyStoryMenu(
                 }
                 if (hasStory) Row2(Icons.Outlined.Visibility, "Ver meu story", accent, textC) { onDismiss(); onViewMine() }
                 Row2(Icons.Outlined.Edit, if (hasNote) "Mudar nota" else "Escrever uma nota", accent, textC) { step = "note" }
-                Row2(Icons.Outlined.PhotoLibrary, "Story da galeria", accent, textC) { galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }
-                Row2(Icons.Outlined.PhotoCamera, "Story com foto agora", accent, textC) {
-                    if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) launchCamera()
-                    else cameraPermission.launch(android.Manifest.permission.CAMERA)
-                }
+                Row2(Icons.Outlined.PhotoCamera, "Adicionar story", accent, textC) { onDismiss(); onAddStory() }
+                Row2(Icons.Outlined.MusicNote, "Adicionar música", accent, textC) { onNotice("Música: em breve (precisa da chave da API de músicas).") }
                 if (hasNote) Row2(Icons.Outlined.Delete, "Apagar nota", red, red) {
                     val token = prefs.getString("token", null)
                     if (token.isNullOrBlank()) { onNotice("Entre na sua conta."); return@Row2 }

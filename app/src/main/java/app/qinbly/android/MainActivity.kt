@@ -554,7 +554,7 @@ private fun qinblyNotify(context: android.content.Context, title: String, text: 
 
 /** Navegação global para hashtags e menções: qualquer texto clicável abre daqui. */
 /** Texto inicial para a próxima publicação (pergunta do dia, desafio da semana). */
-private object QinblyComposeSeed { var text: String = "" }
+private object QinblyComposeSeed { var text: String = ""; var story: Boolean = false }
 
 /** Ícones de linha do menu "Criar" (traço de 1,8, pontas arredondadas, grade 24x24). */
 private object QinblyCreateIcons {
@@ -2093,7 +2093,7 @@ private fun QinblyApp() {
                     }
                 } else androidx.compose.runtime.key(accountSessionVersion) { QinblyPullRefresh(enabled = tab != 0 && tab != 2) { when (tab) {
                     0 -> FeedPage(scrollToTopRequest = navTopRequest, onlineUsers = onlineUsers, currentUsername = loggedInUser, photoRefreshKey = profilePhotoRefreshKey, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true }, onCreateWith = { mode, seed -> QinblyComposeSeed.text = seed; createEntryMode = mode; tab = 2 })
-                    1 -> MessagesPage(scrollToTopRequest = navTopRequest, recipientUsername = messageRecipient, onSearch = { showSearchDialog = true }, onOpenConversation = { messageRecipient = it }, onConversationRead = { n -> unreadMessages = (unreadMessages - n).coerceAtLeast(0) }, onOpenProfile = { publicProfileUsername = it }, onNotice = { notice = it })
+                    1 -> MessagesPage(scrollToTopRequest = navTopRequest, recipientUsername = messageRecipient, onSearch = { showSearchDialog = true }, onOpenConversation = { messageRecipient = it }, onConversationRead = { n -> unreadMessages = (unreadMessages - n).coerceAtLeast(0) }, onOpenProfile = { publicProfileUsername = it }, onNotice = { notice = it }, onAddStory = { QinblyComposeSeed.story = true; createEntryMode = "camera"; tab = 2 })
                     2 -> PostPage(onNotice = { notice = it }, onCameraCancelled = { tab = 0 }, initialMode = createEntryMode, onSwitchMode = { createEntryMode = it })
                     3 -> CommunitiesPage(onNotice = { notice = it })
                     else -> if (showAuth) {
@@ -7206,7 +7206,7 @@ private fun BlockedAccountsDialog(prefs: android.content.SharedPreferences, onDi
 }
 
 @Composable
-private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onSearch: () -> Unit, onOpenConversation: (String) -> Unit, onOpenProfile: (String) -> Unit, onNotice: (String) -> Unit, onConversationRead: (Int) -> Unit = {}) {
+private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onSearch: () -> Unit, onOpenConversation: (String) -> Unit, onOpenProfile: (String) -> Unit, onNotice: (String) -> Unit, onConversationRead: (Int) -> Unit = {}, onAddStory: () -> Unit = {}) {
     val readLocally = remember { mutableStateListOf<String>() }
     var inboxMenu by remember { mutableStateOf<QinblyApi.InboxSummary?>(null) }
     var inboxAnchor by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
@@ -7358,7 +7358,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
         QinblyStoryMenu(
             QinblyBrand.Accent, hasStory = myStoryEntry?.stories?.isNotEmpty() == true, hasNote = !myStoryEntry?.note.isNullOrBlank(), currentNote = myStoryEntry?.note.orEmpty(),
             onDismiss = { showStoryMenu = false }, onNotice = onNotice, onChanged = { storyRefresh++ },
-            onViewMine = { viewingStory = myStoryEntry }
+            onViewMine = { viewingStory = myStoryEntry }, onAddStory = onAddStory
         )
     }
     viewingStory?.let { entry ->
@@ -8196,11 +8196,11 @@ private object QinblyAvatarCache {
 private fun QinblyNoteBubble(note: String) {
     // Reserva sempre a mesma altura para os avatares da faixa ficarem alinhados, com ou sem nota.
     // O balão pode ser mais largo que a coluna do avatar, assim a nota aparece inteira (até 3 linhas).
-    Box(Modifier.height(60.dp).fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
+    Box(Modifier.height(60.dp).fillMaxWidth(), contentAlignment = Alignment.BottomStart) {
         if (note.isNotBlank()) {
             Text(note, color = Color.White, fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.wrapContentSize(Alignment.BottomCenter, unbounded = true).widthIn(max = 150.dp).offset(y = 6.dp)
+                modifier = Modifier.wrapContentSize(Alignment.BottomStart, unbounded = true).widthIn(max = 150.dp).offset(y = 6.dp)
                     .clip(RoundedCornerShape(16.dp)).background(Color(0xFF2E2745)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(16.dp)).padding(horizontal = 10.dp, vertical = 5.dp))
         }
     }
@@ -10395,6 +10395,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     val context = androidx.compose.ui.platform.LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QinblyComposeSeed.story = false } }
     var caption by remember { mutableStateOf(QinblyComposeSeed.text.also { QinblyComposeSeed.text = "" }) }
     var captionCursor by remember { mutableIntStateOf(caption.length) }
     var pollOptions by remember { mutableStateOf(listOf("", "")) }
@@ -12416,8 +12417,11 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                             if (size <= 0L) throw IllegalStateException("O arquivo selecionado está vazio ou não pôde ser lido.")
                                             val extension = android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: if (mime.startsWith("video/")) "mp4" else "jpg"
                                             val fileName = "qinbly-${System.currentTimeMillis()}.$extension"
-                                            val fileId = QinblyApi.uploadPostMedia(context, token, uploadUri, fileName, mime, size)
-                                            if (selectedType == "foto" && gallerySelection.size > 1) {
+                                            val storyMode = QinblyComposeSeed.story
+                                            val fileId = QinblyApi.uploadPostMedia(context, token, uploadUri, fileName, mime, size, if (storyMode) "story_media" else "post_media")
+                                            if (storyMode) {
+                                                QinblyApi.createStoryFromFile(token, fileId, mime.startsWith("video/"), caption)
+                                            } else if (selectedType == "foto" && gallerySelection.size > 1) {
                                                 val uploadedIds = mutableListOf(fileId)
                                                 for ((index, extraUri) in gallerySelection.drop(1).withIndex()) {
                                                     val extraMime = context.contentResolver.getType(extraUri)?.takeIf { it.startsWith("image/") } ?: "image/jpeg"
@@ -12450,7 +12454,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                         showComposer = false
                                         sourceUri = null
                                         coverBitmap = null
-                                        onNotice("Publicado")
+                                        onNotice(if (QinblyComposeSeed.story) "Story publicado. Fica no ar por 24 horas." else "Publicado")
+                                        QinblyComposeSeed.story = false
                                         onCameraCancelled()
                                     }
                                 } catch (e: Exception) {

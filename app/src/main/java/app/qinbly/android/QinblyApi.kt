@@ -642,6 +642,10 @@ object QinblyApi {
     }
 
     /** Publica um story de foto ou vídeo da galeria/câmera; sobe como categoria `story_media`. */
+    fun createStoryFromFile(token: String, fileId: String, isVideo: Boolean, caption: String) {
+        request("POST", "/api/stories", JSONObject().put("mediaFileId", fileId).put("mediaType", if (isVideo) "video" else "image").put("caption", caption.trim()), token)
+    }
+
     fun createStory(context: Context, token: String, uri: Uri, caption: String) {
         val resolver = context.contentResolver
         val type = (resolver.getType(uri) ?: "image/jpeg").lowercase()
