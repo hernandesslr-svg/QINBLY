@@ -8195,11 +8195,13 @@ private object QinblyAvatarCache {
 @Composable
 private fun QinblyNoteBubble(note: String) {
     // Reserva sempre a mesma altura para os avatares da faixa ficarem alinhados, com ou sem nota.
-    Box(Modifier.height(46.dp).fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
+    // O balão pode ser mais largo que a coluna do avatar, assim a nota aparece inteira (até 3 linhas).
+    Box(Modifier.height(60.dp).fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
         if (note.isNotBlank()) {
-            Text(note, color = Color.White, fontSize = 14.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            Text(note, color = Color.White, fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.offset(y = 8.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF2E2745)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(16.dp)).padding(horizontal = 10.dp, vertical = 5.dp))
+                modifier = Modifier.wrapContentSize(Alignment.BottomCenter, unbounded = true).widthIn(max = 150.dp).offset(y = 6.dp)
+                    .clip(RoundedCornerShape(16.dp)).background(Color(0xFF2E2745)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(16.dp)).padding(horizontal = 10.dp, vertical = 5.dp))
         }
     }
 }
