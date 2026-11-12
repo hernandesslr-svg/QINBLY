@@ -8229,9 +8229,9 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
 private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, note: String, ring: Color, plus: Boolean, onClick: () -> Unit, onNoteClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    Box(Modifier.width(120.dp).height(210.dp).clip(shape).background(QiblyTheme.soft).border(1.5.dp, ring, shape).clickable(indication = null, interactionSource = ms) { onClick() }) {
+    Box(Modifier.width(160.dp).height(280.dp).clip(shape).background(QiblyTheme.soft).border(1.5.dp, ring, shape).clickable(indication = null, interactionSource = ms) { onClick() }) {
         if (isAvatar || imageUrl.isBlank()) {
-            Box(Modifier.align(Alignment.Center).offset(y = if (plus) (-8).dp else 10.dp).size(84.dp).clip(CircleShape).background(Color(0xFF3A3158)), contentAlignment = Alignment.Center) {
+            Box(Modifier.align(Alignment.Center).offset(y = if (plus) (-10).dp else 12.dp).size(110.dp).clip(CircleShape).background(Color(0xFF3A3158)), contentAlignment = Alignment.Center) {
                 if (imageUrl.isNotBlank()) AsyncImage(model = imageUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                 else Icon(Icons.Default.Person, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(30.dp))
             }
@@ -8239,16 +8239,16 @@ private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolea
             if (isVideo) QinblyVideoPoster(imageUrl, Modifier.fillMaxSize(), androidx.compose.ui.layout.ContentScale.Crop)
             else AsyncImage(model = imageUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
         }
-        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(72.dp).background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC000000)))))
-        if (plus) Box(Modifier.align(Alignment.Center).offset(x = 32.dp, y = 32.dp).size(32.dp).clip(CircleShape).background(QinblyBrand.Accent).border(2.dp, QiblyTheme.soft, CircleShape), contentAlignment = Alignment.Center) {
-            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(96.dp).background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC000000)))))
+        if (plus) Box(Modifier.align(Alignment.Center).offset(x = 42.dp, y = 42.dp).size(42.dp).clip(CircleShape).background(QinblyBrand.Accent).border(2.dp, QiblyTheme.soft, CircleShape), contentAlignment = Alignment.Center) {
+            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
         }
-        if (note.isNotBlank()) Text(note, color = Color.White, fontSize = 12.sp, lineHeight = 15.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        if (note.isNotBlank()) Text(note, color = Color.White, fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp, start = 6.dp, end = 4.dp).clip(RoundedCornerShape(10.dp))
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 10.dp, start = 8.dp, end = 4.dp).clip(RoundedCornerShape(10.dp))
                 .clickable(indication = null, interactionSource = ms) { onNoteClick() }.background(Color(0xCC15101F)).padding(horizontal = 6.dp, vertical = 3.dp))
-        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(start = 4.dp, end = 4.dp, bottom = 9.dp))
+        Text(label, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(start = 4.dp, end = 4.dp, bottom = 12.dp))
     }
 }
 
