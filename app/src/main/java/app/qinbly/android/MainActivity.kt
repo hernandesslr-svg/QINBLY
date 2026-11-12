@@ -382,7 +382,12 @@ class MainActivity : ComponentActivity() {
                 controller.isAppearanceLightStatusBars = lightBackground
                 controller.isAppearanceLightNavigationBars = lightBackground
             }
-            QinblyApp()
+            // Letras menores em todo o app: ignora o aumento de fonte do sistema e aplica uma redução fixa.
+            val baseDensity = androidx.compose.ui.platform.LocalDensity.current
+            val smallerText = androidx.compose.ui.unit.Density(baseDensity.density, fontScale = minOf(baseDensity.fontScale, 1f) * 0.86f)
+            androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides smallerText) {
+                QinblyApp()
+            }
         }
     }
 
