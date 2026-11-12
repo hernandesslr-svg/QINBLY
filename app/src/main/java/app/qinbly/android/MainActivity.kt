@@ -8240,10 +8240,10 @@ private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolea
         if (plus) Box(Modifier.align(Alignment.Center).offset(x = 42.dp, y = 42.dp).size(42.dp).clip(CircleShape).background(QinblyBrand.Accent).border(2.dp, QiblyTheme.soft, CircleShape), contentAlignment = Alignment.Center) {
             Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
         }
-        if (note.isNotBlank()) Text(note, color = Color.White, fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        if (note.isNotBlank()) Text(note, color = Color.White, fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, maxLines = 4, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 10.dp, start = 8.dp, end = 4.dp).clip(RoundedCornerShape(10.dp))
-                .clickable(indication = null, interactionSource = ms) { onNoteClick() }.background(Color(0xCC15101F)).padding(horizontal = 6.dp, vertical = 3.dp))
+            style = androidx.compose.ui.text.TextStyle(shadow = androidx.compose.ui.graphics.Shadow(Color(0xFF000000), androidx.compose.ui.geometry.Offset(0f, 2f), 6f)),
+            modifier = Modifier.align(Alignment.BottomCenter).padding(start = 10.dp, end = 10.dp, bottom = 40.dp).clickable(indication = null, interactionSource = ms) { onNoteClick() })
         Text(label, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             modifier = Modifier.align(Alignment.BottomCenter).padding(start = 4.dp, end = 4.dp, bottom = 12.dp))
     }
