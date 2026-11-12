@@ -11,6 +11,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -158,7 +159,7 @@ internal fun QinblyStoryMenu(
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Big(Icons.Outlined.AddBox, "Story", "Compartilhe fotos e vídeos", Modifier.weight(1f)) { onDismiss(); onAddStory() }
-                        Big(Icons.Outlined.ChatBubbleOutline, "Nota", if (hasNote) "Mudar o seu recado" else "Um recado rápido para seus amigos", Modifier.weight(1f)) { step = "note" }
+                        Big(Icons.Outlined.TextFields, "Texto", "Escreva e deixe comentarem", Modifier.weight(1f)) { step = "text" }
                         Big(Icons.Outlined.MusicNote, "Música", "Compartilhe uma música no seu perfil", Modifier.weight(1f)) { soon("Música") }
                     }
                     Text("Atalhos", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 6.dp))
@@ -166,21 +167,13 @@ internal fun QinblyStoryMenu(
                         if (hasStory) Short(Icons.Outlined.Visibility, "Ver meu story", "Abrir o story que está no ar") { onDismiss(); onViewMine() }
                         Short(Icons.Outlined.PhotoLibrary, "Galeria", "Selecionar fotos e vídeos") { galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }
                         Short(Icons.Outlined.PhotoCamera, "Câmera", "Gravar um novo story") { onDismiss(); onAddStory() }
-                        Short(Icons.Outlined.TextFields, "Texto", "Criar um story somente com texto") { soon("Story só com texto") }
+                        Short(Icons.Outlined.TextFields, "Texto", "Criar um story somente com texto") { step = "text" }
                         Short(Icons.Outlined.MusicNote, "Escolher música", "Adicionar uma música ao seu story") { soon("Música") }
-                        if (hasNote) Short(Icons.Outlined.Delete, "Apagar nota", "Remover o seu recado atual", red) {
-                            val token = prefs.getString("token", null)
-                            if (token.isNullOrBlank()) { onNotice("Entre na sua conta."); return@Short }
-                            Thread {
-                                val main = Handler(Looper.getMainLooper())
-                                try { QinblyApi.deleteNote(token); main.post { onNotice("Nota apagada."); onChanged(); onDismiss() } }
-                                catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível apagar a nota.") } }
-                            }.start()
-                        }
                     }
                 }
             }
         }
+        "text" -> QinblyTextStoryComposer(onDismiss = onDismiss, onPublished = { onChanged(); onDismiss() }, onNotice = onNotice)
         "compose" -> AlertDialog(
             onDismissRequest = { if (!busy) onDismiss() },
             title = { Text("Novo story") },
@@ -284,6 +277,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     val items = remember(entry.username) { mutableStateListOf<QinblyApi.StoryItem>().apply { addAll(entry.stories) } }
     var index by remember(entry.username) { mutableIntStateOf(0) }
     var showViewers by remember { mutableStateOf(false) }
+    var showComments by remember { mutableStateOf(false) }
     var viewers by remember { mutableStateOf<List<QinblyApi.StoryViewer>?>(null) }
     if (items.isEmpty()) { onDismiss(); return }
     val current = items[index.coerceIn(0, items.lastIndex)]
@@ -297,8 +291,8 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
             Thread { try { QinblyApi.markStoryViewed(token, current.id) } catch (_: Exception) { } }.start()
         }
     }
-    LaunchedEffect(current.id, showViewers) {
-        if (showViewers) { progress.stop(); return@LaunchedEffect }
+    LaunchedEffect(current.id, showViewers, showComments) {
+        if (showViewers || showComments) { progress.stop(); return@LaunchedEffect }
         val total = if (current.mediaType == "video") 20000 else 6000
         val remaining = ((1f - progress.value) * total).toInt().coerceAtLeast(1)
         progress.animateTo(1f, tween(durationMillis = remaining, easing = LinearEasing))
@@ -311,7 +305,9 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                 detectTapGestures { offset -> if (offset.x < size.width / 3f) previous() else next() }
             }
         ) {
-            if (current.mediaType == "video") StoryVideo(current.mediaUrl) { next() }
+            val textStory = if (current.mediaType == "text") qinblyParseTextStory(current.caption) else null
+            if (textStory != null) QinblyTextStoryContent(textStory, Modifier.fillMaxSize())
+            else if (current.mediaType == "video") StoryVideo(current.mediaUrl) { next() }
             else AsyncImage(model = current.mediaUrl, contentDescription = "Story", contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
 
             Column(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp)) {
@@ -335,9 +331,11 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
             }
 
             Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (current.caption.isNotBlank()) {
+                if (current.caption.isNotBlank() && current.mediaType != "text") {
                     Text(current.caption, color = Color.White, fontSize = 16.sp, modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0x88000000)).padding(horizontal = 12.dp, vertical = 8.dp))
                 }
+                Text(if (entry.mine) "💬  Ver comentários" else "Comentar no story…", color = if (entry.mine) Color.White else Color(0xCCFFFFFF), fontSize = 15.sp,
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0x55000000)).border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(26.dp)).clickable { showComments = true }.padding(horizontal = 20.dp, vertical = 13.dp))
                 if (entry.mine) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         Row(
@@ -368,6 +366,8 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
             }
         }
     }
+
+    if (showComments) QinblyStoryCommentsDialog(current.id, entry.mine, accent, onNotice) { showComments = false }
 
     if (showViewers) {
         AlertDialog(

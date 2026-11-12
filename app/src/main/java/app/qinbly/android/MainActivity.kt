@@ -8173,7 +8173,6 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
     var storyRefresh by remember { mutableIntStateOf(0) }
     var showStoryMenu by remember { mutableStateOf(false) }
     var viewingStory by remember { mutableStateOf<QinblyApi.TrayEntry?>(null) }
-    var viewingNote by remember { mutableStateOf<QinblyApi.TrayEntry?>(null) }
     LaunchedEffect(storyRefresh) {
         val token = prefs.getString("token", null)
         if (!token.isNullOrBlank()) {
@@ -8181,41 +8180,30 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
         }
     }
     val myStoryEntry = storyTray.firstOrNull { it.mine }
-    val trayOthers = storyTray.filter { !it.mine && (it.stories.isNotEmpty() || it.note.isNotBlank()) }
+    val trayOthers = storyTray.filter { !it.mine && it.stories.isNotEmpty() }
     androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)) {
         item(key = "story-create") {
             val mine = myStoryEntry
             val myCover = mine?.stories?.firstOrNull()
             QinblyStoryCard(
-                imageUrl = if (myCover != null && myCover.mediaType != "video") myCover.mediaUrl else mine?.avatarUrl.orEmpty(),
-                isAvatar = myCover == null || myCover.mediaType == "video", isVideo = myCover != null && myCover.mediaType == "video", label = "Criar story", note = mine?.note.orEmpty(),
-                ring = QinblyBrand.Accent.copy(alpha = 0.55f), plus = true, onClick = { showStoryMenu = true }, onNoteClick = { showStoryMenu = true }
+                imageUrl = if (myCover != null && myCover.mediaType != "video" && myCover.mediaType != "text") myCover.mediaUrl else mine?.avatarUrl.orEmpty(),
+                isAvatar = myCover == null || myCover.mediaType == "video" || myCover.mediaType == "text", isVideo = myCover != null && myCover.mediaType == "video", label = "Criar story", textStory = if (myCover?.mediaType == "text") qinblyParseTextStory(myCover.caption) else null,
+                ring = QinblyBrand.Accent.copy(alpha = 0.55f), plus = true, onClick = { showStoryMenu = true }
             )
         }
         items(trayOthers, key = { "tray-" + it.username }) { person ->
             val cover = person.stories.firstOrNull()
-            val open: () -> Unit = { if (person.stories.isNotEmpty()) { viewingStory = person } else if (person.note.isNotBlank()) { viewingNote = person } else { onOpenConversation(person.username) } }
+            val open: () -> Unit = { viewingStory = person }
             QinblyStoryCard(
-                imageUrl = if (cover != null && cover.mediaType != "video") cover.mediaUrl else person.avatarUrl,
-                isAvatar = cover == null || cover.mediaType == "video", isVideo = cover != null && cover.mediaType == "video", label = person.displayName.ifBlank { person.username }, note = person.note,
-                ring = if (person.stories.isEmpty() || person.hasUnseen) QinblyBrand.Accent else Color(0xFF4A4066), plus = false, onClick = open, onNoteClick = { viewingNote = person }
+                imageUrl = if (cover != null && cover.mediaType != "video" && cover.mediaType != "text") cover.mediaUrl else person.avatarUrl,
+                isAvatar = cover == null || cover.mediaType == "video" || cover.mediaType == "text", isVideo = cover != null && cover.mediaType == "video", label = person.displayName.ifBlank { person.username }, textStory = if (cover?.mediaType == "text") qinblyParseTextStory(cover.caption) else null,
+                ring = if (person.stories.isEmpty() || person.hasUnseen) QinblyBrand.Accent else Color(0xFF4A4066), plus = false, onClick = open
             )
-        }
-    }
-    viewingNote?.let { n ->
-        androidx.compose.ui.window.Dialog(onDismissRequest = { viewingNote = null }) {
-            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Color(0xFF1B1727)).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                QiblyAccountAvatar(n.username, n.avatarUrl, 64.dp) { viewingNote = null; onOpenProfile(n.username) }
-                Text(n.displayName.ifBlank { n.username }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(n.note, color = Color.White, fontSize = 18.sp, lineHeight = 24.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFF2E2745)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(18.dp)).padding(horizontal = 16.dp, vertical = 14.dp))
-                Button(onClick = { viewingNote = null; onOpenConversation(n.username) }, colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent), shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) { Text("Responder na conversa") }
-            }
         }
     }
     if (showStoryMenu) {
         QinblyStoryMenu(
-            QinblyBrand.Accent, hasStory = myStoryEntry?.stories?.isNotEmpty() == true, hasNote = !myStoryEntry?.note.isNullOrBlank(), currentNote = myStoryEntry?.note.orEmpty(),
+            QinblyBrand.Accent, hasStory = myStoryEntry?.stories?.isNotEmpty() == true, hasNote = false,
             onDismiss = { showStoryMenu = false }, onNotice = onNotice, onChanged = { storyRefresh++ },
             onViewMine = { viewingStory = myStoryEntry }, onAddStory = onAddStory
         )
@@ -8226,11 +8214,16 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
 }
 
 @Composable
-private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, note: String, ring: Color, plus: Boolean, onClick: () -> Unit, onNoteClick: () -> Unit) {
+private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, textStory: QinblyTextStory?, ring: Color, plus: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Box(Modifier.width(168.dp).height(306.dp).clip(shape).background(QiblyTheme.soft).border(1.5.dp, ring, shape).clickable(indication = null, interactionSource = ms) { onClick() }) {
-        if (imageUrl.isBlank()) {
+        if (textStory != null) {
+            Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(qinblyTextBgs[textStory.bg.coerceIn(0, qinblyTextBgs.lastIndex)])), contentAlignment = Alignment.Center) {
+                Text(textStory.text, color = Color.White, fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium, maxLines = 8, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(horizontal = 14.dp))
+            }
+        } else if (imageUrl.isBlank()) {
             Icon(Icons.Default.Person, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.align(Alignment.Center).size(60.dp))
         } else if (imageUrl.isNotBlank()) {
             if (isVideo) QinblyVideoPoster(imageUrl, Modifier.fillMaxSize(), androidx.compose.ui.layout.ContentScale.Crop)
@@ -8240,10 +8233,6 @@ private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolea
         if (plus) Box(Modifier.align(Alignment.Center).offset(x = 42.dp, y = 42.dp).size(42.dp).clip(CircleShape).background(QinblyBrand.Accent).border(2.dp, QiblyTheme.soft, CircleShape), contentAlignment = Alignment.Center) {
             Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
         }
-        if (note.isNotBlank()) Text(note, color = Color.White, fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, maxLines = 4, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            style = androidx.compose.ui.text.TextStyle(shadow = androidx.compose.ui.graphics.Shadow(Color(0xFF000000), androidx.compose.ui.geometry.Offset(0f, 2f), 6f)),
-            modifier = Modifier.align(Alignment.BottomCenter).padding(start = 10.dp, end = 10.dp, bottom = 40.dp).clickable(indication = null, interactionSource = ms) { onNoteClick() })
         Text(label, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             modifier = Modifier.align(Alignment.BottomCenter).padding(start = 4.dp, end = 4.dp, bottom = 12.dp))
     }

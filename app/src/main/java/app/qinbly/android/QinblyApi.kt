@@ -375,6 +375,24 @@ object QinblyApi {
     }
 
     /** targetType: post, comment, user ou message. reason: spam, harassment, hate, violence, sexual, minor_safety, self_harm, illegal ou other. */
+    /** Story de texto: grava direto na tabela (a política de segurança confere que o story é de quem está logado). */
+    fun createTextStory(token: String, userId: String, encodedCaption: String) {
+        val exp = java.time.Instant.now().plusSeconds(24 * 3600).toString()
+        restCall(token, "POST", "stories", JSONObject().put("user_id", userId).put("media_path", "text").put("media_type", "text").put("caption", encodedCaption).put("expires_at", exp).toString(), "return=minimal")
+    }
+
+    fun getStoryComments(token: String, storyId: String): List<StoryComment> {
+        val arr = org.json.JSONArray(restCall(token, "GET", "story_comments?story_id=eq.$storyId&select=id,body,created_at,profiles(username,display_name)&order=created_at.asc&limit=200"))
+        return (0 until arr.length()).map { i ->
+            val o = arr.getJSONObject(i); val p = o.optJSONObject("profiles")
+            StoryComment(o.getString("id"), o.getString("body"), p?.optString("username").orEmpty(), p?.optString("display_name").orEmpty(), o.optString("created_at"))
+        }
+    }
+
+    fun addStoryComment(token: String, storyId: String, userId: String, body: String) {
+        restCall(token, "POST", "story_comments", JSONObject().put("story_id", storyId).put("user_id", userId).put("body", body).toString(), "return=minimal")
+    }
+
     private fun restCall(token: String, method: String, pathAndQuery: String, body: String? = null, prefer: String? = null): String {
         val c = (URL("https://jqomgrdlocdqaarfqkay.supabase.co/rest/v1/" + pathAndQuery).openConnection() as HttpURLConnection).apply {
             requestMethod = method; connectTimeout = 20000; readTimeout = 30000
@@ -624,6 +642,7 @@ object QinblyApi {
     // ───────── Stories (24 h) e notas ─────────
     data class StoryItem(val id: String, val mediaUrl: String, val mediaType: String, val caption: String, val createdAt: String, val seen: Boolean, val views: Int)
     data class TrayEntry(val username: String, val displayName: String, val avatarUrl: String, val mine: Boolean, val note: String, val stories: List<StoryItem>, val hasUnseen: Boolean)
+    data class StoryComment(val id: String, val body: String, val username: String, val displayName: String, val createdAt: String)
     data class StoryViewer(val username: String, val displayName: String, val avatarUrl: String, val viewedAt: String)
 
     /** Bandeja de stories e notas: você primeiro, depois quem você segue (com story novo antes). */
