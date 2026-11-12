@@ -554,11 +554,13 @@ private fun qinblyNotify(context: android.content.Context, title: String, text: 
 
 /** Navegação global para hashtags e menções: qualquer texto clicável abre daqui. */
 /** Texto inicial para a próxima publicação (pergunta do dia, desafio da semana). */
-private object QinblyComposeSeed { var text: String = ""; var story: Boolean = false; var contribTo: String = ""; var collabNew: Boolean = false }
+private object QinblyComposeSeed { var text: String = ""; var story: Boolean = false; var contribTo: String = ""; var collabNew: Boolean = false; var pickedUri: Uri? = null; var pickedVideo: Boolean = false }
 /** Chamado antes de abrir a câmera do app: a foto/vídeo tirado vira resposta do story coletivo [storyId] em vez de story novo. */
 internal fun qinblyStartContribution(storyId: String) { QinblyComposeSeed.contribTo = storyId }
 /** Chamado antes de abrir a câmera do app: a foto/vídeo tirado vira um story coletivo novo. */
 internal fun qinblyStartCollabStory() { QinblyComposeSeed.collabNew = true }
+/** Foto/vídeo já escolhido na galeria do story coletivo: abre direto na tela de edição padrão. */
+internal fun qinblySetPickedMedia(uri: Uri, video: Boolean) { QinblyComposeSeed.pickedUri = uri; QinblyComposeSeed.pickedVideo = video }
 
 /** Ícones de linha do menu "Criar" (traço de 1,8, pontas arredondadas, grade 24x24). */
 private object QinblyCreateIcons {
@@ -10659,6 +10661,15 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             showComposer = true
         } else if (initialMode == "gallery" && !showComposer) {
             onCameraCancelled()
+        }
+    }
+    LaunchedEffect(Unit) {
+        val u = QinblyComposeSeed.pickedUri
+        if (u != null) {
+            QinblyComposeSeed.pickedUri = null
+            sourceUri = u; selectedUri = u
+            selectedType = if (QinblyComposeSeed.pickedVideo) "vídeo" else "foto"
+            galleryOpen = false; publishSettings = false; showComposer = true
         }
     }
     fun openQinblyGallery() {

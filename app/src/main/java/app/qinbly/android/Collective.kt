@@ -120,7 +120,7 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted = hasGalleryPermission(context) }
     val systemPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) { picked = GalleryItem(uri, (context.contentResolver.getType(uri) ?: "").startsWith("video/")); step = "caption" }
+        if (uri != null) { qinblySetPickedMedia(uri, (context.contentResolver.getType(uri) ?: "").startsWith("video/")); onCamera() }
     }
     LaunchedEffect(granted) {
         if (granted) items = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { loadRecentMedia(context) }
@@ -184,7 +184,7 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                     } else {
                         LazyVerticalGrid(GridCells.Fixed(3), modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             items(items, key = { it.uri.toString() }) { g ->
-                                Box(Modifier.aspectRatio(1f).clickable { picked = g; step = "caption" }) {
+                                Box(Modifier.aspectRatio(1f).clickable { qinblySetPickedMedia(g.uri, g.video); onCamera() }) {
                                     MediaThumb(g.uri, g.video, Modifier.fillMaxSize())
                                     if (g.video) Text("▶", color = Color.White, fontSize = 14.sp, modifier = Modifier.align(Alignment.BottomStart).padding(6.dp))
                                 }
