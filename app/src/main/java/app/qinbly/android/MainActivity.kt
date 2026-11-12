@@ -7603,7 +7603,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                     val myCover = mine?.stories?.firstOrNull()
                     QinblyStoryCard(
                         imageUrl = if (myCover != null && myCover.mediaType != "video") myCover.mediaUrl else mine?.avatarUrl.orEmpty(),
-                        isVideo = myCover != null && myCover.mediaType == "video", label = "Criar story", note = mine?.note.orEmpty(),
+                        isAvatar = myCover == null || myCover.mediaType == "video", isVideo = myCover != null && myCover.mediaType == "video", label = "Criar story", note = mine?.note.orEmpty(),
                         ring = QinblyBrand.Accent.copy(alpha = 0.55f), plus = true, onClick = { showStoryMenu = true }, onNoteClick = { showStoryMenu = true }
                     )
                 }
@@ -7612,7 +7612,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                     val open: () -> Unit = { if (person.stories.isNotEmpty()) { viewingStory = person } else if (person.note.isNotBlank()) { viewingNote = person } else { onOpenConversation(person.username) } }
                     QinblyStoryCard(
                         imageUrl = if (cover != null && cover.mediaType != "video") cover.mediaUrl else person.avatarUrl,
-                        isVideo = cover != null && cover.mediaType == "video", label = person.displayName.ifBlank { person.username }, note = person.note,
+                        isAvatar = cover == null || cover.mediaType == "video", isVideo = cover != null && cover.mediaType == "video", label = person.displayName.ifBlank { person.username }, note = person.note,
                         ring = if (person.stories.isEmpty() || person.hasUnseen) QinblyBrand.Accent else Color(0xFF4A4066), plus = false, onClick = open, onNoteClick = { viewingNote = person }
                     )
                 }
@@ -8190,16 +8190,21 @@ private object QinblyAvatarCache {
 }
 
 @Composable
-private fun QinblyStoryCard(imageUrl: String, isVideo: Boolean, label: String, note: String, ring: Color, plus: Boolean, onClick: () -> Unit, onNoteClick: () -> Unit) {
+private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, note: String, ring: Color, plus: Boolean, onClick: () -> Unit, onNoteClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Box(Modifier.width(76.dp).height(116.dp).clip(shape).background(QiblyTheme.soft).border(1.5.dp, ring, shape).clickable(indication = null, interactionSource = ms) { onClick() }) {
-        if (imageUrl.isNotBlank()) {
+        if (isAvatar || imageUrl.isBlank()) {
+            Box(Modifier.align(Alignment.Center).offset(y = if (plus) (-4).dp else 6.dp).size(52.dp).clip(CircleShape).background(Color(0xFF3A3158)), contentAlignment = Alignment.Center) {
+                if (imageUrl.isNotBlank()) AsyncImage(model = imageUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                else Icon(Icons.Default.Person, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(30.dp))
+            }
+        } else if (imageUrl.isNotBlank()) {
             if (isVideo) QinblyVideoPoster(imageUrl, Modifier.fillMaxSize(), androidx.compose.ui.layout.ContentScale.Crop)
             else AsyncImage(model = imageUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-        } else Icon(Icons.Default.Person, contentDescription = null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.align(Alignment.Center).size(34.dp))
+        }
         Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(48.dp).background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC000000)))))
-        if (plus) Box(Modifier.align(Alignment.Center).offset(y = 12.dp).size(26.dp).clip(CircleShape).background(QinblyBrand.Accent), contentAlignment = Alignment.Center) {
+        if (plus) Box(Modifier.align(Alignment.Center).offset(x = 20.dp, y = 20.dp).size(24.dp).clip(CircleShape).background(QinblyBrand.Accent).border(2.dp, QiblyTheme.soft, CircleShape), contentAlignment = Alignment.Center) {
             Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
         }
         if (note.isNotBlank()) Text(note, color = Color.White, fontSize = 9.sp, lineHeight = 11.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
