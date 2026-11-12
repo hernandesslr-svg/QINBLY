@@ -8230,11 +8230,8 @@ private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolea
     val shape = RoundedCornerShape(16.dp)
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Box(Modifier.width(168.dp).height(306.dp).clip(shape).background(QiblyTheme.soft).border(1.5.dp, ring, shape).clickable(indication = null, interactionSource = ms) { onClick() }) {
-        if (isAvatar || imageUrl.isBlank()) {
-            Box(Modifier.align(Alignment.Center).offset(y = if (plus) (-10).dp else 12.dp).size(110.dp).clip(CircleShape).background(Color(0xFF3A3158)), contentAlignment = Alignment.Center) {
-                if (imageUrl.isNotBlank()) AsyncImage(model = imageUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-                else Icon(Icons.Default.Person, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(30.dp))
-            }
+        if (imageUrl.isBlank()) {
+            Icon(Icons.Default.Person, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.align(Alignment.Center).size(60.dp))
         } else if (imageUrl.isNotBlank()) {
             if (isVideo) QinblyVideoPoster(imageUrl, Modifier.fillMaxSize(), androidx.compose.ui.layout.ContentScale.Crop)
             else AsyncImage(model = imageUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
