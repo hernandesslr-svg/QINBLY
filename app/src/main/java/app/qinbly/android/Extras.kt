@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -206,20 +207,53 @@ internal fun QinblyMoodDialog(onDismiss: () -> Unit, onNotice: (String) -> Unit,
         }.start()
     }
     val chosen = Color(android.graphics.Color.parseColor(color))
-    QinblyBottomPanel("Clima do dia", onDismiss) {
-        Text("Como você está hoje? Aparece no seu card por 24 horas.", color = Color(0xFFA9B5C8), fontSize = 16.sp)
-        moodEmojis.chunked(4).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                row.forEach { e -> Box(Modifier.size(74.dp).clip(RoundedCornerShape(24.dp)).background(if (emoji == e) chosen.copy(alpha = 0.45f) else FieldBg).border(if (emoji == e) 2.dp else 0.dp, chosen, RoundedCornerShape(24.dp)).clickable { emoji = e }, contentAlignment = Alignment.Center) { Text(e, fontSize = 38.sp) } }
+    var pickingEmoji by remember { mutableStateOf(false) }
+    QinblyDialog(onDismissRequest = { if (pickingEmoji) pickingEmoji = false else onDismiss() }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
+        Box(Modifier.fillMaxSize().background(Color(0xFF14101F))) {
+            Column(Modifier.fillMaxSize().statusBarsPadding()) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable { if (pickingEmoji) pickingEmoji = false else onDismiss() }, contentAlignment = Alignment.Center) {
+                        Text(if (pickingEmoji) "←" else "✕", color = Color.White, fontSize = 18.sp)
+                    }
+                    Text(if (pickingEmoji) "Escolher emoji" else "Clima do dia", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.padding(start = 14.dp))
+                }
+                if (pickingEmoji) {
+                    Box(Modifier.size(84.dp).align(Alignment.CenterHorizontally).clip(CircleShape).background(chosen), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 44.sp) }
+                    Spacer(Modifier.size(12.dp))
+                    QinblyEmojiPanel(Modifier.padding(bottom = qinblyNavBarPadding()), Color(0xFF14101F), gridHeight = 380.dp) { e -> emoji = e; pickingEmoji = false }
+                } else {
+                    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(horizontal = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Spacer(Modifier.size(18.dp))
+                        Box(Modifier.size(120.dp).clip(CircleShape).background(chosen).border(4.dp, Color.White, CircleShape), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 62.sp) }
+                        Spacer(Modifier.size(16.dp))
+                        Text("Como você está hoje?", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                        Text("Aparece no seu cartão de story por 24 horas.", color = Color(0xFFA9B5C8), fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
+                        Spacer(Modifier.size(24.dp))
+                        (moodEmojis + "＋").chunked(5).forEach { row ->
+                            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                row.forEach { e ->
+                                    val isMore = e == "＋"
+                                    val on = if (isMore) emoji !in moodEmojis else emoji == e
+                                    Box(Modifier.size(56.dp).clip(RoundedCornerShape(18.dp)).background(if (on) chosen.copy(alpha = 0.4f) else FieldBg).border(if (on) 2.dp else 0.dp, chosen, RoundedCornerShape(18.dp)).clickable { if (isMore) pickingEmoji = true else emoji = e }, contentAlignment = Alignment.Center) {
+                                        Text(if (isMore && emoji !in moodEmojis) emoji else e, fontSize = if (isMore && emoji in moodEmojis) 22.sp else 28.sp, color = Color.White)
+                                    }
+                                }
+                                repeat(5 - row.size) { Spacer(Modifier.size(56.dp)) }
+                            }
+                        }
+                        Spacer(Modifier.size(22.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            moodColors.forEach { c -> Box(Modifier.size(32.dp).clip(CircleShape).background(Color(android.graphics.Color.parseColor(c))).border(if (color == c) 3.dp else 1.dp, Color.White, CircleShape).clickable { color = c }) }
+                        }
+                        Spacer(Modifier.size(24.dp))
+                    }
+                    Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, bottom = 14.dp + qinblyNavBarPadding()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Publicar clima", color = Color(0xFF26215C), fontWeight = FontWeight.Bold, fontSize = 17.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Color.White).clickable { save(false) }.padding(vertical = 16.dp))
+                        Text("Limpar meu clima", color = Color(0xFFC9B8FF), fontSize = 15.sp, modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable { save(true) }.padding(horizontal = 16.dp, vertical = 8.dp))
+                    }
+                }
             }
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            moodColors.forEach { c -> Box(Modifier.size(38.dp).clip(CircleShape).background(Color(android.graphics.Color.parseColor(c))).border(if (color == c) 4.dp else 0.dp, Color.White, CircleShape).clickable { color = c }) }
-        }
-        Box(Modifier.align(Alignment.CenterHorizontally).clip(RoundedCornerShape(28.dp)).background(chosen).padding(horizontal = 26.dp, vertical = 14.dp)) { Text("$emoji  meu clima", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            BigButton("Limpar", FieldBg, Modifier.weight(1f)) { save(true) }
-            BigButton("Definir", Color(0xFF7C4DFF), Modifier.weight(1.4f)) { save(false) }
         }
     }
 }
