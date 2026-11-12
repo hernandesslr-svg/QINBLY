@@ -7661,15 +7661,15 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                             Modifier.fillMaxWidth().padding(vertical = 3.dp)
                                 .clip(RoundedCornerShape(18.dp))
                                 .background(if (unread) QinblyBrand.Accent.copy(alpha = 0.12f) else Color.Transparent)
-                                .onGloballyPositioned { inboxRowRect[0] = it.boundsInWindow() }.combinedClickable(onClick = { if (unread) { readLocally.add(conversation.username); onConversationRead(conversation.unreadCount) }; onOpenConversation(conversation.username) }, onLongClick = { inboxAnchor = inboxRowRect[0]; inboxMenu = conversation }).padding(horizontal = 10.dp, vertical = 11.dp),
+                                .onGloballyPositioned { inboxRowRect[0] = it.boundsInWindow() }.combinedClickable(onClick = { if (unread) { readLocally.add(conversation.username); onConversationRead(conversation.unreadCount) }; onOpenConversation(conversation.username) }, onLongClick = { inboxAnchor = inboxRowRect[0]; inboxMenu = conversation }).padding(horizontal = 10.dp, vertical = 7.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
-                            QiblyAccountAvatar(conversation.username, conversation.avatarUrl, 60.dp) { onOpenProfile(conversation.username) }
+                            QiblyAccountAvatar(conversation.username, conversation.avatarUrl, 50.dp) { onOpenProfile(conversation.username) }
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                     Box(Modifier.weight(1f)) {
-                                        Text(conversation.displayName.ifBlank { conversation.username }, color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                                        Text(conversation.displayName.ifBlank { conversation.username }, color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
                                     }
                                     Spacer(Modifier.width(8.dp))
                                     Text(if (conversation.createdAt.isBlank()) "Agora" else postRelativeTime(conversation.createdAt, System.currentTimeMillis()), color = if (unread) QinblyBrand.Accent else RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall, fontWeight = if (unread) FontWeight.Bold else FontWeight.Normal)
