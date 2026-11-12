@@ -152,7 +152,7 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                 Column(Modifier.fillMaxSize().statusBarsPadding()) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable { onDismiss() }, contentAlignment = Alignment.Center) { Text("✕", color = Color.White, fontSize = 18.sp) }
-                        Text("Recentes", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.weight(1f).padding(start = 14.dp))
+                        Text("Recentes", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f).padding(end = 40.dp))
                     }
                     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         @Composable fun Chip(label: String, onClick: () -> Unit, mod: Modifier) {
@@ -193,16 +193,16 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                     Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 14.dp), contentAlignment = Alignment.Center) {
                         if (item != null) MediaThumb(item.uri, item.video, Modifier.fillMaxSize().clip(RoundedCornerShape(18.dp)), size = 900)
                     }
-                    Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(Modifier.weight(1f).clip(RoundedCornerShape(26.dp)).background(Color(0xFF2B2342)).padding(start = 18.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0xFF2B2342)).padding(start = 18.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.weight(1f).padding(vertical = 8.dp)) {
                                 if (caption.isEmpty()) Text("Adicionar legenda…", color = Color(0xFF8E87A8), fontSize = 15.sp)
                                 BasicTextField(value = caption, onValueChange = { caption = it.take(300) }, textStyle = TextStyle(color = Color.White, fontSize = 15.sp), cursorBrush = SolidColor(Color.White), maxLines = 3, modifier = Modifier.fillMaxWidth())
                             }
                             Box(Modifier.size(36.dp).clip(CircleShape).background(if (showEmojis) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = !showEmojis }, contentAlignment = Alignment.Center) { Text("😊", fontSize = 20.sp) }
                         }
-                        Text(if (sending) "Enviando…" else "Enviar", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
-                            modifier = Modifier.clip(RoundedCornerShape(24.dp)).background(Color.White).clickable(enabled = !sending) { confirm = true }.padding(horizontal = 20.dp, vertical = 13.dp))
+                        Text(if (sending) "Enviando…" else "Enviar ao coletivo", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 16.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Color.White).clickable(enabled = !sending) { confirm = true }.padding(vertical = 15.dp))
                     }
                     if (showEmojis) QinblyEmojiPanel(Modifier.padding(bottom = qinblyNavBarPadding()), Color(0xFF1E1830)) { e -> caption = (caption + e).take(300) }
                 }
