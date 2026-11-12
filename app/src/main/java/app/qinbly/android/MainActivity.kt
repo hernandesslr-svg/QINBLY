@@ -2117,7 +2117,7 @@ private fun QinblyApp() {
                     )
                     }
                 } else androidx.compose.runtime.key(accountSessionVersion) { QinblyPullRefresh(enabled = tab != 0 && tab != 2) { when (tab) {
-                    0 -> FeedPage(scrollToTopRequest = navTopRequest, onlineUsers = onlineUsers, currentUsername = loggedInUser, photoRefreshKey = profilePhotoRefreshKey, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true }, onCreateWith = { mode, seed -> QinblyComposeSeed.text = seed; createEntryMode = mode; tab = 2 })
+                    0 -> FeedPage(scrollToTopRequest = navTopRequest, onlineUsers = onlineUsers, currentUsername = loggedInUser, photoRefreshKey = profilePhotoRefreshKey, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { QinblyComposeSeed.story = true; createEntryMode = "camera"; tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true }, onCreateWith = { mode, seed -> QinblyComposeSeed.text = seed; createEntryMode = mode; tab = 2 }, onOpenConversation = { u -> messageRecipient = u; tab = 1 })
                     1 -> MessagesPage(scrollToTopRequest = navTopRequest, recipientUsername = messageRecipient, onSearch = { showSearchDialog = true }, onOpenConversation = { messageRecipient = it }, onConversationRead = { n -> unreadMessages = (unreadMessages - n).coerceAtLeast(0) }, onOpenProfile = { publicProfileUsername = it }, onNotice = { notice = it }, onAddStory = { QinblyComposeSeed.story = true; createEntryMode = "camera"; tab = 2 })
                     2 -> PostPage(onNotice = { notice = it }, onCameraCancelled = { tab = 0 }, initialMode = createEntryMode, onSwitchMode = { createEntryMode = it })
                     3 -> CommunitiesPage(onNotice = { notice = it })
@@ -6038,7 +6038,7 @@ private fun QinblyRankRow(rank: Int, post: QinblyApi.PostSummary, onClick: () ->
 
 @Composable
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername: String, photoRefreshKey: Int, nameFontStyle: String, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onAddStory: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit, onCreateWith: (String, String) -> Unit = { _, _ -> }) {
+private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername: String, photoRefreshKey: Int, nameFontStyle: String, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onAddStory: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit, onCreateWith: (String, String) -> Unit = { _, _ -> }, onOpenConversation: (String) -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
     var posts by remember { mutableStateOf(QinblyCache.feed.ifEmpty { QinblyApi.getCachedPosts(context) }) }
@@ -6255,6 +6255,9 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                             }
                         }
                     }
+                }
+                if (selectedFeedTab == "Descobrir") item(key = "home-stories") {
+                    QinblyStoriesRow(onNotice, onOpenProfile, onOpenConversation, onAddStory)
                 }
                 if (selectedFeedTab == "Descobrir") item(key = "home-header") {
                     QinblyHomeHeader(allFeedPosts, prefs, onCreateWith)
@@ -7270,7 +7273,6 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var replyingTo by remember { mutableStateOf<QinblyApi.MessageSummary?>(null) }
     var menuAnchor by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     var showSharedMedia by remember { mutableStateOf(false) }
-    var viewingNote by remember { mutableStateOf<QinblyApi.TrayEntry?>(null) }
     var chatPhotoUrl by remember { mutableStateOf<String?>(null) }
     var reactions by remember { mutableStateOf<Map<String, List<Pair<String, String>>>>(emptyMap()) }
     var reactionsNonce by remember { mutableStateOf(0) }
@@ -7302,17 +7304,6 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var showChatPoll by remember { mutableStateOf(false) }
     var showStickerCreator by remember { mutableStateOf(false) }
     var stickerRefresh by remember { mutableIntStateOf(0) }
-    var storyTray by remember { mutableStateOf<List<QinblyApi.TrayEntry>>(emptyList()) }
-    var storyRefresh by remember { mutableIntStateOf(0) }
-    var showStoryMenu by remember { mutableStateOf(false) }
-    var viewingStory by remember { mutableStateOf<QinblyApi.TrayEntry?>(null) }
-    LaunchedEffect(storyRefresh) {
-        val token = prefs.getString("token", null)
-        if (!token.isNullOrBlank()) {
-            storyTray = try { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getStoryTray(token) } } catch (_: Exception) { storyTray }
-        }
-    }
-    val myStoryEntry = storyTray.firstOrNull { it.mine }
     val chatDocPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) sendWith { token -> QinblyApi.sendFileMessage(context, token, recipientUsername, uri) }
     }
@@ -7379,27 +7370,6 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     }
     if (showStickerCreator) {
         QinblyStickerCreateDialog(QinblyBrand.Accent, onNotice, onDismiss = { showStickerCreator = false }, onCreated = { stickerRefresh++ })
-    }
-    viewingNote?.let { n ->
-        androidx.compose.ui.window.Dialog(onDismissRequest = { viewingNote = null }) {
-            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Color(0xFF1B1727)).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                QiblyAccountAvatar(n.username, n.avatarUrl, 64.dp) { viewingNote = null; onOpenProfile(n.username) }
-                Text(n.displayName.ifBlank { n.username }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(n.note, color = Color.White, fontSize = 18.sp, lineHeight = 24.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFF2E2745)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(18.dp)).padding(horizontal = 16.dp, vertical = 14.dp))
-                Button(onClick = { viewingNote = null; onOpenConversation(n.username) }, colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent), shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) { Text("Responder na conversa") }
-            }
-        }
-    }
-    if (showStoryMenu) {
-        QinblyStoryMenu(
-            QinblyBrand.Accent, hasStory = myStoryEntry?.stories?.isNotEmpty() == true, hasNote = !myStoryEntry?.note.isNullOrBlank(), currentNote = myStoryEntry?.note.orEmpty(),
-            onDismiss = { showStoryMenu = false }, onNotice = onNotice, onChanged = { storyRefresh++ },
-            onViewMine = { viewingStory = myStoryEntry }, onAddStory = onAddStory
-        )
-    }
-    viewingStory?.let { entry ->
-        QinblyStoryViewer(entry, QinblyBrand.Accent, onNotice, onDismiss = { viewingStory = null; storyRefresh++ })
     }
     if (showChatPoll) {
         QinblyPollCreateDialog(QinblyBrand.Accent, onDismiss = { showChatPoll = false }) { question, options ->
@@ -7620,28 +7590,6 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     Column(Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0) 0.dp else 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (recipientUsername.isBlank()) {
             // Faixa de cima: "Criar" (story ou nota), quem você segue com story/nota e atalhos para quem você conversa.
-            val trayOthers = storyTray.filter { !it.mine && (it.stories.isNotEmpty() || it.note.isNotBlank()) }
-            val trayNames = trayOthers.map { it.username.lowercase() }.toSet()
-            androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 2.dp)) {
-                item(key = "story-create") {
-                    val mine = myStoryEntry
-                    val myCover = mine?.stories?.firstOrNull()
-                    QinblyStoryCard(
-                        imageUrl = if (myCover != null && myCover.mediaType != "video") myCover.mediaUrl else mine?.avatarUrl.orEmpty(),
-                        isAvatar = myCover == null || myCover.mediaType == "video", isVideo = myCover != null && myCover.mediaType == "video", label = "Criar story", note = mine?.note.orEmpty(),
-                        ring = QinblyBrand.Accent.copy(alpha = 0.55f), plus = true, onClick = { showStoryMenu = true }, onNoteClick = { showStoryMenu = true }
-                    )
-                }
-                items(trayOthers, key = { "tray-" + it.username }) { person ->
-                    val cover = person.stories.firstOrNull()
-                    val open: () -> Unit = { if (person.stories.isNotEmpty()) { viewingStory = person } else if (person.note.isNotBlank()) { viewingNote = person } else { onOpenConversation(person.username) } }
-                    QinblyStoryCard(
-                        imageUrl = if (cover != null && cover.mediaType != "video") cover.mediaUrl else person.avatarUrl,
-                        isAvatar = cover == null || cover.mediaType == "video", isVideo = cover != null && cover.mediaType == "video", label = person.displayName.ifBlank { person.username }, note = person.note,
-                        ring = if (person.stories.isEmpty() || person.hasUnseen) QinblyBrand.Accent else Color(0xFF4A4066), plus = false, onClick = open, onNoteClick = { viewingNote = person }
-                    )
-                }
-            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 listOf("Todas", "Não lidas").forEach { label ->
                     val selected = selectedFilter == label
@@ -8216,11 +8164,72 @@ private object QinblyAvatarCache {
 
 private data class QinblyNavState(val tab: Int, val notifications: Boolean, val settings: Boolean, val editProfile: Boolean, val profile: String, val recipient: String)
 
+/** Faixa de stories e notas (cartões grandes) no topo do Descobrir, com menu Criar, visualizador e nota completa. */
+@Composable
+private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onOpenConversation: (String) -> Unit, onAddStory: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    var storyTray by remember { mutableStateOf<List<QinblyApi.TrayEntry>>(emptyList()) }
+    var storyRefresh by remember { mutableIntStateOf(0) }
+    var showStoryMenu by remember { mutableStateOf(false) }
+    var viewingStory by remember { mutableStateOf<QinblyApi.TrayEntry?>(null) }
+    var viewingNote by remember { mutableStateOf<QinblyApi.TrayEntry?>(null) }
+    LaunchedEffect(storyRefresh) {
+        val token = prefs.getString("token", null)
+        if (!token.isNullOrBlank()) {
+            storyTray = try { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getStoryTray(token) } } catch (_: Exception) { storyTray }
+        }
+    }
+    val myStoryEntry = storyTray.firstOrNull { it.mine }
+    val trayOthers = storyTray.filter { !it.mine && (it.stories.isNotEmpty() || it.note.isNotBlank()) }
+    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
+        item(key = "story-create") {
+            val mine = myStoryEntry
+            val myCover = mine?.stories?.firstOrNull()
+            QinblyStoryCard(
+                imageUrl = if (myCover != null && myCover.mediaType != "video") myCover.mediaUrl else mine?.avatarUrl.orEmpty(),
+                isAvatar = myCover == null || myCover.mediaType == "video", isVideo = myCover != null && myCover.mediaType == "video", label = "Criar story", note = mine?.note.orEmpty(),
+                ring = QinblyBrand.Accent.copy(alpha = 0.55f), plus = true, onClick = { showStoryMenu = true }, onNoteClick = { showStoryMenu = true }
+            )
+        }
+        items(trayOthers, key = { "tray-" + it.username }) { person ->
+            val cover = person.stories.firstOrNull()
+            val open: () -> Unit = { if (person.stories.isNotEmpty()) { viewingStory = person } else if (person.note.isNotBlank()) { viewingNote = person } else { onOpenConversation(person.username) } }
+            QinblyStoryCard(
+                imageUrl = if (cover != null && cover.mediaType != "video") cover.mediaUrl else person.avatarUrl,
+                isAvatar = cover == null || cover.mediaType == "video", isVideo = cover != null && cover.mediaType == "video", label = person.displayName.ifBlank { person.username }, note = person.note,
+                ring = if (person.stories.isEmpty() || person.hasUnseen) QinblyBrand.Accent else Color(0xFF4A4066), plus = false, onClick = open, onNoteClick = { viewingNote = person }
+            )
+        }
+    }
+    viewingNote?.let { n ->
+        androidx.compose.ui.window.Dialog(onDismissRequest = { viewingNote = null }) {
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Color(0xFF1B1727)).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                QiblyAccountAvatar(n.username, n.avatarUrl, 64.dp) { viewingNote = null; onOpenProfile(n.username) }
+                Text(n.displayName.ifBlank { n.username }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(n.note, color = Color.White, fontSize = 18.sp, lineHeight = 24.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFF2E2745)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(18.dp)).padding(horizontal = 16.dp, vertical = 14.dp))
+                Button(onClick = { viewingNote = null; onOpenConversation(n.username) }, colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent), shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) { Text("Responder na conversa") }
+            }
+        }
+    }
+    if (showStoryMenu) {
+        QinblyStoryMenu(
+            QinblyBrand.Accent, hasStory = myStoryEntry?.stories?.isNotEmpty() == true, hasNote = !myStoryEntry?.note.isNullOrBlank(), currentNote = myStoryEntry?.note.orEmpty(),
+            onDismiss = { showStoryMenu = false }, onNotice = onNotice, onChanged = { storyRefresh++ },
+            onViewMine = { viewingStory = myStoryEntry }, onAddStory = onAddStory
+        )
+    }
+    viewingStory?.let { entry ->
+        QinblyStoryViewer(entry, QinblyBrand.Accent, onNotice, onDismiss = { viewingStory = null; storyRefresh++ })
+    }
+}
+
 @Composable
 private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, note: String, ring: Color, plus: Boolean, onClick: () -> Unit, onNoteClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    Box(Modifier.width(104.dp).height(156.dp).clip(shape).background(QiblyTheme.soft).border(1.5.dp, ring, shape).clickable(indication = null, interactionSource = ms) { onClick() }) {
+    Box(Modifier.width(100.dp).height(170.dp).clip(shape).background(QiblyTheme.soft).border(1.5.dp, ring, shape).clickable(indication = null, interactionSource = ms) { onClick() }) {
         if (isAvatar || imageUrl.isBlank()) {
             Box(Modifier.align(Alignment.Center).offset(y = if (plus) (-6).dp else 8.dp).size(68.dp).clip(CircleShape).background(Color(0xFF3A3158)), contentAlignment = Alignment.Center) {
                 if (imageUrl.isNotBlank()) AsyncImage(model = imageUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
