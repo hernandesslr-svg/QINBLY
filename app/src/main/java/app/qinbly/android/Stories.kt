@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -287,6 +288,9 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     var index by remember(entry.username) { mutableIntStateOf(0) }
     var showViewers by remember { mutableStateOf(false) }
     var showComments by remember { mutableStateOf(false) }
+    var replying by remember { mutableStateOf(false) }
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    val imeOpen = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
     var viewers by remember { mutableStateOf<List<QinblyApi.StoryViewer>?>(null) }
     if (items.isEmpty()) { LaunchedEffect(Unit) { onDismiss() }; return }
     val current = items[index.coerceIn(0, items.lastIndex)]
@@ -304,8 +308,8 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
             Thread { try { QinblyApi.markStoryViewed(token, current.id) } catch (_: Exception) { } }.start()
         }
     }
-    LaunchedEffect(current.id, showViewers, showComments) {
-        if (showViewers || showComments) { progress.stop(); return@LaunchedEffect }
+    LaunchedEffect(current.id, showViewers, showComments, replying) {
+        if (showViewers || showComments || replying) { progress.stop(); return@LaunchedEffect }
         val total = if (current.mediaType == "video") 20000 else 6000
         val remaining = ((1f - progress.value) * total).toInt().coerceAtLeast(1)
         progress.animateTo(1f, tween(durationMillis = remaining, easing = LinearEasing))
@@ -314,8 +318,11 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
 
     QinblyDialog(onDismissRequest = { closeSafe() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
         Box(
-            Modifier.fillMaxSize().background(Color.Black).pointerInput(current.id) {
-                detectTapGestures { offset -> if (!tooSoon()) { if (offset.x < size.width / 3f) previous() else next() } }
+            Modifier.fillMaxSize().background(Color.Black).pointerInput(current.id, replying) {
+                detectTapGestures { offset ->
+                    if (replying) focusManager.clearFocus()
+                    else if (offset.y < size.height * 0.80f && !tooSoon()) { if (offset.x < size.width / 3f) previous() else next() }
+                }
             }
         ) {
             val textStory = if (current.mediaType == "text") qinblyParseTextStory(current.caption) else null
@@ -343,13 +350,20 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                 }
             }
 
-            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp + qinblyNavBarPadding()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = if (imeOpen) 8.dp else 16.dp + qinblyNavBarPadding()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (current.caption.isNotBlank() && current.mediaType != "text") {
                     Text(current.caption, color = Color.White, fontSize = 16.sp, modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0x88000000)).padding(horizontal = 12.dp, vertical = 8.dp))
                 }
                 val isCollab = qinblyParseTextStory(current.caption)?.collab == true
-                Text(if (isCollab) (if (entry.mine) "👥  Ver contribuições" else "👥  Adicionar ao story…") else if (entry.mine) "💬  Ver comentários" else "Comentar no story…", color = if (entry.mine) Color.White else Color(0xCCFFFFFF), fontSize = 15.sp,
-                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0x55000000)).border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(26.dp)).clickable { showComments = true }.padding(horizontal = 20.dp, vertical = 13.dp))
+                if (entry.mine) {
+                    Text(if (isCollab) "👥  Ver contribuições" else "💬  Ver comentários", color = Color.White, fontSize = 15.sp,
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0x55000000)).border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(26.dp)).clickable { showComments = true }.padding(horizontal = 20.dp, vertical = 13.dp))
+                } else {
+                    if (isCollab) Text("👥  Ver contribuições", color = Color.White, fontSize = 13.sp,
+                        modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0x66000000)).clickable { showComments = true }.padding(horizontal = 14.dp, vertical = 7.dp))
+                    QinblyStoryReplyBar(current.id, isCollab, accent, Color(0x66000000), Color(0xCCFFFFFF), onNotice,
+                        onSent = { focusManager.clearFocus() }, onFocus = { replying = it })
+                }
                 if (entry.mine) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         Row(

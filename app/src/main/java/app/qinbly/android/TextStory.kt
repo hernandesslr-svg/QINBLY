@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -188,48 +189,13 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
     val token = remember { prefs.getString("token", null) }
     val uid = remember { prefs.getString("user_id", null) }
     var comments by remember { mutableStateOf<List<QinblyApi.StoryComment>?>(null) }
-    var draft by remember { mutableStateOf("") }
     var refresh by remember { mutableStateOf(0) }
     LaunchedEffect(refresh) {
         if (token.isNullOrBlank()) { comments = emptyList(); return@LaunchedEffect }
         comments = try { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getStoryComments(token, storyId) } } catch (_: Exception) { comments ?: emptyList() }
     }
-    val rec = remember { arrayOfNulls<android.media.MediaRecorder>(1) }
-    val recFile = remember { java.io.File(context.cacheDir, "sc_voice.m4a") }
-    var recording by remember { mutableStateOf(false) }
     val player = remember { arrayOfNulls<android.media.MediaPlayer>(1) }
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { try { rec[0]?.release() } catch (_: Exception) { }; try { player[0]?.release() } catch (_: Exception) { } } }
-    fun stopRec(send: Boolean) {
-        val r = rec[0] ?: return
-        rec[0] = null; recording = false
-        try { r.stop() } catch (_: Exception) { }
-        try { r.release() } catch (_: Exception) { }
-        if (!send || token.isNullOrBlank() || uid.isNullOrBlank() || !recFile.exists() || recFile.length() < 800) return
-        Thread {
-            val main = Handler(Looper.getMainLooper())
-            try {
-                val b64 = android.util.Base64.encodeToString(recFile.readBytes(), android.util.Base64.NO_WRAP)
-                QinblyApi.addStoryComment(token, storyId, uid, QINBLY_VOICE, if (collab) "contrib" else "comment", b64)
-                main.post { refresh++ }
-            } catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível enviar o áudio.") } }
-        }.start()
-    }
-    fun startRec() {
-        try {
-            val r = if (android.os.Build.VERSION.SDK_INT >= 31) android.media.MediaRecorder(context) else @Suppress("DEPRECATION") android.media.MediaRecorder()
-            r.setAudioSource(android.media.MediaRecorder.AudioSource.MIC)
-            r.setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4)
-            r.setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC)
-            r.setAudioSamplingRate(16000); r.setAudioEncodingBitRate(24000); r.setMaxDuration(30000)
-            r.setOutputFile(recFile.absolutePath)
-            r.setOnInfoListener { _, what, _ -> if (what == android.media.MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) stopRec(true) }
-            r.prepare(); r.start()
-            rec[0] = r; recording = true
-        } catch (_: Exception) { rec[0] = null; recording = false; onNotice("Não foi possível gravar o áudio.") }
-    }
-    val micPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) startRec() else onNotice("Permita o microfone para gravar.")
-    }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { try { player[0]?.release() } catch (_: Exception) { } } }
     fun playVoice(commentId: String) {
         if (token.isNullOrBlank()) return
         Thread {
@@ -250,16 +216,6 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
         }.start()
     }
     val sheet = Color(0xFF1E1830)
-    fun send() {
-        val body = draft.trim()
-        if (body.isBlank() || token.isNullOrBlank() || uid.isNullOrBlank()) return
-        draft = ""
-        Thread {
-            val main = Handler(Looper.getMainLooper())
-            try { QinblyApi.addStoryComment(token, storyId, uid, body, if (collab) "contrib" else "comment"); main.post { refresh++ } }
-            catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível comentar.") } }
-        }.start()
-    }
     QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
         Box(Modifier.fillMaxSize().clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }) {
             Column(
@@ -288,6 +244,68 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
                     }
                 }
                 Spacer(Modifier.size(10.dp))
+                QinblyStoryReplyBar(storyId, collab, accent, Color(0xFF2B2342), Color(0xFF8E87A8), onNotice, onSent = { refresh++ })
+            }
+        }
+    }
+}
+
+/** Barra de resposta em pílula (digitar, gravar voz e enviar). Usada direto no story e na folha de comentários. */
+@Composable
+internal fun QinblyStoryReplyBar(
+    storyId: String, collab: Boolean, accent: Color, fieldBg: Color, hintColor: Color,
+    onNotice: (String) -> Unit, onSent: () -> Unit = {}, onFocus: (Boolean) -> Unit = {}
+) {
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val token = remember { prefs.getString("token", null) }
+    val uid = remember { prefs.getString("user_id", null) }
+    var draft by remember { mutableStateOf("") }
+    val rec = remember { arrayOfNulls<android.media.MediaRecorder>(1) }
+    val recFile = remember { java.io.File(context.cacheDir, "sc_voice.m4a") }
+    var recording by remember { mutableStateOf(false) }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { try { rec[0]?.release() } catch (_: Exception) { } } }
+    fun stopRec(send: Boolean) {
+        val r = rec[0] ?: return
+        rec[0] = null; recording = false
+        try { r.stop() } catch (_: Exception) { }
+        try { r.release() } catch (_: Exception) { }
+        if (!send || token.isNullOrBlank() || uid.isNullOrBlank() || !recFile.exists() || recFile.length() < 800) return
+        Thread {
+            val main = Handler(Looper.getMainLooper())
+            try {
+                val b64 = android.util.Base64.encodeToString(recFile.readBytes(), android.util.Base64.NO_WRAP)
+                QinblyApi.addStoryComment(token, storyId, uid, QINBLY_VOICE, if (collab) "contrib" else "comment", b64)
+                main.post { onSent() }
+            } catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível enviar o áudio.") } }
+        }.start()
+    }
+    fun startRec() {
+        try {
+            val r = if (android.os.Build.VERSION.SDK_INT >= 31) android.media.MediaRecorder(context) else @Suppress("DEPRECATION") android.media.MediaRecorder()
+            r.setAudioSource(android.media.MediaRecorder.AudioSource.MIC)
+            r.setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4)
+            r.setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC)
+            r.setAudioSamplingRate(16000); r.setAudioEncodingBitRate(24000); r.setMaxDuration(30000)
+            r.setOutputFile(recFile.absolutePath)
+            r.setOnInfoListener { _, what, _ -> if (what == android.media.MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) stopRec(true) }
+            r.prepare(); r.start()
+            rec[0] = r; recording = true
+        } catch (_: Exception) { rec[0] = null; recording = false; onNotice("Não foi possível gravar o áudio.") }
+    }
+    val micPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { ok ->
+        if (ok) startRec() else onNotice("Permita o microfone para gravar.")
+    }
+    fun send() {
+        val body = draft.trim()
+        if (body.isBlank() || token.isNullOrBlank() || uid.isNullOrBlank()) return
+        draft = ""
+        Thread {
+            val main = Handler(Looper.getMainLooper())
+            try { QinblyApi.addStoryComment(token, storyId, uid, body, if (collab) "contrib" else "comment"); main.post { onSent() } }
+            catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível comentar.") } }
+        }.start()
+    }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (recording) {
                         Box(Modifier.weight(1f).clip(RoundedCornerShape(26.dp)).background(Color(0xFF3A2236)).padding(horizontal = 18.dp, vertical = 15.dp)) {
@@ -296,10 +314,10 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
                         Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF3A3256)).clickable { stopRec(false) }, contentAlignment = Alignment.Center) { Text("✕", color = Color.White, fontSize = 17.sp) }
                         Box(Modifier.size(46.dp).clip(CircleShape).background(accent).clickable { stopRec(true) }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, fontSize = 18.sp) }
                     } else {
-                        Box(Modifier.weight(1f).clip(RoundedCornerShape(26.dp)).background(Color(0xFF2B2342)).padding(horizontal = 18.dp, vertical = 13.dp)) {
-                            if (draft.isEmpty()) Text(if (collab) "Adicionar ao story…" else "Comentar no story…", color = Color(0xFF8E87A8), fontSize = 15.sp)
+                        Box(Modifier.weight(1f).clip(RoundedCornerShape(26.dp)).background(fieldBg).padding(horizontal = 18.dp, vertical = 13.dp)) {
+                            if (draft.isEmpty()) Text(if (collab) "Adicionar ao story…" else "Comentar no story…", color = hintColor, fontSize = 15.sp)
                             BasicTextField(value = draft, onValueChange = { draft = it.take(500) }, textStyle = TextStyle(color = Color.White, fontSize = 15.sp),
-                                cursorBrush = SolidColor(Color.White), maxLines = 4, modifier = Modifier.fillMaxWidth())
+                                cursorBrush = SolidColor(Color.White), maxLines = 4, modifier = Modifier.fillMaxWidth().onFocusChanged { onFocus(it.isFocused) })
                         }
                         if (draft.isBlank()) Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF3A3256)).clickable {
                             if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) startRec()
@@ -308,9 +326,6 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
                         else Box(Modifier.size(46.dp).clip(CircleShape).background(accent).clickable { send() }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, fontSize = 18.sp) }
                     }
                 }
-            }
-        }
-    }
 }
 
 internal const val QINBLY_VOICE = "🎤 Mensagem de voz"
