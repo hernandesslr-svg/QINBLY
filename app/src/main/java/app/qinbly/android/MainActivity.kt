@@ -7588,7 +7588,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp), contentPadding = PaddingValues(horizontal = 2.dp)) {
                 item(key = "story-create") {
                     val hasMyStory = myStoryEntry?.stories?.isNotEmpty() == true
-                    Column(Modifier.widthIn(min = 84.dp, max = 140.dp).width(IntrinsicSize.Max).clickable { showStoryMenu = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(Modifier.widthIn(min = 84.dp, max = 140.dp).width(IntrinsicSize.Max).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { showStoryMenu = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         QinblyNoteBubble(myStoryEntry?.note.orEmpty())
                         Box(Modifier.size(86.dp).then(if (hasMyStory) Modifier.border(2.dp, Color.Gray.copy(alpha = 0.6f), CircleShape) else Modifier), contentAlignment = Alignment.Center) {
                             Box(Modifier.size(80.dp)) {
@@ -7603,7 +7603,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                 }
                 items(trayOthers, key = { "tray-" + it.username }) { person ->
                     val open: () -> Unit = { if (person.stories.isNotEmpty()) { viewingStory = person } else { onOpenConversation(person.username) } }
-                    Column(Modifier.widthIn(min = 84.dp, max = 140.dp).width(IntrinsicSize.Max).clickable { open() }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(Modifier.widthIn(min = 84.dp, max = 140.dp).width(IntrinsicSize.Max).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { open() }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         QinblyNoteBubble(person.note)
                         Box(
                             Modifier.size(86.dp).then(if (person.stories.isNotEmpty()) Modifier.border(2.dp, if (person.hasUnseen) QinblyBrand.Accent else Color.Gray.copy(alpha = 0.6f), CircleShape) else Modifier),
@@ -7613,7 +7613,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                     }
                 }
                 items(inbox.filter { it.username.lowercase() !in trayNames }.take(12), key = { "story-" + it.username }) { person ->
-                    Column(Modifier.widthIn(min = 84.dp, max = 140.dp).width(IntrinsicSize.Max).clickable { onOpenConversation(person.username) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(Modifier.widthIn(min = 84.dp, max = 140.dp).width(IntrinsicSize.Max).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onOpenConversation(person.username) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         QinblyNoteBubble("")
                         Box(Modifier.size(86.dp), contentAlignment = Alignment.Center) { QiblyAccountAvatar(person.username, person.avatarUrl, 78.dp) { onOpenConversation(person.username) } }
                         Text(person.displayName.ifBlank { person.username }, color = RemoteAppearance.screenTextColor, fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
