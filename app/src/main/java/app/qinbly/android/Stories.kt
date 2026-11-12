@@ -126,7 +126,7 @@ internal fun QinblyStoryMenu(
     }
 
     when (step) {
-        "menu" -> QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+        "menu" -> QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
             val soon: (String) -> Unit = { onNotice("$it: em breve.") }
             val card = Color(0xFF241D38)
             val red = Color(0xFFE5484D)
@@ -154,7 +154,8 @@ internal fun QinblyStoryMenu(
                     .verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 16.dp)) {
                     Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(Color(0x55FFFFFF)))
                     Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Criar", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Text("Criar", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text("  v" + BuildConfig.VERSION_NAME, color = Color(0x88FFFFFF), fontSize = 12.sp, modifier = Modifier.weight(1f))
                         Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.White, modifier = Modifier.size(28.dp).clip(CircleShape).clickable { onDismiss() })
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -311,7 +312,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
         next()
     }
 
-    QinblyDialog(onDismissRequest = { closeSafe() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+    QinblyDialog(onDismissRequest = { closeSafe() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
         Box(
             Modifier.fillMaxSize().background(Color.Black).pointerInput(current.id) {
                 detectTapGestures { offset -> if (!tooSoon()) { if (offset.x < size.width / 3f) previous() else next() } }
