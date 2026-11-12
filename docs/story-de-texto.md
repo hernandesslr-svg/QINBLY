@@ -11,6 +11,7 @@ Substitui as "notas". Um story feito só de texto sobre fundo colorido, com come
 - Sem limite de texto. A letra diminui sozinha; na tela cheia o texto longo rola.
 - Cor de fundo (bolinhas), fonte (algumas), alinhamento (esquerda, centro, direita) e emoji.
 - Botão Publicar no topo, X para sair.
+- Ao tocar no X (ou no voltar do celular) com texto escrito: pergunta "Descartar o story?" (Continuar escrevendo / Descartar). Sem texto, fecha direto.
 
 ## A decidir
 - Quem vê os comentários (suposição por enquanto: só o autor vê todos; quem comentou vê o próprio).
