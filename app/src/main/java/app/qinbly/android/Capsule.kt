@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -174,12 +175,15 @@ internal fun QinblyCapsuleViewer(c: QinblyCapsule, onClose: () -> Unit) {
                 }
             }
             Box(Modifier.statusBarsPadding().padding(12.dp).size(40.dp).clip(CircleShape).background(Color(0x66000000)).clickable { onClose() }, contentAlignment = Alignment.Center) { Text("✕", color = Color.White, fontSize = 18.sp) }
+            val (viewMsg, viewMusic) = qinblySplitMusic(c.message)
+            if (viewMusic != null) QinblyMusicPlayer(viewMusic.url, muted = false)
             Column(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC000000))))
                     .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = qinblyNavBarPadding() + 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (c.message.isNotBlank()) Text(c.message, color = Color.White, fontSize = 17.sp, lineHeight = 23.sp)
+                if (viewMusic != null) QinblyMusicLine(viewMusic)
+                if (viewMsg.isNotBlank()) Text(viewMsg, color = Color.White, fontSize = 17.sp, lineHeight = 23.sp)
                 Text((if (c.fromId == c.toId) "Guardada por você" else "De @${c.fromName}") + " em ${capShort(c.createdAt)}", color = Color(0xCCFFFFFF), fontSize = 13.sp)
             }
         }
@@ -273,6 +277,8 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
     var textBody by remember { mutableStateOf<String?>(null) }
     var message by remember { mutableStateOf("") }
     var showEmojis by remember { mutableStateOf(false) }
+    var music by remember { mutableStateOf<QinblyMusic?>(null) }
+    var showMusic by remember { mutableStateOf(false) }
     var date by remember { mutableStateOf<LocalDate?>(null) }
     var year by remember { mutableIntStateOf(minDate.year) }
     var month by remember { mutableIntStateOf(minDate.monthValue) }
@@ -332,7 +338,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                 val item = picked
                 if (item != null) {
                     val (fileId, isVideo) = QinblyApi.uploadStoryMedia(context, token, item.uri)
-                    o.put("body", "").put("message", message.trim()).put("media_path", fileId).put("media_type", if (isVideo) "video" else "image")
+                    o.put("body", "").put("message", qinblyAttachMusic(message.trim(), music)).put("media_path", fileId).put("media_type", if (isVideo) "video" else "image")
                 } else {
                     o.put("body", textBody.orEmpty()).put("message", "").put("media_type", "text")
                 }
@@ -411,6 +417,11 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                     val item = picked
                     Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 14.dp), contentAlignment = Alignment.Center) {
                         if (item != null) MediaThumb(item.uri, item.video, Modifier.fillMaxSize().clip(RoundedCornerShape(18.dp)), size = 900)
+                        val m = music
+                        if (m != null) Row(Modifier.align(Alignment.TopStart).padding(10.dp).clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            QinblyMusicLine(m, Modifier.widthIn(max = 220.dp))
+                            Text("✕", color = Color.White, fontSize = 14.sp, modifier = Modifier.clickable { music = null }.padding(10.dp))
+                        }
                     }
                     Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(Modifier.weight(1f).clip(RoundedCornerShape(26.dp)).background(CapField).padding(start = 18.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -418,6 +429,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                                 if (message.isEmpty()) Text("Escreva uma mensagem para o futuro…", color = Color(0xFF8E87A8), fontSize = 15.sp)
                                 BasicTextField(value = message, onValueChange = { message = it.take(500) }, textStyle = TextStyle(color = Color.White, fontSize = 15.sp), cursorBrush = SolidColor(Color.White), maxLines = 4, modifier = Modifier.fillMaxWidth())
                             }
+                            Box(Modifier.size(36.dp).clip(CircleShape).background(if (music != null) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = false; showMusic = true }, contentAlignment = Alignment.Center) { Text("🎵", fontSize = 19.sp) }
                             Box(Modifier.size(36.dp).clip(CircleShape).background(if (showEmojis) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = !showEmojis }, contentAlignment = Alignment.Center) { Text("😊", fontSize = 20.sp) }
                         }
                         Text("Continuar", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
@@ -535,6 +547,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
             }
         }
     }
+    if (showMusic) QinblyMusicPicker(onPick = { music = it; showMusic = false }, onDismiss = { showMusic = false })
     if (confirm) {
         AlertDialog(
             onDismissRequest = { confirm = false },

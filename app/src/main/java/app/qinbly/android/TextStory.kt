@@ -71,7 +71,7 @@ internal fun qinblyEncodeTextStory(s: QinblyTextStory): String = "qinbly:${if (s
 /** Story coletivo que começa com foto/vídeo: a legenda leva a marca "coletivo" na frente. */
 internal fun qinblyCollabCaption(legend: String): String = "qinbly:collab:0:0:1\n" + legend.trim()
 /** Legenda para mostrar na tela, sem a marca interna do story coletivo. */
-internal fun qinblyDisplayCaption(caption: String): String = if (caption.startsWith("qinbly:collab:") || caption.startsWith("qinbly:text:")) caption.substringAfter('\n', "") else caption
+internal fun qinblyDisplayCaption(caption: String): String = qinblySplitMusic(if (caption.startsWith("qinbly:collab:") || caption.startsWith("qinbly:text:")) caption.substringAfter('\n', "") else caption).first.trim()
 
 internal fun qinblyParseTextStory(caption: String): QinblyTextStory? {
     val collab = caption.startsWith("qinbly:collab:")

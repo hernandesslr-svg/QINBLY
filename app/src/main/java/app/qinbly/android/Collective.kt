@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -112,6 +113,8 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
     var items by remember { mutableStateOf<List<GalleryItem>>(emptyList()) }
     var caption by remember { mutableStateOf("") }
     var showEmojis by remember { mutableStateOf(false) }
+    var music by remember { mutableStateOf<QinblyMusic?>(null) }
+    var showMusic by remember { mutableStateOf(false) }
     var confirm by remember { mutableStateOf(false) }
     var sending by remember { mutableStateOf(false) }
 
@@ -135,11 +138,11 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
             val main = Handler(Looper.getMainLooper())
             try {
                 if (newCollab) {
-                    QinblyApi.createStory(context, token, item.uri, qinblyCollabCaption(caption))
+                    QinblyApi.createStory(context, token, item.uri, qinblyAttachMusic(qinblyCollabCaption(caption), music))
                     main.post { onNotice("Story coletivo publicado. Fica no ar por 24 horas."); onDone() }
                 } else {
                     val (fileId, isVideo) = QinblyApi.uploadStoryMedia(context, token, item.uri)
-                    QinblyApi.addContribution(token, storyId, fileId, if (isVideo) "video" else "image", caption)
+                    QinblyApi.addContribution(token, storyId, fileId, if (isVideo) "video" else "image", qinblyAttachMusic(caption, music))
                     main.post { onNotice("Resposta enviada."); onDone() }
                 }
             } catch (e: Exception) { main.post { sending = false; onNotice(e.message ?: "Não foi possível enviar.") } }
@@ -197,6 +200,11 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                     }
                     Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 14.dp), contentAlignment = Alignment.Center) {
                         if (item != null) MediaThumb(item.uri, item.video, Modifier.fillMaxSize().clip(RoundedCornerShape(18.dp)), size = 900)
+                        val m = music
+                        if (m != null) Row(Modifier.align(Alignment.TopStart).padding(10.dp).clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            QinblyMusicLine(m, Modifier.widthIn(max = 220.dp))
+                            Text("✕", color = Color.White, fontSize = 14.sp, modifier = Modifier.clickable { music = null }.padding(10.dp))
+                        }
                     }
                     Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0xFF2B2342)).padding(start = 18.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -204,6 +212,7 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                                 if (caption.isEmpty()) Text("Adicionar legenda…", color = Color(0xFF8E87A8), fontSize = 15.sp)
                                 BasicTextField(value = caption, onValueChange = { caption = it.take(300) }, textStyle = TextStyle(color = Color.White, fontSize = 15.sp), cursorBrush = SolidColor(Color.White), maxLines = 3, modifier = Modifier.fillMaxWidth())
                             }
+                            Box(Modifier.size(36.dp).clip(CircleShape).background(if (music != null) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = false; showMusic = true }, contentAlignment = Alignment.Center) { Text("🎵", fontSize = 19.sp) }
                             Box(Modifier.size(36.dp).clip(CircleShape).background(if (showEmojis) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = !showEmojis }, contentAlignment = Alignment.Center) { Text("😊", fontSize = 20.sp) }
                         }
                         Text(if (sending) "Enviando…" else if (newCollab) "Publicar story coletivo" else "Enviar ao coletivo", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 16.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -214,6 +223,7 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
             }
         }
     }
+    if (showMusic) QinblyMusicPicker(onPick = { music = it; showMusic = false }, onDismiss = { showMusic = false })
     if (confirm) {
         AlertDialog(
             onDismissRequest = { confirm = false },

@@ -10480,6 +10480,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QinblyComposeSeed.story = false; QinblyComposeSeed.contribTo = ""; QinblyComposeSeed.collabNew = false } }
     var caption by remember { mutableStateOf(QinblyComposeSeed.text.also { QinblyComposeSeed.text = "" }) }
     var showCapEmojis by remember { mutableStateOf(false) }
+    var storyMusic by remember { mutableStateOf<QinblyMusic?>(null) }
+    var showMusicPicker by remember { mutableStateOf(false) }
     var captionCursor by remember { mutableIntStateOf(caption.length) }
     var pollOptions by remember { mutableStateOf(listOf("", "")) }
     var pollDurationHours by remember { mutableIntStateOf(24) }
@@ -12425,11 +12427,18 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     QinblyLegendField(capState, 2200, "Escreva uma legenda…", QiblyTheme.text, 15.sp, Modifier.fillMaxWidth().weight(1f)) { caption = it; captionCursor = it.length }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text("😊", fontSize = 22.sp, modifier = Modifier.clip(CircleShape).background(if (showCapEmojis) QinblyBrand.Accent.copy(alpha = 0.25f) else Color.Transparent).clickable { showCapEmojis = !showCapEmojis }.padding(horizontal = 6.dp, vertical = 2.dp))
+                        if (QinblyComposeSeed.story) Text("🎵", fontSize = 22.sp, modifier = Modifier.clip(CircleShape).background(if (storyMusic != null) QinblyBrand.Accent.copy(alpha = 0.25f) else Color.Transparent).clickable { showMusicPicker = true }.padding(horizontal = 6.dp, vertical = 2.dp))
                         Spacer(Modifier.weight(1f))
                         Text("${caption.length} / 2200", color = Color.Gray, style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
+            val sm = storyMusic
+            if (sm != null && QinblyComposeSeed.story) Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(QinblyBrand.Accent.copy(alpha = 0.10f)).padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                QinblyMusicLine(sm, Modifier.weight(1f), QiblyTheme.text)
+                Text("✕", color = QiblyTheme.text, fontSize = 14.sp, modifier = Modifier.clickable { storyMusic = null }.padding(10.dp))
+            }
+            if (showMusicPicker) QinblyMusicPicker(onPick = { storyMusic = it; showMusicPicker = false }, onDismiss = { showMusicPicker = false })
             if (showCapEmojis) QinblyEmojiPanel(Modifier.clip(RoundedCornerShape(16.dp)), QiblyTheme.card) { e ->
                 capState.legend = (capState.legend + e).take(2200); caption = capState.full(); captionCursor = caption.length
             }
@@ -12477,6 +12486,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         else -> {
                             publishError = ""
                             publishing = true
+                            val musicToSend = if (QinblyComposeSeed.story) storyMusic else null
                             QinblyHashtagStore.record(context, caption)
                             Thread {
                                 try {
@@ -12511,8 +12521,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                             val fileId = QinblyApi.uploadPostMedia(context, token, uploadUri, fileName, mime, size, if (storyMode) "story_media" else "post_media")
                                             if (storyMode) {
                                                 val contribTo = QinblyComposeSeed.contribTo
-                                                if (contribTo.isNotBlank()) QinblyApi.addContribution(token, contribTo, fileId, if (mime.startsWith("video/")) "video" else "image", caption)
-                                                else QinblyApi.createStoryFromFile(token, fileId, mime.startsWith("video/"), if (QinblyComposeSeed.collabNew) qinblyCollabCaption(caption) else caption)
+                                                if (contribTo.isNotBlank()) QinblyApi.addContribution(token, contribTo, fileId, if (mime.startsWith("video/")) "video" else "image", qinblyAttachMusic(caption, musicToSend))
+                                                else QinblyApi.createStoryFromFile(token, fileId, mime.startsWith("video/"), qinblyAttachMusic(if (QinblyComposeSeed.collabNew) qinblyCollabCaption(caption) else caption, musicToSend))
                                             } else if (selectedType == "foto" && gallerySelection.size > 1) {
                                                 val uploadedIds = mutableListOf(fileId)
                                                 for ((index, extraUri) in gallerySelection.drop(1).withIndex()) {
@@ -12539,6 +12549,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                     android.os.Handler(android.os.Looper.getMainLooper()).post {
                                         publishing = false
                                         caption = ""
+                                        storyMusic = null
                                         selectedUri = null
                                         gallerySelection.clear()
                                         selectedType = ""

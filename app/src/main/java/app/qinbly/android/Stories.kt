@@ -296,6 +296,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     }
     var index by remember(entry.username) { mutableIntStateOf(0) }
     var showViewers by remember { mutableStateOf(false) }
+    var muted by remember { mutableStateOf(false) }
     var showComments by remember { mutableStateOf(false) }
     var replying by remember { mutableStateOf(false) }
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
@@ -370,12 +371,20 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     val headAvatar = if (current.page == "contrib") current.authorAvatar else entry.avatarUrl
-                    Box(Modifier.size(34.dp).clip(CircleShape).background(Color(0xFF2B3544))) {
+                    val music = if (current.mediaType != "text" && current.page != "invite") qinblySplitMusic(current.caption).second else null
+                    Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF2B3544))) {
                         if (headAvatar.isNotBlank()) AsyncImage(model = headAvatar, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                     }
-                    Spacer(Modifier.width(8.dp))
-                    Text(if (current.page == "contrib") current.authorName else (if (entry.mine) "Seu story" else entry.displayName.ifBlank { entry.username }) + (if (QinblyApi.isCollabCaption(current.caption)) "  ·  Story coletivo" else ""), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(if (current.page == "contrib") current.authorName else (if (entry.mine) "Seu story" else entry.displayName.ifBlank { entry.username }) + (if (QinblyApi.isCollabCaption(current.caption)) "  ·  Story coletivo" else ""), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        if (music != null) QinblyMusicLine(music)
+                    }
+                    if (music != null) {
+                        Text(if (muted) "🔇" else "🔊", fontSize = 20.sp, modifier = Modifier.clip(CircleShape).clickable { muted = !muted }.padding(horizontal = 8.dp, vertical = 4.dp))
+                        QinblyMusicPlayer(music.url, muted, paused = showViewers || showComments || replying || contribTarget.isNotBlank())
+                    }
                     Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.White, modifier = Modifier.size(28.dp).clickable { onDismiss() })
                 }
             }
