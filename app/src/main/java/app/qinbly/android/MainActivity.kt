@@ -554,13 +554,13 @@ private fun qinblyNotify(context: android.content.Context, title: String, text: 
 
 /** Navegação global para hashtags e menções: qualquer texto clicável abre daqui. */
 /** Texto inicial para a próxima publicação (pergunta do dia, desafio da semana). */
-private object QinblyComposeSeed { var text: String = ""; var story: Boolean = false; var contribTo: String = ""; var collabNew: Boolean = false; var pickedUri: Uri? = null; var pickedVideo: Boolean = false }
+private object QinblyComposeSeed { var text: String = ""; var story: Boolean = false; var contribTo: String = ""; var collabNew: Boolean = false; var pickedUri: Uri? = null; var pickedVideo: Boolean = false; var fromGallery: Boolean = false }
 /** Chamado antes de abrir a câmera do app: a foto/vídeo tirado vira resposta do story coletivo [storyId] em vez de story novo. */
 internal fun qinblyStartContribution(storyId: String) { QinblyComposeSeed.contribTo = storyId }
 /** Chamado antes de abrir a câmera do app: a foto/vídeo tirado vira um story coletivo novo. */
 internal fun qinblyStartCollabStory() { QinblyComposeSeed.collabNew = true }
 /** Foto/vídeo já escolhido na galeria do story coletivo: abre direto na tela de edição padrão. */
-internal fun qinblySetPickedMedia(uri: Uri, video: Boolean) { QinblyComposeSeed.pickedUri = uri; QinblyComposeSeed.pickedVideo = video }
+internal fun qinblySetPickedMedia(uri: Uri, video: Boolean) { QinblyComposeSeed.pickedUri = uri; QinblyComposeSeed.pickedVideo = video; QinblyComposeSeed.fromGallery = true }
 
 /** Ícones de linha do menu "Criar" (traço de 1,8, pontas arredondadas, grade 24x24). */
 private object QinblyCreateIcons {
@@ -10479,7 +10479,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     val context = androidx.compose.ui.platform.LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QinblyComposeSeed.story = false; QinblyComposeSeed.contribTo = ""; QinblyComposeSeed.collabNew = false } }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QinblyComposeSeed.story = false; QinblyComposeSeed.contribTo = ""; QinblyComposeSeed.collabNew = false; QinblyComposeSeed.fromGallery = false } }
     var caption by remember { mutableStateOf(QinblyComposeSeed.text.also { QinblyComposeSeed.text = "" }) }
     var showCapEmojis by remember { mutableStateOf(false) }
     var storyMusic by remember { mutableStateOf<QinblyMusic?>(null) }
@@ -10594,6 +10594,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var editorContrast by remember { mutableFloatStateOf(0f) }
     var editorImageRatio by remember { mutableFloatStateOf(1f) }
     var bakedUri by remember { mutableStateOf<Uri?>(null) }
+    var showCollabGallery by remember { mutableStateOf(false) }
     var cropOpen by remember { mutableStateOf(false) }
     var editorBusy by remember { mutableStateOf(false) }
     var cropRatio by remember { mutableStateOf("Original") }
@@ -10663,15 +10664,14 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             onCameraCancelled()
         }
     }
-    LaunchedEffect(Unit) {
-        val u = QinblyComposeSeed.pickedUri
-        if (u != null) {
-            QinblyComposeSeed.pickedUri = null
-            sourceUri = u; selectedUri = u
-            selectedType = if (QinblyComposeSeed.pickedVideo) "vídeo" else "foto"
-            galleryOpen = false; publishSettings = false; showComposer = true
-        }
+    fun applyPicked() {
+        val u = QinblyComposeSeed.pickedUri ?: return
+        QinblyComposeSeed.pickedUri = null
+        sourceUri = u; selectedUri = u
+        selectedType = if (QinblyComposeSeed.pickedVideo) "vídeo" else "foto"
+        galleryOpen = false; publishSettings = false; showComposer = true; showCollabGallery = false
     }
+    LaunchedEffect(Unit) { applyPicked() }
     fun openQinblyGallery() {
         try { multiPhotoPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
         catch (e: Exception) { onNotice("Não foi possível abrir a galeria: " + (e.localizedMessage ?: "tente novamente")) }
@@ -10685,7 +10685,16 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     // O editor é o mesmo para foto da galeria e foto/vídeo da câmera; só muda para onde ele volta.
     val newEditorChrome = initialMode == "gallery" || initialMode == "camera"
     fun leaveEditor() {
-        if (initialMode == "gallery") returnToGallery()
+        if (QinblyComposeSeed.fromGallery) {
+            // Veio da galeria do story coletivo: voltar leva de novo a ela, não à câmera.
+            publishSettings = false
+            showComposer = false
+            editorTool = "Filtros"
+            sourceUri = null; selectedUri = null; bakedUri = null
+            editorText = ""; editorSticker = ""; editorWordColors.clear(); editorSelWord = -1
+            editorStrokes.clear()
+            showCollabGallery = true
+        } else if (initialMode == "gallery") returnToGallery()
         else {
             publishSettings = false
             showComposer = false
@@ -10699,6 +10708,20 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     BackHandler(enabled = newEditorChrome && showComposer) {
         leaveEditor()
     }
+    if (showCollabGallery) QinblyContributeFlow(
+        storyId = QinblyComposeSeed.contribTo, newCollab = QinblyComposeSeed.collabNew, onNotice = onNotice,
+        onCamera = { if (QinblyComposeSeed.pickedUri != null) applyPicked() else showCollabGallery = false },
+        onDone = {
+            showCollabGallery = false
+            QinblyComposeSeed.story = false; QinblyComposeSeed.contribTo = ""; QinblyComposeSeed.collabNew = false; QinblyComposeSeed.fromGallery = false
+            onCameraCancelled()
+        },
+        onDismiss = {
+            showCollabGallery = false
+            QinblyComposeSeed.story = false; QinblyComposeSeed.contribTo = ""; QinblyComposeSeed.collabNew = false; QinblyComposeSeed.fromGallery = false
+            onCameraCancelled()
+        }
+    )
     LaunchedEffect(initialMode) {
         if (initialMode == "gallery") openQinblyGallery()
     }
@@ -12572,6 +12595,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                         QinblyComposeSeed.story = false
                                         QinblyComposeSeed.contribTo = ""
                                         QinblyComposeSeed.collabNew = false
+                                        QinblyComposeSeed.fromGallery = false
                                         onCameraCancelled()
                                     }
                                 } catch (e: Exception) {
