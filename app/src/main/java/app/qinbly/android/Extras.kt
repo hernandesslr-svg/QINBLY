@@ -57,29 +57,53 @@ private fun sess(c: Context) = c.getSharedPreferences("qinbly_session", Context.
 private fun main(block: () -> Unit) { Handler(Looper.getMainLooper()).post(block) }
 
 
-/** Altura da barra de botões do celular. Dentro de janelas de diálogo os insets chegam zerados, então usamos também a medida do sistema. */
+/** Dentro de QinblyDialog o recuo dos botões do celular já foi aplicado na janela inteira. */
+internal val LocalQinblyNavHandled = androidx.compose.runtime.compositionLocalOf { false }
+
+/** Altura da barra de botões do celular, medida de três formas (insets do Compose, métricas da janela do app e medida do sistema). */
 @Composable
 internal fun qinblyNavBarPadding(): androidx.compose.ui.unit.Dp {
+    if (LocalQinblyNavHandled.current) return 0.dp
     val density = androidx.compose.ui.platform.LocalDensity.current
     val context = LocalContext.current
     val fromCompose = with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
-    val fromSystem = remember {
+    val measured = remember {
         val res = context.resources
+        val d = res.displayMetrics.density
+        var activity: Context? = context
+        while (activity is android.content.ContextWrapper && activity !is android.app.Activity) activity = activity.baseContext
+        var fromWindow = 0f
+        if (android.os.Build.VERSION.SDK_INT >= 30 && activity is android.app.Activity) {
+            try { fromWindow = activity.windowManager.currentWindowMetrics.windowInsets.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.navigationBars()).bottom / d } catch (_: Exception) { }
+        }
         val gesture = try { android.provider.Settings.Secure.getInt(context.contentResolver, "navigation_mode", 0) == 2 } catch (_: Exception) { false }
         val id = res.getIdentifier("navigation_bar_height", "dimen", "android")
-        val px = if (id > 0) res.getDimensionPixelSize(id) else 0
-        val dp = px / res.displayMetrics.density
-        // Navegação por gestos tem só uma linha fina; botões ocupam a altura inteira.
-        (if (gesture) minOf(dp, 24f) else dp).coerceAtLeast(0f)
+        val sys = if (id > 0) res.getDimensionPixelSize(id) / d else 0f
+        maxOf(fromWindow, if (gesture) minOf(sys, 24f) else sys)
     }
-    return maxOf(fromCompose, fromSystem.dp)
+    return maxOf(fromCompose, measured.dp)
+}
+
+/** Igual ao Dialog do Compose, mas as telas que ocupam a janela inteira terminam sempre acima dos botões do celular. */
+@Composable
+internal fun QinblyDialog(
+    onDismissRequest: () -> Unit,
+    properties: androidx.compose.ui.window.DialogProperties = androidx.compose.ui.window.DialogProperties(),
+    content: @Composable () -> Unit
+) {
+    val pad = if (!properties.decorFitsSystemWindows) qinblyNavBarPadding() else 0.dp
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismissRequest, properties = properties) {
+        androidx.compose.runtime.CompositionLocalProvider(LocalQinblyNavHandled provides true) {
+            Box(Modifier.padding(bottom = pad)) { content() }
+        }
+    }
 }
 
 /** Painel grande que sobe de baixo, sempre acima dos botões do celular. */
 @Composable
 internal fun QinblyBottomPanel(title: String, onDismiss: () -> Unit, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
     val nav = qinblyNavBarPadding()
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }) {
             Column(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(top = 48.dp, bottom = nav + 8.dp).clip(RoundedCornerShape(32.dp)).background(Panel)

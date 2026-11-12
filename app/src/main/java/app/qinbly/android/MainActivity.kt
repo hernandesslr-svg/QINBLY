@@ -985,7 +985,7 @@ private fun QinblyTagHost(prefs: android.content.SharedPreferences, currentUsern
             }
         }.start()
     }
-    androidx.compose.ui.window.Dialog(
+    QinblyDialog(
         onDismissRequest = { QinblyTagNav.tag = null },
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
     ) {
@@ -1421,7 +1421,7 @@ private fun AccountSwitcherDialog(
 ) {
  var confirmRemove by remember { mutableStateOf("") }
  val blue = QinblyBrand.Accent
- androidx.compose.ui.window.Dialog(
+ QinblyDialog(
   onDismissRequest = onDismiss,
   properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
  ) {
@@ -2220,7 +2220,7 @@ private fun QinblyApp() {
         }
         if (showCreateOptions) {
             // Folha de baixo com 4 cartões (Texto, Galeria, Câmera, Enquete); tocar fora fecha.
-            androidx.compose.ui.window.Dialog(
+            QinblyDialog(
                 onDismissRequest = { showCreateOptions = false },
                 properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
             ) {
@@ -2280,7 +2280,7 @@ private fun QinblyApp() {
             )
         }
         if (profileStat.isNotBlank()) {
-            androidx.compose.ui.window.Dialog(
+            QinblyDialog(
                 onDismissRequest = { profileStat = "" },
                 properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
             ) {
@@ -2428,7 +2428,7 @@ private fun NotificationsPage(
             IconButton(onClick = { showNotifSettings = true }) { Icon(Icons.Default.Menu, contentDescription = "Configurações das notificações", tint = QiblyTheme.text) }
         }
         if (showNotifSettings) {
-            androidx.compose.ui.window.Dialog(
+            QinblyDialog(
                 onDismissRequest = { showNotifSettings = false },
                 properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
             ) {
@@ -2761,7 +2761,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
         }
     }
 
-    androidx.compose.ui.window.Dialog(
+    QinblyDialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
     ) {
@@ -3861,7 +3861,7 @@ private fun QinblyPostViewer(
     if (posts.isEmpty()) return
     val context = androidx.compose.ui.platform.LocalContext.current
     var reportPost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
-    androidx.compose.ui.window.Dialog(
+    QinblyDialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
     ) {
@@ -4076,7 +4076,7 @@ private fun QinblyCommentsDialog(
     val keyboardVisible = keyboardInset > 120.dp
     val activePost = post
     run {
-        androidx.compose.ui.window.Dialog(
+        QinblyDialog(
             onDismissRequest = {
                 if (showCommentEmojis) showCommentEmojis = false else onDismiss()
             },
@@ -4822,7 +4822,7 @@ private fun QinblyPostCard(
 @Composable
 private fun QinblyPhotoViewer(url: String, onNotice: (String) -> Unit, onDismiss: () -> Unit, onReport: (() -> Unit)? = null) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    androidx.compose.ui.window.Dialog(
+    QinblyDialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
@@ -5047,7 +5047,7 @@ private fun QinblyEditCaptionDialog(
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } }
         )
     }
-    androidx.compose.ui.window.Dialog(
+    QinblyDialog(
         onDismissRequest = { if (!busy) onDismiss() },
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
@@ -5165,7 +5165,7 @@ private fun QiblyShareDialog(
         }
     }
     val recipients = (if (query.isBlank()) inbox.map { it.username to it.displayName } else users.map { it.username to it.displayName }).distinctBy { it.first }
-    androidx.compose.ui.window.Dialog(
+    QinblyDialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
@@ -6339,7 +6339,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 if (originalSound) candidate.id == sourcePost.id
                 else candidate.audioId == sourcePost.audioId
         }.ifEmpty { listOf(sourcePost) }
-        androidx.compose.ui.window.Dialog(
+        QinblyDialog(
             onDismissRequest = { selectedAudioPost = null },
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
         ) {
@@ -6414,7 +6414,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     }
     if (selectedStory != null) {
         val story = selectedStory!!
-        androidx.compose.ui.window.Dialog(onDismissRequest = { selectedStory = null }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        QinblyDialog(onDismissRequest = { selectedStory = null }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
             Box(Modifier.fillMaxSize().background(Color.Black).clickable { selectedStory = null }) {
                 AsyncImage(model = story.second.replace("w=240", "w=1200"), contentDescription = "Story de @" + story.first, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
                 Row(Modifier.align(Alignment.TopStart).fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -6599,7 +6599,7 @@ private fun QinblyCreateCommunityDialog(onDismiss: () -> Unit, onCreate: (String
         if (uri != null) photoBitmap = runCatching { photoContext.contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it) } }.getOrNull()
     }
     BackHandler(enabled = !sending) { onDismiss() }
-    androidx.compose.ui.window.Dialog(
+    QinblyDialog(
         onDismissRequest = { if (!sending) onDismiss() },
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)
     ) {
@@ -6861,7 +6861,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
     }
     BackHandler { if (showInfo) showInfo = false else onDismiss() }
 
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
+    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
         Surface(Modifier.fillMaxSize(), color = QiblyTheme.background) {
             val c = community
             if (c == null) {
@@ -7466,7 +7466,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     }
 
     chatPhotoUrl?.let { u ->
-        androidx.compose.ui.window.Dialog(onDismissRequest = { chatPhotoUrl = null }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        QinblyDialog(onDismissRequest = { chatPhotoUrl = null }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
             Box(Modifier.fillMaxSize().background(Color.Black).clickable { chatPhotoUrl = null }, contentAlignment = Alignment.Center) {
                 AsyncImage(model = u, contentDescription = "Foto", modifier = Modifier.fillMaxWidth(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
             }
@@ -9863,7 +9863,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
             }
         }
     if (connectionListType.isNotBlank()) {
-        androidx.compose.ui.window.Dialog(onDismissRequest = { connectionListType = "" }) {
+        QinblyDialog(onDismissRequest = { connectionListType = "" }) {
             Surface(shape = RoundedCornerShape(20.dp), color = QiblyTheme.card) {
                 Column(Modifier.fillMaxWidth().padding(16.dp)) {
                     Text(if (connectionListType == "following") "Seguindo" else "Seguidores", fontWeight = FontWeight.Bold, color = QiblyTheme.text)

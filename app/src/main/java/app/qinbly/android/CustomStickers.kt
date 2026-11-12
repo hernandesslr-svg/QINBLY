@@ -138,7 +138,7 @@ internal fun QinblyStickerCreateDialog(accent: Color, onNotice: (String) -> Unit
     }
     LaunchedEffect(Unit) { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
     if (busy) {
-        androidx.compose.ui.window.Dialog(onDismissRequest = {}) { CircularProgressIndicator(color = accent, modifier = Modifier.size(36.dp)) }
+        QinblyDialog(onDismissRequest = {}) { CircularProgressIndicator(color = accent, modifier = Modifier.size(36.dp)) }
     }
 }
 

@@ -154,7 +154,7 @@ internal fun QinblyMessageSheet(
             } catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível salvar a figurinha.") } }
         }.start()
     }
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }) {
             val density = androidx.compose.ui.platform.LocalDensity.current
             val screenW = maxWidth
@@ -233,7 +233,7 @@ internal fun QinblyMessageSheet(
     }
             }
     if (showBig) {
-        androidx.compose.ui.window.Dialog(onDismissRequest = { showBig = false }) {
+        QinblyDialog(onDismissRequest = { showBig = false }) {
             AsyncImage(model = message.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.fillMaxWidth().padding(16.dp).clickable { showBig = false })
         }
     }

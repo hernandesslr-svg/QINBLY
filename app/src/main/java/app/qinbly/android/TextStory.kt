@@ -107,7 +107,7 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
     LaunchedEffect(Unit) { try { focus.requestFocus() } catch (_: Exception) { } }
     fun tryExit() { if (text.isBlank()) onDismiss() else confirmExit = true }
     BackHandler { tryExit() }
-    Dialog(onDismissRequest = { tryExit() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnBackPress = false)) {
+    QinblyDialog(onDismissRequest = { tryExit() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnBackPress = false)) {
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(qinblyTextBgs[bg]))) {
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("✕", color = Color.White, fontSize = 22.sp, modifier = Modifier.clip(CircleShape).clickable { tryExit() }.padding(horizontal = 10.dp, vertical = 4.dp))
@@ -260,7 +260,7 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
             catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível comentar.") } }
         }.start()
     }
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+    QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Box(Modifier.fillMaxSize().clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }) {
             Column(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth().clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(sheet)

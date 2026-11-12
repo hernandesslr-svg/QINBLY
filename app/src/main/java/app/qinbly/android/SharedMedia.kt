@@ -56,7 +56,7 @@ internal fun QinblyChatSharedMedia(
     fun open(url: String) {
         try { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) { }
     }
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
         Column(Modifier.fillMaxSize().background(bg)) {
             Row(Modifier.fillMaxWidth().padding(top = 28.dp, start = 4.dp, end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = textColor) }
@@ -91,7 +91,7 @@ internal fun QinblyChatSharedMedia(
         }
     }
     big?.let { url ->
-        androidx.compose.ui.window.Dialog(onDismissRequest = { big = null }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        QinblyDialog(onDismissRequest = { big = null }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
             Box(Modifier.fillMaxSize().background(Color.Black).clickable { big = null }, contentAlignment = Alignment.Center) {
                 AsyncImage(model = url, contentDescription = "Foto", modifier = Modifier.fillMaxWidth())
             }
