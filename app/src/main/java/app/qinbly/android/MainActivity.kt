@@ -7597,48 +7597,31 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             // Faixa de cima: "Criar" (story ou nota), quem você segue com story/nota e atalhos para quem você conversa.
             val trayOthers = storyTray.filter { !it.mine && (it.stories.isNotEmpty() || it.note.isNotBlank()) }
             val trayNames = trayOthers.map { it.username.lowercase() }.toSet()
-            val noMs = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-            androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 2.dp)) {
+            androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp), contentPadding = PaddingValues(horizontal = 2.dp)) {
                 item(key = "story-create") {
                     val hasMyStory = myStoryEntry?.stories?.isNotEmpty() == true
-                    val myNote = myStoryEntry?.note.orEmpty()
-                    Box(Modifier.width(104.dp).height(176.dp).clip(RoundedCornerShape(14.dp)).background(QiblyTheme.soft).border(1.dp, QiblyTheme.border, RoundedCornerShape(14.dp))
-                        .clickable(indication = null, interactionSource = noMs) { showStoryMenu = true }) {
-                        if (myNote.isNotBlank()) Text(myNote, color = Color.White, fontSize = 12.sp, lineHeight = 15.sp, fontWeight = FontWeight.Medium, maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            modifier = Modifier.align(Alignment.TopCenter).padding(top = 10.dp, start = 8.dp, end = 8.dp).clip(RoundedCornerShape(14.dp)).clickable(indication = null, interactionSource = noMs) { showStoryMenu = true }
-                                .background(Color(0xFF2E2745)).padding(horizontal = 8.dp, vertical = 5.dp))
-                        Box(Modifier.align(Alignment.Center).offset(y = 6.dp).size(64.dp)) {
-                            QiblyAccountAvatar(ownHandle, "", 64.dp) { showStoryMenu = true }
+                    Column(Modifier.widthIn(min = 84.dp, max = 140.dp).width(IntrinsicSize.Max).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { showStoryMenu = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        QinblyNoteBubble(myStoryEntry?.note.orEmpty(), onClick = { showStoryMenu = true })
+                        Box(Modifier.size(86.dp).then(if (hasMyStory) Modifier.border(2.dp, Color.Gray.copy(alpha = 0.6f), CircleShape) else Modifier), contentAlignment = Alignment.Center) {
+                            Box(Modifier.size(80.dp)) {
+                                QiblyAccountAvatar(ownHandle, "", 78.dp) { showStoryMenu = true }
+                                Box(Modifier.align(Alignment.BottomEnd).size(28.dp).clip(CircleShape).background(QinblyBrand.Accent).border(2.dp, QiblyTheme.background, CircleShape), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                }
+                            }
                         }
-                        Box(Modifier.align(Alignment.Center).offset(x = 24.dp, y = 36.dp).size(26.dp).clip(CircleShape).background(QinblyBrand.Accent).border(2.dp, QiblyTheme.soft, CircleShape), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                        }
-                        Text(if (hasMyStory) "Seu story" else "Criar story", color = QiblyTheme.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
-                            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp))
+                        Text(if (hasMyStory) "Seu story" else "Criar", color = RemoteAppearance.screenTextColor, fontSize = 14.sp, maxLines = 1)
                     }
                 }
                 items(trayOthers, key = { "tray-" + it.username }) { person ->
-                    val open: () -> Unit = { if (person.stories.isNotEmpty()) { viewingStory = person } else if (person.note.isNotBlank()) { viewingNote = person } else { onOpenConversation(person.username) } }
-                    val cover = person.stories.firstOrNull()
-                    Box(Modifier.width(104.dp).height(176.dp).clip(RoundedCornerShape(14.dp)).background(QiblyTheme.soft)
-                        .clickable(indication = null, interactionSource = noMs) { open() }) {
-                        if (cover != null && cover.mediaUrl.isNotBlank()) {
-                            if (cover.mediaType == "video") QinblyVideoPoster(cover.mediaUrl, Modifier.fillMaxSize(), ContentScale.Crop)
-                            else AsyncImage(model = cover.mediaUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                            Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(70.dp).background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC000000)))))
-                        } else {
-                            Box(Modifier.align(Alignment.Center).offset(y = 8.dp).size(60.dp)) { QiblyAccountAvatar(person.username, person.avatarUrl, 60.dp) { open() } }
-                        }
-                        if (cover != null) Box(Modifier.align(Alignment.TopStart).padding(8.dp).size(38.dp).border(2.5.dp, if (person.hasUnseen) QinblyBrand.Accent else Color.Gray.copy(alpha = 0.7f), CircleShape).padding(3.dp).clip(CircleShape)) {
-                            QiblyAccountAvatar(person.username, person.avatarUrl, 32.dp) { open() }
-                        }
-                        if (person.note.isNotBlank()) Text(person.note, color = Color.White, fontSize = 12.sp, lineHeight = 15.sp, fontWeight = FontWeight.Medium, maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            modifier = Modifier.align(if (cover != null) Alignment.Center else Alignment.TopCenter).padding(top = if (cover != null) 0.dp else 10.dp, start = 8.dp, end = 8.dp)
-                                .clip(RoundedCornerShape(14.dp)).clickable(indication = null, interactionSource = noMs) { viewingNote = person }.background(Color(0xFF2E2745)).padding(horizontal = 8.dp, vertical = 5.dp))
-                        Text(person.displayName.ifBlank { person.username }, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            modifier = Modifier.align(Alignment.BottomStart).padding(start = 10.dp, end = 10.dp, bottom = 10.dp))
+                    val open: () -> Unit = { if (person.stories.isNotEmpty()) { viewingStory = person } else { onOpenConversation(person.username) } }
+                    Column(Modifier.widthIn(min = 84.dp, max = 140.dp).width(IntrinsicSize.Max).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { open() }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        QinblyNoteBubble(person.note, onClick = { viewingNote = person })
+                        Box(
+                            Modifier.size(86.dp).then(if (person.stories.isNotEmpty()) Modifier.border(2.dp, if (person.hasUnseen) QinblyBrand.Accent else Color.Gray.copy(alpha = 0.6f), CircleShape) else Modifier),
+                            contentAlignment = Alignment.Center
+                        ) { QiblyAccountAvatar(person.username, person.avatarUrl, 78.dp) { open() } }
+                        Text(person.displayName.ifBlank { person.username }, color = RemoteAppearance.screenTextColor, fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     }
                 }
             }
