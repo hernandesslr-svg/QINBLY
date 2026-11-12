@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -278,6 +281,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
     var search by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
+    var yearOpen by remember { mutableStateOf(false) }
 
     var granted by remember { mutableStateOf(hasGalleryPermission(context)) }
     var items by remember { mutableStateOf<List<GalleryItem>>(emptyList()) }
@@ -422,57 +426,74 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                     if (showEmojis) QinblyEmojiPanel(Modifier.padding(bottom = qinblyNavBarPadding()), Color(0xFF1E1830)) { e -> message = (message + e).take(500) }
                 }
                 "date" -> Column(Modifier.fillMaxSize()) {
-                    TopBar("Quando ela abre?")
-                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        Text(date?.let { capLong(it) } ?: "Escolha uma data no futuro", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                    TopBar("Escolha a data")
+                    val ym = YearMonth.of(year, month)
+                    val minYm = YearMonth.from(minDate)
+                    val maxYm = YearMonth.of(minDate.year + 60, 12)
+                    fun goTo(t: YearMonth) {
+                        val c = if (t.isBefore(minYm)) minYm else if (t.isAfter(maxYm)) maxYm else t
+                        year = c.year; month = c.monthValue
+                    }
+                    Column(
+                        Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp)
+                            .pointerInput(year, month) {
+                                var dx = 0f
+                                detectHorizontalDragGestures(onDragStart = { dx = 0f }, onDragEnd = { if (dx > 80f) goTo(ym.minusMonths(1)) else if (dx < -80f) goTo(ym.plusMonths(1)) }) { _, amount -> dx += amount }
+                            },
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Text("Dia em que a cápsula abre", color = CapMuted, fontSize = 14.sp)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             listOf("1 mês" to today.plusMonths(1), "6 meses" to today.plusMonths(6), "1 ano" to today.plusYears(1)).forEach { (label, d) ->
                                 Text(label, color = if (date == d) Color(0xFF26215C) else Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
-                                    modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(if (date == d) Color.White else CapField).clickable { date = d; year = d.year; month = d.monthValue }.padding(horizontal = 16.dp, vertical = 9.dp))
+                                    modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(if (date == d) Color.White else CapField).clickable { date = d; year = d.year; month = d.monthValue; yearOpen = false }.padding(horizontal = 16.dp, vertical = 9.dp))
                             }
                         }
-                        Text("Ano", color = CapMuted, fontSize = 13.sp)
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items((minDate.year..minDate.year + 60).toList()) { y ->
-                                Text("$y", color = if (year == y) Color(0xFF26215C) else Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
-                                    modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(if (year == y) Color.White else CapField)
-                                        .clickable { year = y; if (y == minDate.year && month < minDate.monthValue) month = minDate.monthValue; if (date?.year != y) date = null }.padding(horizontal = 18.dp, vertical = 9.dp))
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            val canBack = ym.isAfter(minYm); val canNext = ym.isBefore(maxYm)
+                            Box(Modifier.size(42.dp).clip(CircleShape).background(CapField).clickable(enabled = canBack) { goTo(ym.minusMonths(1)) }, contentAlignment = Alignment.Center) { Text("‹", color = if (canBack) Color.White else Color(0xFF5C5575), fontSize = 26.sp) }
+                            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(CapMonths[month - 1].replaceFirstChar { it.uppercase() }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                                Row(Modifier.clip(RoundedCornerShape(14.dp)).clickable { yearOpen = !yearOpen }.padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Text("$year", color = Color(0xFFC9B8FF), fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+                                    Text(if (yearOpen) "  ▴" else "  ▾", color = Color(0xFFC9B8FF), fontSize = 15.sp)
+                                }
                             }
+                            Box(Modifier.size(42.dp).clip(CircleShape).background(CapField).clickable(enabled = canNext) { goTo(ym.plusMonths(1)) }, contentAlignment = Alignment.Center) { Text("›", color = if (canNext) Color.White else Color(0xFF5C5575), fontSize = 26.sp) }
                         }
-                        Text("Mês", color = CapMuted, fontSize = 13.sp)
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            for (r in 0 until 4) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                for (k in 0 until 3) {
-                                    val m = r * 3 + k + 1
-                                    val ok = YearMonth.of(year, m).atEndOfMonth().isAfter(today)
-                                    Box(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(if (month == m) Color.White else CapField).clickable(enabled = ok) { month = m; if (date?.monthValue != m) date = null }.padding(vertical = 11.dp), contentAlignment = Alignment.Center) {
-                                        Text(CapMonths[m - 1].replaceFirstChar { it.uppercase() }, color = if (month == m) Color(0xFF26215C) else if (ok) Color.White else Color(0xFF5C5575), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        Box(Modifier.fillMaxWidth()) {
+                            Column {
+                                Row(Modifier.fillMaxWidth()) {
+                                    listOf("D", "S", "T", "Q", "Q", "S", "S").forEach { Text(it, color = CapMuted, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.weight(1f)) }
+                                }
+                                val offset = ym.atDay(1).dayOfWeek.value % 7
+                                val total = offset + ym.lengthOfMonth()
+                                for (r in 0 until (total + 6) / 7) Row(Modifier.fillMaxWidth()) {
+                                    for (k in 0 until 7) {
+                                        val dayNum = r * 7 + k - offset + 1
+                                        if (dayNum < 1 || dayNum > ym.lengthOfMonth()) { Spacer(Modifier.weight(1f).aspectRatio(1f)); continue }
+                                        val d = ym.atDay(dayNum)
+                                        val ok = !d.isBefore(minDate)
+                                        val sel = date == d
+                                        Box(Modifier.weight(1f).aspectRatio(1f).padding(3.dp).clip(CircleShape).background(if (sel) CapAccent else Color.Transparent).clickable(enabled = ok) { date = d; yearOpen = false }, contentAlignment = Alignment.Center) {
+                                            Text("$dayNum", color = if (ok) Color.White else Color(0xFF5C5575), fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal, fontSize = 16.sp)
+                                        }
+                                    }
+                                }
+                                Text("Arraste pro lado pra mudar o mês", color = Color(0xFF8E87A8), fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 14.dp))
+                            }
+                            if (yearOpen) {
+                                Column(Modifier.align(Alignment.TopCenter).width(130.dp).heightIn(max = 260.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF2B2342)).verticalScroll(rememberScrollState()).padding(vertical = 6.dp)) {
+                                    for (y in minDate.year..minDate.year + 60) {
+                                        Text("$y", color = if (year == y) Color(0xFF26215C) else Color.White, fontWeight = if (year == y) FontWeight.Bold else FontWeight.Normal, fontSize = 17.sp, textAlign = TextAlign.Center,
+                                            modifier = Modifier.fillMaxWidth().background(if (year == y) Color.White else Color.Transparent)
+                                                .clickable { goTo(YearMonth.of(y, month)); yearOpen = false }.padding(vertical = 10.dp))
                                     }
                                 }
                             }
                         }
-                        Text("Dia", color = CapMuted, fontSize = 13.sp)
-                        val ym = YearMonth.of(year, month)
-                        Row(Modifier.fillMaxWidth()) {
-                            listOf("D", "S", "T", "Q", "Q", "S", "S").forEach { Text(it, color = CapMuted, fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.weight(1f)) }
-                        }
-                        val offset = ym.atDay(1).dayOfWeek.value % 7
-                        val total = offset + ym.lengthOfMonth()
-                        for (r in 0 until (total + 6) / 7) Row(Modifier.fillMaxWidth()) {
-                            for (k in 0 until 7) {
-                                val dayNum = r * 7 + k - offset + 1
-                                if (dayNum < 1 || dayNum > ym.lengthOfMonth()) { Spacer(Modifier.weight(1f).aspectRatio(1f)); continue }
-                                val d = ym.atDay(dayNum)
-                                val ok = !d.isBefore(minDate)
-                                val sel = date == d
-                                Box(Modifier.weight(1f).aspectRatio(1f).padding(2.dp).clip(CircleShape).background(if (sel) CapAccent else Color.Transparent).clickable(enabled = ok) { date = d }, contentAlignment = Alignment.Center) {
-                                    Text("$dayNum", color = if (sel) Color.White else if (ok) Color.White else Color(0xFF5C5575), fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal, fontSize = 15.sp)
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(8.dp))
                     }
-                    Primary("Continuar", enabled = date != null, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = qinblyNavBarPadding() + 8.dp)) { step = "who" }
+                    Primary("Continuar", enabled = date != null, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = qinblyNavBarPadding() + 8.dp)) { yearOpen = false; step = "who" }
                 }
                 "who" -> Column(Modifier.fillMaxSize()) {
                     TopBar("Para quem?")
