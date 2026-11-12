@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -102,6 +103,8 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
     var showEmojis by remember { mutableStateOf(false) }
     var confirmExit by remember { mutableStateOf(false) }
     var sending by remember { mutableStateOf(false) }
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    LaunchedEffect(Unit) { try { focus.requestFocus() } catch (_: Exception) { } }
     fun tryExit() { if (text.isBlank()) onDismiss() else confirmExit = true }
     BackHandler { tryExit() }
     Dialog(onDismissRequest = { tryExit() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnBackPress = false)) {
@@ -131,7 +134,7 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
                     BasicTextField(
                         value = text, onValueChange = { text = it },
                         textStyle = TextStyle(color = Color.White, fontSize = size.sp, lineHeight = (size * 1.3f).sp, fontFamily = qinblyTextFonts[font].second, fontWeight = FontWeight.Medium, textAlign = alignOf(align)),
-                        cursorBrush = SolidColor(Color.White), modifier = Modifier.fillMaxWidth(),
+                        cursorBrush = SolidColor(Color.White), modifier = Modifier.fillMaxWidth().focusRequester(focus),
                         decorationBox = { inner ->
                             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                                 if (text.isEmpty()) Text(if (collab) "Faça uma pergunta ou lance um desafio…" else "Escreva aqui…", color = Color(0xAAFFFFFF), fontSize = 28.sp, textAlign = TextAlign.Center)
@@ -141,7 +144,7 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
                     )
                 }
             }
-            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().navigationBarsPadding().padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().padding(bottom = 12.dp + qinblyNavBarPadding()), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (showEmojis) Column(Modifier.padding(horizontal = 14.dp).clip(RoundedCornerShape(16.dp)).background(Color(0x66000000)).padding(8.dp)) {
                     qinblyTextEmojis.chunked(10).forEach { row ->
                         Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -262,7 +265,7 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
             Column(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth().clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(sheet)
                     .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) {}
-                    .imePadding().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp)
+                    .imePadding().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 10.dp + qinblyNavBarPadding())
             ) {
                 Box(Modifier.align(Alignment.CenterHorizontally).width(40.dp).size(width = 40.dp, height = 4.dp).clip(CircleShape).background(Color(0x55FFFFFF)))
                 Spacer(Modifier.size(12.dp))

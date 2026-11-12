@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -52,19 +54,58 @@ private const val STICKER_BASE = "https://jqomgrdlocdqaarfqkay.supabase.co/stora
 private fun sess(c: Context) = c.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)
 private fun main(block: () -> Unit) { Handler(Looper.getMainLooper()).post(block) }
 
+
+/** Altura real dos botões do celular (barra de navegação). Janelas de diálogo não recebem esse recuo sozinhas, então lemos da janela do app. */
+@Composable
+internal fun qinblyNavBarPadding(): androidx.compose.ui.unit.Dp {
+    val context = LocalContext.current
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    var c: Context? = context
+    while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
+    val px = (c as? android.app.Activity)?.window?.decorView?.let { androidx.core.view.ViewCompat.getRootWindowInsets(it)?.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars())?.bottom } ?: 0
+    return with(density) { px.toDp() }
+}
+
+/** Painel grande que sobe de baixo, sempre acima dos botões do celular. */
+@Composable
+internal fun QinblyBottomPanel(title: String, onDismiss: () -> Unit, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    val nav = qinblyNavBarPadding()
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+        Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }) {
+            Column(
+                Modifier.align(Alignment.BottomCenter).fillMaxWidth().heightIn(max = 760.dp).clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)).background(Panel)
+                    .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { }
+                    .imePadding().verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 20.dp + nav),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Box(Modifier.align(Alignment.CenterHorizontally).size(width = 44.dp, height = 5.dp).clip(CircleShape).background(Color(0x55FFFFFF)))
+                Text(title, color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+private fun BigButton(text: String, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(modifier.clip(RoundedCornerShape(28.dp)).background(color).clickable { onClick() }.padding(vertical = 17.dp), contentAlignment = Alignment.Center) {
+        Text(text, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
 /** Campo de texto arredondado (pílula) usado nas telas novas. */
 @Composable
 internal fun QinblyPillField(value: String, onChange: (String) -> Unit, hint: String, modifier: Modifier = Modifier, maxLines: Int = 1) {
-    Box(modifier.clip(RoundedCornerShape(22.dp)).background(FieldBg).padding(horizontal = 16.dp, vertical = 12.dp)) {
-        if (value.isEmpty()) Text(hint, color = Color(0xFF8E87A8), fontSize = 15.sp)
-        BasicTextField(value, onChange, textStyle = TextStyle(color = Color.White, fontSize = 15.sp), cursorBrush = SolidColor(Color.White), maxLines = maxLines, modifier = Modifier.fillMaxWidth())
+    Box(modifier.clip(RoundedCornerShape(26.dp)).background(FieldBg).padding(horizontal = 20.dp, vertical = 16.dp)) {
+        if (value.isEmpty()) Text(hint, color = Color(0xFF8E87A8), fontSize = 17.sp)
+        BasicTextField(value, onChange, textStyle = TextStyle(color = Color.White, fontSize = 17.sp), cursorBrush = SolidColor(Color.White), maxLines = maxLines, modifier = Modifier.fillMaxWidth())
     }
 }
 
 @Composable
 private fun Chip(text: String, selected: Boolean, accent: Color = Color(0xFF7C4DFF), onClick: () -> Unit) {
-    Text(text, color = Color.White, fontSize = 13.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-        modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(if (selected) accent else FieldBg).clickable { onClick() }.padding(horizontal = 12.dp, vertical = 7.dp))
+    Text(text, color = Color.White, fontSize = 16.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+        modifier = Modifier.clip(RoundedCornerShape(22.dp)).background(if (selected) accent else FieldBg).clickable { onClick() }.padding(horizontal = 18.dp, vertical = 11.dp))
 }
 
 internal fun qinblyAgo(iso: String): String = try {
@@ -113,28 +154,23 @@ internal fun QinblyMoodDialog(onDismiss: () -> Unit, onNotice: (String) -> Unit,
             } catch (e: Exception) { main { onNotice(e.message ?: "Não foi possível salvar.") } }
         }.start()
     }
-    AlertDialog(
-        onDismissRequest = onDismiss, containerColor = Panel, shape = RoundedCornerShape(26.dp),
-        title = { Text("Clima do dia", color = Color.White) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Como você está hoje? Aparece no seu card por 24 horas.", color = Color(0xFFA9B5C8), fontSize = 13.sp)
-                moodEmojis.chunked(6).forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        row.forEach { e -> Text(e, fontSize = 24.sp, modifier = Modifier.clip(CircleShape).background(if (emoji == e) FieldBg else Color.Transparent).clickable { emoji = e }.padding(6.dp)) }
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    moodColors.forEach { c ->
-                        Box(Modifier.size(26.dp).clip(CircleShape).background(Color(android.graphics.Color.parseColor(c))).border(if (color == c) 3.dp else 0.dp, Color.White, CircleShape).clickable { color = c })
-                    }
-                }
-                Box(Modifier.clip(RoundedCornerShape(20.dp)).background(Color(android.graphics.Color.parseColor(color))).padding(horizontal = 14.dp, vertical = 8.dp)) { Text("$emoji  meu clima", color = Color.White, fontWeight = FontWeight.SemiBold) }
+    val chosen = Color(android.graphics.Color.parseColor(color))
+    QinblyBottomPanel("Clima do dia", onDismiss) {
+        Text("Como você está hoje? Aparece no seu card por 24 horas.", color = Color(0xFFA9B5C8), fontSize = 16.sp)
+        moodEmojis.chunked(4).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                row.forEach { e -> Box(Modifier.size(74.dp).clip(RoundedCornerShape(24.dp)).background(if (emoji == e) chosen.copy(alpha = 0.45f) else FieldBg).border(if (emoji == e) 2.dp else 0.dp, chosen, RoundedCornerShape(24.dp)).clickable { emoji = e }, contentAlignment = Alignment.Center) { Text(e, fontSize = 38.sp) } }
             }
-        },
-        confirmButton = { TextButton(onClick = { save(false) }) { Text("Definir", color = Color(0xFF7C4DFF)) } },
-        dismissButton = { Row { TextButton(onClick = { save(true) }) { Text("Limpar", color = Color(0xFFA9B5C8)) }; TextButton(onClick = onDismiss) { Text("Fechar", color = Color(0xFFA9B5C8)) } } }
-    )
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            moodColors.forEach { c -> Box(Modifier.size(38.dp).clip(CircleShape).background(Color(android.graphics.Color.parseColor(c))).border(if (color == c) 4.dp else 0.dp, Color.White, CircleShape).clickable { color = c }) }
+        }
+        Box(Modifier.align(Alignment.CenterHorizontally).clip(RoundedCornerShape(28.dp)).background(chosen).padding(horizontal = 26.dp, vertical = 14.dp)) { Text("$emoji  meu clima", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            BigButton("Limpar", FieldBg, Modifier.weight(1f)) { save(true) }
+            BigButton("Definir", Color(0xFF7C4DFF), Modifier.weight(1.4f)) { save(false) }
+        }
+    }
 }
 
 // ───────── Cápsula do tempo ─────────
@@ -154,47 +190,40 @@ internal fun QinblyCapsuleDialog(accent: Color, onDismiss: () -> Unit, onNotice:
         d.datePicker.minDate = t.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
         d.show()
     }
-    AlertDialog(
-        onDismissRequest = { if (!busy) onDismiss() }, containerColor = Panel, shape = RoundedCornerShape(26.dp),
-        title = { Text("Cápsula do tempo", color = Color.White) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { Chip("Para mim", toMe, accent) { toMe = true }; Chip("Para um amigo", !toMe, accent) { toMe = false } }
-                if (!toMe) QinblyPillField(who, { who = it.trim().removePrefix("@").take(24) }, "@usuário", Modifier.fillMaxWidth())
-                QinblyPillField(text, { text = it.take(2000) }, "Escreva a mensagem…", Modifier.fillMaxWidth(), maxLines = 6)
-                Text("Abre em:", color = Color(0xFFA9B5C8), fontSize = 13.sp)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Chip("1 semana", date == today.plusWeeks(1), accent) { date = today.plusWeeks(1) }
-                    Chip("1 mês", date == today.plusMonths(1), accent) { date = today.plusMonths(1) }
-                    Chip("1 ano", date == today.plusYears(1), accent) { date = today.plusYears(1) }
+    fun save() {
+        val token = prefs.getString("token", null); val uid = prefs.getString("user_id", null); val d = date
+        if (token.isNullOrBlank() || uid.isNullOrBlank()) { onNotice("Entre na sua conta."); return }
+        if (text.isBlank()) { onNotice("Escreva a mensagem."); return }
+        if (d == null) { onNotice("Escolha quando ela abre."); return }
+        if (!toMe && who.isBlank()) { onNotice("Diga para quem é."); return }
+        busy = true
+        Thread {
+            try {
+                val target = if (toMe) uid else {
+                    val a = JSONArray(QinblyApi.rest(token, "GET", "profiles?username=eq.${who.lowercase()}&select=id"))
+                    if (a.length() == 0) throw IllegalStateException("Não achei @$who.")
+                    a.getJSONObject(0).getString("id")
                 }
-                Chip(date?.let { "📅 ${it.dayOfMonth}/${it.monthValue}/${it.year}" } ?: "📅 Escolher data", false, accent) { pick() }
-            }
-        },
-        confirmButton = {
-            TextButton(enabled = !busy, onClick = {
-                val token = prefs.getString("token", null); val uid = prefs.getString("user_id", null); val d = date
-                if (token.isNullOrBlank() || uid.isNullOrBlank()) { onNotice("Entre na sua conta."); return@TextButton }
-                if (text.isBlank()) { onNotice("Escreva a mensagem."); return@TextButton }
-                if (d == null) { onNotice("Escolha quando ela abre."); return@TextButton }
-                if (!toMe && who.isBlank()) { onNotice("Diga para quem é."); return@TextButton }
-                busy = true
-                Thread {
-                    try {
-                        val target = if (toMe) uid else {
-                            val a = JSONArray(QinblyApi.rest(token, "GET", "profiles?username=eq.${who.lowercase()}&select=id"))
-                            if (a.length() == 0) throw IllegalStateException("Não achei @$who.")
-                            a.getJSONObject(0).getString("id")
-                        }
-                        val at = d.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toString()
-                        QinblyApi.rest(token, "POST", "time_capsules", JSONObject().put("to_user", target).put("body", text.trim()).put("unlock_at", at).toString(), "return=minimal")
-                        main { onNotice("Cápsula guardada. Abre em ${d.dayOfMonth}/${d.monthValue}/${d.year}."); onDismiss() }
-                    } catch (e: Exception) { main { busy = false; onNotice(e.message ?: "Não foi possível guardar.") } }
-                }.start()
-            }) { Text(if (busy) "Guardando…" else "Guardar", color = accent) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar", color = Color(0xFFA9B5C8)) } }
-    )
+                val at = d.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toString()
+                QinblyApi.rest(token, "POST", "time_capsules", JSONObject().put("to_user", target).put("body", text.trim()).put("unlock_at", at).toString(), "return=minimal")
+                main { onNotice("Cápsula guardada. Abre em ${d.dayOfMonth}/${d.monthValue}/${d.year}."); onDismiss() }
+            } catch (e: Exception) { main { busy = false; onNotice(e.message ?: "Não foi possível guardar.") } }
+        }.start()
+    }
+    QinblyBottomPanel("Cápsula do tempo", { if (!busy) onDismiss() }) {
+        Text("Escreva agora, abre só na data escolhida.", color = Color(0xFFA9B5C8), fontSize = 16.sp)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { Chip("Para mim", toMe, accent) { toMe = true }; Chip("Para um amigo", !toMe, accent) { toMe = false } }
+        if (!toMe) QinblyPillField(who, { who = it.trim().removePrefix("@").take(24) }, "@usuário", Modifier.fillMaxWidth())
+        QinblyPillField(text, { text = it.take(2000) }, "Escreva a mensagem…", Modifier.fillMaxWidth().heightIn(min = 130.dp), maxLines = 8)
+        Text("Abre em", color = Color(0xFFA9B5C8), fontSize = 16.sp)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Chip("1 semana", date == today.plusWeeks(1), accent) { date = today.plusWeeks(1) }
+            Chip("1 mês", date == today.plusMonths(1), accent) { date = today.plusMonths(1) }
+            Chip("1 ano", date == today.plusYears(1), accent) { date = today.plusYears(1) }
+        }
+        Chip(date?.let { "📅  ${it.dayOfMonth}/${it.monthValue}/${it.year}" } ?: "📅  Escolher outra data", false, accent) { pick() }
+        BigButton(if (busy) "Guardando…" else "Guardar cápsula", accent, Modifier.fillMaxWidth()) { if (!busy) save() }
+    }
 }
 
 /** Mostra (uma por vez) as cápsulas que já chegaram na data. */
@@ -214,25 +243,18 @@ internal fun QinblyCapsuleInbox() {
         } catch (_: Exception) { emptyList() }
     }
     val c = caps.firstOrNull() ?: return
-    val from = c.optJSONObject("profiles")
-    val fromName = from?.optString("username").orEmpty()
+    val fromName = c.optJSONObject("profiles")?.optString("username").orEmpty()
     val made = c.optString("created_at").take(10).split("-").let { if (it.size == 3) "${it[2]}/${it[1]}/${it[0]}" else "" }
     fun close() {
         val id = c.optString("id"); val token = prefs.getString("token", null)
         caps = caps.drop(1)
         if (!token.isNullOrBlank()) Thread { try { QinblyApi.rest(token, "PATCH", "time_capsules?id=eq.$id", JSONObject().put("opened", true).toString(), "return=minimal") } catch (_: Exception) { } }.start()
     }
-    AlertDialog(
-        onDismissRequest = { close() }, containerColor = Panel, shape = RoundedCornerShape(26.dp),
-        title = { Text("💌 Cápsula do tempo", color = Color.White) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("De @$fromName • guardada em $made", color = Color(0xFFA9B5C8), fontSize = 13.sp)
-                Text(c.optString("body"), color = Color.White, fontSize = 16.sp, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(FieldBg).padding(14.dp))
-            }
-        },
-        confirmButton = { TextButton(onClick = { close() }) { Text("Fechar", color = Color(0xFF7C4DFF)) } }
-    )
+    QinblyBottomPanel("💌 Cápsula do tempo", { close() }) {
+        Text("De @$fromName • guardada em $made", color = Color(0xFFA9B5C8), fontSize = 16.sp)
+        Text(c.optString("body"), color = Color.White, fontSize = 19.sp, lineHeight = 26.sp, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(FieldBg).padding(20.dp))
+        BigButton("Fechar", Color(0xFF7C4DFF), Modifier.fillMaxWidth()) { close() }
+    }
 }
 
 // ───────── Pacotes de figurinhas da comunidade ─────────
@@ -287,39 +309,29 @@ internal fun QinblyStickerPacksDialog(accent: Color, onDismiss: () -> Unit, onNo
             } catch (e: Exception) { main { onNotice(e.message ?: "Não foi possível adicionar.") } }
         }.start()
     }
-    AlertDialog(
-        onDismissRequest = onDismiss, containerColor = Panel, shape = RoundedCornerShape(26.dp),
-        title = { Text("Pacotes de figurinhas", color = Color.White) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    QinblyPillField(name, { name = it.take(40) }, "Nome do meu pacote", Modifier.weight(1f))
-                    Text("Publicar", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(accent).clickable { publish() }.padding(horizontal = 14.dp, vertical = 10.dp))
-                }
-                Text("Publicar usa todas as suas figurinhas atuais.", color = Color(0xFF8E87A8), fontSize = 12.sp)
-                val list = packs
-                if (list == null) Text("Carregando…", color = Color(0xFFA9B5C8))
-                else if (list.isEmpty()) Text("Nenhum pacote ainda. Seja o primeiro!", color = Color(0xFFA9B5C8))
-                else LazyColumn(Modifier.heightIn(max = 340.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(list, key = { it.id }) { p ->
-                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(FieldBg).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(p.name, color = Color.White, fontWeight = FontWeight.SemiBold)
-                                    Text("por @${p.owner} • ${p.paths.size} figurinhas", color = Color(0xFFA9B5C8), fontSize = 12.sp)
-                                }
-                                Text("Adicionar", color = Color.White, fontSize = 13.sp, modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(accent).clickable { add(p) }.padding(horizontal = 12.dp, vertical = 7.dp))
-                            }
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                items(p.paths.take(8)) { path -> AsyncImage(model = STICKER_BASE + path, contentDescription = null, modifier = Modifier.size(48.dp)) }
-                            }
-                        }
+    QinblyBottomPanel("Pacotes de figurinhas", onDismiss) {
+        Text("Publique as suas figurinhas como um pacote e adicione as da comunidade.", color = Color(0xFFA9B5C8), fontSize = 16.sp)
+        QinblyPillField(name, { name = it.take(40) }, "Nome do meu pacote", Modifier.fillMaxWidth())
+        BigButton("Publicar meu pacote", accent, Modifier.fillMaxWidth()) { publish() }
+        Text("Publicar usa todas as suas figurinhas atuais.", color = Color(0xFF8E87A8), fontSize = 13.sp)
+        val list = packs
+        if (list == null) Text("Carregando…", color = Color(0xFFA9B5C8), fontSize = 16.sp)
+        else if (list.isEmpty()) Text("Nenhum pacote ainda. Seja o primeiro!", color = Color(0xFFA9B5C8), fontSize = 16.sp)
+        else list.forEach { p ->
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(FieldBg).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(p.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text("por @${p.owner} • ${p.paths.size} figurinhas", color = Color(0xFFA9B5C8), fontSize = 14.sp)
                     }
+                    Text("Adicionar", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(accent).clickable { add(p) }.padding(horizontal = 16.dp, vertical = 10.dp))
+                }
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(p.paths.take(8)) { path -> AsyncImage(model = STICKER_BASE + path, contentDescription = null, modifier = Modifier.size(64.dp)) }
                 }
             }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar", color = accent) } }
-    )
+        }
+    }
 }
 
 // ───────── Mural do bairro ─────────

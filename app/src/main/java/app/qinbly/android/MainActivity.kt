@@ -2439,7 +2439,7 @@ private fun NotificationsPage(
                         Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                             .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)).background(QiblyTheme.card)
                             .clickable(indication = null, interactionSource = inner) { }
-                            .navigationBarsPadding().padding(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 16.dp)
+                            .padding(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 16.dp + qinblyNavBarPadding())
                     ) {
                         Box(Modifier.align(Alignment.CenterHorizontally).width(34.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFFD0D5DD)))
                         Text("Configurações das notificações", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.padding(vertical = 10.dp))
@@ -5172,7 +5172,7 @@ private fun QiblyShareDialog(
         Column(
             Modifier.fillMaxWidth().fillMaxHeight(0.86f)
                 .background(QiblyTheme.card, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-                .navigationBarsPadding().padding(horizontal = 18.dp).padding(top = 10.dp, bottom = 14.dp)
+                .padding(horizontal = 18.dp).padding(top = 10.dp, bottom = 14.dp + qinblyNavBarPadding())
         ) {
             Box(Modifier.align(Alignment.CenterHorizontally).width(44.dp).height(5.dp).background(QiblyTheme.secondary.copy(alpha = 0.35f), RoundedCornerShape(3.dp)))
             Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
