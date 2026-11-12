@@ -7245,6 +7245,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var replyingTo by remember { mutableStateOf<QinblyApi.MessageSummary?>(null) }
     var menuAnchor by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     var showSharedMedia by remember { mutableStateOf(false) }
+    var viewingNote by remember { mutableStateOf<QinblyApi.TrayEntry?>(null) }
     var chatPhotoUrl by remember { mutableStateOf<String?>(null) }
     var reactions by remember { mutableStateOf<Map<String, List<Pair<String, String>>>>(emptyMap()) }
     var reactionsNonce by remember { mutableStateOf(0) }
@@ -7353,6 +7354,17 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     }
     if (showStickerCreator) {
         QinblyStickerCreateDialog(QinblyBrand.Accent, onNotice, onDismiss = { showStickerCreator = false }, onCreated = { stickerRefresh++ })
+    }
+    viewingNote?.let { n ->
+        androidx.compose.ui.window.Dialog(onDismissRequest = { viewingNote = null }) {
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Color(0xFF1B1727)).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                QiblyAccountAvatar(n.username, n.avatarUrl, 64.dp) { viewingNote = null; onOpenProfile(n.username) }
+                Text(n.displayName.ifBlank { n.username }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(n.note, color = Color.White, fontSize = 18.sp, lineHeight = 24.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFF2E2745)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(18.dp)).padding(horizontal = 16.dp, vertical = 14.dp))
+                Button(onClick = { viewingNote = null; onOpenConversation(n.username) }, colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent), shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) { Text("Responder na conversa") }
+            }
+        }
     }
     if (showStoryMenu) {
         QinblyStoryMenu(
@@ -7583,13 +7595,13 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     Column(Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0) 0.dp else 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (recipientUsername.isBlank()) {
             // Faixa de cima: "Criar" (story ou nota), quem você segue com story/nota e atalhos para quem você conversa.
-            val trayOthers = storyTray.filter { !it.mine }
+            val trayOthers = storyTray.filter { !it.mine && (it.stories.isNotEmpty() || it.note.isNotBlank()) }
             val trayNames = trayOthers.map { it.username.lowercase() }.toSet()
             androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp), contentPadding = PaddingValues(horizontal = 2.dp)) {
                 item(key = "story-create") {
                     val hasMyStory = myStoryEntry?.stories?.isNotEmpty() == true
                     Column(Modifier.widthIn(min = 84.dp, max = 140.dp).width(IntrinsicSize.Max).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { showStoryMenu = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        QinblyNoteBubble(myStoryEntry?.note.orEmpty())
+                        QinblyNoteBubble(myStoryEntry?.note.orEmpty(), onClick = { showStoryMenu = true })
                         Box(Modifier.size(86.dp).then(if (hasMyStory) Modifier.border(2.dp, Color.Gray.copy(alpha = 0.6f), CircleShape) else Modifier), contentAlignment = Alignment.Center) {
                             Box(Modifier.size(80.dp)) {
                                 QiblyAccountAvatar(ownHandle, "", 78.dp) { showStoryMenu = true }
@@ -7604,18 +7616,11 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                 items(trayOthers, key = { "tray-" + it.username }) { person ->
                     val open: () -> Unit = { if (person.stories.isNotEmpty()) { viewingStory = person } else { onOpenConversation(person.username) } }
                     Column(Modifier.widthIn(min = 84.dp, max = 140.dp).width(IntrinsicSize.Max).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { open() }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        QinblyNoteBubble(person.note)
+                        QinblyNoteBubble(person.note, onClick = { viewingNote = person })
                         Box(
                             Modifier.size(86.dp).then(if (person.stories.isNotEmpty()) Modifier.border(2.dp, if (person.hasUnseen) QinblyBrand.Accent else Color.Gray.copy(alpha = 0.6f), CircleShape) else Modifier),
                             contentAlignment = Alignment.Center
                         ) { QiblyAccountAvatar(person.username, person.avatarUrl, 78.dp) { open() } }
-                        Text(person.displayName.ifBlank { person.username }, color = RemoteAppearance.screenTextColor, fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                    }
-                }
-                items(inbox.filter { it.username.lowercase() !in trayNames }.take(12), key = { "story-" + it.username }) { person ->
-                    Column(Modifier.widthIn(min = 84.dp, max = 140.dp).width(IntrinsicSize.Max).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onOpenConversation(person.username) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        QinblyNoteBubble("")
-                        Box(Modifier.size(86.dp), contentAlignment = Alignment.Center) { QiblyAccountAvatar(person.username, person.avatarUrl, 78.dp) { onOpenConversation(person.username) } }
                         Text(person.displayName.ifBlank { person.username }, color = RemoteAppearance.screenTextColor, fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     }
                 }
@@ -8193,7 +8198,7 @@ private object QinblyAvatarCache {
 }
 
 @Composable
-private fun QinblyNoteBubble(note: String) {
+private fun QinblyNoteBubble(note: String, onClick: (() -> Unit)? = null) {
     // Reserva sempre a mesma altura para os avatares da faixa ficarem alinhados, com ou sem nota.
     // O balão pode ser mais largo que a coluna do avatar, assim a nota aparece inteira (até 3 linhas).
     Box(Modifier.height(60.dp).fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
@@ -8201,7 +8206,7 @@ private fun QinblyNoteBubble(note: String) {
             Text(note, color = Color.White, fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 modifier = Modifier.offset(y = 6.dp)
-                    .clip(RoundedCornerShape(16.dp)).background(Color(0xFF2E2745)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(16.dp)).padding(horizontal = 10.dp, vertical = 5.dp))
+                    .clip(RoundedCornerShape(16.dp)).then(if (onClick != null) Modifier.clickable { onClick() } else Modifier).background(Color(0xFF2E2745)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(16.dp)).padding(horizontal = 10.dp, vertical = 5.dp))
         }
     }
 }
