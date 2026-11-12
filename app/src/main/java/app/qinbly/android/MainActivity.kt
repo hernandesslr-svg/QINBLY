@@ -5600,7 +5600,7 @@ private fun QinblyNearbyPage(onNotice: (String) -> Unit) {
     }
     val hereNow = here
     if (allowed && !failed && hereNow != null) {
-        QinblyNeighborhoodBoard(hereNow.first, hereNow.second, place, onRefreshLocation = { attempt++ }, onNotice = onNotice)
+        QinblyNeighborhoodBoard(hereNow.first, hereNow.second, place, RemoteAppearance.feedTextColor, RemoteAppearance.feedSecondaryTextColor, onRefreshLocation = { attempt++ }, onNotice = onNotice)
         return
     }
     Column(

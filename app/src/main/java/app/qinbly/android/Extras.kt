@@ -62,7 +62,7 @@ internal fun QinblyPillField(value: String, onChange: (String) -> Unit, hint: St
 }
 
 @Composable
-private fun Chip(text: String, selected: Boolean, accent: Color = QinblyBrand.Accent, onClick: () -> Unit) {
+private fun Chip(text: String, selected: Boolean, accent: Color = Color(0xFF7C4DFF), onClick: () -> Unit) {
     Text(text, color = Color.White, fontSize = 13.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(if (selected) accent else FieldBg).clickable { onClick() }.padding(horizontal = 12.dp, vertical = 7.dp))
 }
@@ -88,7 +88,7 @@ internal fun qinblyFetchMoods(token: String, usernames: List<String>): Map<Strin
         val o = arr.getJSONObject(i)
         val fresh = try { java.time.Duration.between(java.time.OffsetDateTime.parse(o.optString("mood_at")).toInstant(), java.time.Instant.now()).toHours() < 24 } catch (_: Exception) { false }
         if (!fresh) continue
-        val col = try { Color(android.graphics.Color.parseColor(o.optString("mood_color", "#7C4DFF"))) } catch (_: Exception) { QinblyBrand.Accent }
+        val col = try { Color(android.graphics.Color.parseColor(o.optString("mood_color", "#7C4DFF"))) } catch (_: Exception) { Color(0xFF7C4DFF) }
         out[o.optString("username")] = QinblyMood(o.optString("mood_emoji"), col)
     }
     return out
@@ -132,7 +132,7 @@ internal fun QinblyMoodDialog(onDismiss: () -> Unit, onNotice: (String) -> Unit,
                 Box(Modifier.clip(RoundedCornerShape(20.dp)).background(Color(android.graphics.Color.parseColor(color))).padding(horizontal = 14.dp, vertical = 8.dp)) { Text("$emoji  meu clima", color = Color.White, fontWeight = FontWeight.SemiBold) }
             }
         },
-        confirmButton = { TextButton(onClick = { save(false) }) { Text("Definir", color = QinblyBrand.Accent) } },
+        confirmButton = { TextButton(onClick = { save(false) }) { Text("Definir", color = Color(0xFF7C4DFF)) } },
         dismissButton = { Row { TextButton(onClick = { save(true) }) { Text("Limpar", color = Color(0xFFA9B5C8)) }; TextButton(onClick = onDismiss) { Text("Fechar", color = Color(0xFFA9B5C8)) } } }
     )
 }
@@ -231,7 +231,7 @@ internal fun QinblyCapsuleInbox() {
                 Text(c.optString("body"), color = Color.White, fontSize = 16.sp, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(FieldBg).padding(14.dp))
             }
         },
-        confirmButton = { TextButton(onClick = { close() }) { Text("Fechar", color = QinblyBrand.Accent) } }
+        confirmButton = { TextButton(onClick = { close() }) { Text("Fechar", color = Color(0xFF7C4DFF)) } }
     )
 }
 
@@ -324,7 +324,7 @@ internal fun QinblyStickerPacksDialog(accent: Color, onDismiss: () -> Unit, onNo
 
 // ───────── Mural do bairro ─────────
 @Composable
-internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, onRefreshLocation: () -> Unit, onNotice: (String) -> Unit) {
+internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, textColor: Color, secondary: Color, onRefreshLocation: () -> Unit, onNotice: (String) -> Unit) {
     val context = LocalContext.current
     val prefs = remember { sess(context) }
     val myId = remember { prefs.getString("user_id", null) }
@@ -360,18 +360,18 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, on
     Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Mural do bairro", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = RemoteAppearance.feedTextColor)
-                Text(if (place.isNotBlank()) "Perto de $place • avisos somem em 48 h" else "Avisos de até ~5 km • somem em 48 h", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
+                Text("Mural do bairro", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = textColor)
+                Text(if (place.isNotBlank()) "Perto de $place • avisos somem em 48 h" else "Avisos de até ~5 km • somem em 48 h", color = secondary, fontSize = 12.sp)
             }
-            Text("↻", fontSize = 22.sp, color = RemoteAppearance.feedTextColor, modifier = Modifier.clip(CircleShape).clickable { refresh++; onRefreshLocation() }.padding(10.dp))
+            Text("↻", fontSize = 22.sp, color = textColor, modifier = Modifier.clip(CircleShape).clickable { refresh++; onRefreshLocation() }.padding(10.dp))
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             QinblyPillField(draft, { draft = it.take(280) }, "Avise a vizinhança…", Modifier.weight(1f), maxLines = 3)
-            Box(Modifier.size(46.dp).clip(CircleShape).background(if (draft.isBlank()) Color(0xFF3A3256) else QinblyBrand.Accent).clickable(enabled = draft.isNotBlank()) { post() }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, fontSize = 18.sp) }
+            Box(Modifier.size(46.dp).clip(CircleShape).background(if (draft.isBlank()) Color(0xFF3A3256) else Color(0xFF7C4DFF)).clickable(enabled = draft.isNotBlank()) { post() }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, fontSize = 18.sp) }
         }
         val list = notices
-        if (list == null) Text("Carregando…", color = RemoteAppearance.feedSecondaryTextColor)
-        else if (list.isEmpty()) Text("Nenhum aviso por perto ainda. Escreva o primeiro: achados e perdidos, eventos, recomendações…", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
+        if (list == null) Text("Carregando…", color = secondary)
+        else if (list.isEmpty()) Text("Nenhum aviso por perto ainda. Escreva o primeiro: achados e perdidos, eventos, recomendações…", color = secondary, fontSize = 14.sp)
         else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(list, key = { it.optString("id") }) { n ->
                 val p = n.optJSONObject("profiles")
