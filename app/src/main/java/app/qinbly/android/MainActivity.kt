@@ -554,7 +554,9 @@ private fun qinblyNotify(context: android.content.Context, title: String, text: 
 
 /** Navegação global para hashtags e menções: qualquer texto clicável abre daqui. */
 /** Texto inicial para a próxima publicação (pergunta do dia, desafio da semana). */
-private object QinblyComposeSeed { var text: String = ""; var story: Boolean = false }
+private object QinblyComposeSeed { var text: String = ""; var story: Boolean = false; var contribTo: String = "" }
+/** Chamado antes de abrir a câmera do app: a foto/vídeo tirado vira resposta do story coletivo [storyId] em vez de story novo. */
+internal fun qinblyStartContribution(storyId: String) { QinblyComposeSeed.contribTo = storyId }
 
 /** Ícones de linha do menu "Criar" (traço de 1,8, pontas arredondadas, grade 24x24). */
 private object QinblyCreateIcons {
@@ -8201,7 +8203,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
             QinblyStoryCard(
                 imageUrl = if (myCover != null && myCover.mediaType != "video" && myCover.mediaType != "text") myCover.mediaUrl else mine?.avatarUrl.orEmpty(),
                 isAvatar = myCover == null || myCover.mediaType == "video" || myCover.mediaType == "text", isVideo = myCover != null && myCover.mediaType == "video", label = "Criar story", textStory = if (myCover?.mediaType == "text") qinblyParseTextStory(myCover.caption) else null,
-                ring = QinblyBrand.Accent.copy(alpha = 0.55f), plus = true, mood = moods[prefs.getString("username", "").orEmpty()], onPlus = { showStoryMenu = true }, onClick = { if (mine?.stories?.isNotEmpty() == true) viewingStory = mine else onNotice("Você ainda não tem story. Toque no + para criar.") }
+                ring = QinblyBrand.Accent.copy(alpha = 0.55f), plus = true, collabAvatars = myCover?.contribAvatars.orEmpty(), mood = moods[prefs.getString("username", "").orEmpty()], onPlus = { showStoryMenu = true }, onClick = { if (mine?.stories?.isNotEmpty() == true) viewingStory = mine else onNotice("Você ainda não tem story. Toque no + para criar.") }
             )
         }
         items(trayOthers, key = { "tray-" + it.username }) { person ->
@@ -8210,7 +8212,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
             QinblyStoryCard(
                 imageUrl = if (cover != null && cover.mediaType != "video" && cover.mediaType != "text") cover.mediaUrl else person.avatarUrl,
                 isAvatar = cover == null || cover.mediaType == "video" || cover.mediaType == "text", isVideo = cover != null && cover.mediaType == "video", label = person.displayName.ifBlank { person.username }, textStory = if (cover?.mediaType == "text") qinblyParseTextStory(cover.caption) else null,
-                ring = if (person.stories.isEmpty() || person.hasUnseen) QinblyBrand.Accent else Color(0xFF4A4066), plus = false, mood = moods[person.username], showAvatar = true, avatarUrl = person.avatarUrl, onClick = open
+                ring = if (person.stories.isEmpty() || person.hasUnseen) QinblyBrand.Accent else Color(0xFF4A4066), plus = false, collabAvatars = cover?.contribAvatars.orEmpty(), mood = moods[person.username], showAvatar = true, avatarUrl = person.avatarUrl, onClick = open
             )
         }
     }
@@ -8222,18 +8224,18 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
         )
     }
     viewingStory?.let { entry ->
-        QinblyStoryViewer(entry, QinblyBrand.Accent, onNotice, onDismiss = { viewingStory = null; storyRefresh++ })
+        QinblyStoryViewer(entry, QinblyBrand.Accent, onNotice, onDismiss = { viewingStory = null; storyRefresh++ }, onCamera = { id -> qinblyStartContribution(id); onAddStory() })
     }
 }
 
 @Composable
-private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, textStory: QinblyTextStory?, ring: Color, plus: Boolean, mood: QinblyMood? = null, onPlus: () -> Unit = {}, showAvatar: Boolean = false, avatarUrl: String = "", onClick: () -> Unit) {
+private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, textStory: QinblyTextStory?, ring: Color, plus: Boolean, collabAvatars: List<String> = emptyList(), mood: QinblyMood? = null, onPlus: () -> Unit = {}, showAvatar: Boolean = false, avatarUrl: String = "", onClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Box(Modifier.width(168.dp).height(306.dp).clip(shape).background(QiblyTheme.soft).border(1.5.dp, ring, shape).clickable(indication = null, interactionSource = ms) { onClick() }) {
         if (textStory != null) {
             Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(qinblyTextBgs[textStory.bg.coerceIn(0, qinblyTextBgs.lastIndex)])), contentAlignment = Alignment.Center) {
-                Text((if (textStory.collab) "👥 " else "") + textStory.text, color = Color.White, fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium, maxLines = 8, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                Text(textStory.text, color = Color.White, fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium, maxLines = 8, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(horizontal = 14.dp))
             }
         } else if (imageUrl.isBlank()) {
@@ -8245,6 +8247,17 @@ private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolea
         Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(96.dp).background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC000000)))))
         if (plus) Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 46.dp).size(60.dp).clip(CircleShape).background(QinblyBrand.Accent).border(3.dp, Color.White.copy(alpha = 0.9f), CircleShape).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onPlus() }, contentAlignment = Alignment.Center) {
             Icon(Icons.Default.Add, contentDescription = "Criar", tint = Color.White, modifier = Modifier.size(32.dp))
+        }
+        if (textStory?.collab == true) {
+            Text("👥 Coletivo", color = Color(0xFF26215C), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).clip(RoundedCornerShape(12.dp)).background(Color.White).padding(horizontal = 8.dp, vertical = 3.dp))
+            if (collabAvatars.isNotEmpty()) Row(Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = if (showAvatar) 54.dp else 40.dp)) {
+                collabAvatars.take(3).forEach { url ->
+                    Box(Modifier.padding(end = 0.dp).offset(x = 0.dp).size(24.dp).clip(CircleShape).background(QiblyTheme.soft).border(1.5.dp, Color.White, CircleShape)) {
+                        if (url.isNotBlank()) AsyncImage(model = url, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                    }
+                    Spacer(Modifier.width(2.dp))
+                }
+            }
         }
         if (mood != null) Box(Modifier.align(Alignment.TopStart).padding(8.dp).size(36.dp).clip(CircleShape).background(mood.color).border(2.dp, Color.White, CircleShape), contentAlignment = Alignment.Center) { Text(mood.emoji, fontSize = 18.sp) }
         if (showAvatar) Row(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(start = 10.dp, end = 10.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -10462,8 +10475,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     val context = androidx.compose.ui.platform.LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QinblyComposeSeed.story = false } }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QinblyComposeSeed.story = false; QinblyComposeSeed.contribTo = "" } }
     var caption by remember { mutableStateOf(QinblyComposeSeed.text.also { QinblyComposeSeed.text = "" }) }
+    var showCapEmojis by remember { mutableStateOf(false) }
     var captionCursor by remember { mutableIntStateOf(caption.length) }
     var pollOptions by remember { mutableStateOf(listOf("", "")) }
     var pollDurationHours by remember { mutableIntStateOf(24) }
@@ -12407,8 +12421,15 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 }
                 Column(Modifier.weight(1f).height(140.dp).clip(RoundedCornerShape(14.dp)).background(QinblyBrand.Accent.copy(alpha = 0.06f)).padding(12.dp)) {
                     QinblyLegendField(capState, 2200, "Escreva uma legenda…", QiblyTheme.text, 15.sp, Modifier.fillMaxWidth().weight(1f)) { caption = it; captionCursor = it.length }
-                    Text("${caption.length} / 2200", modifier = Modifier.align(Alignment.End), color = Color.Gray, style = MaterialTheme.typography.labelSmall)
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("😊", fontSize = 22.sp, modifier = Modifier.clip(CircleShape).background(if (showCapEmojis) QinblyBrand.Accent.copy(alpha = 0.25f) else Color.Transparent).clickable { showCapEmojis = !showCapEmojis }.padding(horizontal = 6.dp, vertical = 2.dp))
+                        Spacer(Modifier.weight(1f))
+                        Text("${caption.length} / 2200", color = Color.Gray, style = MaterialTheme.typography.labelSmall)
+                    }
                 }
+            }
+            if (showCapEmojis) QinblyEmojiPanel(Modifier.clip(RoundedCornerShape(16.dp)), QiblyTheme.card) { e ->
+                capState.legend = (capState.legend + e).take(2200); caption = capState.full(); captionCursor = caption.length
             }
             if (selectedType == "vídeo") {
                 Row(
@@ -12487,7 +12508,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                             val storyMode = QinblyComposeSeed.story
                                             val fileId = QinblyApi.uploadPostMedia(context, token, uploadUri, fileName, mime, size, if (storyMode) "story_media" else "post_media")
                                             if (storyMode) {
-                                                QinblyApi.createStoryFromFile(token, fileId, mime.startsWith("video/"), caption)
+                                                val contribTo = QinblyComposeSeed.contribTo
+                                                if (contribTo.isNotBlank()) QinblyApi.addContribution(token, contribTo, fileId, if (mime.startsWith("video/")) "video" else "image", caption)
+                                                else QinblyApi.createStoryFromFile(token, fileId, mime.startsWith("video/"), caption)
                                             } else if (selectedType == "foto" && gallerySelection.size > 1) {
                                                 val uploadedIds = mutableListOf(fileId)
                                                 for ((index, extraUri) in gallerySelection.drop(1).withIndex()) {
@@ -12521,8 +12544,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                         showComposer = false
                                         sourceUri = null
                                         coverBitmap = null
-                                        onNotice(if (QinblyComposeSeed.story) "Story publicado. Fica no ar por 24 horas." else "Publicado")
+                                        onNotice(if (QinblyComposeSeed.contribTo.isNotBlank()) "Resposta enviada." else if (QinblyComposeSeed.story) "Story publicado. Fica no ar por 24 horas." else "Publicado")
                                         QinblyComposeSeed.story = false
+                                        QinblyComposeSeed.contribTo = ""
                                         onCameraCancelled()
                                     }
                                 } catch (e: Exception) {

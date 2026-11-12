@@ -281,11 +281,19 @@ private fun StoryVideo(url: String, onEnded: () -> Unit) {
  * passa sozinho (6 s para foto; vídeo até o fim, no máximo 20 s). Se o story é seu: contagem de quem viu, lista e excluir.
  */
 @Composable
-internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNotice: (String) -> Unit, onDismiss: () -> Unit) {
+internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNotice: (String) -> Unit, onDismiss: () -> Unit, onCamera: (String) -> Unit = {}) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     val token = remember { prefs.getString("token", null) }
-    val items = remember(entry.username) { mutableStateListOf<QinblyApi.StoryItem>().apply { addAll(entry.stories) } }
+    val items = remember(entry.username) {
+        mutableStateListOf<QinblyApi.StoryItem>().apply {
+            entry.stories.forEach { st ->
+                add(st)
+                // Story coletivo: depois do tema e das respostas vem a página final com o botão Participar.
+                if (QinblyApi.isCollabCaption(st.caption)) add(st.copy(id = st.id + "#invite", page = "invite", parentId = st.id))
+            }
+        }
+    }
     var index by remember(entry.username) { mutableIntStateOf(0) }
     var showViewers by remember { mutableStateOf(false) }
     var showComments by remember { mutableStateOf(false) }
@@ -293,6 +301,26 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     val imeOpen = WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
     var viewers by remember { mutableStateOf<List<QinblyApi.StoryViewer>?>(null) }
+    var contribTarget by remember { mutableStateOf("") }
+    var reloadContribs by remember { mutableIntStateOf(0) }
+    fun applyContribs(storyId: String, list: List<QinblyApi.Contribution>) {
+        val curId = items.getOrNull(index)?.id
+        items.removeAll { it.page == "contrib" && it.parentId == storyId }
+        val invIdx = items.indexOfFirst { it.page == "invite" && it.parentId == storyId }
+        if (invIdx < 0) return
+        items.addAll(invIdx, list.map { c ->
+            QinblyApi.StoryItem(id = "c:" + c.id, mediaUrl = c.mediaUrl, mediaType = c.mediaType, caption = c.caption, createdAt = c.createdAt, seen = true, views = 0,
+                page = "contrib", contribId = c.id, authorName = c.displayName.ifBlank { c.username }, authorUsername = c.username, authorAvatar = c.avatarUrl, authorMine = c.mine, parentId = storyId)
+        })
+        if (curId != null) { val ni = items.indexOfFirst { it.id == curId }; if (ni >= 0) index = ni }
+    }
+    LaunchedEffect(entry.username, reloadContribs) {
+        if (token.isNullOrBlank()) return@LaunchedEffect
+        for (st in entry.stories.filter { QinblyApi.isCollabCaption(it.caption) }) {
+            val list = try { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getContributions(token, st.id) } } catch (_: Exception) { continue }
+            applyContribs(st.id, list)
+        }
+    }
     if (items.isEmpty()) { LaunchedEffect(Unit) { onDismiss() }; return }
     val current = items[index.coerceIn(0, items.lastIndex)]
     val progress = remember(current.id) { Animatable(0f) }
@@ -305,12 +333,12 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     fun previous() { if (index > 0) index-- }
 
     LaunchedEffect(current.id) {
-        if (!entry.mine && !token.isNullOrBlank()) {
+        if (!entry.mine && current.page == "story" && !token.isNullOrBlank()) {
             Thread { try { QinblyApi.markStoryViewed(token, current.id) } catch (_: Exception) { } }.start()
         }
     }
-    LaunchedEffect(current.id, showViewers, showComments, replying) {
-        if (showViewers || showComments || replying) { progress.stop(); return@LaunchedEffect }
+    LaunchedEffect(current.id, showViewers, showComments, replying, contribTarget) {
+        if (showViewers || showComments || replying || contribTarget.isNotBlank()) { progress.stop(); return@LaunchedEffect }
         val total = if (current.mediaType == "video") 20000 else 6000
         val remaining = ((1f - progress.value) * total).toInt().coerceAtLeast(1)
         progress.animateTo(1f, tween(durationMillis = remaining, easing = LinearEasing))
@@ -341,11 +369,12 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                     }
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    val headAvatar = if (current.page == "contrib") current.authorAvatar else entry.avatarUrl
                     Box(Modifier.size(34.dp).clip(CircleShape).background(Color(0xFF2B3544))) {
-                        if (entry.avatarUrl.isNotBlank()) AsyncImage(model = entry.avatarUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                        if (headAvatar.isNotBlank()) AsyncImage(model = headAvatar, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                     }
                     Spacer(Modifier.width(8.dp))
-                    Text(if (entry.mine) "Seu story" else entry.displayName.ifBlank { entry.username }, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
+                    Text(if (current.page == "contrib") current.authorName else (if (entry.mine) "Seu story" else entry.displayName.ifBlank { entry.username }) + (if (QinblyApi.isCollabCaption(current.caption)) "  ·  Story coletivo" else ""), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
                         maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.White, modifier = Modifier.size(28.dp).clickable { onDismiss() })
                 }
@@ -355,19 +384,24 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                 if (current.caption.isNotBlank() && current.mediaType != "text") {
                     Text(current.caption, color = Color.White, fontSize = 16.sp, modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0x88000000)).padding(horizontal = 12.dp, vertical = 8.dp))
                 }
-                val isCollab = qinblyParseTextStory(current.caption)?.collab == true
-                if (entry.mine) {
-                    Text(if (isCollab) "👥  Ver contribuições" else "💬  Ver comentários", color = Color.White, fontSize = 15.sp,
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0x55000000)).border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(26.dp)).clickable { showComments = true }.padding(horizontal = 20.dp, vertical = 13.dp))
-                } else {
-                    if (isCollab) Text("👥  Ver contribuições", color = Color.White, fontSize = 13.sp,
-                        modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0x66000000)).clickable { showComments = true }.padding(horizontal = 14.dp, vertical = 7.dp))
-                    QinblyStoryReplyBar(current.id, isCollab, accent, Color(0x66000000), Color(0xCCFFFFFF), onNotice,
-                        onSent = { focusManager.clearFocus() }, onFocus = { replying = it })
+                val isCollab = QinblyApi.isCollabCaption(current.caption)
+                if (current.page == "invite") {
+                    Text("Participar", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 16.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Color.White).clickable { contribTarget = current.parentId }.padding(vertical = 15.dp))
+                } else if (current.page == "story" && !isCollab) {
+                    if (entry.mine) {
+                        Text("💬  Ver comentários", color = Color.White, fontSize = 15.sp,
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0x55000000)).border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(26.dp)).clickable { showComments = true }.padding(horizontal = 20.dp, vertical = 13.dp))
+                    } else {
+                        QinblyStoryReplyBar(current.id, false, accent, Color(0x66000000), Color(0xCCFFFFFF), onNotice,
+                            onSent = { focusManager.clearFocus() }, onFocus = { replying = it })
+                    }
                 }
-                if (entry.mine) {
+                val showViews = entry.mine && current.page == "story"
+                val canDelete = (entry.mine && current.page != "invite") || (current.page == "contrib" && current.authorMine)
+                if (showViews || canDelete) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Row(
+                        if (showViews) Row(
                             Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0x66000000)).clickable {
                                 showViewers = true
                                 viewers = null
@@ -383,17 +417,32 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                             Spacer(Modifier.width(6.dp))
                             Text(current.views.toString(), color = Color.White, fontWeight = FontWeight.SemiBold)
                         }
-                        Icon(Icons.Outlined.Delete, contentDescription = "Excluir story", tint = Color.White,
+                        if (canDelete) Icon(Icons.Outlined.Delete, contentDescription = if (current.page == "contrib") "Apagar resposta" else "Excluir story", tint = Color.White,
                             modifier = Modifier.size(28.dp).clickable {
                                 val id = current.id
-                                if (!token.isNullOrBlank()) Thread { try { QinblyApi.deleteStory(token, id) } catch (_: Exception) { } }.start()
-                                items.removeAll { it.id == id }
+                                if (current.page == "contrib") {
+                                    val cid = current.contribId
+                                    if (!token.isNullOrBlank()) Thread { try { QinblyApi.deleteContribution(token, cid) } catch (_: Exception) { } }.start()
+                                    items.removeAll { it.id == id }
+                                } else {
+                                    if (!token.isNullOrBlank()) Thread { try { QinblyApi.deleteStory(token, id) } catch (_: Exception) { } }.start()
+                                    items.removeAll { it.id == id || it.parentId == id }
+                                }
                                 if (items.isEmpty()) onDismiss() else if (index > items.lastIndex) index = items.lastIndex
                             })
                     }
                 }
             }
         }
+    }
+
+    if (contribTarget.isNotBlank()) {
+        QinblyContributeFlow(
+            storyId = contribTarget, onNotice = onNotice,
+            onCamera = { val sid = contribTarget; contribTarget = ""; onCamera(sid); onDismiss() },
+            onDone = { contribTarget = ""; reloadContribs++ },
+            onDismiss = { contribTarget = "" }
+        )
     }
 
     if (showComments) QinblyStoryCommentsDialog(current.id, entry.mine, accent, qinblyParseTextStory(current.caption)?.collab == true, onNotice) { showComments = false }

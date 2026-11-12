@@ -673,13 +673,104 @@ object QinblyApi {
     }
 
     // ───────── Stories (24 h) e notas ─────────
-    data class StoryItem(val id: String, val mediaUrl: String, val mediaType: String, val caption: String, val createdAt: String, val seen: Boolean, val views: Int)
+    /** [page]: "story" (normal), "contrib" (resposta de um story coletivo) ou "invite" (última página, com o botão Participar). */
+    data class StoryItem(
+        val id: String, val mediaUrl: String, val mediaType: String, val caption: String, val createdAt: String, val seen: Boolean, val views: Int,
+        val contribAvatars: List<String> = emptyList(), val page: String = "story", val contribId: String = "",
+        val authorName: String = "", val authorUsername: String = "", val authorAvatar: String = "", val authorMine: Boolean = false, val parentId: String = ""
+    )
+    data class Contribution(val id: String, val username: String, val displayName: String, val avatarUrl: String, val mediaUrl: String, val mediaType: String, val caption: String, val createdAt: String, val mine: Boolean)
     data class TrayEntry(val username: String, val displayName: String, val avatarUrl: String, val mine: Boolean, val note: String, val stories: List<StoryItem>, val hasUnseen: Boolean)
     data class StoryComment(val id: String, val body: String, val username: String, val displayName: String, val createdAt: String, val kind: String = "comment")
     data class StoryViewer(val username: String, val displayName: String, val avatarUrl: String, val viewedAt: String)
 
     /** Bandeja de stories e notas: você primeiro, depois quem você segue (com story novo antes). */
+    private const val STORAGE_PUBLIC = "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/"
+    private fun pubUrl(path: String?): String = if (path.isNullOrBlank()) "" else if (path.startsWith("http")) path else STORAGE_PUBLIC + path
+    internal fun isCollabCaption(caption: String) = caption.startsWith("qinbly:collab:")
+
     fun getStoryTray(token: String): List<TrayEntry> {
+        val base = getStoryTrayBase(token)
+        return try { withCollab(token, base) } catch (_: Exception) { base }
+    }
+
+    /** Junta à bandeja os stories coletivos que chegam até você por quem você segue ter respondido, e as bolinhas de quem já respondeu. */
+    private fun withCollab(token: String, base: List<TrayEntry>): List<TrayEntry> {
+        val me = userIdFromToken(token) ?: return base
+        val have = base.flatMap { it.stories }.map { it.id }.toSet()
+        val followArr = org.json.JSONArray(restCall(token, "GET", "follows?follower_id=eq.$me&select=following_id"))
+        val following = (0 until followArr.length()).map { followArr.getJSONObject(it).optString("following_id") }.filter { it.isNotBlank() }
+        val extraItems = mutableListOf<Pair<TrayEntry, StoryItem>>()
+        if (following.isNotEmpty()) {
+            val c = org.json.JSONArray(restCall(token, "GET", "story_contributions?user_id=in.(${following.joinToString(",")})&select=story_id"))
+            val ids = (0 until c.length()).map { c.getJSONObject(it).optString("story_id") }.distinct().filter { it !in have }
+            if (ids.isNotEmpty()) {
+                val now = java.net.URLEncoder.encode(java.time.Instant.now().toString(), "UTF-8")
+                val st = org.json.JSONArray(restCall(token, "GET", "stories?id=in.(${ids.joinToString(",")})&expires_at=gt.$now&select=id,user_id,caption,created_at,media_type,media_path,profiles(username,display_name,avatar_path)"))
+                val vw = org.json.JSONArray(restCall(token, "GET", "story_views?viewer_id=eq.$me&story_id=in.(${ids.joinToString(",")})&select=story_id"))
+                val seen = (0 until vw.length()).map { vw.getJSONObject(it).optString("story_id") }.toSet()
+                for (i in 0 until st.length()) {
+                    val o = st.getJSONObject(i); val pr = o.optJSONObject("profiles") ?: continue
+                    if (!isCollabCaption(o.optString("caption"))) continue
+                    val item = StoryItem(o.optString("id"), pubUrl(o.optString("media_path")), o.optString("media_type"), o.optString("caption"), o.optString("created_at"), o.optString("id") in seen, 0)
+                    extraItems.add(TrayEntry(pr.optString("username"), pr.optString("display_name"), pubUrl(pr.optString("avatar_path")), o.optString("user_id") == me, "", listOf(item), !(item.seen)) to item)
+                }
+            }
+        }
+        val allCollabIds = (base.flatMap { it.stories } + extraItems.map { it.second }).filter { isCollabCaption(it.caption) }.map { it.id }
+        val avatars = HashMap<String, MutableList<String>>()
+        if (allCollabIds.isNotEmpty()) {
+            val ca = org.json.JSONArray(restCall(token, "GET", "story_contributions?story_id=in.(${allCollabIds.joinToString(",")})&select=story_id,profiles(avatar_path)&order=created_at.asc&limit=400"))
+            for (i in 0 until ca.length()) {
+                val o = ca.getJSONObject(i)
+                val list = avatars.getOrPut(o.optString("story_id")) { mutableListOf() }
+                val url = pubUrl(o.optJSONObject("profiles")?.optString("avatar_path"))
+                if (list.size < 3) list.add(url)
+            }
+        }
+        fun decorate(e: TrayEntry) = e.copy(stories = e.stories.map { if (isCollabCaption(it.caption)) it.copy(contribAvatars = avatars[it.id].orEmpty()) else it })
+        val merged = base.map { decorate(it) }.toMutableList()
+        for ((entry, _) in extraItems) {
+            val idx = merged.indexOfFirst { it.username.equals(entry.username, true) && !it.mine }
+            if (idx >= 0) merged[idx] = merged[idx].copy(stories = merged[idx].stories + decorate(entry).stories, hasUnseen = merged[idx].hasUnseen || entry.hasUnseen)
+            else merged.add(decorate(entry))
+        }
+        return merged.sortedWith(compareBy<TrayEntry>({ !it.mine }, { !it.hasUnseen }))
+    }
+
+    fun getContributions(token: String, storyId: String): List<Contribution> {
+        val me = userIdFromToken(token)
+        val arr = org.json.JSONArray(restCall(token, "GET", "story_contributions?story_id=eq.$storyId&select=id,user_id,media_path,media_type,caption,created_at,profiles(username,display_name,avatar_path)&order=created_at.asc&limit=200"))
+        return (0 until arr.length()).map { i ->
+            val o = arr.getJSONObject(i); val p = o.optJSONObject("profiles")
+            Contribution(o.getString("id"), p?.optString("username").orEmpty(), p?.optString("display_name").orEmpty(), pubUrl(p?.optString("avatar_path")),
+                pubUrl(o.optString("media_path")), o.optString("media_type"), o.optString("caption"), o.optString("created_at"), o.optString("user_id") == me)
+        }
+    }
+
+    fun addContribution(token: String, storyId: String, mediaFileId: String?, mediaType: String, caption: String) {
+        val uid = userIdFromToken(token) ?: throw IllegalStateException("Entre na sua conta.")
+        val o = JSONObject().put("story_id", storyId).put("user_id", uid).put("media_type", mediaType).put("caption", caption.trim().take(4000))
+        if (mediaFileId != null) o.put("media_path", mediaFileId)
+        restCall(token, "POST", "story_contributions", o.toString(), "return=minimal")
+    }
+
+    fun deleteContribution(token: String, id: String) { restCall(token, "DELETE", "story_contributions?id=eq.$id") }
+
+    /** Sobe a foto ou vídeo escolhido como mídia de story; devolve (id do arquivo, é vídeo). */
+    fun uploadStoryMedia(context: Context, token: String, uri: Uri): Pair<String, Boolean> {
+        val resolver = context.contentResolver
+        val type = (resolver.getType(uri) ?: "image/jpeg").lowercase()
+        val isVideo = type.startsWith("video/")
+        require(isVideo || type in setOf("image/jpeg", "image/png", "image/webp")) { "Esse tipo de arquivo não é aceito. Use foto (JPG, PNG, WebP) ou vídeo." }
+        val size = resolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
+        require(size > 0) { "Não foi possível ler o arquivo." }
+        require(size <= (if (isVideo) 100L else 25L) * 1024 * 1024) { if (isVideo) "O vídeo passa de 100 MB." else "A foto passa de 25 MB." }
+        val ext = when (type) { "image/png" -> "png"; "image/webp" -> "webp"; "video/quicktime" -> "mov"; "video/webm" -> "webm"; "video/mp4" -> "mp4"; else -> if (isVideo) "mp4" else "jpg" }
+        return uploadPostMedia(context, token, uri, "story.$ext", type, size, "story_media") to isVideo
+    }
+
+    private fun getStoryTrayBase(token: String): List<TrayEntry> {
         val arr = request("GET", "/api/stories", null, token).optJSONArray("tray") ?: return emptyList()
         return (0 until arr.length()).mapNotNull { i ->
             val o = arr.optJSONObject(i) ?: return@mapNotNull null

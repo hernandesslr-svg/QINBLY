@@ -62,8 +62,9 @@ internal val qinblyTextBgs: List<List<Color>> = listOf(
     listOf(Color(0xFFEF9F27), Color(0xFFB45309)), listOf(Color(0xFF378ADD), Color(0xFF185FA5)), listOf(Color(0xFF111111), Color(0xFF2B2B2B)),
     listOf(Color(0xFFD85A30), Color(0xFF993C1D)), listOf(Color(0xFF639922), Color(0xFF3B6D11))
 )
-private val qinblyTextFonts = listOf("Aa" to FontFamily.Default, "Aa" to FontFamily.Serif, "Aa" to FontFamily.Monospace, "Aa" to FontFamily.Cursive)
-private val qinblyTextEmojis = "😀 😂 🥹 😍 🥰 😎 🤔 😢 😭 😡 🥳 🙏 👏 💪 👍 🔥 ✨ ❤️ 💜 💔 🎉 🌅 🌧️ 🌟 🍀 ☕ 🎶 📚 🙌 😴".split(" ")
+private val qinblyTextFonts = listOf("Aa" to FontFamily.Default, "Aa" to FontFamily.Serif, "Aa" to FontFamily.Monospace, "Aa" to FontFamily.Default)
+private val qinblyFontNames = listOf("Moderno", "Clássico", "Máquina", "Negrito")
+private fun qinblyFontWeight(i: Int) = if (i == 3) FontWeight.Bold else FontWeight.Medium
 
 internal fun qinblyEncodeTextStory(s: QinblyTextStory): String = "qinbly:${if (s.collab) "collab" else "text"}:${s.bg}:${s.font}:${s.align}\n${s.text}"
 
@@ -86,14 +87,14 @@ internal fun QinblyTextStoryContent(s: QinblyTextStory, modifier: Modifier = Mod
     Box(modifier.background(Brush.verticalGradient(colors)), contentAlignment = Alignment.Center) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 110.dp), verticalArrangement = Arrangement.Center) {
             Text(s.text, color = Color.White, fontSize = textSizeFor(s.text.length).sp, lineHeight = (textSizeFor(s.text.length) * 1.3f).sp,
-                fontFamily = qinblyTextFonts[s.font.coerceIn(0, qinblyTextFonts.lastIndex)].second, fontWeight = FontWeight.Medium,
+                fontFamily = qinblyTextFonts[s.font.coerceIn(0, qinblyTextFonts.lastIndex)].second, fontWeight = qinblyFontWeight(s.font.coerceIn(0, qinblyTextFonts.lastIndex)),
                 textAlign = alignOf(s.align), modifier = Modifier.fillMaxWidth())
         }
     }
 }
 
 @Composable
-internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> Unit, onNotice: (String) -> Unit, collab: Boolean = false) {
+internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> Unit, onNotice: (String) -> Unit, collab: Boolean = false, contributeTo: String? = null) {
     val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
@@ -102,81 +103,102 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
     var font by remember { mutableStateOf(0) }
     var align by remember { mutableStateOf(1) }
     var showEmojis by remember { mutableStateOf(false) }
+    var showFonts by remember { mutableStateOf(false) }
+    var showBgs by remember { mutableStateOf(true) }
     var confirmExit by remember { mutableStateOf(false) }
+    var confirmSend by remember { mutableStateOf(false) }
     var sending by remember { mutableStateOf(false) }
     val focus = remember { androidx.compose.ui.focus.FocusRequester() }
     LaunchedEffect(Unit) { try { focus.requestFocus() } catch (_: Exception) { } }
     fun tryExit() { if (text.isBlank()) onDismiss() else confirmExit = true }
     BackHandler { tryExit() }
+    fun doPublish() {
+        val token = prefs.getString("token", null)
+        val uid = QinblyApi.currentUserId(prefs)
+        if (text.isBlank()) { onNotice("Escreva alguma coisa."); return }
+        if (token.isNullOrBlank() || uid.isNullOrBlank()) { onNotice("Entre na sua conta."); return }
+        sending = true
+        Thread {
+            val main = Handler(Looper.getMainLooper())
+            try {
+                if (contributeTo != null) {
+                    QinblyApi.addContribution(token, contributeTo, null, "text", qinblyEncodeTextStory(QinblyTextStory(bg, font, align, text.trim(), false)))
+                    main.post { onNotice("Resposta enviada."); onPublished() }
+                } else {
+                    QinblyApi.createTextStory(token, uid, qinblyEncodeTextStory(QinblyTextStory(bg, font, align, text.trim(), collab)))
+                    main.post { onNotice("Story publicado. Fica no ar por 24 horas."); onPublished() }
+                }
+            } catch (e: Exception) { main.post { sending = false; onNotice(e.message ?: "Não foi possível publicar.") } }
+        }.start()
+    }
     QinblyDialog(onDismissRequest = { tryExit() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnBackPress = false), lift = false) {
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(qinblyTextBgs[bg]))) {
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("✕", color = Color.White, fontSize = 22.sp, modifier = Modifier.clip(CircleShape).clickable { tryExit() }.padding(horizontal = 10.dp, vertical = 4.dp))
+                Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x33000000)).clickable { tryExit() }, contentAlignment = Alignment.Center) { Text("✕", color = Color.White, fontSize = 18.sp) }
                 Spacer(Modifier.weight(1f))
-                Text(if (sending) "Publicando…" else "Publicar", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
-                    modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0x44FFFFFF)).clickable(enabled = !sending) {
-                        val token = prefs.getString("token", null)
-                        val uid = QinblyApi.currentUserId(prefs)
-                        if (text.isBlank()) { onNotice("Escreva alguma coisa."); return@clickable }
-                        if (token.isNullOrBlank() || uid.isNullOrBlank()) { onNotice("Entre na sua conta."); return@clickable }
-                        sending = true
-                        Thread {
-                            val main = Handler(Looper.getMainLooper())
-                            try {
-                                QinblyApi.createTextStory(token, uid, qinblyEncodeTextStory(QinblyTextStory(bg, font, align, text.trim(), collab)))
-                                main.post { onNotice("Story publicado. Fica no ar por 24 horas."); onPublished() }
-                            } catch (e: Exception) { main.post { sending = false; onNotice(e.message ?: "Não foi possível publicar.") } }
-                        }.start()
-                    }.padding(horizontal = 16.dp, vertical = 8.dp))
+                Text(if (sending) "Publicando…" else if (contributeTo != null) "Enviar" else "Publicar", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
+                    modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color.White).clickable(enabled = !sending) {
+                        if (text.isBlank()) onNotice("Escreva alguma coisa.")
+                        else if (contributeTo != null) confirmSend = true else doPublish()
+                    }.padding(horizontal = 18.dp, vertical = 9.dp))
             }
-            Box(Modifier.fillMaxSize().statusBarsPadding().padding(top = 60.dp, bottom = 150.dp).padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
+            Column(Modifier.align(Alignment.CenterEnd).padding(end = 10.dp, bottom = 120.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                @Composable fun Tool(on: Boolean, onClick: () -> Unit, content: @Composable () -> Unit) {
+                    Box(Modifier.size(42.dp).clip(CircleShape).background(if (on) Color.White else Color(0x44000000)).clickable { onClick() }, contentAlignment = Alignment.Center) { content() }
+                }
+                Tool(showFonts, { showFonts = !showFonts; if (showFonts) showEmojis = false }) { Text("Aa", color = if (showFonts) Color(0xFF26215C) else Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp) }
+                Tool(showBgs, { showBgs = !showBgs }) { Text("🎨", fontSize = 18.sp) }
+                Tool(false, { align = (align + 1) % 3 }) { Text(when (align) { 0 -> "⇤"; 2 -> "⇥"; else -> "↔" }, color = Color.White, fontSize = 18.sp) }
+                Tool(showEmojis, { showEmojis = !showEmojis; if (showEmojis) showFonts = false }) { Text("😊", fontSize = 18.sp) }
+            }
+            Box(Modifier.fillMaxSize().statusBarsPadding().padding(top = 60.dp, bottom = 190.dp).padding(start = 24.dp, end = 64.dp), contentAlignment = Alignment.Center) {
                 Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                     val size = textSizeFor(text.length)
                     BasicTextField(
                         value = text, onValueChange = { text = it },
-                        textStyle = TextStyle(color = Color.White, fontSize = size.sp, lineHeight = (size * 1.3f).sp, fontFamily = qinblyTextFonts[font].second, fontWeight = FontWeight.Medium, textAlign = alignOf(align)),
+                        textStyle = TextStyle(color = Color.White, fontSize = size.sp, lineHeight = (size * 1.3f).sp, fontFamily = qinblyTextFonts[font].second, fontWeight = qinblyFontWeight(font), textAlign = alignOf(align)),
                         cursorBrush = SolidColor(Color.White), modifier = Modifier.fillMaxWidth().focusRequester(focus),
                         decorationBox = { inner ->
                             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                                if (text.isEmpty()) Text(if (collab) "Faça uma pergunta ou lance um desafio…" else "Escreva aqui…", color = Color(0xAAFFFFFF), fontSize = 28.sp, textAlign = TextAlign.Center)
+                                if (text.isEmpty()) Text(if (contributeTo != null) "Escreva sua resposta…" else if (collab) "Qual é o tema? Ex.: mostre seu café de hoje" else "Escreva aqui…", color = Color(0xAAFFFFFF), fontSize = 24.sp, textAlign = TextAlign.Center)
                                 inner()
                             }
                         }
                     )
                 }
             }
-            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().padding(bottom = 12.dp + qinblyNavBarPadding()), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                if (showEmojis) Column(Modifier.padding(horizontal = 14.dp).clip(RoundedCornerShape(16.dp)).background(Color(0x66000000)).padding(8.dp)) {
-                    qinblyTextEmojis.chunked(10).forEach { row ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                            row.forEach { e -> Text(e, fontSize = 22.sp, modifier = Modifier.clip(CircleShape).clickable { text += e }.padding(4.dp)) }
-                        }
+            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().padding(bottom = if (showEmojis) 0.dp else 12.dp + qinblyNavBarPadding()), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                if (showFonts) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    qinblyFontNames.forEachIndexed { i, name ->
+                        Text(name, color = if (font == i) Color(0xFF26215C) else Color.White, fontFamily = qinblyTextFonts[i].second, fontWeight = qinblyFontWeight(i), fontSize = 14.sp,
+                            modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(if (font == i) Color.White else Color(0x44000000)).clickable { font = i }.padding(horizontal = 14.dp, vertical = 8.dp))
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    qinblyTextFonts.forEachIndexed { i, f ->
-                        Text(f.first, color = Color.White, fontFamily = f.second, fontSize = 16.sp, fontWeight = if (font == i) FontWeight.Bold else FontWeight.Normal,
-                            modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(if (font == i) Color(0x55FFFFFF) else Color(0x22FFFFFF)).clickable { font = i }.padding(horizontal = 12.dp, vertical = 6.dp))
-                    }
-                    Text(when (align) { 0 -> "⇤"; 2 -> "⇥"; else -> "↔" }, color = Color.White, fontSize = 16.sp,
-                        modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0x22FFFFFF)).clickable { align = (align + 1) % 3 }.padding(horizontal = 12.dp, vertical = 6.dp))
-                    Text("😊", fontSize = 16.sp, modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(if (showEmojis) Color(0x55FFFFFF) else Color(0x22FFFFFF)).clickable { showEmojis = !showEmojis }.padding(horizontal = 12.dp, vertical = 6.dp))
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (showBgs) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     qinblyTextBgs.forEachIndexed { i, c ->
-                        Box(Modifier.size(28.dp).clip(CircleShape).background(c[0]).border(if (bg == i) 3.dp else 1.dp, Color.White, CircleShape).clickable { bg = i })
+                        Box(Modifier.size(26.dp).clip(CircleShape).background(c[0]).border(if (bg == i) 3.dp else 1.5.dp, Color.White, CircleShape).clickable { bg = i })
                     }
                 }
+                if (showEmojis) QinblyEmojiPanel(Modifier.padding(bottom = qinblyNavBarPadding()), Color(0xEE1E1830)) { e -> text += e }
             }
         }
     }
     if (confirmExit) {
         AlertDialog(
             onDismissRequest = { confirmExit = false },
-            title = { Text("Descartar o story?") },
+            title = { Text(if (contributeTo != null) "Descartar a resposta?" else "Descartar o story?") },
             text = { Text("O texto que você escreveu vai ser perdido.") },
             confirmButton = { TextButton(onClick = { confirmExit = false; onDismiss() }) { Text("Descartar") } },
             dismissButton = { TextButton(onClick = { confirmExit = false }) { Text("Continuar escrevendo") } }
+        )
+    }
+    if (confirmSend) {
+        AlertDialog(
+            onDismissRequest = { confirmSend = false },
+            title = { Text("Enviar resposta?") },
+            text = { Text("Sua resposta aparece para todos que veem este story.") },
+            confirmButton = { TextButton(onClick = { confirmSend = false; doPublish() }) { Text("Enviar") } },
+            dismissButton = { TextButton(onClick = { confirmSend = false }) { Text("Cancelar") } }
         )
     }
 }
