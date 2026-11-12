@@ -55,15 +55,15 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 
-private data class GalleryItem(val uri: Uri, val video: Boolean)
+internal data class GalleryItem(val uri: Uri, val video: Boolean)
 
-private fun hasGalleryPermission(context: Context): Boolean {
+internal fun hasGalleryPermission(context: Context): Boolean {
     fun ok(p: String) = androidx.core.content.ContextCompat.checkSelfPermission(context, p) == android.content.pm.PackageManager.PERMISSION_GRANTED
     return if (Build.VERSION.SDK_INT >= 33) ok(android.Manifest.permission.READ_MEDIA_IMAGES) || ok(android.Manifest.permission.READ_MEDIA_VIDEO) || (Build.VERSION.SDK_INT >= 34 && ok("android.permission.READ_MEDIA_VISUAL_USER_SELECTED"))
     else ok(android.Manifest.permission.READ_EXTERNAL_STORAGE)
 }
 
-private fun loadRecentMedia(context: Context): List<GalleryItem> {
+internal fun loadRecentMedia(context: Context): List<GalleryItem> {
     val out = mutableListOf<GalleryItem>()
     try {
         val idCol = MediaStore.Files.FileColumns._ID
@@ -84,7 +84,7 @@ private fun loadRecentMedia(context: Context): List<GalleryItem> {
 }
 
 @Composable
-private fun MediaThumb(uri: Uri, video: Boolean, modifier: Modifier, size: Int = 320) {
+internal fun MediaThumb(uri: Uri, video: Boolean, modifier: Modifier, size: Int = 320) {
     val context = LocalContext.current
     val bmp by produceState<android.graphics.Bitmap?>(null, uri) {
         value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {

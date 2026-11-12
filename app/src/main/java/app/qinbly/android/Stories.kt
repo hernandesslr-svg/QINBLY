@@ -50,6 +50,10 @@ import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.AddBox
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.EmojiEmotions
+import androidx.compose.material.icons.outlined.HourglassEmpty
+import androidx.compose.material.icons.outlined.StickyNote2
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -165,24 +169,20 @@ internal fun QinblyStoryMenu(
                         Big(Icons.Outlined.TextFields, "Texto", "Escreva e deixe comentarem", Modifier.weight(1f)) { step = "text" }
                         Big(Icons.Outlined.MusicNote, "Música", "Compartilhe uma música no seu perfil", Modifier.weight(1f)) { soon("Música") }
                     }
-                    Text("Atalhos", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
+                    Text("Mais", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
                     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFF211A33))) {
                         if (hasStory) Short(Icons.Outlined.Visibility, "Ver meu story", "Abrir o story que está no ar") { onDismiss(); onViewMine() }
-                        Short(Icons.Outlined.PhotoLibrary, "Galeria", "Selecionar fotos e vídeos") { galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }
-                        Short(Icons.Outlined.PhotoCamera, "Câmera", "Gravar um novo story") { onDismiss(); onAddStory() }
-                        Short(Icons.Outlined.TextFields, "Texto", "Criar um story somente com texto") { step = "text" }
-                        Short(Icons.Outlined.MusicNote, "Escolher música", "Adicionar uma música ao seu story") { soon("Música") }
-                        Short(Icons.Outlined.Visibility, "Story coletivo", "Lance uma pergunta e os amigos contribuem") { step = "collab" }
-                        Short(Icons.Outlined.TextFields, "Clima do dia", "Mostre seu humor com emoji e cor") { step = "mood" }
-                        Short(Icons.Outlined.PhotoLibrary, "Cápsula do tempo", "Uma mensagem que só abre numa data futura") { step = "capsule" }
-                        Short(Icons.Outlined.AddBox, "Pacotes de figurinhas", "Compartilhe e adicione figurinhas da comunidade") { step = "packs" }
+                        Short(Icons.Outlined.Groups, "Story coletivo", "Lance um tema e os amigos participam") { step = "collab" }
+                        Short(Icons.Outlined.EmojiEmotions, "Clima do dia", "Mostre seu humor com emoji e cor") { step = "mood" }
+                        Short(Icons.Outlined.HourglassEmpty, "Cápsula do tempo", "Guarde uma lembrança para abrir no futuro") { step = "capsule" }
+                        Short(Icons.Outlined.StickyNote2, "Figurinhas", "Compartilhe e adicione figurinhas da comunidade") { step = "packs" }
                     }
                 }
             }
         }
         "collab" -> QinblyTextStoryComposer(onDismiss = onDismiss, onPublished = { onChanged(); onDismiss() }, onNotice = onNotice, collab = true)
         "mood" -> QinblyMoodDialog(onDismiss = onDismiss, onNotice = onNotice, onChanged = onChanged)
-        "capsule" -> QinblyCapsuleDialog(accent, onDismiss, onNotice)
+        "capsule" -> QinblyCapsuleHub(accent, onDismiss, onNotice)
         "packs" -> QinblyStickerPacksDialog(accent, onDismiss, onNotice)
         "text" -> QinblyTextStoryComposer(onDismiss = onDismiss, onPublished = { onChanged(); onDismiss() }, onNotice = onNotice)
         "compose" -> AlertDialog(
@@ -252,7 +252,7 @@ private fun MenuRow(text: String, accent: Color, onClick: () -> Unit) {
 }
 
 @Composable
-private fun StoryVideo(url: String, onEnded: () -> Unit) {
+internal fun StoryVideo(url: String, onEnded: () -> Unit) {
     val context = LocalContext.current
     val player = remember(url) {
         ExoPlayer.Builder(context).build().apply {

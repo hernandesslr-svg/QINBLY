@@ -687,6 +687,7 @@ object QinblyApi {
     /** Bandeja de stories e notas: você primeiro, depois quem você segue (com story novo antes). */
     private const val STORAGE_PUBLIC = "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/"
     private fun pubUrl(path: String?): String = if (path.isNullOrBlank()) "" else if (path.startsWith("http")) path else STORAGE_PUBLIC + path
+    internal fun publicMediaUrl(path: String?): String = pubUrl(path)
     internal fun isCollabCaption(caption: String) = caption.startsWith("qinbly:collab:")
 
     fun getStoryTray(token: String): List<TrayEntry> {

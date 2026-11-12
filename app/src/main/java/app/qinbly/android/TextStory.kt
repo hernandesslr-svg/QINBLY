@@ -94,7 +94,7 @@ internal fun QinblyTextStoryContent(s: QinblyTextStory, modifier: Modifier = Mod
 }
 
 @Composable
-internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> Unit, onNotice: (String) -> Unit, collab: Boolean = false, contributeTo: String? = null) {
+internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> Unit, onNotice: (String) -> Unit, collab: Boolean = false, contributeTo: String? = null, onCompose: ((String) -> Unit)? = null) {
     val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
@@ -116,6 +116,7 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
         val token = prefs.getString("token", null)
         val uid = QinblyApi.currentUserId(prefs)
         if (text.isBlank()) { onNotice("Escreva alguma coisa."); return }
+        if (onCompose != null) { onCompose(qinblyEncodeTextStory(QinblyTextStory(bg, font, align, text.trim(), false))); return }
         if (token.isNullOrBlank() || uid.isNullOrBlank()) { onNotice("Entre na sua conta."); return }
         sending = true
         Thread {
@@ -136,7 +137,7 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x33000000)).clickable { tryExit() }, contentAlignment = Alignment.Center) { Text("✕", color = Color.White, fontSize = 18.sp) }
                 Spacer(Modifier.weight(1f))
-                Text(if (sending) "Publicando…" else if (contributeTo != null) "Enviar" else "Publicar", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
+                Text(if (sending) "Publicando…" else if (onCompose != null) "Continuar" else if (contributeTo != null) "Enviar" else "Publicar", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
                     modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color.White).clickable(enabled = !sending) {
                         if (text.isBlank()) onNotice("Escreva alguma coisa.")
                         else if (contributeTo != null) confirmSend = true else doPublish()
