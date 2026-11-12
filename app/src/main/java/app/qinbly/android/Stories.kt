@@ -291,7 +291,11 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     val current = items[index.coerceIn(0, items.lastIndex)]
     val progress = remember(current.id) { Animatable(0f) }
 
-    fun next() { if (index < items.lastIndex) index++ else onDismiss() }
+    // Ignora toques logo após abrir: o toque que abriu o story não pode fechá-lo de novo.
+    val openedAt = remember { System.currentTimeMillis() }
+    fun tooSoon() = System.currentTimeMillis() - openedAt < 500
+    fun closeSafe() { if (!tooSoon()) onDismiss() }
+    fun next() { if (index < items.lastIndex) index++ else closeSafe() }
     fun previous() { if (index > 0) index-- }
 
     LaunchedEffect(current.id) {
@@ -307,10 +311,10 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
         next()
     }
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+    Dialog(onDismissRequest = { closeSafe() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Box(
             Modifier.fillMaxSize().background(Color.Black).pointerInput(current.id) {
-                detectTapGestures { offset -> if (offset.x < size.width / 3f) previous() else next() }
+                detectTapGestures { offset -> if (!tooSoon()) { if (offset.x < size.width / 3f) previous() else next() } }
             }
         ) {
             val textStory = if (current.mediaType == "text") qinblyParseTextStory(current.caption) else null
