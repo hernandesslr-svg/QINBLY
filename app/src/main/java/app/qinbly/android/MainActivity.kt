@@ -1845,17 +1845,42 @@ private fun QinblyApp() {
             }.start()
         }
     }
+    // Histórico de navegação: o botão voltar do celular sempre volta para a tela de onde a pessoa veio
+    // (ex.: notificação -> perfil -> voltar = notificações), e não direto para o início.
+    val navHistory = remember { mutableListOf<QinblyNavState>() }
+    var navSuppress by remember { mutableStateOf<QinblyNavState?>(null) }
+    LaunchedEffect(Unit) {
+        var previous: QinblyNavState? = null
+        snapshotFlow { QinblyNavState(tab, showNotifications, showSettings, showEditProfile, publicProfileUsername, messageRecipient) }.collect { now ->
+            val before = previous
+            previous = now
+            if (before == null || before == now) return@collect
+            if (navSuppress == now) { navSuppress = null; return@collect }
+            if (navHistory.lastOrNull() != before) navHistory.add(before)
+            while (navHistory.size > 40) navHistory.removeAt(0)
+        }
+    }
     BackHandler {
         when {
             showAccountSwitcher -> showAccountSwitcher = false
             showSearchDialog -> showSearchDialog = false
             profileStat.isNotBlank() -> profileStat = ""
             showEditProfilePhoto -> showEditProfilePhoto = false
+            showAuth -> showAuth = false
+            navHistory.isNotEmpty() -> {
+                val back = navHistory.removeAt(navHistory.lastIndex)
+                navSuppress = back
+                tab = back.tab
+                showNotifications = back.notifications
+                showSettings = back.settings
+                showEditProfile = back.editProfile
+                publicProfileUsername = back.profile
+                messageRecipient = back.recipient
+            }
             showEditProfile -> showEditProfile = false
             showSettings -> showSettings = false
             showNotifications -> showNotifications = false
             publicProfileUsername.isNotBlank() -> publicProfileUsername = ""
-            showAuth -> showAuth = false
             tab == 1 && messageRecipient.isNotBlank() -> messageRecipient = ""
             tab != 0 -> {
                 tab = 0
@@ -8188,6 +8213,8 @@ private object QinblyAvatarCache {
 
     fun clear() { entries.clear(); fetching.clear(); prefs?.edit()?.clear()?.apply() }
 }
+
+private data class QinblyNavState(val tab: Int, val notifications: Boolean, val settings: Boolean, val editProfile: Boolean, val profile: String, val recipient: String)
 
 @Composable
 private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, note: String, ring: Color, plus: Boolean, onClick: () -> Unit, onNoteClick: () -> Unit) {
