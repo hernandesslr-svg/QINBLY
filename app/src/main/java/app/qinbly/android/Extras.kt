@@ -57,11 +57,22 @@ private fun sess(c: Context) = c.getSharedPreferences("qinbly_session", Context.
 private fun main(block: () -> Unit) { Handler(Looper.getMainLooper()).post(block) }
 
 
-/** Altura da barra de botões do celular, lida pelo próprio Compose (funciona dentro das janelas de diálogo). */
+/** Altura da barra de botões do celular. Dentro de janelas de diálogo os insets chegam zerados, então usamos também a medida do sistema. */
 @Composable
 internal fun qinblyNavBarPadding(): androidx.compose.ui.unit.Dp {
     val density = androidx.compose.ui.platform.LocalDensity.current
-    return with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
+    val context = LocalContext.current
+    val fromCompose = with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
+    val fromSystem = remember {
+        val res = context.resources
+        val gesture = try { android.provider.Settings.Secure.getInt(context.contentResolver, "navigation_mode", 0) == 2 } catch (_: Exception) { false }
+        val id = res.getIdentifier("navigation_bar_height", "dimen", "android")
+        val px = if (id > 0) res.getDimensionPixelSize(id) else 0
+        val dp = px / res.displayMetrics.density
+        // Navegação por gestos tem só uma linha fina; botões ocupam a altura inteira.
+        (if (gesture) minOf(dp, 24f) else dp).coerceAtLeast(0f)
+    }
+    return maxOf(fromCompose, fromSystem.dp)
 }
 
 /** Painel grande que sobe de baixo, sempre acima dos botões do celular. */
