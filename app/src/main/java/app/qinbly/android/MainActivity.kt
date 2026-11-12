@@ -6996,7 +6996,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                                             if (!mine) Text(p.displayName.ifBlank { p.username } + if (p.username == c.ownerUsername) " · dono" else "", color = qinblyNameColor(p.username), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                             val stickerId = QinblyStickers.idOf(p.body)
                                             if (p.poll != null) QinblyChatPollBubble(p.poll, QinblyBrand.Accent, QiblyTheme.text) { index -> voteC(p.poll, index) }
-                                            else if (p.stickerUrl.isNotBlank()) AsyncImage(model = p.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.size(120.dp))
+                                            else if (p.stickerUrl.isNotBlank()) AsyncImage(model = p.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.size(92.dp))
                                             else if (p.fileUrl.isNotBlank()) QinblyFileBubble(p.fileUrl, p.fileName, QinblyBrand.Accent, QiblyTheme.text)
                                             else if (p.audioUrl.isNotBlank()) QinblyAudioBubble(p.audioUrl, p.audioSeconds, QinblyBrand.Accent, mine, QiblyTheme.text)
                                             else if (p.imageUrl.isNotBlank()) AsyncImage(model = p.imageUrl, contentDescription = "Foto enviada", modifier = Modifier.width(220.dp).heightIn(max = 320.dp).clip(RoundedCornerShape(12.dp)), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
@@ -7829,7 +7829,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                                 if (message.poll != null) {
                                     QinblyChatPollBubble(message.poll, QinblyBrand.Accent, textColor) { index -> voteDm(message.poll, index) }
                                 } else if (message.stickerUrl.isNotBlank()) {
-                                    AsyncImage(model = message.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.size(120.dp))
+                                    AsyncImage(model = message.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.size(92.dp))
                                 } else if (message.fileUrl.isNotBlank()) {
                                     QinblyFileBubble(message.fileUrl, message.fileName, QinblyBrand.Accent, textColor)
                                 } else if (message.imageUrl.isNotBlank()) {

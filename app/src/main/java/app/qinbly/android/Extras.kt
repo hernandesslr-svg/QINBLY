@@ -90,7 +90,7 @@ internal fun qinblyNavBarPadding(): androidx.compose.ui.unit.Dp {
 internal fun QinblyDialog(
     onDismissRequest: () -> Unit,
     properties: androidx.compose.ui.window.DialogProperties = androidx.compose.ui.window.DialogProperties(),
-    lift: Boolean = true,
+    lift: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val pad = if (lift && !properties.decorFitsSystemWindows) qinblyNavBarPadding() else 0.dp
