@@ -8182,7 +8182,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
     }
     val myStoryEntry = storyTray.firstOrNull { it.mine }
     val trayOthers = storyTray.filter { !it.mine && (it.stories.isNotEmpty() || it.note.isNotBlank()) }
-    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
+    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)) {
         item(key = "story-create") {
             val mine = myStoryEntry
             val myCover = mine?.stories?.firstOrNull()
@@ -8229,7 +8229,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
 private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, note: String, ring: Color, plus: Boolean, onClick: () -> Unit, onNoteClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    Box(Modifier.width(160.dp).height(280.dp).clip(shape).background(QiblyTheme.soft).border(1.5.dp, ring, shape).clickable(indication = null, interactionSource = ms) { onClick() }) {
+    Box(Modifier.width(168.dp).height(306.dp).clip(shape).background(QiblyTheme.soft).border(1.5.dp, ring, shape).clickable(indication = null, interactionSource = ms) { onClick() }) {
         if (isAvatar || imageUrl.isBlank()) {
             Box(Modifier.align(Alignment.Center).offset(y = if (plus) (-10).dp else 12.dp).size(110.dp).clip(CircleShape).background(Color(0xFF3A3158)), contentAlignment = Alignment.Center) {
                 if (imageUrl.isNotBlank()) AsyncImage(model = imageUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
