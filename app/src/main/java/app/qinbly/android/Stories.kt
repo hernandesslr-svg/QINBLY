@@ -287,7 +287,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     var showViewers by remember { mutableStateOf(false) }
     var showComments by remember { mutableStateOf(false) }
     var viewers by remember { mutableStateOf<List<QinblyApi.StoryViewer>?>(null) }
-    if (items.isEmpty()) { onDismiss(); return }
+    if (items.isEmpty()) { LaunchedEffect(Unit) { onDismiss() }; return }
     val current = items[index.coerceIn(0, items.lastIndex)]
     val progress = remember(current.id) { Animatable(0f) }
 
