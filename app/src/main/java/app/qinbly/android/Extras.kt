@@ -85,19 +85,28 @@ internal fun qinblyNavBarPadding(): androidx.compose.ui.unit.Dp {
     return maxOf(fromCompose, measured.dp, 98.dp)
 }
 
+/** Letras menores só dentro do conteúdo informado (usado nas telas de story). */
+@Composable
+internal fun QinblySmallText(content: @Composable () -> Unit) {
+    val base = androidx.compose.ui.platform.LocalDensity.current
+    val smaller = androidx.compose.ui.unit.Density(base.density, fontScale = minOf(base.fontScale, 1f) * 0.86f)
+    androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides smaller) { content() }
+}
+
 /** Igual ao Dialog do Compose, mas as telas que ocupam a janela inteira terminam sempre acima dos botões do celular. */
 @Composable
 internal fun QinblyDialog(
     onDismissRequest: () -> Unit,
     properties: androidx.compose.ui.window.DialogProperties = androidx.compose.ui.window.DialogProperties(),
     lift: Boolean = false,
+    smallText: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val pad = if (lift && !properties.decorFitsSystemWindows) qinblyNavBarPadding() else 0.dp
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismissRequest, properties = properties) {
         if (lift) androidx.compose.runtime.CompositionLocalProvider(LocalQinblyNavHandled provides true) {
             Box(Modifier.padding(bottom = pad)) { content() }
-        } else content()
+        } else if (smallText) QinblySmallText { content() } else content()
     }
 }
 
@@ -105,7 +114,7 @@ internal fun QinblyDialog(
 @Composable
 internal fun QinblyBottomPanel(title: String, onDismiss: () -> Unit, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
     val nav = qinblyNavBarPadding()
-    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
+    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false, smallText = true) {
         Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }) {
             Column(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(top = 48.dp, bottom = nav + 8.dp).clip(RoundedCornerShape(32.dp)).background(Panel)
