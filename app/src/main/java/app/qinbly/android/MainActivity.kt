@@ -554,9 +554,11 @@ private fun qinblyNotify(context: android.content.Context, title: String, text: 
 
 /** Navegação global para hashtags e menções: qualquer texto clicável abre daqui. */
 /** Texto inicial para a próxima publicação (pergunta do dia, desafio da semana). */
-private object QinblyComposeSeed { var text: String = ""; var story: Boolean = false; var contribTo: String = "" }
+private object QinblyComposeSeed { var text: String = ""; var story: Boolean = false; var contribTo: String = ""; var collabNew: Boolean = false }
 /** Chamado antes de abrir a câmera do app: a foto/vídeo tirado vira resposta do story coletivo [storyId] em vez de story novo. */
 internal fun qinblyStartContribution(storyId: String) { QinblyComposeSeed.contribTo = storyId }
+/** Chamado antes de abrir a câmera do app: a foto/vídeo tirado vira um story coletivo novo. */
+internal fun qinblyStartCollabStory() { QinblyComposeSeed.collabNew = true }
 
 /** Ícones de linha do menu "Criar" (traço de 1,8, pontas arredondadas, grade 24x24). */
 private object QinblyCreateIcons {
@@ -10475,7 +10477,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     val context = androidx.compose.ui.platform.LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QinblyComposeSeed.story = false; QinblyComposeSeed.contribTo = "" } }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QinblyComposeSeed.story = false; QinblyComposeSeed.contribTo = ""; QinblyComposeSeed.collabNew = false } }
     var caption by remember { mutableStateOf(QinblyComposeSeed.text.also { QinblyComposeSeed.text = "" }) }
     var showCapEmojis by remember { mutableStateOf(false) }
     var captionCursor by remember { mutableIntStateOf(caption.length) }
@@ -12510,7 +12512,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                             if (storyMode) {
                                                 val contribTo = QinblyComposeSeed.contribTo
                                                 if (contribTo.isNotBlank()) QinblyApi.addContribution(token, contribTo, fileId, if (mime.startsWith("video/")) "video" else "image", caption)
-                                                else QinblyApi.createStoryFromFile(token, fileId, mime.startsWith("video/"), caption)
+                                                else QinblyApi.createStoryFromFile(token, fileId, mime.startsWith("video/"), if (QinblyComposeSeed.collabNew) qinblyCollabCaption(caption) else caption)
                                             } else if (selectedType == "foto" && gallerySelection.size > 1) {
                                                 val uploadedIds = mutableListOf(fileId)
                                                 for ((index, extraUri) in gallerySelection.drop(1).withIndex()) {
@@ -12544,9 +12546,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                         showComposer = false
                                         sourceUri = null
                                         coverBitmap = null
-                                        onNotice(if (QinblyComposeSeed.contribTo.isNotBlank()) "Resposta enviada." else if (QinblyComposeSeed.story) "Story publicado. Fica no ar por 24 horas." else "Publicado")
+                                        onNotice(if (QinblyComposeSeed.collabNew) "Story coletivo publicado. Fica no ar por 24 horas." else if (QinblyComposeSeed.contribTo.isNotBlank()) "Resposta enviada." else if (QinblyComposeSeed.story) "Story publicado. Fica no ar por 24 horas." else "Publicado")
                                         QinblyComposeSeed.story = false
                                         QinblyComposeSeed.contribTo = ""
+                                        QinblyComposeSeed.collabNew = false
                                         onCameraCancelled()
                                     }
                                 } catch (e: Exception) {

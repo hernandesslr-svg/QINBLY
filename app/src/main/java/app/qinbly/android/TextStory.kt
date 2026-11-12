@@ -68,6 +68,11 @@ private fun qinblyFontWeight(i: Int) = if (i == 3) FontWeight.Bold else FontWeig
 
 internal fun qinblyEncodeTextStory(s: QinblyTextStory): String = "qinbly:${if (s.collab) "collab" else "text"}:${s.bg}:${s.font}:${s.align}\n${s.text}"
 
+/** Story coletivo que começa com foto/vídeo: a legenda leva a marca "coletivo" na frente. */
+internal fun qinblyCollabCaption(legend: String): String = "qinbly:collab:0:0:1\n" + legend.trim()
+/** Legenda para mostrar na tela, sem a marca interna do story coletivo. */
+internal fun qinblyDisplayCaption(caption: String): String = if (caption.startsWith("qinbly:collab:") || caption.startsWith("qinbly:text:")) caption.substringAfter('\n', "") else caption
+
 internal fun qinblyParseTextStory(caption: String): QinblyTextStory? {
     val collab = caption.startsWith("qinbly:collab:")
     if (!collab && !caption.startsWith("qinbly:text:")) return null

@@ -180,7 +180,11 @@ internal fun QinblyStoryMenu(
                 }
             }
         }
-        "collab" -> QinblyTextStoryComposer(onDismiss = onDismiss, onPublished = { onChanged(); onDismiss() }, onNotice = onNotice, collab = true)
+        "collab" -> QinblyContributeFlow(
+            storyId = "", newCollab = true, onNotice = onNotice,
+            onCamera = { qinblyStartCollabStory(); onDismiss(); onAddStory() },
+            onDone = { onChanged(); onDismiss() }, onDismiss = onDismiss
+        )
         "mood" -> QinblyMoodDialog(onDismiss = onDismiss, onNotice = onNotice, onChanged = onChanged)
         "capsule" -> QinblyCapsuleHub(accent, onDismiss, onNotice)
         "packs" -> QinblyStickerPacksDialog(accent, onDismiss, onNotice)
@@ -381,8 +385,8 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
             }
 
             Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = if (imeOpen) 8.dp else 16.dp + qinblyNavBarPadding()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (current.caption.isNotBlank() && current.mediaType != "text") {
-                    Text(current.caption, color = Color.White, fontSize = 16.sp, modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0x88000000)).padding(horizontal = 12.dp, vertical = 8.dp))
+                if (qinblyDisplayCaption(current.caption).isNotBlank() && current.mediaType != "text") {
+                    Text(qinblyDisplayCaption(current.caption), color = Color.White, fontSize = 16.sp, modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0x88000000)).padding(horizontal = 12.dp, vertical = 8.dp))
                 }
                 val isCollab = QinblyApi.isCollabCaption(current.caption)
                 if (current.page == "invite") {
@@ -445,7 +449,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
         )
     }
 
-    if (showComments) QinblyStoryCommentsDialog(current.id, entry.mine, accent, qinblyParseTextStory(current.caption)?.collab == true, onNotice) { showComments = false }
+    if (showComments) QinblyStoryCommentsDialog(current.id, entry.mine, accent, QinblyApi.isCollabCaption(current.caption), onNotice) { showComments = false }
 
     if (showViewers) {
         val list = viewers

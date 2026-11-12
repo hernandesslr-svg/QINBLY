@@ -102,7 +102,7 @@ internal fun MediaThumb(uri: Uri, video: Boolean, modifier: Modifier, size: Int 
  * Escolher uma foto/vídeo leva à legenda (com emojis) e ao envio.
  */
 @Composable
-internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, onCamera: () -> Unit, onDone: () -> Unit, onDismiss: () -> Unit) {
+internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, onCamera: () -> Unit, onDone: () -> Unit, onDismiss: () -> Unit, newCollab: Boolean = false) {
     val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
@@ -134,15 +134,20 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
         Thread {
             val main = Handler(Looper.getMainLooper())
             try {
-                val (fileId, isVideo) = QinblyApi.uploadStoryMedia(context, token, item.uri)
-                QinblyApi.addContribution(token, storyId, fileId, if (isVideo) "video" else "image", caption)
-                main.post { onNotice("Resposta enviada."); onDone() }
+                if (newCollab) {
+                    QinblyApi.createStory(context, token, item.uri, qinblyCollabCaption(caption))
+                    main.post { onNotice("Story coletivo publicado. Fica no ar por 24 horas."); onDone() }
+                } else {
+                    val (fileId, isVideo) = QinblyApi.uploadStoryMedia(context, token, item.uri)
+                    QinblyApi.addContribution(token, storyId, fileId, if (isVideo) "video" else "image", caption)
+                    main.post { onNotice("Resposta enviada."); onDone() }
+                }
             } catch (e: Exception) { main.post { sending = false; onNotice(e.message ?: "Não foi possível enviar.") } }
         }.start()
     }
 
     if (step == "text") {
-        QinblyTextStoryComposer(onDismiss = { step = "gallery" }, onPublished = onDone, onNotice = onNotice, contributeTo = storyId)
+        QinblyTextStoryComposer(onDismiss = { step = "gallery" }, onPublished = onDone, onNotice = onNotice, collab = newCollab, contributeTo = if (newCollab) null else storyId)
         return
     }
 
@@ -201,7 +206,7 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                             }
                             Box(Modifier.size(36.dp).clip(CircleShape).background(if (showEmojis) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = !showEmojis }, contentAlignment = Alignment.Center) { Text("😊", fontSize = 20.sp) }
                         }
-                        Text(if (sending) "Enviando…" else "Enviar ao coletivo", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 16.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        Text(if (sending) "Enviando…" else if (newCollab) "Publicar story coletivo" else "Enviar ao coletivo", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 16.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Color.White).clickable(enabled = !sending) { confirm = true }.padding(vertical = 15.dp))
                     }
                     if (showEmojis) QinblyEmojiPanel(Modifier.padding(bottom = qinblyNavBarPadding()), Color(0xFF1E1830)) { e -> caption = (caption + e).take(300) }
@@ -212,9 +217,9 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
     if (confirm) {
         AlertDialog(
             onDismissRequest = { confirm = false },
-            title = { Text("Enviar resposta?") },
-            text = { Text("Sua resposta aparece para todos que veem este story.") },
-            confirmButton = { TextButton(onClick = { confirm = false; send() }) { Text("Enviar") } },
+            title = { Text(if (newCollab) "Publicar story coletivo?" else "Enviar resposta?") },
+            text = { Text(if (newCollab) "Seus seguidores vão ver e poderão participar." else "Sua resposta aparece para todos que veem este story.") },
+            confirmButton = { TextButton(onClick = { confirm = false; send() }) { Text(if (newCollab) "Publicar" else "Enviar") } },
             dismissButton = { TextButton(onClick = { confirm = false }) { Text("Cancelar") } }
         )
     }
