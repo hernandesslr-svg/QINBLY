@@ -1490,7 +1490,7 @@ private fun AccountSwitcherDialog(
   }
  }
  if (confirmRemove.isNotBlank()) {
-  androidx.compose.material3.AlertDialog(
+  AlertDialog(
         shape = RoundedCornerShape(28.dp),
    onDismissRequest = { confirmRemove = "" },
    title = { Text("Remover conta?") },
@@ -7426,7 +7426,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             onReport = { reportConvUser = cv.username })
     }
     confirmDeleteConv?.let { cv ->
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { confirmDeleteConv = null },
             title = { Text("Apagar conversa?") },
             text = { Text("A conversa some da sua lista neste aparelho e volta se chegar uma mensagem nova. As mensagens continuam com a outra pessoa.") },
@@ -7435,7 +7435,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
         )
     }
     confirmBlockConv?.let { who ->
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { confirmBlockConv = null },
             title = { Text("Bloquear @$who?") },
             text = { Text("Vocês não verão mais as publicações um do outro nem poderão trocar mensagens. Dá para desbloquear em Configurações > Contas bloqueadas.") },
