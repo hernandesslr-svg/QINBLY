@@ -5554,6 +5554,7 @@ private fun QinblyNearbyPage(onNotice: (String) -> Unit) {
     var locating by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
     var attempt by remember { mutableIntStateOf(0) }
+    var here by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
         allowed = result.values.any { it } || hasLocation()
         blocked = !allowed
@@ -5587,6 +5588,7 @@ private fun QinblyNearbyPage(onNotice: (String) -> Unit) {
         } catch (_: SecurityException) { allowed = false }
         val found = loc
         if (found == null) { failed = true; locating = false; return@LaunchedEffect }
+        here = found.latitude to found.longitude
         place = try {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 @Suppress("DEPRECATION")
@@ -5595,6 +5597,11 @@ private fun QinblyNearbyPage(onNotice: (String) -> Unit) {
             }
         } catch (_: Exception) { "" }
         locating = false
+    }
+    val hereNow = here
+    if (allowed && !failed && hereNow != null) {
+        QinblyNeighborhoodBoard(hereNow.first, hereNow.second, place, onRefreshLocation = { attempt++ }, onNotice = onNotice)
+        return
     }
     Column(
         Modifier.fillMaxSize().padding(horizontal = 28.dp),
@@ -8179,6 +8186,12 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
             storyTray = try { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getStoryTray(token) } } catch (_: Exception) { storyTray }
         }
     }
+    var moods by remember { mutableStateOf<Map<String, QinblyMood>>(emptyMap()) }
+    LaunchedEffect(storyTray) {
+        val token = prefs.getString("token", null)
+        if (!token.isNullOrBlank()) moods = try { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { qinblyFetchMoods(token, storyTray.map { it.username } + listOf(prefs.getString("username", "").orEmpty())) } } catch (_: Exception) { moods }
+    }
+    QinblyCapsuleInbox()
     val myStoryEntry = storyTray.firstOrNull { it.mine }
     val trayOthers = storyTray.filter { !it.mine && it.stories.isNotEmpty() }
     androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)) {
@@ -8188,7 +8201,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
             QinblyStoryCard(
                 imageUrl = if (myCover != null && myCover.mediaType != "video" && myCover.mediaType != "text") myCover.mediaUrl else mine?.avatarUrl.orEmpty(),
                 isAvatar = myCover == null || myCover.mediaType == "video" || myCover.mediaType == "text", isVideo = myCover != null && myCover.mediaType == "video", label = "Criar story", textStory = if (myCover?.mediaType == "text") qinblyParseTextStory(myCover.caption) else null,
-                ring = QinblyBrand.Accent.copy(alpha = 0.55f), plus = true, onClick = { showStoryMenu = true }
+                ring = QinblyBrand.Accent.copy(alpha = 0.55f), plus = true, mood = moods[prefs.getString("username", "").orEmpty()], onClick = { showStoryMenu = true }
             )
         }
         items(trayOthers, key = { "tray-" + it.username }) { person ->
@@ -8197,7 +8210,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
             QinblyStoryCard(
                 imageUrl = if (cover != null && cover.mediaType != "video" && cover.mediaType != "text") cover.mediaUrl else person.avatarUrl,
                 isAvatar = cover == null || cover.mediaType == "video" || cover.mediaType == "text", isVideo = cover != null && cover.mediaType == "video", label = person.displayName.ifBlank { person.username }, textStory = if (cover?.mediaType == "text") qinblyParseTextStory(cover.caption) else null,
-                ring = if (person.stories.isEmpty() || person.hasUnseen) QinblyBrand.Accent else Color(0xFF4A4066), plus = false, onClick = open
+                ring = if (person.stories.isEmpty() || person.hasUnseen) QinblyBrand.Accent else Color(0xFF4A4066), plus = false, mood = moods[person.username], onClick = open
             )
         }
     }
@@ -8214,13 +8227,13 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
 }
 
 @Composable
-private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, textStory: QinblyTextStory?, ring: Color, plus: Boolean, onClick: () -> Unit) {
+private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, textStory: QinblyTextStory?, ring: Color, plus: Boolean, mood: QinblyMood? = null, onClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Box(Modifier.width(168.dp).height(306.dp).clip(shape).background(QiblyTheme.soft).border(1.5.dp, ring, shape).clickable(indication = null, interactionSource = ms) { onClick() }) {
         if (textStory != null) {
             Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(qinblyTextBgs[textStory.bg.coerceIn(0, qinblyTextBgs.lastIndex)])), contentAlignment = Alignment.Center) {
-                Text(textStory.text, color = Color.White, fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium, maxLines = 8, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                Text((if (textStory.collab) "👥 " else "") + textStory.text, color = Color.White, fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium, maxLines = 8, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(horizontal = 14.dp))
             }
         } else if (imageUrl.isBlank()) {
@@ -8233,6 +8246,7 @@ private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolea
         if (plus) Box(Modifier.align(Alignment.Center).offset(x = 42.dp, y = 42.dp).size(42.dp).clip(CircleShape).background(QinblyBrand.Accent).border(2.dp, QiblyTheme.soft, CircleShape), contentAlignment = Alignment.Center) {
             Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
         }
+        if (mood != null) Box(Modifier.align(Alignment.TopStart).padding(8.dp).size(36.dp).clip(CircleShape).background(mood.color).border(2.dp, Color.White, CircleShape), contentAlignment = Alignment.Center) { Text(mood.emoji, fontSize = 18.sp) }
         Text(label, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             modifier = Modifier.align(Alignment.BottomCenter).padding(start = 4.dp, end = 4.dp, bottom = 12.dp))
     }

@@ -169,10 +169,18 @@ internal fun QinblyStoryMenu(
                         Short(Icons.Outlined.PhotoCamera, "Câmera", "Gravar um novo story") { onDismiss(); onAddStory() }
                         Short(Icons.Outlined.TextFields, "Texto", "Criar um story somente com texto") { step = "text" }
                         Short(Icons.Outlined.MusicNote, "Escolher música", "Adicionar uma música ao seu story") { soon("Música") }
+                        Short(Icons.Outlined.Visibility, "Story coletivo", "Lance uma pergunta e os amigos contribuem") { step = "collab" }
+                        Short(Icons.Outlined.TextFields, "Clima do dia", "Mostre seu humor com emoji e cor") { step = "mood" }
+                        Short(Icons.Outlined.PhotoLibrary, "Cápsula do tempo", "Uma mensagem que só abre numa data futura") { step = "capsule" }
+                        Short(Icons.Outlined.AddBox, "Pacotes de figurinhas", "Compartilhe e adicione figurinhas da comunidade") { step = "packs" }
                     }
                 }
             }
         }
+        "collab" -> QinblyTextStoryComposer(onDismiss = onDismiss, onPublished = { onChanged(); onDismiss() }, onNotice = onNotice, collab = true)
+        "mood" -> QinblyMoodDialog(onDismiss = onDismiss, onNotice = onNotice, onChanged = onChanged)
+        "capsule" -> QinblyCapsuleDialog(accent, onDismiss, onNotice)
+        "packs" -> QinblyStickerPacksDialog(accent, onDismiss, onNotice)
         "text" -> QinblyTextStoryComposer(onDismiss = onDismiss, onPublished = { onChanged(); onDismiss() }, onNotice = onNotice)
         "compose" -> AlertDialog(
             onDismissRequest = { if (!busy) onDismiss() },
@@ -334,7 +342,8 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                 if (current.caption.isNotBlank() && current.mediaType != "text") {
                     Text(current.caption, color = Color.White, fontSize = 16.sp, modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0x88000000)).padding(horizontal = 12.dp, vertical = 8.dp))
                 }
-                Text(if (entry.mine) "💬  Ver comentários" else "Comentar no story…", color = if (entry.mine) Color.White else Color(0xCCFFFFFF), fontSize = 15.sp,
+                val isCollab = qinblyParseTextStory(current.caption)?.collab == true
+                Text(if (isCollab) (if (entry.mine) "👥  Ver contribuições" else "👥  Adicionar ao story…") else if (entry.mine) "💬  Ver comentários" else "Comentar no story…", color = if (entry.mine) Color.White else Color(0xCCFFFFFF), fontSize = 15.sp,
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0x55000000)).border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(26.dp)).clickable { showComments = true }.padding(horizontal = 20.dp, vertical = 13.dp))
                 if (entry.mine) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -367,7 +376,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
         }
     }
 
-    if (showComments) QinblyStoryCommentsDialog(current.id, entry.mine, accent, onNotice) { showComments = false }
+    if (showComments) QinblyStoryCommentsDialog(current.id, entry.mine, accent, qinblyParseTextStory(current.caption)?.collab == true, onNotice) { showComments = false }
 
     if (showViewers) {
         AlertDialog(

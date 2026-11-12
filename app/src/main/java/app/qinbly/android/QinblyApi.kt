@@ -382,16 +382,21 @@ object QinblyApi {
     }
 
     fun getStoryComments(token: String, storyId: String): List<StoryComment> {
-        val arr = org.json.JSONArray(restCall(token, "GET", "story_comments?story_id=eq.$storyId&select=id,body,created_at,profiles(username,display_name)&order=created_at.asc&limit=200"))
+        val arr = org.json.JSONArray(restCall(token, "GET", "story_comments?story_id=eq.$storyId&select=id,body,created_at,kind,profiles(username,display_name)&order=created_at.asc&limit=200"))
         return (0 until arr.length()).map { i ->
             val o = arr.getJSONObject(i); val p = o.optJSONObject("profiles")
-            StoryComment(o.getString("id"), o.getString("body"), p?.optString("username").orEmpty(), p?.optString("display_name").orEmpty(), o.optString("created_at"))
+            StoryComment(o.getString("id"), o.getString("body"), p?.optString("username").orEmpty(), p?.optString("display_name").orEmpty(), o.optString("created_at"), o.optString("kind", "comment"))
         }
     }
 
-    fun addStoryComment(token: String, storyId: String, userId: String, body: String) {
-        restCall(token, "POST", "story_comments", JSONObject().put("story_id", storyId).put("user_id", userId).put("body", body).toString(), "return=minimal")
+    fun addStoryComment(token: String, storyId: String, userId: String, body: String, kind: String = "comment", audioB64: String? = null) {
+        val o = JSONObject().put("story_id", storyId).put("user_id", userId).put("body", body).put("kind", kind)
+        if (audioB64 != null) o.put("audio_b64", audioB64)
+        restCall(token, "POST", "story_comments", o.toString(), "return=minimal")
     }
+
+    /** Acesso direto às tabelas (PostgREST); a segurança é feita pelas políticas do banco. */
+    fun rest(token: String, method: String, path: String, body: String? = null, prefer: String? = null): String = restCall(token, method, path, body, prefer)
 
     private fun restCall(token: String, method: String, pathAndQuery: String, body: String? = null, prefer: String? = null): String {
         val c = (URL("https://jqomgrdlocdqaarfqkay.supabase.co/rest/v1/" + pathAndQuery).openConnection() as HttpURLConnection).apply {
@@ -642,7 +647,7 @@ object QinblyApi {
     // ───────── Stories (24 h) e notas ─────────
     data class StoryItem(val id: String, val mediaUrl: String, val mediaType: String, val caption: String, val createdAt: String, val seen: Boolean, val views: Int)
     data class TrayEntry(val username: String, val displayName: String, val avatarUrl: String, val mine: Boolean, val note: String, val stories: List<StoryItem>, val hasUnseen: Boolean)
-    data class StoryComment(val id: String, val body: String, val username: String, val displayName: String, val createdAt: String)
+    data class StoryComment(val id: String, val body: String, val username: String, val displayName: String, val createdAt: String, val kind: String = "comment")
     data class StoryViewer(val username: String, val displayName: String, val avatarUrl: String, val viewedAt: String)
 
     /** Bandeja de stories e notas: você primeiro, depois quem você segue (com story novo antes). */
