@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.ui.unit.toDp
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
@@ -55,15 +58,11 @@ private fun sess(c: Context) = c.getSharedPreferences("qinbly_session", Context.
 private fun main(block: () -> Unit) { Handler(Looper.getMainLooper()).post(block) }
 
 
-/** Altura real dos botões do celular (barra de navegação). Janelas de diálogo não recebem esse recuo sozinhas, então lemos da janela do app. */
+/** Altura da barra de botões do celular, lida pelo próprio Compose (funciona dentro das janelas de diálogo). */
 @Composable
 internal fun qinblyNavBarPadding(): androidx.compose.ui.unit.Dp {
-    val context = LocalContext.current
     val density = androidx.compose.ui.platform.LocalDensity.current
-    var c: Context? = context
-    while (c is android.content.ContextWrapper && c !is android.app.Activity) c = c.baseContext
-    val px = (c as? android.app.Activity)?.window?.decorView?.let { androidx.core.view.ViewCompat.getRootWindowInsets(it)?.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars())?.bottom } ?: 0
-    return with(density) { px.toDp() }
+    return with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
 }
 
 /** Painel grande que sobe de baixo, sempre acima dos botões do celular. */
@@ -73,9 +72,9 @@ internal fun QinblyBottomPanel(title: String, onDismiss: () -> Unit, content: @C
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }) {
             Column(
-                Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = nav).heightIn(max = 760.dp).clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)).background(Panel)
+                Modifier.align(Alignment.BottomCenter).fillMaxWidth().heightIn(max = 760.dp).clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)).background(Panel)
                     .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { }
-                    .imePadding().verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 20.dp),
+                    .imePadding().verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 20.dp + nav),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Box(Modifier.align(Alignment.CenterHorizontally).size(width = 44.dp, height = 5.dp).clip(CircleShape).background(Color(0x55FFFFFF)))

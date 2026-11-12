@@ -2430,7 +2430,7 @@ private fun NotificationsPage(
         if (showNotifSettings) {
             androidx.compose.ui.window.Dialog(
                 onDismissRequest = { showNotifSettings = false },
-                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
             ) {
                 val outer = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                 val inner = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
@@ -5167,7 +5167,7 @@ private fun QiblyShareDialog(
     val recipients = (if (query.isBlank()) inbox.map { it.username to it.displayName } else users.map { it.username to it.displayName }).distinctBy { it.first }
     androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
-        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
         Column(
             Modifier.fillMaxWidth().fillMaxHeight(0.86f)
@@ -8201,7 +8201,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
             QinblyStoryCard(
                 imageUrl = if (myCover != null && myCover.mediaType != "video" && myCover.mediaType != "text") myCover.mediaUrl else mine?.avatarUrl.orEmpty(),
                 isAvatar = myCover == null || myCover.mediaType == "video" || myCover.mediaType == "text", isVideo = myCover != null && myCover.mediaType == "video", label = "Criar story", textStory = if (myCover?.mediaType == "text") qinblyParseTextStory(myCover.caption) else null,
-                ring = QinblyBrand.Accent.copy(alpha = 0.55f), plus = true, mood = moods[prefs.getString("username", "").orEmpty()], onClick = { showStoryMenu = true }
+                ring = QinblyBrand.Accent.copy(alpha = 0.55f), plus = true, mood = moods[prefs.getString("username", "").orEmpty()], onPlus = { showStoryMenu = true }, onClick = { if (mine?.stories?.isNotEmpty() == true) viewingStory = mine else onNotice("Você ainda não tem story. Toque no + para criar.") }
             )
         }
         items(trayOthers, key = { "tray-" + it.username }) { person ->
@@ -8227,7 +8227,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
 }
 
 @Composable
-private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, textStory: QinblyTextStory?, ring: Color, plus: Boolean, mood: QinblyMood? = null, onClick: () -> Unit) {
+private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, textStory: QinblyTextStory?, ring: Color, plus: Boolean, mood: QinblyMood? = null, onPlus: () -> Unit = {}, onClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Box(Modifier.width(168.dp).height(306.dp).clip(shape).background(QiblyTheme.soft).border(1.5.dp, ring, shape).clickable(indication = null, interactionSource = ms) { onClick() }) {
@@ -8243,8 +8243,8 @@ private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolea
             else AsyncImage(model = imageUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
         }
         Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(96.dp).background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC000000)))))
-        if (plus) Box(Modifier.align(Alignment.Center).offset(x = 42.dp, y = 42.dp).size(42.dp).clip(CircleShape).background(QinblyBrand.Accent).border(2.dp, QiblyTheme.soft, CircleShape), contentAlignment = Alignment.Center) {
-            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
+        if (plus) Box(Modifier.align(Alignment.Center).size(60.dp).clip(CircleShape).background(QinblyBrand.Accent).border(3.dp, Color.White.copy(alpha = 0.9f), CircleShape).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onPlus() }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Default.Add, contentDescription = "Criar", tint = Color.White, modifier = Modifier.size(32.dp))
         }
         if (mood != null) Box(Modifier.align(Alignment.TopStart).padding(8.dp).size(36.dp).clip(CircleShape).background(mood.color).border(2.dp, Color.White, CircleShape), contentAlignment = Alignment.Center) { Text(mood.emoji, fontSize = 18.sp) }
         Text(label, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
