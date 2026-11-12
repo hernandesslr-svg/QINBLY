@@ -8243,7 +8243,7 @@ private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolea
             else AsyncImage(model = imageUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
         }
         Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(96.dp).background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC000000)))))
-        if (plus) Box(Modifier.align(Alignment.Center).size(60.dp).clip(CircleShape).background(QinblyBrand.Accent).border(3.dp, Color.White.copy(alpha = 0.9f), CircleShape).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onPlus() }, contentAlignment = Alignment.Center) {
+        if (plus) Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 46.dp).size(60.dp).clip(CircleShape).background(QinblyBrand.Accent).border(3.dp, Color.White.copy(alpha = 0.9f), CircleShape).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onPlus() }, contentAlignment = Alignment.Center) {
             Icon(Icons.Default.Add, contentDescription = "Criar", tint = Color.White, modifier = Modifier.size(32.dp))
         }
         if (mood != null) Box(Modifier.align(Alignment.TopStart).padding(8.dp).size(36.dp).clip(CircleShape).background(mood.color).border(2.dp, Color.White, CircleShape), contentAlignment = Alignment.Center) { Text(mood.emoji, fontSize = 18.sp) }
