@@ -66,14 +66,17 @@ private fun hasGalleryPermission(context: Context): Boolean {
 private fun loadRecentMedia(context: Context): List<GalleryItem> {
     val out = mutableListOf<GalleryItem>()
     try {
-        val f = MediaStore.Files.FileColumns
+        val idCol = MediaStore.Files.FileColumns._ID
+        val typeCol = MediaStore.Files.FileColumns.MEDIA_TYPE
+        val image = MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE
+        val video = MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO
         context.contentResolver.query(
-            MediaStore.Files.getContentUri("external"), arrayOf(f._ID, f.MEDIA_TYPE), "${f.MEDIA_TYPE}=? OR ${f.MEDIA_TYPE}=?",
-            arrayOf(f.MEDIA_TYPE_IMAGE.toString(), f.MEDIA_TYPE_VIDEO.toString()), "${f.DATE_ADDED} DESC"
+            MediaStore.Files.getContentUri("external"), arrayOf(idCol, typeCol), "$typeCol=? OR $typeCol=?",
+            arrayOf(image.toString(), video.toString()), MediaStore.Files.FileColumns.DATE_ADDED + " DESC"
         )?.use { c ->
             while (c.moveToNext() && out.size < 150) {
-                val id = c.getLong(0); val video = c.getInt(1) == f.MEDIA_TYPE_VIDEO
-                out.add(GalleryItem(ContentUris.withAppendedId(if (video) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id), video))
+                val id = c.getLong(0); val isVideo = c.getInt(1) == video
+                out.add(GalleryItem(ContentUris.withAppendedId(if (isVideo) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id), isVideo))
             }
         }
     } catch (_: Exception) { }
