@@ -7356,7 +7356,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     }
     if (showStoryMenu) {
         QinblyStoryMenu(
-            QinblyBrand.Accent, hasStory = myStoryEntry?.stories?.isNotEmpty() == true, hasNote = !myStoryEntry?.note.isNullOrBlank(),
+            QinblyBrand.Accent, hasStory = myStoryEntry?.stories?.isNotEmpty() == true, hasNote = !myStoryEntry?.note.isNullOrBlank(), currentNote = myStoryEntry?.note.orEmpty(),
             onDismiss = { showStoryMenu = false }, onNotice = onNotice, onChanged = { storyRefresh++ },
             onViewMine = { viewingStory = myStoryEntry }
         )
@@ -8194,11 +8194,12 @@ private object QinblyAvatarCache {
 
 @Composable
 private fun QinblyNoteBubble(note: String) {
-    // Reserva sempre a mesma altura (20 dp) para os avatares da faixa ficarem alinhados, com ou sem nota.
-    Box(Modifier.height(30.dp).fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
+    // Reserva sempre a mesma altura para os avatares da faixa ficarem alinhados, com ou sem nota.
+    Box(Modifier.height(46.dp).fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
         if (note.isNotBlank()) {
-            Text(note, color = RemoteAppearance.screenTextColor, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(QinblyBrand.Accent.copy(alpha = 0.22f)).padding(horizontal = 10.dp, vertical = 3.dp))
+            Text(note, color = Color.White, fontSize = 14.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.offset(y = 8.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF2E2745)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(16.dp)).padding(horizontal = 10.dp, vertical = 5.dp))
         }
     }
 }

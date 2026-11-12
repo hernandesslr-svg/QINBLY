@@ -35,6 +35,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -81,7 +84,7 @@ import kotlinx.coroutines.withContext
  */
 @Composable
 internal fun QinblyStoryMenu(
-    accent: Color, hasStory: Boolean, hasNote: Boolean,
+    accent: Color, hasStory: Boolean, hasNote: Boolean, currentNote: String = "",
     onDismiss: () -> Unit, onNotice: (String) -> Unit, onChanged: () -> Unit, onViewMine: () -> Unit
 ) {
     val context = LocalContext.current
@@ -115,31 +118,39 @@ internal fun QinblyStoryMenu(
     }
 
     when (step) {
-        "menu" -> AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Criar") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    if (hasStory) MenuRow("Ver meu story", accent) { onDismiss(); onViewMine() }
-                    MenuRow("Story com foto ou vídeo da galeria", accent) { galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }
-                    MenuRow("Story com uma foto tirada agora", accent) {
-                        if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) launchCamera()
-                        else cameraPermission.launch(android.Manifest.permission.CAMERA)
-                    }
-                    MenuRow(if (hasNote) "Mudar minha nota" else "Escrever uma nota", accent) { step = "note" }
-                    if (hasNote) MenuRow("Apagar minha nota", accent) {
-                        val token = prefs.getString("token", null)
-                        if (token.isNullOrBlank()) { onNotice("Entre na sua conta."); return@MenuRow }
-                        Thread {
-                            val main = Handler(Looper.getMainLooper())
-                            try { QinblyApi.deleteNote(token); main.post { onNotice("Nota apagada."); onChanged(); onDismiss() } }
-                            catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível apagar a nota.") } }
-                        }.start()
-                    }
+        "menu" -> Dialog(onDismissRequest = onDismiss) {
+            val textC = Color.White
+            val red = Color(0xFFE5484D)
+            @Composable fun Row2(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, tint: Color, color: Color, onClick: () -> Unit) {
+                Row(Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 18.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+                    Spacer(Modifier.width(16.dp))
+                    Text(label, color = color, fontSize = 16.sp)
                 }
-            },
-            confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar") } }
-        )
+            }
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF1B1727)).padding(vertical = 6.dp)) {
+                if (hasNote && currentNote.isNotBlank()) {
+                    Text(currentNote, color = textC, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0x22FFFFFF)))
+                }
+                if (hasStory) Row2(Icons.Outlined.Visibility, "Ver meu story", accent, textC) { onDismiss(); onViewMine() }
+                Row2(Icons.Outlined.Edit, if (hasNote) "Mudar nota" else "Escrever uma nota", accent, textC) { step = "note" }
+                Row2(Icons.Outlined.PhotoLibrary, "Story da galeria", accent, textC) { galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }
+                Row2(Icons.Outlined.PhotoCamera, "Story com foto agora", accent, textC) {
+                    if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) launchCamera()
+                    else cameraPermission.launch(android.Manifest.permission.CAMERA)
+                }
+                if (hasNote) Row2(Icons.Outlined.Delete, "Apagar nota", red, red) {
+                    val token = prefs.getString("token", null)
+                    if (token.isNullOrBlank()) { onNotice("Entre na sua conta."); return@Row2 }
+                    Thread {
+                        val main = Handler(Looper.getMainLooper())
+                        try { QinblyApi.deleteNote(token); main.post { onNotice("Nota apagada."); onChanged(); onDismiss() } }
+                        catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível apagar a nota.") } }
+                    }.start()
+                }
+            }
+        }
         "compose" -> AlertDialog(
             onDismissRequest = { if (!busy) onDismiss() },
             title = { Text("Novo story") },
