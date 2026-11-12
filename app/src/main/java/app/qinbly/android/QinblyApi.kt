@@ -398,7 +398,27 @@ object QinblyApi {
     /** Acesso direto às tabelas (PostgREST); a segurança é feita pelas políticas do banco. */
     fun rest(token: String, method: String, path: String, body: String? = null, prefer: String? = null): String = restCall(token, method, path, body, prefer)
 
-    private fun restCall(token: String, method: String, pathAndQuery: String, body: String? = null, prefer: String? = null): String {
+    /** ID do usuário logado: vem do próprio token (campo "sub"), sem depender de outra tela ter salvo antes. */
+    fun userIdFromToken(token: String?): String? {
+        if (token.isNullOrBlank()) return null
+        return try {
+            val part = token.split(".").getOrNull(1) ?: return null
+            val json = String(android.util.Base64.decode(part, android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP), Charsets.UTF_8)
+            JSONObject(json).optString("sub").ifBlank { null }
+        } catch (_: Exception) { null }
+    }
+
+    /** Usuário logado: token primeiro (sempre certo), depois o que estiver salvo. */
+    fun currentUserId(prefs: android.content.SharedPreferences): String? {
+        val fromToken = userIdFromToken(prefs.getString("token", null))
+        if (fromToken != null) {
+            if (prefs.getString("user_id", null) != fromToken) prefs.edit().putString("user_id", fromToken).apply()
+            return fromToken
+        }
+        return prefs.getString("user_id", null)?.ifBlank { null }
+    }
+
+    private fun restCall(token: String, method: String, pathAndQuery: String, body: String? = null, prefer: String? = null, allowRefresh: Boolean = true): String {
         val c = (URL("https://jqomgrdlocdqaarfqkay.supabase.co/rest/v1/" + pathAndQuery).openConnection() as HttpURLConnection).apply {
             requestMethod = method; connectTimeout = 20000; readTimeout = 30000
             setRequestProperty("apikey", BuildConfig.SUPABASE_PUBLISHABLE_KEY)
@@ -410,7 +430,15 @@ object QinblyApi {
             if (body != null) c.outputStream.use { it.write(body.toByteArray()) }
             val status = c.responseCode
             val text = (if (status >= 400) c.errorStream else c.inputStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
-            if (status !in 200..299) throw IllegalStateException("Não foi possível concluir (HTTP $status).")
+            if (status == 401 && allowRefresh) {
+                // Sessão vencida: renova e tenta de novo uma vez.
+                val fresh = renewExpiredSession(token)
+                return restCall(fresh, method, pathAndQuery, body, prefer, false)
+            }
+            if (status !in 200..299) {
+                val detail = try { JSONObject(text).optString("message").ifBlank { JSONObject(text).optString("hint") } } catch (_: Exception) { "" }
+                throw IllegalStateException("Não foi possível concluir (HTTP $status)." + if (detail.isNotBlank()) " $detail" else "")
+            }
             return text
         } finally { c.disconnect() }
     }

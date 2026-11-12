@@ -109,6 +109,13 @@ internal fun QinblyDialog(
     }
 }
 
+/** Aviso que aparece por cima de qualquer janela (o aviso normal fica escondido atrás das folhas). */
+@Composable
+internal fun qinblyToast(@Suppress("UNUSED_PARAMETER") original: (String) -> Unit): (String) -> Unit {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    return { m -> android.widget.Toast.makeText(ctx, m, android.widget.Toast.LENGTH_LONG).show() }
+}
+
 /** Painel grande que sobe de baixo, sempre acima dos botões do celular. */
 @Composable
 internal fun QinblyBottomPanel(title: String, onDismiss: () -> Unit, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
@@ -180,12 +187,13 @@ internal fun qinblyFetchMoods(token: String, usernames: List<String>): Map<Strin
 
 @Composable
 internal fun QinblyMoodDialog(onDismiss: () -> Unit, onNotice: (String) -> Unit, onChanged: () -> Unit) {
+    val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = LocalContext.current
     val prefs = remember { sess(context) }
     var emoji by remember { mutableStateOf(moodEmojis[0]) }
     var color by remember { mutableStateOf(moodColors[0]) }
     fun save(clear: Boolean) {
-        val token = prefs.getString("token", null); val uid = prefs.getString("user_id", null)
+        val token = prefs.getString("token", null); val uid = QinblyApi.currentUserId(prefs)
         if (token.isNullOrBlank() || uid.isNullOrBlank()) { onNotice("Entre na sua conta."); return }
         Thread {
             try {
@@ -219,6 +227,7 @@ internal fun QinblyMoodDialog(onDismiss: () -> Unit, onNotice: (String) -> Unit,
 // ───────── Cápsula do tempo ─────────
 @Composable
 internal fun QinblyCapsuleDialog(accent: Color, onDismiss: () -> Unit, onNotice: (String) -> Unit) {
+    val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = LocalContext.current
     val prefs = remember { sess(context) }
     var toMe by remember { mutableStateOf(true) }
@@ -234,7 +243,7 @@ internal fun QinblyCapsuleDialog(accent: Color, onDismiss: () -> Unit, onNotice:
         d.show()
     }
     fun save() {
-        val token = prefs.getString("token", null); val uid = prefs.getString("user_id", null); val d = date
+        val token = prefs.getString("token", null); val uid = QinblyApi.currentUserId(prefs); val d = date
         if (token.isNullOrBlank() || uid.isNullOrBlank()) { onNotice("Entre na sua conta."); return }
         if (text.isBlank()) { onNotice("Escreva a mensagem."); return }
         if (d == null) { onNotice("Escolha quando ela abre."); return }
@@ -276,7 +285,7 @@ internal fun QinblyCapsuleInbox() {
     val prefs = remember { sess(context) }
     var caps by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     LaunchedEffect(Unit) {
-        val token = prefs.getString("token", null); val uid = prefs.getString("user_id", null)
+        val token = prefs.getString("token", null); val uid = QinblyApi.currentUserId(prefs)
         if (token.isNullOrBlank() || uid.isNullOrBlank()) return@LaunchedEffect
         caps = try {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -305,6 +314,7 @@ private data class Pack(val id: String, val name: String, val owner: String, val
 
 @Composable
 internal fun QinblyStickerPacksDialog(accent: Color, onDismiss: () -> Unit, onNotice: (String) -> Unit) {
+    val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = LocalContext.current
     val prefs = remember { sess(context) }
     var packs by remember { mutableStateOf<List<Pack>?>(null) }
@@ -324,7 +334,7 @@ internal fun QinblyStickerPacksDialog(accent: Color, onDismiss: () -> Unit, onNo
         } catch (_: Exception) { packs ?: emptyList() }
     }
     fun publish() {
-        val token = prefs.getString("token", null); val uid = prefs.getString("user_id", null)
+        val token = prefs.getString("token", null); val uid = QinblyApi.currentUserId(prefs)
         if (token.isNullOrBlank() || uid.isNullOrBlank()) { onNotice("Entre na sua conta."); return }
         if (name.isBlank()) { onNotice("Dê um nome ao pacote."); return }
         val n = name.trim()
@@ -341,7 +351,7 @@ internal fun QinblyStickerPacksDialog(accent: Color, onDismiss: () -> Unit, onNo
         }.start()
     }
     fun add(p: Pack) {
-        val token = prefs.getString("token", null); val uid = prefs.getString("user_id", null)
+        val token = prefs.getString("token", null); val uid = QinblyApi.currentUserId(prefs)
         if (token.isNullOrBlank() || uid.isNullOrBlank()) return
         Thread {
             try {
@@ -382,7 +392,7 @@ internal fun QinblyStickerPacksDialog(accent: Color, onDismiss: () -> Unit, onNo
 internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, textColor: Color, secondary: Color, onRefreshLocation: () -> Unit, onNotice: (String) -> Unit) {
     val context = LocalContext.current
     val prefs = remember { sess(context) }
-    val myId = remember { prefs.getString("user_id", null) }
+    val myId = remember { QinblyApi.currentUserId(prefs) }
     // Aproxima a posição (~1 km) antes de gravar, para não expor o ponto exato de quem avisa.
     val gLat = Math.round(lat * 100) / 100.0
     val gLng = Math.round(lng * 100) / 100.0

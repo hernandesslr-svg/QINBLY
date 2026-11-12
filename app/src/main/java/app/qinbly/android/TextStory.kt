@@ -94,6 +94,7 @@ internal fun QinblyTextStoryContent(s: QinblyTextStory, modifier: Modifier = Mod
 
 @Composable
 internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> Unit, onNotice: (String) -> Unit, collab: Boolean = false) {
+    val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     var text by remember { mutableStateOf("") }
@@ -115,7 +116,7 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
                 Text(if (sending) "Publicando…" else "Publicar", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
                     modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0x44FFFFFF)).clickable(enabled = !sending) {
                         val token = prefs.getString("token", null)
-                        val uid = prefs.getString("user_id", null)
+                        val uid = QinblyApi.currentUserId(prefs)
                         if (text.isBlank()) { onNotice("Escreva alguma coisa."); return@clickable }
                         if (token.isNullOrBlank() || uid.isNullOrBlank()) { onNotice("Entre na sua conta."); return@clickable }
                         sending = true
@@ -183,10 +184,11 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
 /** Comentários de um story (folha que sobe de baixo, campo em pílula). O autor vê todos; quem comentou vê só os próprios. */
 @Composable
 internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent: Color, collab: Boolean, onNotice: (String) -> Unit, onDismiss: () -> Unit) {
+    val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     val token = remember { prefs.getString("token", null) }
-    val uid = remember { prefs.getString("user_id", null) }
+    val uid = remember { QinblyApi.currentUserId(prefs) }
     var comments by remember { mutableStateOf<List<QinblyApi.StoryComment>?>(null) }
     var refresh by remember { mutableStateOf(0) }
     LaunchedEffect(refresh) {
@@ -255,10 +257,11 @@ internal fun QinblyStoryReplyBar(
     storyId: String, collab: Boolean, accent: Color, fieldBg: Color, hintColor: Color,
     onNotice: (String) -> Unit, onSent: () -> Unit = {}, onFocus: (Boolean) -> Unit = {}
 ) {
+    val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     val token = remember { prefs.getString("token", null) }
-    val uid = remember { prefs.getString("user_id", null) }
+    val uid = remember { QinblyApi.currentUserId(prefs) }
     var draft by remember { mutableStateOf("") }
     val rec = remember { arrayOfNulls<android.media.MediaRecorder>(1) }
     val recFile = remember { java.io.File(context.cacheDir, "sc_voice.m4a") }
