@@ -95,7 +95,7 @@ internal fun MediaThumb(uri: Uri, video: Boolean, modifier: Modifier, size: Int 
     val b = bmp
     if (b != null) Image(b.asImageBitmap(), contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop)
     else if (!video) AsyncImage(model = uri, contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop)
-    else Box(modifier.background(Color(0xFF2B2342)), contentAlignment = Alignment.Center) { Text("▶", color = Color.White, fontSize = 22.sp) }
+    else Box(modifier.background(Color(0xFF2C2C2E)), contentAlignment = Alignment.Center) { Text("▶", color = Color.White, fontSize = 22.sp) }
 }
 
 /**
@@ -155,7 +155,7 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
     }
 
     QinblyDialog(onDismissRequest = { if (step == "caption" && !sending) step = "gallery" else if (!sending) onDismiss() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
-        Box(Modifier.fillMaxSize().background(Color(0xFF14101F))) {
+        Box(Modifier.fillMaxSize().background(Color(0xFF1C1C1E))) {
             if (step == "gallery") {
                 Column(Modifier.fillMaxSize().statusBarsPadding()) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -207,7 +207,7 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                         }
                     }
                     Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0xFF2B2342)).padding(start = 18.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0xFF2C2C2E)).padding(start = 18.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.weight(1f).padding(vertical = 8.dp)) {
                                 if (caption.isEmpty()) Text("Adicionar legenda…", color = Color(0xFF8E87A8), fontSize = 15.sp)
                                 BasicTextField(value = caption, onValueChange = { caption = it.take(300) }, textStyle = TextStyle(color = Color.White, fontSize = 15.sp), cursorBrush = SolidColor(Color.White), maxLines = 3, modifier = Modifier.fillMaxWidth())
@@ -218,7 +218,7 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                         Text(if (sending) "Enviando…" else if (newCollab) "Publicar story coletivo" else "Enviar ao coletivo", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 16.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Color.White).clickable(enabled = !sending) { confirm = true }.padding(vertical = 15.dp))
                     }
-                    if (showEmojis) QinblyEmojiPanel(Modifier.padding(bottom = qinblyNavBarPadding()), Color(0xFF1E1830)) { e -> caption = (caption + e).take(300) }
+                    if (showEmojis) QinblyEmojiPanel(Modifier.padding(bottom = qinblyNavBarPadding()), Color(0xFF262628)) { e -> caption = (caption + e).take(300) }
                 }
             }
         }
