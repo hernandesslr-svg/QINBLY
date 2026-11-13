@@ -1,7 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<inset xmlns:android="http://schemas.android.com/apk/res/android"
-    android:drawable="@drawable/qinbly_icon"
-    android:insetLeft="10dp"
-    android:insetTop="10dp"
-    android:insetRight="10dp"
-    android:insetBottom="10dp" />
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:translateX="16" android:translateY="16" android:scaleX="0.76" android:scaleY="0.76">
+        <path android:pathData="M10.5,50 a39.5,39.5 0 1,0 79,0 a39.5,39.5 0 1,0 -79,0 M21.5,50 a28.5,28.5 0 1,1 57,0 a28.5,28.5 0 1,1 -57,0 Z"
+            android:fillType="evenOdd">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="15" android:startY="15"
+                    android:endX="85" android:endY="85">
+                    <item android:offset="0.0" android:color="#FF2F8CFF" />
+                    <item android:offset="0.5" android:color="#FF7B3DFF" />
+                    <item android:offset="1.0" android:color="#FFE0368C" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path android:fillColor="#FFFFFF"
+            android:pathData="M50,31 Q53,47 69,50 Q53,53 50,69 Q47,53 31,50 Q47,47 50,31 Z" />
+    </group>
+</vector>
