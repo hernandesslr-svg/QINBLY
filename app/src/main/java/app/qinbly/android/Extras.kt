@@ -154,7 +154,7 @@ internal fun QinblyPillField(value: String, onChange: (String) -> Unit, hint: St
 }
 
 @Composable
-private fun Chip(text: String, selected: Boolean, accent: Color = Color(0xFF5AB4FF), onClick: () -> Unit) {
+private fun Chip(text: String, selected: Boolean, accent: Color = Color(0xFF7AA8FF), onClick: () -> Unit) {
     Text(text, color = Color.White, fontSize = 16.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         modifier = Modifier.clip(RoundedCornerShape(22.dp)).background(if (selected) accent else FieldBg).clickable { onClick() }.padding(horizontal = 18.dp, vertical = 11.dp))
 }
@@ -180,7 +180,7 @@ internal fun qinblyFetchMoods(token: String, usernames: List<String>): Map<Strin
         val o = arr.getJSONObject(i)
         val fresh = try { java.time.Duration.between(java.time.OffsetDateTime.parse(o.optString("mood_at")).toInstant(), java.time.Instant.now()).toHours() < 24 } catch (_: Exception) { false }
         if (!fresh) continue
-        val col = try { Color(android.graphics.Color.parseColor(o.optString("mood_color", "#7C4DFF"))) } catch (_: Exception) { Color(0xFF5AB4FF) }
+        val col = try { Color(android.graphics.Color.parseColor(o.optString("mood_color", "#7C4DFF"))) } catch (_: Exception) { Color(0xFF7AA8FF) }
         out[o.optString("username")] = QinblyMood(o.optString("mood_emoji"), col)
     }
     return out
@@ -250,7 +250,7 @@ internal fun QinblyMoodDialog(onDismiss: () -> Unit, onNotice: (String) -> Unit,
                     Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, bottom = 14.dp + qinblyNavBarPadding()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Publicar clima", color = Color(0xFF26215C), fontWeight = FontWeight.Bold, fontSize = 17.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Color.White).clickable { save(false) }.padding(vertical = 16.dp))
-                        Text("Limpar meu clima", color = Color(0xFF8CCBFF), fontSize = 15.sp, modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable { save(true) }.padding(horizontal = 16.dp, vertical = 8.dp))
+                        Text("Limpar meu clima", color = Color(0xFFA8C4FF), fontSize = 15.sp, modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable { save(true) }.padding(horizontal = 16.dp, vertical = 8.dp))
                     }
                 }
             }
@@ -381,7 +381,7 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             QinblyPillField(draft, { draft = it.take(280) }, "Avise a vizinhança…", Modifier.weight(1f), maxLines = 3)
-            Box(Modifier.size(46.dp).clip(CircleShape).background(if (draft.isBlank()) Color(0xFF2E2E30) else Color(0xFF5AB4FF)).clickable(enabled = draft.isNotBlank()) { post() }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, fontSize = 18.sp) }
+            Box(Modifier.size(46.dp).clip(CircleShape).background(if (draft.isBlank()) Color(0xFF2E2E30) else Color(0xFF7AA8FF)).clickable(enabled = draft.isNotBlank()) { post() }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, fontSize = 18.sp) }
         }
         val list = notices
         if (list == null) Text("Carregando…", color = secondary)
@@ -391,7 +391,7 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
                 val p = n.optJSONObject("profiles")
                 Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(FieldBg).padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text((p?.optString("display_name").orEmpty().ifBlank { p?.optString("username").orEmpty() }) + " • " + qinblyAgo(n.optString("created_at")), color = Color(0xFF8CCBFF), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                        Text((p?.optString("display_name").orEmpty().ifBlank { p?.optString("username").orEmpty() }) + " • " + qinblyAgo(n.optString("created_at")), color = Color(0xFFA8C4FF), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                         if (n.optString("user_id") == myId) Text("Apagar", color = Color(0xFFE0457B), fontSize = 12.sp, modifier = Modifier.clickable {
                             val id = n.optString("id"); val token = prefs.getString("token", null) ?: return@clickable
                             notices = notices?.filterNot { it.optString("id") == id }
