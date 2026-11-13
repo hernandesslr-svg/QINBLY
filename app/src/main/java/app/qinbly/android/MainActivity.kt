@@ -1954,10 +1954,17 @@ private fun QinblyApp() {
                     NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 3) navTopRequest++; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Groups, contentDescription = "Comunidades"); if (RemoteAppearance.navigationUnderlineVisible && tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.Accent)) } }, label = { Text("Comunidades", fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                     NavigationBarItem(selected = false, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; showCreateOptions = true }, icon = {
                         Box(
-                            Modifier.size(36.dp).clip(CircleShape).background(Brush.linearGradient(listOf(QinblyBrand.Logo, QinblyBrand.Pink))),
+                            Modifier.size(36.dp).clip(CircleShape).background(Color.White).border(1.dp, Color.Black, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Criar publicação", modifier = Modifier.size(24.dp), tint = Color.White)
+                            Icon(Icons.Default.Add, contentDescription = "Criar publicação",
+                                modifier = Modifier.size(24.dp)
+                                    .graphicsLayer(compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen)
+                                    .drawWithContent {
+                                        drawContent()
+                                        drawRect(Brush.linearGradient(listOf(QinblyBrand.Logo, QinblyBrand.Pink)), blendMode = androidx.compose.ui.graphics.BlendMode.SrcIn)
+                                    },
+                                tint = Color.Black)
                         }
                     }, label = { Text(RemoteAppearance.navigationLabels[2], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                     NavigationBarItem(
