@@ -87,7 +87,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.roundToInt
 
-private val PvBlue = Color(0xFF7AA8FF)
+private val PvBlue = Color(0xFF1877F2)
 private const val PvPxPerSec = 22
 private const val PvMaxPhotos = 20
 private val PvTransitions = listOf("Nenhuma", "Zoom", "Deslizar", "Surgir")

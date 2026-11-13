@@ -472,7 +472,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                         Icon(Icons.Outlined.Visibility, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                         Spacer(Modifier.width(10.dp))
                         Text("Visualizações", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.weight(1f))
-                        if (list != null) Text(list.size.toString(), color = Color(0xFFA8C4FF), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        if (list != null) Text(list.size.toString(), color = Color(0xFF6AA6F8), fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
                     if (list == null) Box(Modifier.fillMaxWidth().padding(vertical = 28.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = accent, modifier = Modifier.size(28.dp)) }
                     else if (list.isEmpty()) Text("Ninguém viu ainda.", color = Color(0xFFA9B5C8), fontSize = 15.sp, modifier = Modifier.padding(horizontal = 22.dp, vertical = 20.dp))
