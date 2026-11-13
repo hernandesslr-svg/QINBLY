@@ -6265,10 +6265,19 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 contentPadding = PaddingValues(top = 0.dp, bottom = 18.dp)
             ) {
+                if (selectedFeedTab == "Descobrir") item(key = "home-stories") {
+                    QinblyStoriesRow(onNotice, onOpenProfile, onOpenConversation, onAddStory)
+                }
+                if (selectedFeedTab == "Descobrir") item(key = "home-header") {
+                    QinblyHomeHeader(allFeedPosts, prefs, onCreateWith)
+                }
+                if (selectedFeedTab == "Em alta") item(key = "alta-header") {
+                    QinblyEmAltaHeader(emAltaPeriod, { emAltaPeriod = it }, qinblyTopHashtags(allFeedPosts.filter { qinblyInPeriod(it, emAltaPeriod) }), displayedPosts.isEmpty())
+                }
                 if (!loading && displayedPosts.isEmpty()) {
                     item {
                         Column(
-                            Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 56.dp),
+                            Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 32.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
@@ -6279,15 +6288,6 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                             }
                         }
                     }
-                }
-                if (selectedFeedTab == "Descobrir") item(key = "home-stories") {
-                    QinblyStoriesRow(onNotice, onOpenProfile, onOpenConversation, onAddStory)
-                }
-                if (selectedFeedTab == "Descobrir") item(key = "home-header") {
-                    QinblyHomeHeader(allFeedPosts, prefs, onCreateWith)
-                }
-                if (selectedFeedTab == "Em alta") item(key = "alta-header") {
-                    QinblyEmAltaHeader(emAltaPeriod, { emAltaPeriod = it }, qinblyTopHashtags(allFeedPosts.filter { qinblyInPeriod(it, emAltaPeriod) }), displayedPosts.isEmpty())
                 }
                 if (selectedFeedTab == "Em alta") items(displayedPosts.size, key = { "rank-" + displayedPosts[it].id }) { index ->
                     QinblyRankRow(index + 1, displayedPosts[index]) { fullscreenVideoId = displayedPosts[index].id }
