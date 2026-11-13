@@ -73,9 +73,9 @@ import java.time.YearMonth
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
-private val CapBg = Color(0xFF1C1C1E)
-private val CapCard = Color(0xFF2A2A2C)
-private val CapField = Color(0xFF2C2C2E)
+private val CapBg = Color(0xFF171719)
+private val CapCard = Color(0xFF232325)
+private val CapField = Color(0xFF262628)
 private val CapAccent = Color(0xFF7C4DFF)
 private val CapMuted = Color(0xFFA9B5C8)
 private val CapMonths = listOf("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro")
@@ -373,7 +373,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                 }
             }
             @Composable fun Primary(label: String, enabled: Boolean = true, modifier: Modifier = Modifier, onClick: () -> Unit) {
-                Box(modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(if (enabled) CapAccent else Color(0xFF3A3A3C)).clickable(enabled = enabled) { onClick() }.padding(vertical = 15.dp), contentAlignment = Alignment.Center) {
+                Box(modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(if (enabled) CapAccent else Color(0xFF2E2E30)).clickable(enabled = enabled) { onClick() }.padding(vertical = 15.dp), contentAlignment = Alignment.Center) {
                     Text(label, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
@@ -435,7 +435,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                         Text("Continuar", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
                             modifier = Modifier.clip(RoundedCornerShape(24.dp)).background(Color.White).clickable { showEmojis = false; step = "date" }.padding(horizontal = 20.dp, vertical = 13.dp))
                     }
-                    if (showEmojis) QinblyEmojiPanel(Modifier.padding(bottom = qinblyNavBarPadding()), Color(0xFF262628)) { e -> message = (message + e).take(500) }
+                    if (showEmojis) QinblyEmojiPanel(Modifier.padding(bottom = qinblyNavBarPadding()), Color(0xFF1F1F21)) { e -> message = (message + e).take(500) }
                 }
                 "date" -> Column(Modifier.fillMaxSize()) {
                     TopBar("Escolha a data")
@@ -495,7 +495,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                                 Text("Arraste pro lado pra mudar o mês", color = Color(0xFF8E87A8), fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 14.dp))
                             }
                             if (yearOpen) {
-                                Column(Modifier.align(Alignment.TopCenter).width(130.dp).heightIn(max = 260.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF2C2C2E)).verticalScroll(rememberScrollState()).padding(vertical = 6.dp)) {
+                                Column(Modifier.align(Alignment.TopCenter).width(130.dp).heightIn(max = 260.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF262628)).verticalScroll(rememberScrollState()).padding(vertical = 6.dp)) {
                                     for (y in minDate.year..minDate.year + 60) {
                                         Text("$y", color = if (year == y) Color(0xFF26215C) else Color.White, fontWeight = if (year == y) FontWeight.Bold else FontWeight.Normal, fontSize = 17.sp, textAlign = TextAlign.Center,
                                             modifier = Modifier.fillMaxWidth().background(if (year == y) Color.White else Color.Transparent)

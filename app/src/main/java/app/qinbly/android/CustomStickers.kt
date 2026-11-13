@@ -268,7 +268,7 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
         @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
         androidx.compose.material3.ModalBottomSheet(
             onDismissRequest = { toDelete = null },
-            containerColor = cardColor.copy(alpha = 1f).let { if (it == Color.Transparent) Color(0xFF2A2A2C) else it },
+            containerColor = cardColor.copy(alpha = 1f).let { if (it == Color.Transparent) Color(0xFF232325) else it },
             contentColor = textColor
         ) {
             Column(Modifier.fillMaxWidth().padding(bottom = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
