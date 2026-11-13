@@ -1517,7 +1517,7 @@ private fun AccountSwitcherDialog(
  }
 }
 
-private object QiblyTheme {
+internal object QiblyTheme {
     var dark by androidx.compose.runtime.mutableStateOf(true)
     var largeText by androidx.compose.runtime.mutableStateOf(false)
     var reduceMotion by androidx.compose.runtime.mutableStateOf(false)
@@ -3906,13 +3906,13 @@ private fun QinblyPostViewer(
                                 Icon(Icons.Default.MoreVert, contentDescription = "Mais opções", tint = Color.White)
                             }
                             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                                DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = {
+                                DropdownMenuItem(text = { Text("Salvar no celular") }, leadingIcon = { QinblyMenuIcon("Salvar no celular") }, onClick = {
                                     menuOpen = false
                                     saveProfilePhotoToDevice(context, post.mediaUrl.ifBlank { images.firstOrNull().orEmpty() }, onNotice)
                                 })
-                                DropdownMenuItem(text = { Text("Compartilhar") }, onClick = { menuOpen = false; onShare(post) })
+                                DropdownMenuItem(text = { Text("Compartilhar") }, leadingIcon = { QinblyMenuIcon("Compartilhar") }, onClick = { menuOpen = false; onShare(post) })
                                 if (!post.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
-                                    DropdownMenuItem(text = { Text("Denunciar publicação") }, onClick = { menuOpen = false; reportPost = post })
+                                    DropdownMenuItem(text = { Text("Denunciar publicação") }, leadingIcon = { QinblyMenuIcon("Denunciar publicação") }, onClick = { menuOpen = false; reportPost = post })
                                 }
                             }
                         }
@@ -3957,16 +3957,16 @@ private fun QinblyPostViewer(
                                 Icon(Icons.Default.MoreHoriz, contentDescription = "Mais opções", tint = Color.White, modifier = Modifier.size(28.dp))
                             }
                             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                                DropdownMenuItem(text = { Text("Salvar no celular") }, onClick = {
+                                DropdownMenuItem(text = { Text("Salvar no celular") }, leadingIcon = { QinblyMenuIcon("Salvar no celular") }, onClick = {
                                     menuOpen = false
                                     saveProfilePhotoToDevice(context, post.mediaUrl.ifBlank { images.firstOrNull().orEmpty() }, onNotice)
                                 })
-                                DropdownMenuItem(text = { Text("Compartilhar") }, onClick = {
+                                DropdownMenuItem(text = { Text("Compartilhar") }, leadingIcon = { QinblyMenuIcon("Compartilhar") }, onClick = {
                                     menuOpen = false
                                     onShare(post)
                                 })
                                 if (!post.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
-                                    DropdownMenuItem(text = { Text("Denunciar publicação") }, onClick = {
+                                    DropdownMenuItem(text = { Text("Denunciar publicação") }, leadingIcon = { QinblyMenuIcon("Denunciar publicação") }, onClick = {
                                         menuOpen = false
                                         reportPost = post
                                     })
@@ -4208,15 +4208,15 @@ private fun QinblyCommentsDialog(
                                     val isMine = comment.username.equals(me, ignoreCase = true)
                                     val canDelete = isMine || activePost.username.equals(me, ignoreCase = true)
                                     DropdownMenu(expanded = menuFor == comment.id, onDismissRequest = { menuFor = null }) {
-                                        DropdownMenuItem(text = { Text("Copiar") }, onClick = {
+                                        DropdownMenuItem(text = { Text("Copiar") }, leadingIcon = { QinblyMenuIcon("Copiar") }, onClick = {
                                             menuFor = null
                                             val cm = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                             cm.setPrimaryClip(android.content.ClipData.newPlainText("Comentário", comment.body))
                                             onNotice("Comentário copiado.")
                                         })
-                                        if (isMine) DropdownMenuItem(text = { Text("Editar comentário") }, onClick = { menuFor = null; editDraft = comment.body; editingComment = comment })
-                                        if (!isMine) DropdownMenuItem(text = { Text("Ver perfil") }, onClick = { menuFor = null; QinblyTagNav.profile = comment.username })
-                                        if (canDelete) DropdownMenuItem(text = { Text("Excluir comentário", color = Color(0xFFD33B3B)) }, onClick = {
+                                        if (isMine) DropdownMenuItem(text = { Text("Editar comentário") }, leadingIcon = { QinblyMenuIcon("Editar comentário") }, onClick = { menuFor = null; editDraft = comment.body; editingComment = comment })
+                                        if (!isMine) DropdownMenuItem(text = { Text("Ver perfil") }, leadingIcon = { QinblyMenuIcon("Ver perfil") }, onClick = { menuFor = null; QinblyTagNav.profile = comment.username })
+                                        if (canDelete) DropdownMenuItem(text = { Text("Excluir comentário", color = Color(0xFFD33B3B)) }, leadingIcon = { QinblyMenuIcon("Excluir comentário") }, onClick = {
                                             menuFor = null
                                             val token = prefs.getString("token", null)
                                             if (token.isNullOrBlank()) onNotice("Entre na sua conta para excluir comentários.")
@@ -4230,7 +4230,7 @@ private fun QinblyCommentsDialog(
                                                 }
                                             }.start()
                                         })
-                                        if (!isMine) DropdownMenuItem(text = { Text("Denunciar comentário", color = Color(0xFFD33B3B)) }, onClick = { menuFor = null; reportingComment = comment })
+                                        if (!isMine) DropdownMenuItem(text = { Text("Denunciar comentário", color = Color(0xFFD33B3B)) }, leadingIcon = { QinblyMenuIcon("Denunciar comentário") }, onClick = { menuFor = null; reportingComment = comment })
                                     }
                                     Text(
                                         comment.displayName.ifBlank { comment.username }.ifBlank { "Usuário" },
@@ -4870,11 +4870,11 @@ private fun QinblyPhotoViewer(url: String, onNotice: (String) -> Unit, onDismiss
                     Box {
                         IconButton(onClick = { menuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Opções da foto", tint = Color.White) }
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            DropdownMenuItem(text = { Text("Salvar foto no celular") }, onClick = {
+                            DropdownMenuItem(text = { Text("Salvar foto no celular") }, leadingIcon = { QinblyMenuIcon("Salvar foto no celular") }, onClick = {
                                 menuOpen = false
                                 saveProfilePhotoToDevice(context, url, onNotice)
                             })
-                            DropdownMenuItem(text = { Text("Compartilhar foto") }, onClick = {
+                            DropdownMenuItem(text = { Text("Compartilhar foto") }, leadingIcon = { QinblyMenuIcon("Compartilhar foto") }, onClick = {
                                 menuOpen = false
                                 val share = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                                     type = "text/plain"
@@ -4883,7 +4883,7 @@ private fun QinblyPhotoViewer(url: String, onNotice: (String) -> Unit, onDismiss
                                 context.startActivity(android.content.Intent.createChooser(share, "Compartilhar foto"))
                             })
                             if (onReport != null) {
-                                DropdownMenuItem(text = { Text("Denunciar foto") }, onClick = { menuOpen = false; onReport() })
+                                DropdownMenuItem(text = { Text("Denunciar foto") }, leadingIcon = { QinblyMenuIcon("Denunciar foto") }, onClick = { menuOpen = false; onReport() })
                             }
                         }
                     }
@@ -4946,8 +4946,8 @@ private fun QinblyPostMenu(
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             if (mine) {
-                DropdownMenuItem(text = { Text("Editar") }, onClick = { expanded = false; onEdit() })
-                DropdownMenuItem(text = { Text(if (post.pinned) "Desafixar do perfil" else "Fixar no perfil") }, onClick = {
+                DropdownMenuItem(text = { Text("Editar") }, leadingIcon = { QinblyMenuIcon("Editar") }, onClick = { expanded = false; onEdit() })
+                DropdownMenuItem(text = { Text(if (post.pinned) "Desafixar do perfil" else "Fixar no perfil") }, leadingIcon = { QinblyMenuIcon(if (post.pinned) "Desafixar do perfil" else "Fixar no perfil") }, onClick = {
                     expanded = false
                     val token = prefs.getString("token", null)
                     if (token.isNullOrBlank()) onNotice("Entre na sua conta.")
@@ -4964,7 +4964,7 @@ private fun QinblyPostMenu(
                     }.start()
                 })
             }
-            DropdownMenuItem(text = { Text("Copiar link") }, onClick = {
+            DropdownMenuItem(text = { Text("Copiar link") }, leadingIcon = { QinblyMenuIcon("Copiar link") }, onClick = {
                 expanded = false
                 val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                 clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Publicação ${QinblyBrand.Name}", qinblyPostLink(post.id)))
@@ -4977,13 +4977,13 @@ private fun QinblyPostMenu(
                     onClick = { expanded = false; confirmDelete = true }
                 )
             } else {
-                DropdownMenuItem(text = { Text("Ocultar publicação") }, onClick = {
+                DropdownMenuItem(text = { Text("Ocultar publicação") }, leadingIcon = { QinblyMenuIcon("Ocultar publicação") }, onClick = {
                     expanded = false
                     onPostsTransform { list -> list.filterNot { it.id == post.id } }
                     onNotice("Publicação ocultada deste feed.")
                 })
-                DropdownMenuItem(text = { Text("Denunciar publicação") }, onClick = { expanded = false; onReport() })
-                DropdownMenuItem(text = { Text("Bloquear @" + post.username) }, onClick = { expanded = false; onBlock() })
+                DropdownMenuItem(text = { Text("Denunciar publicação") }, leadingIcon = { QinblyMenuIcon("Denunciar publicação") }, onClick = { expanded = false; onReport() })
+                DropdownMenuItem(text = { Text("Bloquear @" + post.username) }, leadingIcon = { QinblyMenuIcon("Bloquear @" + post.username) }, onClick = { expanded = false; onBlock() })
             }
         }
     }
@@ -9127,12 +9127,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                     Spacer(Modifier.weight(1f))
                     Icon(Icons.Default.ExpandMore, contentDescription = null, tint = RemoteAppearance.screenTextColor)
                 }
-                DropdownMenu(expanded = countryMenuExpanded, onDismissRequest = { countryMenuExpanded = false }) {
-                    DropdownMenuItem(text = { Text("Não informar") }, onClick = { selectedCountry = ""; countryMenuExpanded = false })
-                    countryOptions.forEach { country ->
-                        DropdownMenuItem(text = { Text(country) }, onClick = { selectedCountry = country; countryMenuExpanded = false })
-                    }
-                }
+                if (countryMenuExpanded) QinblyCountrySheet(countryOptions, selectedCountry, { selectedCountry = it; countryMenuExpanded = false }, { countryMenuExpanded = false })
             }
             QinblyVerificationCard(prefs.getString("token", "").orEmpty(), onNotice)
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
