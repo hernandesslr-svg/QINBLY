@@ -267,6 +267,10 @@ private object QinblyBrand {
     val Accent = Color(0xFF7C4DFF)
     val AccentDeep = Color(0xFF5E35E0)
     val AccentLight = Color(0xFFB39DFF)
+    /** Cor dos letreiros que antes eram roxos (branco no escuro). Logo e botão Criar continuam roxos. */
+    val TextAccent: Color get() = if (QiblyTheme.dark) Color.White else Accent
+    /** Hashtags e @menções. */
+    val Mention: Color get() = if (QiblyTheme.dark) Color(0xFF5AB4FF) else Color(0xFF1A86D9)
     val AccentLine: Color get() = if (QiblyTheme.dark) Color(0xFF3D3366) else Color(0xFFDDD2FF)
     val AccentSoft: Color get() = if (QiblyTheme.dark) Color(0xFF2A2250) else Color(0xFFF1ECFF)
     val Highlight = Color(0xFFFFB020)
@@ -712,7 +716,7 @@ private val QinblyTagTransformation = androidx.compose.ui.text.input.VisualTrans
     val styled = androidx.compose.ui.text.buildAnnotatedString {
         append(t.text)
         for (m in Regex("[#@][\\p{L}\\p{N}_.]{1,30}").findAll(t.text)) {
-            addStyle(androidx.compose.ui.text.SpanStyle(color = QinblyBrand.Accent, fontWeight = FontWeight.Bold), m.range.first, m.range.last + 1)
+            addStyle(androidx.compose.ui.text.SpanStyle(color = QinblyBrand.Mention, fontWeight = FontWeight.Bold), m.range.first, m.range.last + 1)
         }
     }
     androidx.compose.ui.text.input.TransformedText(styled, androidx.compose.ui.text.input.OffsetMapping.Identity)
@@ -920,7 +924,7 @@ private fun QinblyRichText(
     maxLines: Int = Int.MAX_VALUE,
     onLongClick: (() -> Unit)? = null
 ) {
-    val link = QinblyBrand.Accent
+    val link = QinblyBrand.Mention
     val annotated = remember(text, color, link) {
         androidx.compose.ui.text.buildAnnotatedString {
             val rx = Regex("([#@])([\\p{L}\\p{N}_.]{2,30})")
@@ -1937,7 +1941,7 @@ private fun QinblyApp() {
                 ) {
                     val navColors = NavigationBarItemDefaults.colors(
                         selectedIconColor = QinblyBrand.Accent,
-                        selectedTextColor = QinblyBrand.Accent,
+                        selectedTextColor = QinblyBrand.TextAccent,
                         indicatorColor = Color.Transparent,
                         unselectedIconColor = if (QiblyTheme.dark) Color.White else navigationUnselectedColor,
                         unselectedTextColor = if (QiblyTheme.dark) Color.White else navigationUnselectedColor
@@ -5348,9 +5352,9 @@ private fun QinblyHomeHeader(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).border(1.dp, RemoteAppearance.feedDividerColor, RoundedCornerShape(16.dp))
                 .clickable { onCreateWith("text", "#perguntadodia ") }.padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
-            Text("PERGUNTA DO DIA", color = QinblyBrand.Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
+            Text("PERGUNTA DO DIA", color = QinblyBrand.TextAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
             Text(question, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.padding(top = 2.dp))
-            Text("Responder com uma publicação  →", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
+            Text("Responder com uma publicação  →", color = QinblyBrand.TextAccent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
         }
         Row(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).border(1.dp, RemoteAppearance.feedDividerColor, RoundedCornerShape(16.dp))
@@ -5362,8 +5366,8 @@ private fun QinblyHomeHeader(
                 Text("Desafio da semana: " + challenge.second, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
                 Text("#" + challenge.first + (if (participants > 0) " · " + (if (participants == 1) "1 participante" else "$participants participantes") else ""), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 13.sp, maxLines = 1)
             }
-            Text("Participar", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
-                modifier = Modifier.clip(RoundedCornerShape(18.dp)).border(1.dp, QinblyBrand.Accent, RoundedCornerShape(18.dp))
+            Text("Participar", color = QinblyBrand.TextAccent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
+                modifier = Modifier.clip(RoundedCornerShape(18.dp)).border(1.dp, QinblyBrand.TextAccent, RoundedCornerShape(18.dp))
                     .clickable { onCreateWith("camera", "#" + challenge.first + " ") }.padding(horizontal = 14.dp, vertical = 7.dp))
         }
     }
@@ -6208,6 +6212,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             listOf("Descobrir", "Seguindo", "Em alta", "Vídeos", "Lives", "Perto de mim").forEach { feedTab ->
                 val selected = selectedFeedTab == feedTab
                 val tint = if (selected) QinblyBrand.Accent else RemoteAppearance.headerTextColor.copy(alpha = 0.62f)
+                val labelTint = if (selected) QinblyBrand.TextAccent else tint
                 Column(
                     modifier = Modifier.weight(1f).clickable {
                         selectedFeedTab = feedTab
@@ -6226,9 +6231,9 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                             }, contentDescription = feedTab, tint = tint, modifier = Modifier.size(22.dp)
                         )
                     }
-                    Text(feedTab, color = tint, fontSize = 10.sp, maxLines = 1, softWrap = false, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.padding(top = 2.dp))
+                    Text(feedTab, color = labelTint, fontSize = 10.sp, maxLines = 1, softWrap = false, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.padding(top = 2.dp))
                     Spacer(Modifier.height(5.dp))
-                    Box(Modifier.fillMaxWidth().height(3.dp).background(if (selected) QinblyBrand.Accent else Color.Transparent))
+                    Box(Modifier.fillMaxWidth().height(3.dp).background(if (selected) QinblyBrand.TextAccent else Color.Transparent))
                 }
             }
         }
