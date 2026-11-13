@@ -137,11 +137,11 @@ internal fun OutlinedTextField(
     shape: Shape = RoundedCornerShape(26.dp),
     colors: TextFieldColors = OutlinedTextFieldDefaults.colors(
         focusedContainerColor = QiblyTheme.soft, unfocusedContainerColor = QiblyTheme.soft,
-        focusedBorderColor = Color(0xFF7C4DFF), unfocusedBorderColor = Color.Transparent,
+        focusedBorderColor = Color(0xFF5AB4FF), unfocusedBorderColor = Color.Transparent,
         focusedTextColor = QiblyTheme.text, unfocusedTextColor = QiblyTheme.text,
         focusedPlaceholderColor = QiblyTheme.secondary, unfocusedPlaceholderColor = QiblyTheme.secondary,
-        focusedLabelColor = Color(0xFF9B7BFF), unfocusedLabelColor = QiblyTheme.secondary,
-        cursorColor = Color(0xFF9B7BFF)
+        focusedLabelColor = Color(0xFF8CCBFF), unfocusedLabelColor = QiblyTheme.secondary,
+        cursorColor = Color(0xFF8CCBFF)
     )
 ) {
     androidx.compose.material3.OutlinedTextField(

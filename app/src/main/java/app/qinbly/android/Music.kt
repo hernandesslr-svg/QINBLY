@@ -139,7 +139,7 @@ internal fun QinblyMusicPicker(onPick: (QinblyMusic) -> Unit, onDismiss: () -> U
                 else LazyColumn(Modifier.fillMaxWidth().padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     items(results, key = { it.url }) { m ->
                         Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { playing = ""; onPick(m) }.padding(vertical = 8.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF3A3260)), contentAlignment = Alignment.Center) { Text("♪", color = Color(0xFFC9B8FF), fontSize = 20.sp) }
+                            Box(Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF3A3260)), contentAlignment = Alignment.Center) { Text("♪", color = Color(0xFF8CCBFF), fontSize = 20.sp) }
                             Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                                 Text(m.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Text(m.artist, color = Color(0xFFA9B5C8), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)

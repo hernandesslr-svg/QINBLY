@@ -76,7 +76,7 @@ import java.time.temporal.ChronoUnit
 private val CapBg = Color(0xFF171719)
 private val CapCard = Color(0xFF232325)
 private val CapField = Color(0xFF262628)
-private val CapAccent = Color(0xFF7C4DFF)
+private val CapAccent = Color(0xFF5AB4FF)
 private val CapMuted = Color(0xFFA9B5C8)
 private val CapMonths = listOf("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro")
 
@@ -135,7 +135,7 @@ internal fun QinblyCapsuleInbox() {
     val c = caps.firstOrNull() ?: return
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp).clip(RoundedCornerShape(22.dp))
-            .background(Brush.horizontalGradient(listOf(Color(0xFF4A2FB0), Color(0xFF7C4DFF)))).clickable { viewing = c }.padding(horizontal = 16.dp, vertical = 12.dp),
+            .background(Brush.horizontalGradient(listOf(Color(0xFF1F4E7A), Color(0xFF5AB4FF)))).clickable { viewing = c }.padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text("💌", fontSize = 26.sp)
@@ -397,7 +397,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                         Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text("Permita o acesso às suas fotos para escolher daqui.", color = CapMuted, fontSize = 15.sp)
                             Text("Permitir acesso", color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(CapAccent).clickable { permissionLauncher.launch(galleryPerms) }.padding(horizontal = 22.dp, vertical = 11.dp))
-                            Text("Escolher pela galeria do celular", color = Color(0xFFC9B8FF), modifier = Modifier.clickable { systemPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }.padding(8.dp))
+                            Text("Escolher pela galeria do celular", color = Color(0xFF8CCBFF), modifier = Modifier.clickable { systemPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }.padding(8.dp))
                         }
                     } else if (items.isEmpty()) {
                         Text("Nenhuma foto ou vídeo encontrado.", color = CapMuted, modifier = Modifier.padding(24.dp))
@@ -467,8 +467,8 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(CapMonths[month - 1].replaceFirstChar { it.uppercase() }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
                                 Row(Modifier.clip(RoundedCornerShape(14.dp)).clickable { yearOpen = !yearOpen }.padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Text("$year", color = Color(0xFFC9B8FF), fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
-                                    Text(if (yearOpen) "  ▴" else "  ▾", color = Color(0xFFC9B8FF), fontSize = 15.sp)
+                                    Text("$year", color = Color(0xFF8CCBFF), fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+                                    Text(if (yearOpen) "  ▴" else "  ▾", color = Color(0xFF8CCBFF), fontSize = 15.sp)
                                 }
                             }
                             Box(Modifier.size(42.dp).clip(CircleShape).background(CapField).clickable(enabled = canNext) { goTo(ym.plusMonths(1)) }, contentAlignment = Alignment.Center) { Text("›", color = if (canNext) Color.White else Color(0xFF5C5575), fontSize = 26.sp) }
@@ -541,7 +541,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                     Text(if (target == null) "Para você" else "Para @${target?.username}", color = CapMuted, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
                     Spacer(Modifier.height(32.dp))
                     Primary("Concluir", modifier = Modifier.padding(horizontal = 24.dp)) { onFinished(false) }
-                    Text("Ver minhas cápsulas", color = Color(0xFFC9B8FF), fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable { onFinished(true) }.padding(16.dp))
+                    Text("Ver minhas cápsulas", color = Color(0xFF8CCBFF), fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable { onFinished(true) }.padding(16.dp))
                     Spacer(Modifier.height(qinblyNavBarPadding()))
                 }
             }

@@ -264,15 +264,18 @@ private object QinblyImageRatioCache { val map = java.util.concurrent.Concurrent
 private object QinblyBrand {
     /** Nome do app mostrado nas telas. Para renomear a rede, troque só este valor (e app_name em res/values/strings.xml). */
     const val Name = "QINBLY"
-    val Accent = Color(0xFF7C4DFF)
-    val AccentDeep = Color(0xFF5E35E0)
-    val AccentLight = Color(0xFFB39DFF)
+    /** Roxo original: só o logotipo e o botão + do Criar continuam com ele. */
+    val Logo = Color(0xFF7C4DFF)
+    /** Cor padrão do app (azul-céu). */
+    val Accent: Color get() = if (QiblyTheme.dark) Color(0xFF5AB4FF) else Color(0xFF1A86D9)
+    val AccentDeep: Color get() = if (QiblyTheme.dark) Color(0xFF3A93E0) else Color(0xFF1470BD)
+    val AccentLight = Color(0xFF8CCBFF)
     /** Cor dos letreiros que antes eram roxos (branco no escuro). Logo e botão Criar continuam roxos. */
     val TextAccent: Color get() = if (QiblyTheme.dark) Color.White else Accent
     /** Hashtags e @menções. */
     val Mention: Color get() = if (QiblyTheme.dark) Color(0xFF5AB4FF) else Color(0xFF1A86D9)
-    val AccentLine: Color get() = if (QiblyTheme.dark) Color(0xFF3D3366) else Color(0xFFDDD2FF)
-    val AccentSoft: Color get() = if (QiblyTheme.dark) Color(0xFF2A2250) else Color(0xFFF1ECFF)
+    val AccentLine: Color get() = if (QiblyTheme.dark) Color(0xFF2B4A66) else Color(0xFFCFE6FA)
+    val AccentSoft: Color get() = if (QiblyTheme.dark) Color(0xFF1E3347) else Color(0xFFE8F3FD)
     val Highlight = Color(0xFFFFB020)
     val Pink = Color(0xFFFF4F9A)
     val Ink = Color(0xFF0B1F2A)
@@ -1950,7 +1953,7 @@ private fun QinblyApp() {
                     NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 3) navTopRequest++; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Groups, contentDescription = "Comunidades"); if (RemoteAppearance.navigationUnderlineVisible && tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.Accent)) } }, label = { Text("Comunidades", fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                     NavigationBarItem(selected = false, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; showCreateOptions = true }, icon = {
                         Box(
-                            Modifier.size(36.dp).clip(CircleShape).background(Brush.linearGradient(listOf(QinblyBrand.Accent, QinblyBrand.Pink))),
+                            Modifier.size(36.dp).clip(CircleShape).background(Brush.linearGradient(listOf(QinblyBrand.Logo, QinblyBrand.Pink))),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(Icons.Default.Add, contentDescription = "Criar publicação", modifier = Modifier.size(24.dp), tint = Color.White)
@@ -2515,7 +2518,7 @@ private fun NotificationsPage(
                         "like" -> Icons.Default.Favorite to Color(0xFFE5365B)
                         "follow" -> Icons.Default.PersonAdd to QinblyBrand.Accent
                         "comment", "reply" -> Icons.Default.ChatBubbleOutline to Color(0xFF2FA36B)
-                        "mention", "mention_comment", "tag" -> Icons.Default.AlternateEmail to Color(0xFF8A5CF6)
+                        "mention", "mention_comment", "tag" -> Icons.Default.AlternateEmail to Color(0xFF5AB4FF)
                         else -> Icons.Default.Info to Color(0xFF6B7280)
                     }
                     Row(
@@ -6188,7 +6191,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             }
     ) {
         Box(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 6.dp).heightIn(min = 42.dp)) {
-            Text(QinblyBrand.Name, style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(QinblyBrand.Accent, QinblyBrand.Pink))), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, modifier = Modifier.align(Alignment.Center))
+            Text(QinblyBrand.Name, style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(QinblyBrand.Logo, QinblyBrand.Pink))), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, modifier = Modifier.align(Alignment.Center))
             Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onSearch, modifier = Modifier.size(42.dp)) {
                 Icon(Icons.Default.Search, contentDescription = "Buscar", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(26.dp))
@@ -7031,7 +7034,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                         if (showAttach) {
                             val attachOptions = listOf(
                                 Triple("Documento", Icons.Outlined.Description, Color(0xFF5B6CF0)),
-                                Triple("Galeria", Icons.Outlined.Image, Color(0xFFA855F7)),
+                                Triple("Galeria", Icons.Outlined.Image, Color(0xFF5AB4FF)),
                                 Triple("Áudio", Icons.Outlined.Headphones, Color(0xFFF97316)),
                                 Triple("Localização", Icons.Outlined.LocationOn, Color(0xFF16A34A)),
                                 Triple("Contato", Icons.Outlined.PersonOutline, Color(0xFF0EA5E9)),
@@ -7909,7 +7912,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             if (showAttachPanel) {
                 val attachOptions = listOf(
                     Triple("Documento", Icons.Outlined.Description, Color(0xFF5B6CF0)),
-                    Triple("Galeria", Icons.Outlined.Image, Color(0xFFA855F7)),
+                    Triple("Galeria", Icons.Outlined.Image, Color(0xFF5AB4FF)),
                     Triple("Áudio", Icons.Outlined.Headphones, Color(0xFFF97316)),
                     Triple("Localização", Icons.Outlined.LocationOn, Color(0xFF16A34A)),
                     Triple("Contato", Icons.Outlined.PersonOutline, Color(0xFF0EA5E9)),
@@ -11736,7 +11739,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 }
                             }
                             Box(Modifier.align(Alignment.TopEnd).padding(6.dp).size(23.dp).border(1.5.dp, Color.White, CircleShape)
-                                .background(if (selectedIndex >= 0) Color(0xFFB12AFF) else Color(0x55000000), CircleShape),
+                                .background(if (selectedIndex >= 0) Color(0xFF5AB4FF) else Color(0x55000000), CircleShape),
                                 contentAlignment = Alignment.Center) {
                                 if (selectedIndex >= 0) Text("${selectedIndex + 1}", color = Color.White, style = MaterialTheme.typography.labelSmall)
                             }
@@ -12637,7 +12640,7 @@ private fun LivePage(scrollToTopRequest: Int, onNotice: (String) -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
             categories.forEachIndexed { index, category ->
                 Surface(
-                    color = if (selectedCategory == category) Color(0xFF9D1BCA) else Panel,
+                    color = if (selectedCategory == category) Color(0xFF5AB4FF) else Panel,
                     shape = RoundedCornerShape(24.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, if (selectedCategory == category) Pink else Color(0xFF292D48)),
                     modifier = Modifier.clickable { selectedCategory = category }
