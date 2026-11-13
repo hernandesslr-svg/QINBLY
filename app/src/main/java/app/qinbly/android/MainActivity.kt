@@ -5569,7 +5569,7 @@ private fun QinblyLiveSearch(lives: List<QinblyLive>, onBack: () -> Unit, onOpen
 
 /** Aba "Perto de mim": pede a localização, mostra onde você está e abre as configurações se a permissão foi bloqueada. */
 @Composable
-private fun QinblyNearbyPage(onNotice: (String) -> Unit) {
+private fun QinblyNearbyPage(onNotice: (String) -> Unit, onOpenConversation: (String) -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
     fun hasLocation() = androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
         androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -5625,7 +5625,7 @@ private fun QinblyNearbyPage(onNotice: (String) -> Unit) {
     }
     val hereNow = here
     if (allowed && !failed && hereNow != null) {
-        QinblyNeighborhoodBoard(hereNow.first, hereNow.second, place, RemoteAppearance.feedTextColor, RemoteAppearance.feedSecondaryTextColor, onRefreshLocation = { attempt++ }, onNotice = onNotice)
+        QinblyNearbyHub(hereNow.first, hereNow.second, place, RemoteAppearance.feedTextColor, RemoteAppearance.feedSecondaryTextColor, onRefreshLocation = { attempt++ }, onOpenConversation = onOpenConversation, onNotice = onNotice)
         return
     }
     Column(
@@ -6256,7 +6256,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         if (selectedFeedTab == "Lives") {
             QinblyLivesPage(emptyList(), onNotice)
         } else if (selectedFeedTab == "Perto de mim") {
-            QinblyNearbyPage(onNotice)
+            QinblyNearbyPage(onNotice, onOpenConversation)
         } else if (!loading && displayedPosts.isEmpty() && selectedFeedTab != "Em alta" && selectedFeedTab != "Descobrir") {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
