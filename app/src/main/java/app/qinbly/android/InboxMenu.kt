@@ -76,7 +76,7 @@ internal fun QinblyInboxMenu(
                         val y = desired.coerceAtMost(c.maxHeight - p.height - marginPx).coerceAtLeast(topMinPx)
                         p.place(sidePx, y)
                     }
-                }.width(270.dp).clip(RoundedCornerShape(18.dp)).background(Color(0xFF1C1C1E)).padding(vertical = 4.dp)
+                }.width(270.dp).clip(RoundedCornerShape(18.dp)).background(Color(0xFF151517)).padding(vertical = 4.dp)
             ) {
                 Option(Icons.Default.Person, "Ver perfil", accent) { onDismiss(); onProfile() }
                 if (unread) Option(Icons.Default.Check, "Marcar como lida", accent) { onDismiss(); onMarkRead() }

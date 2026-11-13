@@ -133,7 +133,7 @@ internal fun QinblyStoryMenu(
     when (step) {
         "menu" -> QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
             val soon: (String) -> Unit = { onNotice("$it: em breve.") }
-            val card = Color(0xFF2A2A2C)
+            val card = Color(0xFF222224)
             val red = Color(0xFFE5484D)
             @Composable fun Big(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, sub: String, modifier: Modifier, onClick: () -> Unit) {
                 Column(modifier.clip(RoundedCornerShape(18.dp)).background(card).clickable { onClick() }.padding(horizontal = 6.dp, vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -144,7 +144,7 @@ internal fun QinblyStoryMenu(
             }
             @Composable fun Short(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, sub: String, tint: Color = Color.White, onClick: () -> Unit) {
                 Row(Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF343436)), contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp)) }
+                    Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF2C2C2E)), contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp)) }
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
                         Text(title, color = tint, fontSize = 13.sp, fontWeight = FontWeight.Medium)
@@ -153,7 +153,7 @@ internal fun QinblyStoryMenu(
                     Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = Color(0xFFA9B5C8), modifier = Modifier.size(18.dp))
                 }
             }
-            Column(Modifier.fillMaxSize().background(Color(0xFF1C1C1E)).statusBarsPadding().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 24.dp)) {
+            Column(Modifier.fillMaxSize().background(Color(0xFF151517)).statusBarsPadding().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 24.dp)) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("Criar", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium)
                     Text("  v" + BuildConfig.VERSION_NAME, color = Color(0x88FFFFFF), fontSize = 12.sp, modifier = Modifier.weight(1f))
@@ -167,7 +167,7 @@ internal fun QinblyStoryMenu(
                     Big(Icons.Outlined.MusicNote, "Música", "Compartilhe uma música no seu perfil", Modifier.weight(1f)) { soon("Música") }
                 }
                 Text("Mais", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 22.dp, bottom = 8.dp))
-                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF2A2A2C)).padding(vertical = 6.dp)) {
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF222224)).padding(vertical = 6.dp)) {
                     if (hasStory) Short(Icons.Outlined.Visibility, "Ver meu story", "Abrir o story que está no ar") { onDismiss(); onViewMine() }
                     Short(Icons.Outlined.Groups, "Story coletivo", "Lance um tema e os amigos participam") { step = "collab" }
                     Short(Icons.Outlined.EmojiEmotions, "Clima do dia", "Mostre seu humor com emoji e cor") { step = "mood" }
@@ -463,7 +463,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                 Column(
                     Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                         .padding(start = 8.dp, end = 8.dp, top = 64.dp, bottom = qinblyNavBarPadding() + 8.dp)
-                        .clip(RoundedCornerShape(32.dp)).background(Color(0xFF262628))
+                        .clip(RoundedCornerShape(32.dp)).background(Color(0xFF1E1E20))
                         .clickable(indication = null, interactionSource = none) { }
                         .padding(top = 12.dp, bottom = 10.dp)
                 ) {

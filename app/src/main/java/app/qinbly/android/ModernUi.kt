@@ -83,9 +83,9 @@ internal fun DropdownMenu(
         expanded = expanded, onDismissRequest = onDismissRequest, modifier = modifier, offset = offset,
         scrollState = scrollState, properties = properties,
         shape = RoundedCornerShape(18.dp),
-        containerColor = if (QiblyTheme.dark) Color(0xFF2C2C2E) else Color.White,
+        containerColor = if (QiblyTheme.dark) Color(0xFF252527) else Color.White,
         tonalElevation = 0.dp, shadowElevation = 8.dp,
-        border = BorderStroke(0.5.dp, if (QiblyTheme.dark) Color(0xFF48484A) else Color(0xFFE2DCF2)),
+        border = BorderStroke(0.5.dp, if (QiblyTheme.dark) Color(0xFF404042) else Color(0xFFE2DCF2)),
         content = content
     )
 }
@@ -171,9 +171,9 @@ internal fun OutlinedButton(
     androidx.compose.material3.Button(
         onClick = onClick, modifier = modifier, enabled = enabled, shape = CircleShape,
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (QiblyTheme.dark) Color(0xFF343436) else Color(0xFFEFE9FB),
+            containerColor = if (QiblyTheme.dark) Color(0xFF2C2C2E) else Color(0xFFEFE9FB),
             contentColor = QiblyTheme.text,
-            disabledContainerColor = if (QiblyTheme.dark) Color(0xFF2A2A2C) else Color(0xFFF4F0FB),
+            disabledContainerColor = if (QiblyTheme.dark) Color(0xFF222224) else Color(0xFFF4F0FB),
             disabledContentColor = QiblyTheme.secondary
         ),
         elevation = null, border = null, contentPadding = contentPadding, interactionSource = interactionSource, content = content
@@ -190,7 +190,7 @@ internal fun QinblyCountrySheet(options: List<String>, selected: String, onPick:
         Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onDismiss() }) {
             Column(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(top = 90.dp)
-                    .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(if (dark) Color(0xFF262628) else Color.White)
+                    .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(if (dark) Color(0xFF1E1E20) else Color.White)
                     .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { }
                     .imePadding().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = qinblyNavBarPadding() + 8.dp)
             ) {
