@@ -5364,7 +5364,10 @@ private fun QinblyHomeHeader(
             Icon(androidx.compose.material.icons.Icons.Default.PhotoCamera, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(26.dp))
             Column(Modifier.weight(1f)) {
                 Text("Desafio da semana: " + challenge.second, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
-                Text("#" + challenge.first + (if (participants > 0) " · " + (if (participants == 1) "1 participante" else "$participants participantes") else ""), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 13.sp, maxLines = 1)
+                Row {
+                    Text("#" + challenge.first, color = QinblyBrand.Mention, fontSize = 13.sp, maxLines = 1)
+                    if (participants > 0) Text(" · " + (if (participants == 1) "1 participante" else "$participants participantes"), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 13.sp, maxLines = 1)
+                }
             }
             Text("Participar", color = QinblyBrand.TextAccent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
                 modifier = Modifier.clip(RoundedCornerShape(18.dp)).border(1.dp, QinblyBrand.TextAccent, RoundedCornerShape(18.dp))
