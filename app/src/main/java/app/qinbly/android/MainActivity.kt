@@ -269,12 +269,13 @@ private object QinblyBrand {
     /** Cor padrão do app (azul-lavanda). */
     val Accent: Color get() = if (QiblyTheme.dark) Color(0xFF7AA8FF) else Color(0xFF3F6FE0)
     val AccentDeep: Color get() = if (QiblyTheme.dark) Color(0xFF5A86E0) else Color(0xFF2F5FC8)
-    val Lavender = Color(0xFF7AA8FF)
+    /** Letreiros (PERGUNTA DO DIA, DESAFIO) e hashtags: azul padrão. */
+    val Lavender = Color(0xFF1877F2)
     val AccentLight = Color(0xFFA8C4FF)
     /** Cor dos letreiros que antes eram roxos (branco no escuro). Logo e botão Criar continuam roxos. */
     val TextAccent: Color get() = if (QiblyTheme.dark) Color.White else Accent
     /** Hashtags e @menções. */
-    val Mention: Color get() = if (QiblyTheme.dark) Color(0xFF7AA8FF) else Color(0xFF3F6FE0)
+    val Mention: Color get() = if (QiblyTheme.dark) Color(0xFF1877F2) else Color(0xFF1877F2)
     val AccentLine: Color get() = if (QiblyTheme.dark) Color(0xFF2E3A66) else Color(0xFFDCE6FF)
     val AccentSoft: Color get() = if (QiblyTheme.dark) Color(0xFF222B47) else Color(0xFFEEF3FF)
     val Highlight = Color(0xFFFFB020)
@@ -8266,8 +8267,14 @@ private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolea
             else AsyncImage(model = imageUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
         }
         Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(96.dp).background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC000000)))))
-        if (plus) Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 46.dp).size(60.dp).clip(CircleShape).background(QinblyBrand.Accent).border(3.dp, Color.White.copy(alpha = 0.9f), CircleShape).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onPlus() }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Default.Add, contentDescription = "Criar", tint = Color.White, modifier = Modifier.size(32.dp))
+        if (plus) Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 46.dp).size(60.dp).clip(CircleShape).background(Color.White).border(1.dp, Color.Black, CircleShape).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onPlus() }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Default.Add, contentDescription = "Criar", tint = Color.Black,
+                modifier = Modifier.size(32.dp)
+                    .graphicsLayer(compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen)
+                    .drawWithContent {
+                        drawContent()
+                        drawRect(Brush.linearGradient(listOf(QinblyBrand.Logo, QinblyBrand.Pink)), blendMode = androidx.compose.ui.graphics.BlendMode.SrcIn)
+                    })
         }
         if (textStory?.collab == true) {
             Text("👥 Coletivo", color = Color(0xFF26215C), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).clip(RoundedCornerShape(12.dp)).background(Color.White).padding(horizontal = 8.dp, vertical = 3.dp))
