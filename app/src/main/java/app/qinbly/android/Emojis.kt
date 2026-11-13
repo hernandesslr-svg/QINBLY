@@ -69,7 +69,7 @@ private fun buildEmojis(cat: EmojiCategory): List<String> = emojiCache.getOrPut(
 
 /** Painel de emojis por categoria: abas em cima, grade embaixo. Toque para inserir. */
 @Composable
-internal fun QinblyEmojiPanel(modifier: Modifier = Modifier, background: Color = Color(0xFF1E1E20), gridHeight: androidx.compose.ui.unit.Dp = 240.dp, onPick: (String) -> Unit) {
+internal fun QinblyEmojiPanel(modifier: Modifier = Modifier, background: Color = Color(0xFF262628), gridHeight: androidx.compose.ui.unit.Dp = 240.dp, onPick: (String) -> Unit) {
     var sel by remember { mutableStateOf(0) }
     var list by remember { mutableStateOf<List<String>>(emptyList()) }
     LaunchedEffect(sel) {

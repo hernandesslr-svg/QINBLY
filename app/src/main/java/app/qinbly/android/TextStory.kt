@@ -244,7 +244,7 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
             } catch (_: Exception) { main.post { onNotice("Não foi possível carregar o áudio.") } }
         }.start()
     }
-    val sheet = Color(0xFF1E1E20)
+    val sheet = Color(0xFF262628)
     QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
         Box(Modifier.fillMaxSize().clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }) {
             Column(
@@ -265,7 +265,7 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
                             Box(Modifier.size(34.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
                                 Text((c.displayName.ifBlank { c.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
                             }
-                            Column(Modifier.clip(RoundedCornerShape(18.dp)).background(Color(0xFF252527)).padding(horizontal = 14.dp, vertical = 8.dp)) {
+                            Column(Modifier.clip(RoundedCornerShape(18.dp)).background(Color(0xFF2C2C2E)).padding(horizontal = 14.dp, vertical = 8.dp)) {
                                 Text(c.displayName.ifBlank { c.username }, color = Color(0xFFC9B8FF), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                                 if (c.body == QINBLY_VOICE) Text("▶  Ouvir mensagem de voz", color = Color.White, fontSize = 15.sp, modifier = Modifier.clickable { playVoice(c.id) }) else Text(c.body, color = Color.White, fontSize = 15.sp)
                             }
@@ -273,7 +273,7 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
                     }
                 }
                 Spacer(Modifier.size(10.dp))
-                QinblyStoryReplyBar(storyId, collab, accent, Color(0xFF252527), Color(0xFF8E87A8), onNotice, onSent = { refresh++ })
+                QinblyStoryReplyBar(storyId, collab, accent, Color(0xFF2C2C2E), Color(0xFF8E87A8), onNotice, onSent = { refresh++ })
             }
         }
     }
@@ -341,7 +341,7 @@ internal fun QinblyStoryReplyBar(
                         Box(Modifier.weight(1f).clip(RoundedCornerShape(26.dp)).background(Color(0xFF3A2236)).padding(horizontal = 18.dp, vertical = 15.dp)) {
                             Text("🔴  Gravando… (até 30 s)", color = Color.White, fontSize = 15.sp)
                         }
-                        Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF323234)).clickable { stopRec(false) }, contentAlignment = Alignment.Center) { Text("✕", color = Color.White, fontSize = 17.sp) }
+                        Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF3A3A3C)).clickable { stopRec(false) }, contentAlignment = Alignment.Center) { Text("✕", color = Color.White, fontSize = 17.sp) }
                         Box(Modifier.size(46.dp).clip(CircleShape).background(accent).clickable { stopRec(true) }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, fontSize = 18.sp) }
                     } else {
                         Box(Modifier.weight(1f).clip(RoundedCornerShape(26.dp)).background(fieldBg).padding(horizontal = 18.dp, vertical = 13.dp)) {
@@ -349,7 +349,7 @@ internal fun QinblyStoryReplyBar(
                             BasicTextField(value = draft, onValueChange = { draft = it.take(500) }, textStyle = TextStyle(color = Color.White, fontSize = 15.sp),
                                 cursorBrush = SolidColor(Color.White), maxLines = 4, modifier = Modifier.fillMaxWidth().onFocusChanged { onFocus(it.isFocused) })
                         }
-                        if (draft.isBlank()) Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF323234)).clickable {
+                        if (draft.isBlank()) Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF3A3A3C)).clickable {
                             if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) startRec()
                             else micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
                         }, contentAlignment = Alignment.Center) { Text("🎙", fontSize = 18.sp) }

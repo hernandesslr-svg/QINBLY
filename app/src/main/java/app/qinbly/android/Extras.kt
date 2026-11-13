@@ -49,8 +49,8 @@ import coil.compose.AsyncImage
 import org.json.JSONArray
 import org.json.JSONObject
 
-private val Panel = Color(0xFF1E1E20)
-private val FieldBg = Color(0xFF252527)
+private val Panel = Color(0xFF262628)
+private val FieldBg = Color(0xFF2C2C2E)
 private const val STICKER_BASE = "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/"
 
 private fun sess(c: Context) = c.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)
@@ -209,7 +209,7 @@ internal fun QinblyMoodDialog(onDismiss: () -> Unit, onNotice: (String) -> Unit,
     val chosen = Color(android.graphics.Color.parseColor(color))
     var pickingEmoji by remember { mutableStateOf(false) }
     QinblyDialog(onDismissRequest = { if (pickingEmoji) pickingEmoji = false else onDismiss() }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
-        Box(Modifier.fillMaxSize().background(Color(0xFF151517))) {
+        Box(Modifier.fillMaxSize().background(Color(0xFF1C1C1E))) {
             Column(Modifier.fillMaxSize().statusBarsPadding()) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable { if (pickingEmoji) pickingEmoji = false else onDismiss() }, contentAlignment = Alignment.Center) {
@@ -220,7 +220,7 @@ internal fun QinblyMoodDialog(onDismiss: () -> Unit, onNotice: (String) -> Unit,
                 if (pickingEmoji) {
                     Box(Modifier.size(84.dp).align(Alignment.CenterHorizontally).clip(CircleShape).background(chosen), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 44.sp) }
                     Spacer(Modifier.size(12.dp))
-                    QinblyEmojiPanel(Modifier.padding(bottom = qinblyNavBarPadding()), Color(0xFF151517), gridHeight = 380.dp) { e -> emoji = e; pickingEmoji = false }
+                    QinblyEmojiPanel(Modifier.padding(bottom = qinblyNavBarPadding()), Color(0xFF1C1C1E), gridHeight = 380.dp) { e -> emoji = e; pickingEmoji = false }
                 } else {
                     Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(horizontal = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Spacer(Modifier.size(18.dp))
@@ -381,7 +381,7 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             QinblyPillField(draft, { draft = it.take(280) }, "Avise a vizinhança…", Modifier.weight(1f), maxLines = 3)
-            Box(Modifier.size(46.dp).clip(CircleShape).background(if (draft.isBlank()) Color(0xFF323234) else Color(0xFF7C4DFF)).clickable(enabled = draft.isNotBlank()) { post() }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, fontSize = 18.sp) }
+            Box(Modifier.size(46.dp).clip(CircleShape).background(if (draft.isBlank()) Color(0xFF3A3A3C) else Color(0xFF7C4DFF)).clickable(enabled = draft.isNotBlank()) { post() }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, fontSize = 18.sp) }
         }
         val list = notices
         if (list == null) Text("Carregando…", color = secondary)

@@ -122,13 +122,13 @@ internal fun QinblyMusicPicker(onPick: (QinblyMusic) -> Unit, onDismiss: () -> U
     QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
         Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }) {
             Column(
-                Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(top = 80.dp).clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(Color(0xFF1E1E20))
+                Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(top = 80.dp).clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(Color(0xFF262628))
                     .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { }
                     .imePadding().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = nav + 8.dp)
             ) {
                 Box(Modifier.align(Alignment.CenterHorizontally).size(width = 44.dp, height = 5.dp).clip(CircleShape).background(Color(0x55FFFFFF)))
                 Text("Adicionar música", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp))
-                Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Color(0xFF252527)).padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Color(0xFF2C2C2E)).padding(horizontal = 16.dp, vertical = 12.dp)) {
                     if (query.isEmpty()) Text("Buscar música ou artista", color = Color(0xFF8E87A8), fontSize = 15.sp)
                     BasicTextField(query, { query = it.take(60) }, singleLine = true, textStyle = TextStyle(color = Color.White, fontSize = 15.sp), cursorBrush = SolidColor(Color.White), modifier = Modifier.fillMaxWidth())
                 }
@@ -144,7 +144,7 @@ internal fun QinblyMusicPicker(onPick: (QinblyMusic) -> Unit, onDismiss: () -> U
                                 Text(m.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Text(m.artist, color = Color(0xFFA9B5C8), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
-                            Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF252527)).clickable { playing = if (playing == m.url) "" else m.url }, contentAlignment = Alignment.Center) {
+                            Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF2C2C2E)).clickable { playing = if (playing == m.url) "" else m.url }, contentAlignment = Alignment.Center) {
                                 Text(if (playing == m.url) "❚❚" else "▶", color = Color.White, fontSize = 14.sp)
                             }
                         }

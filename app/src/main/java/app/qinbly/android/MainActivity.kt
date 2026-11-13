@@ -1522,12 +1522,12 @@ internal object QiblyTheme {
     var largeText by androidx.compose.runtime.mutableStateOf(false)
     var reduceMotion by androidx.compose.runtime.mutableStateOf(false)
     // Tema escuro "azul-noite": fundo azul bem escuro, cartões um tom mais claros e texto sempre legível.
-    val background: Color get() = if (dark) Color(0xFF151517) else Color(0xFFFBF9FF)
-    val card: Color get() = if (dark) Color(0xFF151517) else Color.White
-    val soft: Color get() = if (dark) Color(0xFF252527) else Color(0xFFF3F0FA)
+    val background: Color get() = if (dark) Color(0xFF1C1C1E) else Color(0xFFFBF9FF)
+    val card: Color get() = if (dark) Color(0xFF1C1C1E) else Color.White
+    val soft: Color get() = if (dark) Color(0xFF2C2C2E) else Color(0xFFF3F0FA)
     val text: Color get() = if (dark) Color(0xFFF2F4F8) else Color.Black
     val secondary: Color get() = if (dark) Color(0xFFA9B5C8) else Color(0xFF555555)
-    val border: Color get() = if (dark) Color(0xFF323234) else Color(0xFFE9E4F5)
+    val border: Color get() = if (dark) Color(0xFF3A3A3C) else Color(0xFFE9E4F5)
 }
 
 private object RemoteAppearance {
@@ -8285,7 +8285,7 @@ private fun QinblyNoteBubble(note: String, onClick: (() -> Unit)? = null) {
             Text(note, color = Color.White, fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 modifier = Modifier.offset(y = 6.dp)
-                    .clip(RoundedCornerShape(16.dp)).then(if (onClick != null) Modifier.clickable { onClick() } else Modifier).background(Color(0xFF2C2C2E)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(16.dp)).padding(horizontal = 10.dp, vertical = 5.dp))
+                    .clip(RoundedCornerShape(16.dp)).then(if (onClick != null) Modifier.clickable { onClick() } else Modifier).background(Color(0xFF343436)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(16.dp)).padding(horizontal = 10.dp, vertical = 5.dp))
         }
     }
 }

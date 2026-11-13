@@ -183,7 +183,7 @@ internal fun QinblyMessageSheet(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
             Row(
-                Modifier.width(barW).clip(RoundedCornerShape(30.dp)).background(Color(0xFF151517)).horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 6.dp),
+                Modifier.width(barW).clip(RoundedCornerShape(30.dp)).background(Color(0xFF1C1C1E)).horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 reactionOrder(prefs).forEach { e ->
@@ -192,7 +192,7 @@ internal fun QinblyMessageSheet(
                         .clickable { if (myReaction != e) countReaction(prefs, e); onReact(if (myReaction == e) "" else e); onDismiss() }.padding(horizontal = 6.dp, vertical = 3.dp))
                 }
             }
-        Column(Modifier.width(cardW).clip(RoundedCornerShape(18.dp)).background(Color(0xFF151517)).verticalScroll(rememberScrollState()).padding(vertical = 4.dp), horizontalAlignment = Alignment.Start) {
+        Column(Modifier.width(cardW).clip(RoundedCornerShape(18.dp)).background(Color(0xFF1C1C1E)).verticalScroll(rememberScrollState()).padding(vertical = 4.dp), horizontalAlignment = Alignment.Start) {
                 Option(Icons.Default.Reply, "Responder", accent) { onReply(message); onDismiss() }
                 if (raw != null) Option(Icons.Default.Reply, "Encaminhar", accent, flip = true) { showForward = true }
                 if (kind == MsgKind.STICKER && message.stickerUrl.isNotBlank()) {
