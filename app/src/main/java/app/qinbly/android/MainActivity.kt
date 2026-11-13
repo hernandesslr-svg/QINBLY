@@ -269,6 +269,7 @@ private object QinblyBrand {
     /** Cor padrão do app (azul-céu). */
     val Accent: Color get() = if (QiblyTheme.dark) Color(0xFF5AB4FF) else Color(0xFF1A86D9)
     val AccentDeep: Color get() = if (QiblyTheme.dark) Color(0xFF3A93E0) else Color(0xFF1470BD)
+    val Lavender = Color(0xFF7AA8FF)
     val AccentLight = Color(0xFF8CCBFF)
     /** Cor dos letreiros que antes eram roxos (branco no escuro). Logo e botão Criar continuam roxos. */
     val TextAccent: Color get() = if (QiblyTheme.dark) Color.White else Accent
@@ -5355,25 +5356,23 @@ private fun QinblyHomeHeader(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).border(1.dp, RemoteAppearance.feedDividerColor, RoundedCornerShape(16.dp))
                 .clickable { onCreateWith("text", "#perguntadodia ") }.padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
-            Text("PERGUNTA DO DIA", color = QinblyBrand.TextAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
+            Text("PERGUNTA DO DIA", color = QinblyBrand.Lavender, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
             Text(question, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.padding(top = 2.dp))
-            Text("Responder com uma publicação  →", color = QinblyBrand.TextAccent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
+            Text("Responder com uma publicação  →", color = Color(0xFFB4B4BC), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
         }
         Row(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).border(1.dp, RemoteAppearance.feedDividerColor, RoundedCornerShape(16.dp))
                 .clickable { QinblyTagNav.tag = challenge.first }.padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(androidx.compose.material.icons.Icons.Default.PhotoCamera, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(26.dp))
+            Icon(androidx.compose.material.icons.Icons.Default.PhotoCamera, contentDescription = null, tint = QinblyBrand.Lavender, modifier = Modifier.size(26.dp))
             Column(Modifier.weight(1f)) {
-                Text("Desafio da semana: " + challenge.second, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
-                Row {
-                    Text("#" + challenge.first, color = QinblyBrand.Mention, fontSize = 13.sp, maxLines = 1)
-                    if (participants > 0) Text(" · " + (if (participants == 1) "1 participante" else "$participants participantes"), color = RemoteAppearance.feedSecondaryTextColor, fontSize = 13.sp, maxLines = 1)
-                }
+                Text("DESAFIO DA SEMANA", color = QinblyBrand.Lavender, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, maxLines = 1)
+                Text(challenge.second, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 2)
+                if (participants > 0) Text(if (participants == 1) "1 participante" else "$participants participantes", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp, maxLines = 1)
             }
-            Text("Participar", color = QinblyBrand.TextAccent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
-                modifier = Modifier.clip(RoundedCornerShape(18.dp)).border(1.dp, QinblyBrand.TextAccent, RoundedCornerShape(18.dp))
+            Text("Participar", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp,
+                modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(QinblyBrand.Accent)
                     .clickable { onCreateWith("camera", "#" + challenge.first + " ") }.padding(horizontal = 14.dp, vertical = 7.dp))
         }
     }
