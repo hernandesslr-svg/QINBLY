@@ -418,6 +418,24 @@ object QinblyApi {
         return prefs.getString("user_id", null)?.ifBlank { null }
     }
 
+    // ───────── Cópia no celular das últimas respostas (leitura) ─────────
+    // Quando o servidor recusa (402, 429, 5xx) ou a internet cai, as telas mostram a última cópia salva
+    // em vez de ficarem vazias. Só vale para leituras (GET); publicar, curtir e seguir continuam exigindo o servidor.
+    private fun cacheFile(key: String): java.io.File? {
+        val ctx = applicationContext ?: return null
+        val dir = java.io.File(ctx.filesDir, "qinbly_cache")
+        if (!dir.exists()) dir.mkdirs()
+        val sum = java.security.MessageDigest.getInstance("SHA-1").digest(key.toByteArray())
+        return java.io.File(dir, sum.joinToString("") { "%02x".format(it) })
+    }
+    private fun cacheKey(token: String?, url: String): String = (userIdFromToken(token) ?: "anon") + "|" + url
+    private fun cachePut(key: String, text: String) {
+        if (text.isBlank() || text.length > 3_000_000) return
+        try { cacheFile(key)?.writeText(text) } catch (_: Exception) { }
+    }
+    private fun cacheGet(key: String): String? = try { cacheFile(key)?.takeIf { it.exists() }?.readText() } catch (_: Exception) { null }
+    private fun cacheable(status: Int) = status == 402 || status == 429 || status >= 500
+
     private fun restCall(token: String, method: String, pathAndQuery: String, body: String? = null, prefer: String? = null, allowRefresh: Boolean = true): String {
         val c = (URL("https://jqomgrdlocdqaarfqkay.supabase.co/rest/v1/" + pathAndQuery).openConnection() as HttpURLConnection).apply {
             requestMethod = method; connectTimeout = 20000; readTimeout = 30000
@@ -435,11 +453,19 @@ object QinblyApi {
                 val fresh = renewExpiredSession(token)
                 return restCall(fresh, method, pathAndQuery, body, prefer, false)
             }
+            if (method == "GET") {
+                val key = cacheKey(token, pathAndQuery)
+                if (status in 200..299) cachePut(key, text)
+                else if (cacheable(status)) cacheGet(key)?.let { return it }
+            }
             if (status !in 200..299) {
                 val detail = try { JSONObject(text).optString("message").ifBlank { JSONObject(text).optString("hint") } } catch (_: Exception) { "" }
                 throw IllegalStateException("Não foi possível concluir (HTTP $status)." + if (detail.isNotBlank()) " $detail" else "")
             }
             return text
+        } catch (e: java.io.IOException) {
+            if (method == "GET") cacheGet(cacheKey(token, pathAndQuery))?.let { return it }
+            throw e
         } finally { c.disconnect() }
     }
 
@@ -1114,6 +1140,10 @@ object QinblyApi {
             val stream = if (status in 200..299) connection.inputStream else connection.errorStream
             val text = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
             val json = try { JSONObject(text) } catch (_: Exception) { JSONObject() }
+            val cacheOk = method == "GET" && !path.startsWith("/api/auth")
+            val cKey = cacheKey(token, base + path)
+            if (cacheOk && status in 200..299) cachePut(cKey, text)
+            else if (cacheOk && cacheable(status)) cacheGet(cKey)?.let { saved -> try { return JSONObject(saved) } catch (_: Exception) { } }
             if (status == 401 && allowRefresh && !token.isNullOrBlank() &&
                 path != "/api/auth/refresh" && path != "/api/auth/google" &&
                 path != "/api/auth/login" && path != "/api/auth/register") {
@@ -1133,10 +1163,11 @@ object QinblyApi {
                 throw IllegalStateException(diagnostic)
             }
             return json
-        } catch (e: java.net.SocketTimeoutException) {
-            throw IllegalStateException("O servidor demorou para responder. Tente novamente.")
-        } catch (e: java.net.UnknownHostException) {
-            throw IllegalStateException("Não foi possível encontrar o backend. Verifique a URL e a conexão.")
+        } catch (e: java.io.IOException) {
+            if (method == "GET" && !path.startsWith("/api/auth")) cacheGet(cacheKey(token, base + path))?.let { saved -> try { return JSONObject(saved) } catch (_: Exception) { } }
+            if (e is java.net.SocketTimeoutException) throw IllegalStateException("O servidor demorou para responder. Tente novamente.")
+            if (e is java.net.UnknownHostException) throw IllegalStateException("Não foi possível encontrar o backend. Verifique a URL e a conexão.")
+            throw e
         } finally {
             connection.disconnect()
         }
