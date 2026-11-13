@@ -8247,7 +8247,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
 private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, textStory: QinblyTextStory?, ring: Color, plus: Boolean, collabAvatars: List<String> = emptyList(), mood: QinblyMood? = null, onPlus: () -> Unit = {}, showAvatar: Boolean = false, avatarUrl: String = "", onClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    Box(Modifier.width(168.dp).height(306.dp).clip(shape).background(QiblyTheme.soft).border(1.5.dp, ring, shape).clickable(indication = null, interactionSource = ms) { onClick() }) {
+    Box(Modifier.width(168.dp).height(306.dp).clip(shape).background(QiblyTheme.soft).clickable(indication = null, interactionSource = ms) { onClick() }) {
         if (textStory != null) {
             Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(qinblyTextBgs[textStory.bg.coerceIn(0, qinblyTextBgs.lastIndex)])), contentAlignment = Alignment.Center) {
                 Text(textStory.text, color = Color.White, fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium, maxLines = 8, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -8276,7 +8276,7 @@ private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolea
         }
         if (mood != null) Box(Modifier.align(Alignment.TopStart).padding(8.dp).size(36.dp).clip(CircleShape).background(mood.color).border(2.dp, Color.White, CircleShape), contentAlignment = Alignment.Center) { Text(mood.emoji, fontSize = 18.sp) }
         if (showAvatar) Row(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(start = 10.dp, end = 10.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(34.dp).clip(CircleShape).background(QiblyTheme.soft).border(2.dp, Color.White, CircleShape), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(34.dp).clip(CircleShape).background(QiblyTheme.soft).border(2.dp, QinblyBrand.Accent, CircleShape), contentAlignment = Alignment.Center) {
                 if (avatarUrl.isNotBlank()) AsyncImage(model = avatarUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                 else Icon(Icons.Default.Person, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(20.dp))
             }
