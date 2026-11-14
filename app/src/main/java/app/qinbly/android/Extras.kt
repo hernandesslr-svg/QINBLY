@@ -395,18 +395,8 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
     var photoUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var posting by remember { mutableStateOf(false) }
     var openNotice by remember { mutableStateOf<JSONObject?>(null) }
-    var pendingCamera by remember { mutableStateOf<android.net.Uri?>(null) }
-    val cameraLauncher = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.TakePicture()) { ok ->
-        if (ok) photoUri = pendingCamera
-        pendingCamera = null
-    }
-    fun launchCamera() {
-        val f = java.io.File(context.cacheDir, "qinbly-mural-" + System.currentTimeMillis() + ".jpg")
-        val u = androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".fileprovider", f)
-        pendingCamera = u
-        cameraLauncher.launch(u)
-    }
-    val cameraPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { ok -> if (ok) launchCamera() else onNotice("Permita a câmera para tirar a foto.") }
+    var showCamera by remember { mutableStateOf(false) }
+    if (showCamera) QinblyCameraCapture(onResult = { u -> photoUri = u; showCamera = false }, onDismiss = { showCamera = false })
     LaunchedEffect(refresh, gLat, gLng) {
         val token = prefs.getString("token", null)
         if (token.isNullOrBlank()) { notices = emptyList(); return@LaunchedEffect }
@@ -447,10 +437,7 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
                     if (draft.isEmpty()) Text("Avise a vizinhança…", color = Color(0xFF8E87A8), fontSize = 16.sp)
                     androidx.compose.foundation.text.BasicTextField(draft, { draft = it.take(280) }, textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 16.sp), cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.White), maxLines = 4, modifier = Modifier.fillMaxWidth())
                 }
-                Box(Modifier.size(38.dp).clip(CircleShape).background(Color(0xFF2E2E30)).clickable {
-                    if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) launchCamera()
-                    else cameraPermission.launch(android.Manifest.permission.CAMERA)
-                }, contentAlignment = Alignment.Center) { CameraGlyph(Color.White, Modifier.size(20.dp)) }
+                Box(Modifier.size(38.dp).clip(CircleShape).background(Color(0xFF2E2E30)).clickable { showCamera = true }, contentAlignment = Alignment.Center) { CameraGlyph(Color.White, Modifier.size(20.dp)) }
             }
             val pu = photoUri
             if (pu != null) Box(Modifier.padding(start = 6.dp)) {

@@ -297,15 +297,12 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
     val systemPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) { picked = GalleryItem(uri, (context.contentResolver.getType(uri) ?: "").startsWith("video/")); textBody = null; step = "edit" }
     }
-    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        val f = pendingPhoto
-        if (ok && f != null) { picked = GalleryItem(Uri.fromFile(f), false); textBody = null; step = "edit" } else f?.delete()
-    }
-    fun launchCamera() {
-        val f = File(context.cacheDir, "qinbly-capsule-" + System.currentTimeMillis() + ".jpg")
-        pendingPhoto = f
-        cameraLauncher.launch(androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".fileprovider", f))
-    }
+    var showAppCam by remember { mutableStateOf(false) }
+    if (showAppCam) QinblyCameraCapture(
+        onResult = { u -> showAppCam = false; picked = GalleryItem(u, false); textBody = null; step = "edit" },
+        onDismiss = { showAppCam = false }
+    )
+    fun launchCamera() { showAppCam = true }
     val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) launchCamera() else onNotice("Permita a câmera para tirar a foto.") }
     LaunchedEffect(Unit) { if (!granted) permissionLauncher.launch(galleryPerms) }
     LaunchedEffect(granted) { if (granted) items = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { loadRecentMedia(context) } }

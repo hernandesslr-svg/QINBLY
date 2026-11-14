@@ -6738,19 +6738,12 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
     val cGalleryPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) sendCWith { token, cid -> QinblyApi.sendCommunityImage(context, token, cid, uri) }
     }
-    var pendingCPhoto by remember { mutableStateOf<java.io.File?>(null) }
-    val cCameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        val f = pendingCPhoto
-        pendingCPhoto = null
-        if (ok && f != null) sendCWith { token, cid ->
-            try { QinblyApi.sendCommunityImage(context, token, cid, android.net.Uri.fromFile(f)) } finally { f.delete() }
-        } else f?.delete()
-    }
-    fun launchCCamera() {
-        val f = java.io.File(context.cacheDir, "qinbly-chat-" + System.currentTimeMillis() + ".jpg")
-        pendingCPhoto = f
-        cCameraLauncher.launch(androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".fileprovider", f))
-    }
+    var showCCam by remember { mutableStateOf(false) }
+    if (showCCam) QinblyCameraCapture(
+        onResult = { u -> showCCam = false; sendCWith { token, cid -> QinblyApi.sendCommunityImage(context, token, cid, u) } },
+        onDismiss = { showCCam = false }
+    )
+    fun launchCCamera() { showCCam = true }
     val cCameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) launchCCamera() else onNotice("Permita a câmera para tirar a foto.")
     }
@@ -7308,19 +7301,12 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     val chatGalleryPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) sendWith { token -> QinblyApi.sendImageMessage(context, token, recipientUsername, uri) }
     }
-    var pendingChatPhoto by remember { mutableStateOf<java.io.File?>(null) }
-    val chatCameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        val f = pendingChatPhoto
-        pendingChatPhoto = null
-        if (ok && f != null) sendWith { token ->
-            try { QinblyApi.sendImageMessage(context, token, recipientUsername, android.net.Uri.fromFile(f)) } finally { f.delete() }
-        } else f?.delete()
-    }
-    fun launchChatCamera() {
-        val f = java.io.File(context.cacheDir, "qinbly-chat-" + System.currentTimeMillis() + ".jpg")
-        pendingChatPhoto = f
-        chatCameraLauncher.launch(androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".fileprovider", f))
-    }
+    var showChatCam by remember { mutableStateOf(false) }
+    if (showChatCam) QinblyCameraCapture(
+        onResult = { u -> showChatCam = false; sendWith { token -> QinblyApi.sendImageMessage(context, token, recipientUsername, u) } },
+        onDismiss = { showChatCam = false }
+    )
+    fun launchChatCamera() { showChatCam = true }
     val chatCameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) launchChatCamera() else onNotice("Permita a câmera para tirar a foto.")
     }
@@ -10460,6 +10446,28 @@ private fun QinblyEffectsOverlay(effect: String, modifier: Modifier = Modifier) 
     }
 }
 
+/** Pedido de foto para a câmera do app: quem chama recebe a foto no lugar de o PostPage abrir o editor de publicação. */
+internal object QinblyCameraRequest { var onResult: ((Uri) -> Unit)? = null }
+
+/** Câmera do próprio app (com galeria ao lado) em tela inteira. Devolve a foto escolhida/tirada. */
+@Composable
+internal fun QinblyCameraCapture(onResult: (Uri) -> Unit, onDismiss: () -> Unit) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        QinblyCameraRequest.onResult = { u -> onResult(u) }
+        onDispose { QinblyCameraRequest.onResult = null }
+    }
+    QinblyDialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false),
+        lift = false
+    ) {
+        Box(Modifier.fillMaxSize().background(Color.Black)) {
+            PostPage(onNotice = { android.widget.Toast.makeText(ctx, it, android.widget.Toast.LENGTH_LONG).show() }, onCameraCancelled = onDismiss, initialMode = "camera")
+        }
+    }
+}
+
 @Composable
 private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, initialMode: String = "camera", onSwitchMode: (String) -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -10658,6 +10666,15 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         galleryOpen = false; publishSettings = false; showComposer = true; showCollabGallery = false
     }
     LaunchedEffect(Unit) { applyPicked() }
+    // Quando a câmera foi chamada por outra tela (Mural, cápsula, chat…), entrega a foto em vez de abrir o editor de publicação.
+    LaunchedEffect(showComposer) {
+        val cb = QinblyCameraRequest.onResult
+        if (showComposer && cb != null) {
+            val u = selectedUri ?: sourceUri
+            if (selectedType == "vídeo") { onNotice("Aqui só dá para enviar foto."); showComposer = false; selectedUri = null; sourceUri = null }
+            else if (u != null) cb(u)
+        }
+    }
     fun openQinblyGallery() {
         try { multiPhotoPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
         catch (e: Exception) { onNotice("Não foi possível abrir a galeria: " + (e.localizedMessage ?: "tente novamente")) }
