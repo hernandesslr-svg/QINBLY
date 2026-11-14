@@ -457,40 +457,22 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
 
     if (showViewers) {
         val list = viewers
-        val none = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-        QinblyDialog(onDismissRequest = { showViewers = false }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
-            Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = none) { showViewers = false }) {
-                Column(
-                    Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                        .padding(start = 8.dp, end = 8.dp, top = 64.dp, bottom = qinblyNavBarPadding() + 8.dp)
-                        .clip(RoundedCornerShape(32.dp)).background(Color(0xFF1F1F21))
-                        .clickable(indication = null, interactionSource = none) { }
-                        .padding(top = 12.dp, bottom = 10.dp)
-                ) {
-                    Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 5.dp).clip(CircleShape).background(Color(0x55FFFFFF)))
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Visibility, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                        Spacer(Modifier.width(10.dp))
-                        Text("Visualizações", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.weight(1f))
-                        if (list != null) Text(list.size.toString(), color = Color(0xFF6AA6F8), fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    }
-                    if (list == null) Box(Modifier.fillMaxWidth().padding(vertical = 28.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = accent, modifier = Modifier.size(28.dp)) }
-                    else if (list.isEmpty()) Text("Ninguém viu ainda.", color = Color(0xFFA9B5C8), fontSize = 15.sp, modifier = Modifier.padding(horizontal = 22.dp, vertical = 20.dp))
-                    else LazyColumn(Modifier.heightIn(max = 440.dp)) {
-                        items(list, key = { it.username }) { v ->
-                            Row(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(46.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
-                                    Text((v.displayName.ifBlank { v.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                                    if (v.avatarUrl.isNotBlank()) AsyncImage(model = v.avatarUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                                }
-                                Spacer(Modifier.width(14.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(v.displayName.ifBlank { v.username }, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Text("@" + v.username, color = Color(0xFFA9B5C8), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                }
-                                Text(qinblyAgo(v.viewedAt), color = Color(0xFF8E87A8), fontSize = 12.sp)
-                            }
+        QinblyFullScreen("Visualizações" + (list?.let { " (${it.size})" } ?: ""), { showViewers = false }, scroll = false) {
+            if (list == null) Box(Modifier.fillMaxWidth().padding(vertical = 28.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = accent, modifier = Modifier.size(28.dp)) }
+            else if (list.isEmpty()) Text("Ninguém viu ainda.", color = Color(0xFFA9B5C8), fontSize = 15.sp, modifier = Modifier.padding(horizontal = 22.dp, vertical = 20.dp))
+            else LazyColumn(Modifier.fillMaxSize()) {
+                items(list, key = { it.username }) { v ->
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(46.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
+                            Text((v.displayName.ifBlank { v.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            if (v.avatarUrl.isNotBlank()) AsyncImage(model = v.avatarUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                         }
+                        Spacer(Modifier.width(14.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(v.displayName.ifBlank { v.username }, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("@" + v.username, color = Color(0xFFA9B5C8), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        Text(qinblyAgo(v.viewedAt), color = Color(0xFF8E87A8), fontSize = 12.sp)
                     }
                 }
             }

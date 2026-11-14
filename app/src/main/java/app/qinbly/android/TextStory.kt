@@ -244,37 +244,25 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
             } catch (_: Exception) { main.post { onNotice("Não foi possível carregar o áudio.") } }
         }.start()
     }
-    val sheet = Color(0xFF1F1F21)
-    QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
-        Box(Modifier.fillMaxSize().clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }) {
-            Column(
-                Modifier.align(Alignment.BottomCenter).fillMaxWidth().clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(sheet)
-                    .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) {}
-                    .imePadding().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 10.dp + qinblyNavBarPadding())
-            ) {
-                Box(Modifier.align(Alignment.CenterHorizontally).width(40.dp).size(width = 40.dp, height = 4.dp).clip(CircleShape).background(Color(0x55FFFFFF)))
-                Spacer(Modifier.size(12.dp))
-                Text(if (collab) "Contribuições" else if (isOwner) "Comentários" else "Comentar no story", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
-                Spacer(Modifier.size(8.dp))
-                val list = comments?.filter { (it.kind == "contrib") == collab }
-                if (list == null) Text("Carregando…", color = Color(0xFFA9B5C8), modifier = Modifier.padding(vertical = 12.dp))
-                else if (list.isEmpty()) Text(if (isOwner) "Ninguém comentou ainda." else if (collab) "Seja o primeiro a contribuir." else "Só quem postou o story vê o seu comentário.", color = Color(0xFFA9B5C8), modifier = Modifier.padding(vertical = 12.dp))
-                else LazyColumn(Modifier.heightIn(max = 300.dp)) {
-                    items(list, key = { it.id }) { c ->
-                        Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Box(Modifier.size(34.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
-                                Text((c.displayName.ifBlank { c.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
-                            }
-                            Column(Modifier.clip(RoundedCornerShape(18.dp)).background(Color(0xFF262628)).padding(horizontal = 14.dp, vertical = 8.dp)) {
-                                Text(c.displayName.ifBlank { c.username }, color = Color(0xFF6AA6F8), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                                if (c.body == QINBLY_VOICE) Text("▶  Ouvir mensagem de voz", color = Color.White, fontSize = 15.sp, modifier = Modifier.clickable { playVoice(c.id) }) else Text(c.body, color = Color.White, fontSize = 15.sp)
-                            }
-                        }
+    QinblyFullScreen(if (collab) "Contribuições" else if (isOwner) "Comentários" else "Comentar no story", onDismiss, scroll = false) {
+        val list = comments?.filter { (it.kind == "contrib") == collab }
+        if (list == null) Text("Carregando…", color = Color(0xFFA9B5C8), modifier = Modifier.weight(1f).padding(16.dp))
+        else if (list.isEmpty()) Text(if (isOwner) "Ninguém comentou ainda." else if (collab) "Seja o primeiro a contribuir." else "Só quem postou o story vê o seu comentário.", color = Color(0xFFA9B5C8), modifier = Modifier.weight(1f).padding(16.dp))
+        else LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp)) {
+            items(list, key = { it.id }) { c ->
+                Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Box(Modifier.size(34.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
+                        Text((c.displayName.ifBlank { c.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                    Column(Modifier.clip(RoundedCornerShape(18.dp)).background(Color(0xFF262628)).padding(horizontal = 14.dp, vertical = 8.dp)) {
+                        Text(c.displayName.ifBlank { c.username }, color = Color(0xFF6AA6F8), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                        if (c.body == QINBLY_VOICE) Text("▶  Ouvir mensagem de voz", color = Color.White, fontSize = 15.sp, modifier = Modifier.clickable { playVoice(c.id) }) else Text(c.body, color = Color.White, fontSize = 15.sp)
                     }
                 }
-                Spacer(Modifier.size(10.dp))
-                QinblyStoryReplyBar(storyId, collab, accent, Color(0xFF262628), Color(0xFF8E87A8), onNotice, onSent = { refresh++ })
             }
+        }
+        Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            QinblyStoryReplyBar(storyId, collab, accent, Color(0xFF262628), Color(0xFF8E87A8), onNotice, onSent = { refresh++ })
         }
     }
 }

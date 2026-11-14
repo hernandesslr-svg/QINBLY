@@ -1442,15 +1442,13 @@ private fun AccountSwitcherDialog(
   onDismissRequest = onDismiss,
   properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
  ) {
-  Box(Modifier.fillMaxSize().padding(bottom = 92.dp), contentAlignment = Alignment.BottomCenter) {
+  Box(Modifier.fillMaxSize()) {
    Surface(
-    modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+    modifier = Modifier.fillMaxSize(),
     color = QiblyTheme.card,
-    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    shape = androidx.compose.ui.graphics.RectangleShape
    ) {
-   Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 18.dp)) {
-    Spacer(Modifier.height(12.dp))
-    Box(Modifier.align(Alignment.CenterHorizontally).size(width = 42.dp, height = 4.dp).background(Color(0xFFD0D5DD), RoundedCornerShape(50)))
+   Column(Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 18.dp)) {
     Spacer(Modifier.height(12.dp))
     Row(verticalAlignment = Alignment.CenterVertically) {
      IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, "Voltar", tint = QiblyTheme.text) }
@@ -1460,7 +1458,7 @@ private fun AccountSwitcherDialog(
      }
     }
     Spacer(Modifier.height(16.dp))
-    Column(Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
      if (accounts.isEmpty()) Text("Nenhuma conta salva neste aparelho.", color = Color.Gray)
      accounts.forEach { account ->
       val active = account.username.equals(currentUsername, ignoreCase = true)
@@ -2243,45 +2241,26 @@ private fun QinblyApp() {
             })
         }
         if (showCreateOptions) {
-            // Folha de baixo com 4 cartões (Texto, Galeria, Câmera, Enquete); tocar fora fecha.
-            QinblyDialog(
-                onDismissRequest = { showCreateOptions = false },
-                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
-            ) {
-                val noRipple = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                val noRipple2 = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                Box(Modifier.fillMaxSize().clickable(indication = null, interactionSource = noRipple) { showCreateOptions = false }) {
-                    Column(
-                        Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                            .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
-                            .background(QiblyTheme.card)
-                            .clickable(indication = null, interactionSource = noRipple2) { }
-                            .navigationBarsPadding()
-                            .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 96.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Box(Modifier.align(Alignment.CenterHorizontally).width(34.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFFD0D5DD)))
-                        Text("Criar", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.padding(vertical = 6.dp))
-                        listOf(
-                            listOf(Triple("Texto", "text", QinblyCreateIcons.text), Triple("Galeria", "gallery", QinblyCreateIcons.gallery)),
-                            listOf(Triple("Câmera", "camera", QinblyCreateIcons.camera), Triple("Enquete", "poll", QinblyCreateIcons.poll))
-                        ).forEach { row ->
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                row.forEach { (label, mode, icon) ->
-                                    Column(
-                                        Modifier.weight(1f).clip(RoundedCornerShape(16.dp))
-                                            .background(QiblyTheme.soft)
-                                            .clickable { showCreateOptions = false; createEntryMode = mode; tab = 2 }
-                                            .padding(vertical = 14.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(7.dp)
-                                    ) {
-                                        Box(Modifier.size(46.dp).clip(CircleShape).background(QinblyBrand.Accent.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
-                                            Icon(icon, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(24.dp))
-                                        }
-                                        Text(label, color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                                    }
+            // Tela inteira com 4 cartões (Texto, Galeria, Câmera, Enquete).
+            QinblyFullScreen("Criar", { showCreateOptions = false }, background = QiblyTheme.background, contentColor = RemoteAppearance.screenTextColor) {
+                listOf(
+                    listOf(Triple("Texto", "text", QinblyCreateIcons.text), Triple("Galeria", "gallery", QinblyCreateIcons.gallery)),
+                    listOf(Triple("Câmera", "camera", QinblyCreateIcons.camera), Triple("Enquete", "poll", QinblyCreateIcons.poll))
+                ).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { (label, mode, icon) ->
+                            Column(
+                                Modifier.weight(1f).clip(RoundedCornerShape(16.dp))
+                                    .background(QiblyTheme.soft)
+                                    .clickable { showCreateOptions = false; createEntryMode = mode; tab = 2 }
+                                    .padding(vertical = 14.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(7.dp)
+                            ) {
+                                Box(Modifier.size(46.dp).clip(CircleShape).background(QinblyBrand.Accent.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+                                    Icon(icon, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(24.dp))
                                 }
+                                Text(label, color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Medium, fontSize = 14.sp)
                             }
                         }
                     }
@@ -2452,43 +2431,27 @@ private fun NotificationsPage(
             IconButton(onClick = { showNotifSettings = true }) { Icon(Icons.Default.Menu, contentDescription = "Configurações das notificações", tint = QiblyTheme.text) }
         }
         if (showNotifSettings) {
-            QinblyDialog(
-                onDismissRequest = { showNotifSettings = false },
-                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
-            ) {
-                val outer = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                val inner = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                Box(Modifier.fillMaxSize().clickable(indication = null, interactionSource = outer) { showNotifSettings = false }) {
-                    Column(
-                        Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                            .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)).background(QiblyTheme.card)
-                            .clickable(indication = null, interactionSource = inner) { }
-                            .padding(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 16.dp + qinblyNavBarPadding())
-                    ) {
-                        Box(Modifier.align(Alignment.CenterHorizontally).width(34.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFFD0D5DD)))
-                        Text("Configurações das notificações", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.padding(vertical = 10.dp))
-                        // (rótulo, chave, descrição, invertido). "Silenciar tudo" é o contrário de setting_notifications.
-                        listOf(
-                            Triple("Silenciar tudo", "setting_notifications", "Pausar os avisos neste aparelho"),
-                            Triple("Curtidas", "setting_notice_likes", ""),
-                            Triple("Comentários", "setting_notice_comments", ""),
-                            Triple("Menções", "setting_notice_mentions", "Quando alguém marcar você com @ em um comentário ou publicação"),
-                            Triple("Novos seguidores", "setting_notice_followers", ""),
-                            Triple("Avisos do ${QinblyBrand.Name}", "setting_notice_system", "")
-                        ).forEach { (label, key, hint) ->
-                            val inverted = key == "setting_notifications"
-                            var stored by remember { mutableStateOf(notifPrefs.getBoolean(key, true)) }
-                            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(label, color = QiblyTheme.text, fontSize = 15.sp, fontWeight = if (inverted) FontWeight.Medium else FontWeight.Normal)
-                                    if (hint.isNotBlank()) Text(hint, color = QiblyTheme.secondary, fontSize = 12.sp)
-                                }
-                                Switch(
-                                    checked = if (inverted) !stored else stored,
-                                    onCheckedChange = { on -> stored = if (inverted) !on else on; notifPrefs.edit().putBoolean(key, stored).apply() }
-                                )
-                            }
+            QinblyFullScreen("Configurações das notificações", { showNotifSettings = false }, background = QiblyTheme.background, contentColor = QiblyTheme.text) {
+                // (rótulo, chave, descrição, invertido). "Silenciar tudo" é o contrário de setting_notifications.
+                listOf(
+                    Triple("Silenciar tudo", "setting_notifications", "Pausar os avisos neste aparelho"),
+                    Triple("Curtidas", "setting_notice_likes", ""),
+                    Triple("Comentários", "setting_notice_comments", ""),
+                    Triple("Menções", "setting_notice_mentions", "Quando alguém marcar você com @ em um comentário ou publicação"),
+                    Triple("Novos seguidores", "setting_notice_followers", ""),
+                    Triple("Avisos do ${QinblyBrand.Name}", "setting_notice_system", "")
+                ).forEach { (label, key, hint) ->
+                    val inverted = key == "setting_notifications"
+                    var stored by remember { mutableStateOf(notifPrefs.getBoolean(key, true)) }
+                    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(label, color = QiblyTheme.text, fontSize = 15.sp, fontWeight = if (inverted) FontWeight.Medium else FontWeight.Normal)
+                            if (hint.isNotBlank()) Text(hint, color = QiblyTheme.secondary, fontSize = 12.sp)
                         }
+                        Switch(
+                            checked = if (inverted) !stored else stored,
+                            onCheckedChange = { on -> stored = if (inverted) !on else on; notifPrefs.edit().putBoolean(key, stored).apply() }
+                        )
                     }
                 }
             }
@@ -4154,18 +4117,20 @@ private fun QinblyCommentsDialog(
                 // The sheet height is based on the usable height of this Dialog after IME padding.
                 // Keep the sheet inside the screen and lift its lower edge above the system navigation area.
                 // The previous 2x height made the sheet extend beyond the top of the display.
-                val panelHeight = maxHeight * if (dialogKeyboardVisible) 0.90f else 0.90f
+                val panelHeight = maxHeight
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(panelHeight)
-                        .offset(y = (-5).dp)
-                        .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                         .background(RemoteAppearance.commentBackgroundColor)
                         .clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) { }
                 ) {
-                    Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
-                        Box(Modifier.width(48.dp).height(5.dp).clip(CircleShape).background(Color(0xFF777887)))
+                    // Tela inteira: seta de voltar no topo, abaixo da barra de status.
+                    Spacer(Modifier.height(maxOf(with(dialogDensity) { WindowInsets.statusBars.getTop(this).toDp() }, 28.dp)))
+                    Row(Modifier.fillMaxWidth().height(48.dp).padding(start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { if (showCommentEmojis) showCommentEmojis = false else onDismiss() }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.commentTextColor)
+                        }
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(start = 22.dp, end = 18.dp, top = 8.dp, bottom = 16.dp),
@@ -5194,14 +5159,14 @@ private fun QiblyShareDialog(
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
         Column(
-            Modifier.fillMaxWidth().fillMaxHeight(0.86f)
-                .background(QiblyTheme.card, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-                .padding(horizontal = 18.dp).padding(top = 10.dp, bottom = 14.dp + qinblyNavBarPadding())
+            Modifier.fillMaxSize()
+                .background(QiblyTheme.card)
+                .statusBarsPadding()
+                .padding(horizontal = 18.dp).padding(top = 4.dp, bottom = 14.dp + qinblyNavBarPadding())
         ) {
-            Box(Modifier.align(Alignment.CenterHorizontally).width(44.dp).height(5.dp).background(QiblyTheme.secondary.copy(alpha = 0.35f), RoundedCornerShape(3.dp)))
-            Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
                 Text("Enviar para", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = QiblyTheme.text)
-                IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = "Fechar", tint = QiblyTheme.text) }
             }
             // Prévia da publicação que será enviada
             Row(

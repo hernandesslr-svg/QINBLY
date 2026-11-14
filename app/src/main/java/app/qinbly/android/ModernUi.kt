@@ -180,39 +180,27 @@ internal fun OutlinedButton(
     )
 }
 
-/** Escolha de país: folha de baixo pra cima, com busca. */
+/** Escolha de país: tela inteira, com busca. */
 @Composable
 internal fun QinblyCountrySheet(options: List<String>, selected: String, onPick: (String) -> Unit, onDismiss: () -> Unit) {
     var query by remember { mutableStateOf("") }
     val shown = options.filter { query.isBlank() || it.contains(query.trim(), ignoreCase = true) }
-    val dark = QiblyTheme.dark
-    QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
-        Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onDismiss() }) {
-            Column(
-                Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(top = 90.dp)
-                    .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(if (dark) Color(0xFF1F1F21) else Color.White)
-                    .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { }
-                    .imePadding().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = qinblyNavBarPadding() + 8.dp)
-            ) {
-                Box(Modifier.align(Alignment.CenterHorizontally).size(width = 44.dp, height = 5.dp).clip(CircleShape).background(if (dark) Color(0x55FFFFFF) else Color(0x33000000)))
-                Text("País", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp))
-                Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(QiblyTheme.soft).padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    if (query.isEmpty()) Text("Buscar país", color = QiblyTheme.secondary, fontSize = 15.sp)
-                    BasicTextField(query, { query = it.take(40) }, singleLine = true, textStyle = TextStyle(color = QiblyTheme.text, fontSize = 15.sp), cursorBrush = SolidColor(QiblyTheme.text), modifier = Modifier.fillMaxWidth())
+    QinblyFullScreen("País", onDismiss, background = QiblyTheme.background, contentColor = QiblyTheme.text, scroll = false) {
+        Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).clip(RoundedCornerShape(24.dp)).background(QiblyTheme.soft).padding(horizontal = 16.dp, vertical = 12.dp)) {
+            if (query.isEmpty()) Text("Buscar país", color = QiblyTheme.secondary, fontSize = 15.sp)
+            BasicTextField(query, { query = it.take(40) }, singleLine = true, textStyle = TextStyle(color = QiblyTheme.text, fontSize = 15.sp), cursorBrush = SolidColor(QiblyTheme.text), modifier = Modifier.fillMaxWidth())
+        }
+        LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(top = 6.dp, start = 16.dp, end = 16.dp)) {
+            if (query.isBlank()) item {
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { onPick("") }.padding(horizontal = 8.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Não informar", color = QiblyTheme.text, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                    if (selected.isBlank()) Text("✓", color = Color(0xFF63D68D), fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 }
-                LazyColumn(Modifier.fillMaxWidth().padding(top = 6.dp)) {
-                    if (query.isBlank()) item {
-                        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { onPick("") }.padding(horizontal = 8.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text("Não informar", color = QiblyTheme.text, fontSize = 16.sp, modifier = Modifier.weight(1f))
-                            if (selected.isBlank()) Text("✓", color = Color(0xFF63D68D), fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        }
-                    }
-                    items(shown, key = { it }) { country ->
-                        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { onPick(country) }.padding(horizontal = 8.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(country, color = QiblyTheme.text, fontSize = 16.sp, modifier = Modifier.weight(1f))
-                            if (country == selected) Text("✓", color = Color(0xFF63D68D), fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        }
-                    }
+            }
+            items(shown, key = { it }) { country ->
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { onPick(country) }.padding(horizontal = 8.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(country, color = QiblyTheme.text, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                    if (country == selected) Text("✓", color = Color(0xFF63D68D), fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 }
             }
         }

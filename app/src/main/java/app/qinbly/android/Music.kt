@@ -118,36 +118,25 @@ internal fun QinblyMusicPicker(onPick: (QinblyMusic) -> Unit, onDismiss: () -> U
         catch (_: Exception) { results = emptyList(); error = "Não foi possível buscar agora. Verifique a internet." }
         loading = false
     }
-    val nav = qinblyNavBarPadding()
-    QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
-        Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }) {
-            Column(
-                Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(top = 80.dp).clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(Color(0xFF1F1F21))
-                    .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { }
-                    .imePadding().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = nav + 8.dp)
-            ) {
-                Box(Modifier.align(Alignment.CenterHorizontally).size(width = 44.dp, height = 5.dp).clip(CircleShape).background(Color(0x55FFFFFF)))
-                Text("Adicionar música", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp))
-                Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Color(0xFF262628)).padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    if (query.isEmpty()) Text("Buscar música ou artista", color = Color(0xFF8E87A8), fontSize = 15.sp)
-                    BasicTextField(query, { query = it.take(60) }, singleLine = true, textStyle = TextStyle(color = Color.White, fontSize = 15.sp), cursorBrush = SolidColor(Color.White), modifier = Modifier.fillMaxWidth())
-                }
-                if (loading) Text("Buscando…", color = Color(0xFFA9B5C8), modifier = Modifier.padding(16.dp))
-                else if (error.isNotBlank()) Text(error, color = Color(0xFFA9B5C8), modifier = Modifier.padding(16.dp))
-                else if (query.isBlank()) Text("Digite o nome da música ou do artista. Toque no play pra ouvir um trecho e na linha pra escolher.", color = Color(0xFFA9B5C8), fontSize = 14.sp, modifier = Modifier.padding(16.dp))
-                else if (results.isEmpty()) Text("Nenhuma música encontrada.", color = Color(0xFFA9B5C8), modifier = Modifier.padding(16.dp))
-                else LazyColumn(Modifier.fillMaxWidth().padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    items(results, key = { it.url }) { m ->
-                        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { playing = ""; onPick(m) }.padding(vertical = 8.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF3A3260)), contentAlignment = Alignment.Center) { Text("♪", color = Color(0xFF6AA6F8), fontSize = 20.sp) }
-                            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                                Text(m.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(m.artist, color = Color(0xFFA9B5C8), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            }
-                            Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF262628)).clickable { playing = if (playing == m.url) "" else m.url }, contentAlignment = Alignment.Center) {
-                                Text(if (playing == m.url) "❚❚" else "▶", color = Color.White, fontSize = 14.sp)
-                            }
-                        }
+    QinblyFullScreen("Adicionar música", onDismiss, scroll = false) {
+        Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).clip(RoundedCornerShape(24.dp)).background(Color(0xFF262628)).padding(horizontal = 16.dp, vertical = 12.dp)) {
+            if (query.isEmpty()) Text("Buscar música ou artista", color = Color(0xFF8E87A8), fontSize = 15.sp)
+            BasicTextField(query, { query = it.take(60) }, singleLine = true, textStyle = TextStyle(color = Color.White, fontSize = 15.sp), cursorBrush = SolidColor(Color.White), modifier = Modifier.fillMaxWidth())
+        }
+        if (loading) Text("Buscando…", color = Color(0xFFA9B5C8), modifier = Modifier.padding(16.dp))
+        else if (error.isNotBlank()) Text(error, color = Color(0xFFA9B5C8), modifier = Modifier.padding(16.dp))
+        else if (query.isBlank()) Text("Digite o nome da música ou do artista. Toque no play pra ouvir um trecho e na linha pra escolher.", color = Color(0xFFA9B5C8), fontSize = 14.sp, modifier = Modifier.padding(16.dp))
+        else if (results.isEmpty()) Text("Nenhuma música encontrada.", color = Color(0xFFA9B5C8), modifier = Modifier.padding(16.dp))
+        else LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp, start = 16.dp, end = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            items(results, key = { it.url }) { m ->
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { playing = ""; onPick(m) }.padding(vertical = 8.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF3A3260)), contentAlignment = Alignment.Center) { Text("♪", color = Color(0xFF6AA6F8), fontSize = 20.sp) }
+                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Text(m.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(m.artist, color = Color(0xFFA9B5C8), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF262628)).clickable { playing = if (playing == m.url) "" else m.url }, contentAlignment = Alignment.Center) {
+                        Text(if (playing == m.url) "❚❚" else "▶", color = Color.White, fontSize = 14.sp)
                     }
                 }
             }

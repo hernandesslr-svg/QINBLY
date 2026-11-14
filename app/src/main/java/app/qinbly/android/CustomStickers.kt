@@ -265,12 +265,7 @@ internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color
         }
     }
     toDelete?.let { st ->
-        @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-        androidx.compose.material3.ModalBottomSheet(
-            onDismissRequest = { toDelete = null },
-            containerColor = cardColor.copy(alpha = 1f).let { if (it == Color.Transparent) Color(0xFF232325) else it },
-            contentColor = textColor
-        ) {
+        QinblyFullScreen("Figurinha", { toDelete = null }, background = QiblyTheme.background, contentColor = textColor) {
             Column(Modifier.fillMaxWidth().padding(bottom = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 AsyncImage(model = st.url, contentDescription = "Figurinha", modifier = Modifier.size(170.dp).padding(bottom = 12.dp))
                 Row(

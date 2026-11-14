@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
@@ -119,25 +120,52 @@ internal fun qinblyToast(@Suppress("UNUSED_PARAMETER") original: (String) -> Uni
     return { m -> android.widget.Toast.makeText(ctx, m, android.widget.Toast.LENGTH_LONG).show() }
 }
 
-/** Painel grande que sobe de baixo, sempre acima dos botões do celular. */
+/** Tela inteira com seta de voltar no topo (no lugar das "abinhas" que subiam de baixo). */
 @Composable
-internal fun QinblyBottomPanel(title: String, onDismiss: () -> Unit, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    val nav = qinblyNavBarPadding()
-    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
-        Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }) {
-            Column(
-                Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(top = 48.dp, bottom = nav + 8.dp).clip(RoundedCornerShape(32.dp)).background(Panel)
-                    .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { }
-                    .imePadding().verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                Box(Modifier.align(Alignment.CenterHorizontally).size(width = 44.dp, height = 5.dp).clip(CircleShape).background(Color(0x55FFFFFF)))
-                Text(title, color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-                content()
+internal fun QinblyFullScreen(
+    title: String,
+    onDismiss: () -> Unit,
+    background: Color = Panel,
+    contentColor: Color = Color.White,
+    scroll: Boolean = true,
+    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit
+) {
+    QinblyDialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnClickOutside = false),
+        lift = false
+    ) {
+        val nav = qinblyNavBarPadding()
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val imeOpen = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(density) > 0
+        Column(Modifier.fillMaxSize().background(background).statusBarsPadding().imePadding()) {
+            Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 4.dp, end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(48.dp).clip(CircleShape).clickable { onDismiss() }, contentAlignment = Alignment.Center) {
+                    androidx.compose.foundation.Canvas(Modifier.size(24.dp)) {
+                        val w = size.minDimension
+                        val path = androidx.compose.ui.graphics.Path().apply {
+                            moveTo(w * 0.64f, w * 0.18f); lineTo(w * 0.30f, w * 0.5f); lineTo(w * 0.64f, w * 0.82f)
+                        }
+                        drawPath(path, contentColor, style = androidx.compose.ui.graphics.drawscope.Stroke(w * 0.1f, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+                    }
+                }
+                Text(title, color = contentColor, fontSize = 19.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(start = 4.dp))
             }
+            val body = Modifier.weight(1f).fillMaxWidth()
+            val bottom = if (imeOpen) 0.dp else nav
+            if (scroll) Column(
+                body.verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = bottom + 16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) { content() }
+            else Column(body.padding(bottom = bottom)) { content() }
         }
     }
 }
+
+/** Mantido pelo nome antigo: agora abre em tela inteira. */
+@Composable
+internal fun QinblyBottomPanel(title: String, onDismiss: () -> Unit, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) =
+    QinblyFullScreen(title, onDismiss, content = content)
 
 @Composable
 private fun BigButton(text: String, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
@@ -552,9 +580,9 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
         comments = comments?.filterNot { it.optString("id") == id || it.optString("parent_id") == id }
         Thread { try { QinblyApi.rest(token, "DELETE", "neighborhood_comments?id=eq.$id"); main { onChanged() } } catch (_: Exception) { } }.start()
     }
-    QinblyBottomPanel("Aviso", onDismiss) {
-        Column(Modifier.heightIn(max = 560.dp)) {
-            Column(Modifier.weight(1f, fill = false).verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    QinblyFullScreen("Aviso", onDismiss, scroll = false) {
+        Column(Modifier.fillMaxSize()) {
+            Column(Modifier.weight(1f).verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (photo != null) AsyncImage(model = photo, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Fit, modifier = Modifier.fillMaxWidth().heightIn(max = 260.dp).clip(RoundedCornerShape(16.dp)))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(kindName, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(noticeTagColor(kindName)).padding(horizontal = 9.dp, vertical = 3.dp))
