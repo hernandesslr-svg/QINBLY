@@ -110,7 +110,7 @@ private fun parseListing(o: JSONObject): QinblyListing {
 }
 
 /** Sobe uma imagem para o bucket público do app (pasta do próprio usuário) e devolve a URL pública. */
-private fun uploadMarketPhoto(context: Context, token: String, userId: String, uri: Uri, index: Int): String {
+internal fun uploadMarketPhoto(context: Context, token: String, userId: String, uri: Uri, index: Int): String {
     val resolver = context.contentResolver
     val type = (resolver.getType(uri) ?: "image/jpeg").lowercase()
     require(type in setOf("image/jpeg", "image/png", "image/webp")) { "Use fotos JPG, PNG ou WebP." }
@@ -265,7 +265,7 @@ internal fun QinblyNearbyHub(
         }
         Box(Modifier.fillMaxWidth().weight(1f)) {
             if (cat == "Mural" && mine == null) {
-                QinblyNeighborhoodBoard(lat, lng, place, textColor, secondary, onRefreshLocation = onRefreshLocation, onNotice = onNotice)
+                QinblyNeighborhoodBoard(lat, lng, place, textColor, secondary, onRefreshLocation = onRefreshLocation, onNotice = onNotice, onOpenConversation = onOpenConversation)
             } else {
                 val q = query.trim()
                 val list = if (searching && q.isNotEmpty()) listings?.filter { it.title.contains(q, true) || it.description.contains(q, true) } else listings

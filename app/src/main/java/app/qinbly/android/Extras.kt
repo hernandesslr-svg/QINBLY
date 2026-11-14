@@ -338,7 +338,7 @@ internal fun QinblyStickerPacksDialog(accent: Color, onDismiss: () -> Unit, onNo
 
 // ───────── Mural do bairro ─────────
 @Composable
-internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, textColor: Color, secondary: Color, onRefreshLocation: () -> Unit, onNotice: (String) -> Unit) {
+internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, textColor: Color, secondary: Color, onRefreshLocation: () -> Unit, onNotice: (String) -> Unit, onOpenConversation: (String) -> Unit = {}) {
     val context = LocalContext.current
     val prefs = remember { sess(context) }
     val myId = remember { QinblyApi.currentUserId(prefs) }
@@ -348,27 +348,49 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
     var notices by remember { mutableStateOf<List<JSONObject>?>(null) }
     var draft by remember { mutableStateOf("") }
     var refresh by remember { mutableStateOf(0) }
+    var tag by remember { mutableStateOf<String?>(null) }
+    var photoUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var posting by remember { mutableStateOf(false) }
+    var showPhotoMenu by remember { mutableStateOf(false) }
+    var openNotice by remember { mutableStateOf<JSONObject?>(null) }
+    var pendingCamera by remember { mutableStateOf<android.net.Uri?>(null) }
+    val galleryLauncher = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) photoUri = uri }
+    val cameraLauncher = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.TakePicture()) { ok ->
+        if (ok) photoUri = pendingCamera
+        pendingCamera = null
+    }
+    fun launchCamera() {
+        val f = java.io.File(context.cacheDir, "qinbly-mural-" + System.currentTimeMillis() + ".jpg")
+        val u = androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".fileprovider", f)
+        pendingCamera = u
+        cameraLauncher.launch(u)
+    }
+    val cameraPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { ok -> if (ok) launchCamera() else onNotice("Permita a câmera para tirar a foto.") }
     LaunchedEffect(refresh, gLat, gLng) {
         val token = prefs.getString("token", null)
         if (token.isNullOrBlank()) { notices = emptyList(); return@LaunchedEffect }
         notices = try {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 val dLat = 0.05; val dLng = 0.05 / Math.cos(Math.toRadians(lat)).coerceAtLeast(0.2)
-                val q = "neighborhood_notices?lat=gte.${gLat - dLat}&lat=lte.${gLat + dLat}&lng=gte.${gLng - dLng}&lng=lte.${gLng + dLng}&expires_at=gt.${java.time.Instant.now()}&select=id,body,created_at,user_id,profiles(username,display_name)&order=created_at.desc&limit=50"
+                val q = "neighborhood_notices?lat=gte.${gLat - dLat}&lat=lte.${gLat + dLat}&lng=gte.${gLng - dLng}&lng=lte.${gLng + dLng}&expires_at=gt.${java.time.Instant.now()}&select=id,body,kind,photo,created_at,user_id,profiles(username,display_name)&order=created_at.desc&limit=50"
                 val a = JSONArray(QinblyApi.rest(token, "GET", q))
                 (0 until a.length()).map { a.getJSONObject(it) }
             }
         } catch (_: Exception) { notices ?: emptyList() }
     }
     fun post() {
-        val token = prefs.getString("token", null); val body = draft.trim()
-        if (token.isNullOrBlank() || body.isBlank()) return
-        draft = ""
+        val token = prefs.getString("token", null); val body = draft.trim(); val kind = tag
+        if (token.isNullOrBlank() || body.isBlank() || kind == null || posting) return
+        val uri = photoUri
+        posting = true
         Thread {
             try {
-                QinblyApi.rest(token, "POST", "neighborhood_notices", JSONObject().put("body", body).put("lat", gLat).put("lng", gLng).toString(), "return=minimal")
-                main { onNotice("Aviso publicado. Some em 48 horas."); refresh++ }
-            } catch (e: Exception) { main { onNotice(e.message ?: "Não foi possível publicar.") } }
+                val photo = if (uri != null) uploadMarketPhoto(context, token, myId ?: throw IllegalStateException("Entre de novo na conta."), uri, 0) else null
+                val j = JSONObject().put("body", body).put("lat", gLat).put("lng", gLng).put("kind", kind.lowercase())
+                if (photo != null) j.put("photo", photo)
+                QinblyApi.rest(token, "POST", "neighborhood_notices", j.toString(), "return=minimal")
+                main { draft = ""; tag = null; photoUri = null; posting = false; onNotice("Aviso publicado. Some em 48 horas."); refresh++ }
+            } catch (e: Exception) { main { posting = false; onNotice(e.message ?: "Não foi possível publicar.") } }
         }.start()
     }
     Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -379,9 +401,34 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
             }
             Text("↻", fontSize = 22.sp, color = textColor, modifier = Modifier.clip(CircleShape).clickable { refresh++; onRefreshLocation() }.padding(10.dp))
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            QinblyPillField(draft, { draft = it.take(280) }, "Avise a vizinhança…", Modifier.weight(1f), maxLines = 3)
-            Box(Modifier.size(46.dp).clip(CircleShape).background(if (draft.isBlank()) Color(0xFF2E2E30) else Color(0xFF1877F2)).clickable(enabled = draft.isNotBlank()) { post() }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, fontSize = 18.sp) }
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(FieldBg).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp)) {
+                if (draft.isEmpty()) Text("Avise a vizinhança…", color = Color(0xFF8E87A8), fontSize = 16.sp)
+                androidx.compose.foundation.text.BasicTextField(draft, { draft = it.take(280) }, textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 16.sp), cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.White), maxLines = 4, modifier = Modifier.fillMaxWidth())
+            }
+            val pu = photoUri
+            if (pu != null) Box(Modifier.padding(start = 6.dp)) {
+                AsyncImage(model = pu, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(10.dp)))
+                Box(Modifier.align(Alignment.TopEnd).padding(2.dp).size(20.dp).clip(CircleShape).background(Color(0xCC000000)).clickable { photoUri = null }, contentAlignment = Alignment.Center) { Text("✕", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+            }
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(NOTICE_TAGS) { t ->
+                    val sel = tag == t
+                    Text(t, color = if (sel) Color.White else Color(0xFFB4B4BC), fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(if (sel) noticeTagColor(t) else Color(0xFF2E2E30)).clickable { tag = if (sel) null else t }.padding(horizontal = 12.dp, vertical = 6.dp))
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.clip(RoundedCornerShape(20.dp)).clickable { showPhotoMenu = true }.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("📷", fontSize = 16.sp)
+                    Text(if (photoUri == null) "Foto" else "Trocar foto", color = Color(0xFFB4B4BC), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 6.dp))
+                }
+                Spacer(Modifier.weight(1f))
+                val ready = draft.isNotBlank() && tag != null && !posting
+                Text(if (posting) "Enviando…" else "Publicar", color = if (ready) Color.White else Color(0xFF8E87A8), fontWeight = FontWeight.Bold, fontSize = 14.sp,
+                    modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (ready) Color(0xFF1877F2) else Color(0xFF2E2E30)).clickable(enabled = ready) { post() }.padding(horizontal = 20.dp, vertical = 9.dp))
+            }
+            if (draft.isNotBlank() && tag == null) Text("Escolha o tipo do aviso para publicar.", color = secondary, fontSize = 11.sp, modifier = Modifier.padding(start = 6.dp))
         }
         val list = notices
         if (list == null) Text("Carregando…", color = secondary)
@@ -389,18 +436,61 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
         else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(list, key = { it.optString("id") }) { n ->
                 val p = n.optJSONObject("profiles")
-                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(FieldBg).padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                val kindName = noticeKindLabel(n.optString("kind"))
+                val photo = n.optString("photo").takeIf { it.isNotBlank() && it != "null" }
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(FieldBg).clickable { openNotice = n }.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text((p?.optString("display_name").orEmpty().ifBlank { p?.optString("username").orEmpty() }) + " • " + qinblyAgo(n.optString("created_at")), color = Color(0xFF6AA6F8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                        Text(kindName, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(noticeTagColor(kindName)).padding(horizontal = 9.dp, vertical = 3.dp))
+                        Text((p?.optString("display_name").orEmpty().ifBlank { p?.optString("username").orEmpty() }) + " • " + qinblyAgo(n.optString("created_at")), color = Color(0xFF6AA6F8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(start = 8.dp))
                         if (n.optString("user_id") == myId) Text("Apagar", color = Color(0xFFE0457B), fontSize = 12.sp, modifier = Modifier.clickable {
                             val id = n.optString("id"); val token = prefs.getString("token", null) ?: return@clickable
                             notices = notices?.filterNot { it.optString("id") == id }
                             Thread { try { QinblyApi.rest(token, "DELETE", "neighborhood_notices?id=eq.$id") } catch (_: Exception) { } }.start()
                         })
                     }
-                    Text(n.optString("body"), color = Color.White, fontSize = 15.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(n.optString("body"), color = Color.White, fontSize = 15.sp, maxLines = 4, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                        if (photo != null) AsyncImage(model = photo, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(10.dp)))
+                    }
                 }
             }
         }
     }
+
+    if (showPhotoMenu) QinblyBottomPanel("Foto do aviso", { showPhotoMenu = false }) {
+        for ((label, cam) in listOf("📷  Tirar foto agora" to true, "🖼  Escolher da galeria" to false)) {
+            Text(label, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp).clip(RoundedCornerShape(20.dp)).background(FieldBg)
+                    .clickable {
+                        showPhotoMenu = false
+                        if (!cam) galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        else if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) launchCamera()
+                        else cameraPermission.launch(android.Manifest.permission.CAMERA)
+                    }.padding(horizontal = 18.dp, vertical = 16.dp))
+        }
+    }
+    openNotice?.let { n ->
+        val p = n.optJSONObject("profiles")
+        val kindName = noticeKindLabel(n.optString("kind"))
+        val photo = n.optString("photo").takeIf { it.isNotBlank() && it != "null" }
+        val uname = p?.optString("username").orEmpty()
+        QinblyBottomPanel("Aviso", { openNotice = null }) {
+            Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (photo != null) AsyncImage(model = photo, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Fit, modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp).clip(RoundedCornerShape(16.dp)))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(kindName, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(noticeTagColor(kindName)).padding(horizontal = 9.dp, vertical = 3.dp))
+                    Text((p?.optString("display_name").orEmpty().ifBlank { uname }) + " • " + qinblyAgo(n.optString("created_at")), color = Color(0xFF6AA6F8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 8.dp))
+                }
+                Text(n.optString("body"), color = Color.White, fontSize = 16.sp)
+                if (uname.isNotBlank() && n.optString("user_id") != myId) Text("Chamar no chat", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Color(0xFF1877F2)).clickable { openNotice = null; onOpenConversation(uname) }.padding(vertical = 13.dp))
+            }
+        }
+    }
+}
+
+private val NOTICE_TAGS = listOf("Achado", "Perdido", "Pergunta", "Evento")
+private fun noticeKindLabel(kind: String): String = NOTICE_TAGS.firstOrNull { it.equals(kind, true) } ?: "Aviso"
+private fun noticeTagColor(label: String): Color = when (label) {
+    "Achado" -> Color(0xFFE0457B); "Perdido" -> Color(0xFFC2410C); "Pergunta" -> Color(0xFF3A5BA5); "Evento" -> Color(0xFFFF4F9A); else -> Color(0xFF1D9E75)
 }
