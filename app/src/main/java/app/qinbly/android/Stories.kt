@@ -69,6 +69,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -397,18 +398,9 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                     Text("Participar", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 16.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Color.White).clickable { contribTarget = current.parentId }.padding(vertical = 15.dp))
                 } else if (current.page == "story" && !isCollab) {
-                    if (entry.mine) {
-                        Row(
-                            Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0x55000000)).border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(26.dp)).clickable { showComments = true }.padding(horizontal = 20.dp, vertical = 13.dp),
-                            horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            QinblyIconOf(QinblyIcon.ChatBubbleOutline, Color.White, 20.dp)
-                            Text("  Ver comentários", color = Color.White, fontSize = 15.sp)
-                        }
-                    } else {
-                        QinblyStoryReplyBar(current.id, false, accent, Color(0x66000000), Color(0xCCFFFFFF), onNotice,
-                            onSent = { focusManager.clearFocus() }, onFocus = { replying = it })
-                    }
+                    // Sem comentários no story: quem vê só envia mensagem (texto) no privado da pessoa.
+                    if (!entry.mine) QinblyStoryMessageBar(entry.username, Color(0x66000000), Color(0xCCFFFFFF), onNotice,
+                        onSent = { focusManager.clearFocus() }, onFocus = { replying = it })
                 }
                 val showViews = entry.mine && current.page == "story"
                 val canDelete = (entry.mine && current.page != "invite") || (current.page == "contrib" && current.authorMine)
@@ -458,7 +450,6 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
         )
     }
 
-    if (showComments) QinblyStoryCommentsDialog(current.id, entry.mine, accent, QinblyApi.isCollabCaption(current.caption), onNotice) { showComments = false }
 
     if (showViewers) {
         val list = viewers
@@ -482,5 +473,42 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                 }
             }
         }
+    }
+}
+
+
+/** Mensagem de texto para o privado de quem postou o story (sem foto, áudio ou figurinha). */
+@Composable
+internal fun QinblyStoryMessageBar(username: String, fieldBg: Color, hintColor: Color, onNotice: (String) -> Unit, onSent: () -> Unit = {}, onFocus: (Boolean) -> Unit = {}) {
+    val onNotice: (String) -> Unit = qinblyToast(onNotice)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val token = remember { prefs.getString("token", null) }
+    var draft by remember { mutableStateOf("") }
+    var sending by remember { mutableStateOf(false) }
+    fun send() {
+        val body = draft.trim()
+        if (body.isBlank() || token.isNullOrBlank() || sending) return
+        sending = true
+        Thread {
+            val main = android.os.Handler(android.os.Looper.getMainLooper())
+            try {
+                QinblyApi.sendMessage(token, username, "Respondeu ao seu story: " + body.take(1000))
+                main.post { draft = ""; sending = false; onNotice("Mensagem enviada."); onSent() }
+            } catch (e: Exception) { main.post { sending = false; onNotice(e.message ?: "Não foi possível enviar a mensagem.") } }
+        }.start()
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box(Modifier.weight(1f).clip(RoundedCornerShape(26.dp)).background(fieldBg).padding(horizontal = 18.dp, vertical = 14.dp)) {
+            if (draft.isEmpty()) Text("Enviar mensagem…", color = hintColor, fontSize = 15.sp)
+            androidx.compose.foundation.text.BasicTextField(
+                draft, { draft = it.take(1000) },
+                textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 15.sp),
+                cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.White), maxLines = 3,
+                modifier = Modifier.fillMaxWidth().onFocusChanged { onFocus(it.isFocused) }
+            )
+        }
+        val ready = draft.isNotBlank() && !sending
+        Box(Modifier.size(46.dp).clip(CircleShape).background(if (ready) Color(0xFF1877F2) else Color(0x66000000)).clickable(enabled = ready) { send() }, contentAlignment = Alignment.Center) { QinblySendIcon(Color.White, 20.dp) }
     }
 }
