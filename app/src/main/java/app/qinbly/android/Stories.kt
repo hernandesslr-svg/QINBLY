@@ -567,10 +567,7 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
     val list = viewers
     QinblyFullScreen("Seu story", onDismiss, scroll = false) {
         if (list == null) { Box(Modifier.fillMaxWidth().padding(vertical = 28.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = accent, modifier = Modifier.size(28.dp)) }; return@QinblyFullScreen }
-        val card = Color(0xFF1C1C20)
         fun near(v: QinblyApi.StoryViewer): Boolean { val c = cities[v.username].orEmpty(); return c.isNotBlank() && ownerCity.isNotBlank() && c.equals(ownerCity, ignoreCase = true) }
-        val perto = list.filter { near(it) }
-        val longe = list.filterNot { near(it) }
         // Barras do gráfico: 12 faixas de 2 h desde que o story foi postado.
         val start = try { java.time.OffsetDateTime.parse(createdAt).toInstant().toEpochMilli() } catch (_: Exception) { 0L }
         val buckets = IntArray(12)
@@ -593,54 +590,53 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
                 }
                 if (v.username in likedBy) QinblyIconOf(QinblyIcon.Favorite, Color(0xFFE5484D), 20.dp)
             }
+            androidx.compose.material3.HorizontalDivider(Modifier.padding(start = 60.dp), color = Color(0xFF1E1E23))
         }
+        val line = Color(0xFF2A2A30)
         LazyColumn(Modifier.fillMaxSize().padding(horizontal = 22.dp)) {
             item {
-                Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Column(Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(card).padding(18.dp)) {
-                        Text(list.size.toString(), color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(list.size.toString(), color = Color.White, fontSize = 52.sp, fontWeight = FontWeight.Bold, letterSpacing = (-2).sp)
                         Text("viram", color = Color(0xFF8E87A8), fontSize = 14.sp)
                     }
-                    Column(Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(card).padding(18.dp)) {
+                    Box(Modifier.width(1.dp).height(72.dp).background(line))
+                    Column(Modifier.weight(1f).padding(start = 28.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(likedBy.size.toString(), color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                            Text(likedBy.size.toString(), color = Color.White, fontSize = 52.sp, fontWeight = FontWeight.Bold, letterSpacing = (-2).sp)
                             Spacer(Modifier.width(8.dp))
-                            QinblyIconOf(QinblyIcon.Favorite, Color(0xFFE5484D), 22.dp)
+                            QinblyIconOf(QinblyIcon.Favorite, Color(0xFFE5484D), 24.dp)
                         }
-                        Text("curtiram", color = Color(0xFF8E87A8), fontSize = 14.sp)
+                        Text("curtiram" + if (list.isNotEmpty() && likedBy.isNotEmpty()) " · ${likedBy.size * 100 / list.size}%" else "", color = Color(0xFF8E87A8), fontSize = 14.sp)
                     }
                 }
+                androidx.compose.material3.HorizontalDivider(Modifier.padding(top = 18.dp), color = line)
             }
             if (list.isNotEmpty()) item {
-                Column(Modifier.fillMaxWidth().padding(top = 22.dp)) {
-                    Text("Quando viram", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Row(Modifier.fillMaxWidth().height(96.dp).padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
+                Column(Modifier.fillMaxWidth().padding(top = 18.dp)) {
+                    Text("Quando viram", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Row(Modifier.fillMaxWidth().height(90.dp).padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
                         for (i in 0 until 12) {
-                            val h = (4 + 80f * buckets[i] / maxB).dp
-                            Box(Modifier.weight(1f).height(h).clip(RoundedCornerShape(6.dp)).background(if (i == peak && buckets[i] > 0) Color(0xFF1877F2) else Color(0xFF2B3A5C)))
+                            val h = (4 + 76f * buckets[i] / maxB).dp
+                            Box(Modifier.weight(1f).height(h).clip(RoundedCornerShape(6.dp)).background(if (i == peak && buckets[i] > 0) Color(0xFF4C7BD6) else Color(0xFF25304A)))
                         }
                     }
                     Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                        Text("início", color = Color(0xFF8E87A8), fontSize = 12.sp, modifier = Modifier.weight(1f))
-                        if (buckets[peak] > 0) Text("Pico: entre ${peak * 2}h e ${peak * 2 + 2}h depois de postar", color = Color(0xFF6AA6F8), fontSize = 12.sp)
-                        Text("24 h", color = Color(0xFF8E87A8), fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                        Text("início", color = Color(0xFF6E6E78), fontSize = 12.sp, modifier = Modifier.weight(1f))
+                        Text("24 h", color = Color(0xFF6E6E78), fontSize = 12.sp)
                     }
                 }
+                androidx.compose.material3.HorizontalDivider(Modifier.padding(top = 14.dp), color = line)
             }
             if (list.isEmpty()) item { Text("Ninguém viu ainda.", color = Color(0xFFA9B5C8), fontSize = 15.sp, modifier = Modifier.padding(vertical = 24.dp)) }
-            if (perto.isNotEmpty()) {
-                item { Row(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 4.dp)) {
-                    Text("Perto de você", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
-                    Text("${perto.size} pessoa" + if (perto.size > 1) "s" else "", color = Color(0xFF8E87A8), fontSize = 13.sp)
+            else {
+                item { Row(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 4.dp)) {
+                    Text("Quem viu", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                    Text("${list.size} pessoa" + if (list.size > 1) "s" else "", color = Color(0xFF6E6E78), fontSize = 13.sp)
                 } }
-                items(perto, key = { "p" + it.username }) { Person(it, "Sua cidade") }
-            }
-            if (longe.isNotEmpty()) {
-                item { Row(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 4.dp)) {
-                    Text("De mais longe", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
-                    Text("${longe.size} pessoa" + if (longe.size > 1) "s" else "", color = Color(0xFF8E87A8), fontSize = 13.sp)
-                } }
-                items(longe, key = { "l" + it.username }) { v -> Person(v, cities[v.username]?.substringBefore(",") ?: "Cidade não informada") }
+                items(list, key = { it.username }) { v ->
+                    Person(v, if (near(v)) "Sua cidade" else cities[v.username]?.substringBefore(",") ?: "Cidade não informada")
+                }
             }
             item { Spacer(Modifier.height(40.dp)) }
         }
