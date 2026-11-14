@@ -134,6 +134,7 @@ private fun uploadMarketPhoto(context: Context, token: String, userId: String, u
 }
 
 /** Tela "Perto de mim" depois que a localização foi encontrada: categorias em cima, anúncios embaixo e "+" para publicar. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 internal fun QinblyNearbyHub(
     lat: Double, lng: Double, place: String, textColor: Color, secondary: Color,
@@ -211,17 +212,18 @@ internal fun QinblyNearbyHub(
                     Text("Anúncios somem em 7 dias", color = secondary, fontSize = 11.sp, modifier = Modifier.padding(start = 6.dp, top = 2.dp))
                 }
             }
-            Text("↻", fontSize = 22.sp, color = textColor, modifier = Modifier.clip(CircleShape).clickable { refresh++; onRefreshLocation() }.padding(8.dp))
         }
         if (mine == null) LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(vertical = 6.dp)) {
             items(marketCategories) { name ->
                 val selected = name == cat
-                Text(
-                    name, color = if (selected) QiblyTheme.background else secondary, fontSize = 13.sp,
-                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                    modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (selected) QiblyTheme.text else QiblyTheme.soft)
-                        .clickable { cat = name }.padding(horizontal = 14.dp, vertical = 8.dp)
-                )
+                val (emoji, tone) = chipStyle(name)
+                Row(
+                    Modifier.clip(RoundedCornerShape(20.dp)).background(if (selected) QiblyTheme.text else QiblyTheme.soft).clickable { cat = name }.padding(start = 6.dp, end = 14.dp, top = 5.dp, bottom = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(Modifier.size(24.dp).clip(CircleShape).background(tone), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 12.sp) }
+                    Text(name, color = if (selected) QiblyTheme.background else secondary, fontSize = 13.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.padding(start = 7.dp))
+                }
             }
         }
         if (cat == "Achados" && mine == null) {
@@ -241,29 +243,73 @@ internal fun QinblyNearbyHub(
                 QinblyNeighborhoodBoard(lat, lng, place, textColor, secondary, onRefreshLocation = onRefreshLocation, onNotice = onNotice)
             } else {
                 val list = listings
-                when {
-                    list == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Carregando…", color = secondary) }
-                    failed -> Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                        Text("Não foi possível carregar os anúncios", color = textColor, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center)
-                        Text("Confira a internet e tente de novo.", color = secondary, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
-                        Text("Tentar de novo", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp,
-                            modifier = Modifier.padding(top = 14.dp).clip(RoundedCornerShape(20.dp)).background(MarketBlue).clickable { refresh++ }.padding(horizontal = 20.dp, vertical = 10.dp))
-                    }
-                    list.isEmpty() -> Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                        Text(if (mine != null) "Você ainda não publicou nada" else "Nada por perto ainda", color = textColor, fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                        Text("Abra o menu (três tracinhos) e toque em Novo anúncio.", color = secondary, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
-                    }
-                    else -> LazyVerticalGrid(
-                        columns = GridCells.Fixed(2), contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()
-                    ) {
-                        gridItems(list, key = { it.id }) { l -> ListingTile(l, cat == "Tudo", textColor, secondary) { open = l } }
+                var pulling by remember { mutableStateOf(false) }
+                LaunchedEffect(listings, failed) { if (listings != null || failed) pulling = false }
+                androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+                    isRefreshing = pulling, onRefresh = { pulling = true; refresh++ }, modifier = Modifier.fillMaxSize()
+                ) {
+                    when {
+                        list == null -> Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.Center) { Text("Carregando…", color = secondary, modifier = Modifier.padding(top = 120.dp)) }
+                        failed -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                            Text("Não foi possível carregar os anúncios", color = textColor, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center)
+                            Text("Puxe a tela para baixo ou toque abaixo para tentar de novo.", color = secondary, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
+                            Text("Tentar de novo", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp,
+                                modifier = Modifier.padding(top = 14.dp).clip(RoundedCornerShape(20.dp)).background(MarketBlue).clickable { refresh++ }.padding(horizontal = 20.dp, vertical = 10.dp))
+                        }
+                        list.isEmpty() && mine != null -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                            Text(if (mine == "saved") "Nenhum anúncio salvo ainda" else "Você ainda não publicou nada", color = textColor, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                            Text("Abra o menu (três tracinhos) e toque em Novo anúncio.", color = secondary, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
+                        }
+                        list.isEmpty() -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                            Box(Modifier.size(124.dp).clip(CircleShape).background(MarketBlue.copy(alpha = 0.22f)), contentAlignment = Alignment.Center) {
+                                Box(Modifier.size(84.dp).clip(CircleShape).background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(MarketBlue, Color(0xFF7C4DFF)))), contentAlignment = Alignment.Center) {
+                                    Text("+", color = Color.White, fontSize = 44.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            Text("Seja o primeiro de " + city.substringBefore(",").ifBlank { "sua cidade" }, color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 22.dp))
+                            Text("Venda, doe ou avise algo para os vizinhos.", color = secondary, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
+                            Text("Publicar anúncio", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp,
+                                modifier = Modifier.padding(top = 18.dp).clip(RoundedCornerShape(26.dp)).background(MarketBlue).clickable { showMenu = true }.padding(horizontal = 34.dp, vertical = 13.dp))
+                            Row(Modifier.padding(top = 26.dp), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
+                                for ((label, emoji, tone, key) in listOf(
+                                    listOf("Vender", "\uD83D\uDCB2", 0xFF3A5BA5, "venda"), listOf("Doar", "\uD83C\uDF81", 0xFF1D9E75, "doacao"),
+                                    listOf("Achados", "\uD83D\uDD0E", 0xFFE0457B, "achado"), listOf("Eventos", "\uD83C\uDF89", 0xFFFF4F9A, "evento")
+                                ).map { Quad(it[0] as String, it[1] as String, it[2] as Long, it[3] as String) }) {
+                                    Column(Modifier.clickable { createKind = key }, horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Box(Modifier.size(46.dp).clip(CircleShape).background(Color(tone)), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 20.sp) }
+                                        Text(label, color = textColor, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))
+                                    }
+                                }
+                            }
+                        }
+                        else -> LazyVerticalGrid(
+                            columns = GridCells.Fixed(2), contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxSize()
+                        ) {
+                            val donations = list.count { it.kind == "doacao" }
+                            if (cat == "Tudo" && mine == null && donations > 0) item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                                Row(
+                                    Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFF1D9E75), Color(0xFF2DD4BF))))
+                                        .clickable { cat = "Doações" }.padding(horizontal = 18.dp, vertical = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text("Doações perto de você", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                                        Text(if (donations == 1) "1 item de graça" else "$donations itens de graça", color = Color(0xFFE6FFF5), fontSize = 12.sp)
+                                    }
+                                    Text("›", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            if (cat == "Tudo" && mine == null) item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                                Text("Recentes", color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp, top = 6.dp))
+                            }
+                            gridItems(list, key = { it.id }) { l -> ListingTile(l, cat == "Tudo", textColor, secondary) { open = l } }
+                        }
                     }
                 }
             }
         }
     }
-
 
     if (showDrawer) {
         QinblyDialog(onDismissRequest = { showDrawer = false }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
@@ -416,7 +462,7 @@ internal fun QinblyNearbyHub(
 
 @Composable
 private fun ListingTile(l: QinblyListing, showTag: Boolean, textColor: Color, secondary: Color, onClick: () -> Unit) {
-    Column(Modifier.fillMaxWidth().clickable { onClick() }) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(QiblyTheme.card).clickable { onClick() }.padding(6.dp)) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)).background(QiblyTheme.soft)) {
             if (l.photos.isNotEmpty()) AsyncImage(model = photoUrl(l.photos.first()), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
             else Box(Modifier.fillMaxSize().background(kindColor(l.kind).copy(alpha = 0.55f)), contentAlignment = Alignment.Center) {
@@ -425,9 +471,9 @@ private fun ListingTile(l: QinblyListing, showTag: Boolean, textColor: Color, se
             if (showTag) Text(kindLabel(l.kind), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(6.dp).clip(RoundedCornerShape(9.dp)).background(Color(0x99000000)).padding(horizontal = 7.dp, vertical = 3.dp))
         }
-        Text(priceText(l), color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
-        Text(l.title, color = textColor, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(qinblyAgo(l.createdAt), color = secondary, fontSize = 11.sp, maxLines = 1)
+        Text(priceText(l), color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 4.dp, top = 8.dp))
+        Text(l.title, color = textColor, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 4.dp))
+        Text((l.city.substringBefore(",").ifBlank { "" }.let { if (it.isNotBlank()) "$it • " else "" }) + qinblyAgo(l.createdAt), color = secondary, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 4.dp))
     }
 }
 
@@ -635,3 +681,13 @@ private fun CityRow(name: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 private data class Quad(val a: String, val b: String, val c: Long, val d: String)
+
+private fun chipStyle(name: String): Pair<String, Color> = when (name) {
+    "Tudo" -> "\u2728" to Color(0xFF7C4DFF)
+    "Vendas" -> "\uD83D\uDCB2" to Color(0xFF3A5BA5)
+    "Doações" -> "\uD83C\uDF81" to Color(0xFF1D9E75)
+    "Achados" -> "\uD83D\uDD0E" to Color(0xFFE0457B)
+    "Eventos" -> "\uD83C\uDF89" to Color(0xFFFF4F9A)
+    "Serviços" -> "\uD83D\uDEE0\uFE0F" to Color(0xFF2F6FDB)
+    else -> "\uD83D\uDCAC" to Color(0xFF6B7280)
+}
