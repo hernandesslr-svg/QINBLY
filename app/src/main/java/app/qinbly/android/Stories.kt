@@ -381,7 +381,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                         if (music != null) QinblyMusicLine(music)
                     }
                     if (music != null) {
-                        Text(if (muted) "🔇" else "🔊", fontSize = 20.sp, modifier = Modifier.clip(CircleShape).clickable { muted = !muted }.padding(horizontal = 8.dp, vertical = 4.dp))
+                        QinblyIconOf(if (muted) androidx.compose.material.icons.Icons.Filled.VolumeOff else androidx.compose.material.icons.Icons.Filled.VolumeUp, Color.White, 28.dp, Modifier.clip(CircleShape).clickable { muted = !muted }.padding(horizontal = 6.dp, vertical = 4.dp))
                         QinblyMusicPlayer(music.url, muted, paused = showViewers || showComments || replying || contribTarget.isNotBlank())
                     }
                     Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.White, modifier = Modifier.size(28.dp).clickable { onDismiss() })
@@ -398,8 +398,13 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Color.White).clickable { contribTarget = current.parentId }.padding(vertical = 15.dp))
                 } else if (current.page == "story" && !isCollab) {
                     if (entry.mine) {
-                        Text("💬  Ver comentários", color = Color.White, fontSize = 15.sp,
-                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0x55000000)).border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(26.dp)).clickable { showComments = true }.padding(horizontal = 20.dp, vertical = 13.dp))
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0x55000000)).border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(26.dp)).clickable { showComments = true }.padding(horizontal = 20.dp, vertical = 13.dp),
+                            horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            QinblyIconOf(androidx.compose.material.icons.Icons.Filled.ChatBubbleOutline, Color.White, 20.dp)
+                            Text("  Ver comentários", color = Color.White, fontSize = 15.sp)
+                        }
                     } else {
                         QinblyStoryReplyBar(current.id, false, accent, Color(0x66000000), Color(0xCCFFFFFF), onNotice,
                             onSent = { focusManager.clearFocus() }, onFocus = { replying = it })

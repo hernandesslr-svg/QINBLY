@@ -140,7 +140,7 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
     QinblyDialog(onDismissRequest = { tryExit() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnBackPress = false), lift = false) {
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(qinblyTextBgs[bg]))) {
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x33000000)).clickable { tryExit() }, contentAlignment = Alignment.Center) { Text("✕", color = Color.White, fontSize = 18.sp) }
+                Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x33000000)).clickable { tryExit() }, contentAlignment = Alignment.Center) { QinblyCloseIcon(Color.White, 22.dp) }
                 Spacer(Modifier.weight(1f))
                 Text(if (sending) "Publicando…" else if (onCompose != null) "Continuar" else if (contributeTo != null) "Enviar" else "Publicar", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
                     modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color.White).clickable(enabled = !sending) {
@@ -153,9 +153,9 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
                     Box(Modifier.size(42.dp).clip(CircleShape).background(if (on) Color.White else Color(0x44000000)).clickable { onClick() }, contentAlignment = Alignment.Center) { content() }
                 }
                 Tool(showFonts, { showFonts = !showFonts; if (showFonts) showEmojis = false }) { Text("Aa", color = if (showFonts) Color(0xFF26215C) else Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp) }
-                Tool(showBgs, { showBgs = !showBgs }) { Text("🎨", fontSize = 18.sp) }
-                Tool(false, { align = (align + 1) % 3 }) { Text(when (align) { 0 -> "⇤"; 2 -> "⇥"; else -> "↔" }, color = Color.White, fontSize = 18.sp) }
-                Tool(showEmojis, { showEmojis = !showEmojis; if (showEmojis) showFonts = false }) { Text("😊", fontSize = 18.sp) }
+                Tool(showBgs, { showBgs = !showBgs }) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Palette, Color.White, 22.dp) }
+                Tool(false, { align = (align + 1) % 3 }) { QinblyIconOf(when (align) { 0 -> androidx.compose.material.icons.Icons.Filled.FormatAlignLeft; 2 -> androidx.compose.material.icons.Icons.Filled.FormatAlignRight; else -> androidx.compose.material.icons.Icons.Filled.FormatAlignCenter }, Color.White, 22.dp) }
+                Tool(showEmojis, { showEmojis = !showEmojis; if (showEmojis) showFonts = false }) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.EmojiEmotions, Color.White, 22.dp) }
             }
             Box(Modifier.fillMaxSize().statusBarsPadding().padding(top = 60.dp, bottom = 190.dp).padding(start = 24.dp, end = 64.dp), contentAlignment = Alignment.Center) {
                 Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
@@ -327,10 +327,10 @@ internal fun QinblyStoryReplyBar(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (recording) {
                         Box(Modifier.weight(1f).clip(RoundedCornerShape(26.dp)).background(Color(0xFF3A2236)).padding(horizontal = 18.dp, vertical = 15.dp)) {
-                            Text("🔴  Gravando… (até 30 s)", color = Color.White, fontSize = 15.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(10.dp).clip(CircleShape).background(Color(0xFFE5484D))); Text("  Gravando… (até 30 s)", color = Color.White, fontSize = 15.sp) }
                         }
-                        Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF2E2E30)).clickable { stopRec(false) }, contentAlignment = Alignment.Center) { Text("✕", color = Color.White, fontSize = 17.sp) }
-                        Box(Modifier.size(46.dp).clip(CircleShape).background(accent).clickable { stopRec(true) }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, fontSize = 18.sp) }
+                        Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF2E2E30)).clickable { stopRec(false) }, contentAlignment = Alignment.Center) { QinblyCloseIcon(Color.White, 21.dp) }
+                        Box(Modifier.size(46.dp).clip(CircleShape).background(accent).clickable { stopRec(true) }, contentAlignment = Alignment.Center) { QinblySendIcon(Color.White, 21.dp) }
                     } else {
                         Box(Modifier.weight(1f).clip(RoundedCornerShape(26.dp)).background(fieldBg).padding(horizontal = 18.dp, vertical = 13.dp)) {
                             if (draft.isEmpty()) Text(if (collab) "Adicionar ao story…" else "Comentar no story…", color = hintColor, fontSize = 15.sp)
@@ -340,8 +340,8 @@ internal fun QinblyStoryReplyBar(
                         if (draft.isBlank()) Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF2E2E30)).clickable {
                             if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) startRec()
                             else micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
-                        }, contentAlignment = Alignment.Center) { Text("🎙", fontSize = 18.sp) }
-                        else Box(Modifier.size(46.dp).clip(CircleShape).background(accent).clickable { send() }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, fontSize = 18.sp) }
+                        }, contentAlignment = Alignment.Center) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Mic, Color.White, 22.dp) }
+                        else Box(Modifier.size(46.dp).clip(CircleShape).background(accent).clickable { send() }, contentAlignment = Alignment.Center) { QinblySendIcon(Color.White, 21.dp) }
                     }
                 }
 }

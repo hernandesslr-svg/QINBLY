@@ -4343,7 +4343,7 @@ private fun QinblyCommentsDialog(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text("Respondendo a @${target.username}", color = RemoteAppearance.commentSecondaryTextColor, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                                Text("✕", color = RemoteAppearance.commentSecondaryTextColor, modifier = Modifier.clickable { replyTo = null; commentDraft = "" }.padding(6.dp))
+                                QinblyCloseIcon(RemoteAppearance.commentSecondaryTextColor, 16.dp, modifier = Modifier.clickable { replyTo = null; commentDraft = "" }.padding(6.dp))
                             }
                         }
                         HorizontalDivider(color = RemoteAppearance.commentDividerColor)
@@ -4769,7 +4769,7 @@ private fun QinblyPostCard(
                                         Modifier.size(28.dp).background(QinblyBrand.Accent, CircleShape),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("✓", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                                        QinblyCheckIcon(Color.White, 20.dp)
                                     }
                                 }
                             }
@@ -4922,7 +4922,7 @@ private fun QinblyPostMenu(
         )
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        if (post.pinned) Text("📌", fontSize = 15.sp)
+        if (post.pinned) QinblyIconOf(androidx.compose.material.icons.Icons.Filled.PushPin, QiblyTheme.secondary, 18.dp)
         IconButton(onClick = { expanded = true }) {
             if (tint != null) Icon(Icons.Default.MoreVert, contentDescription = "Opções da publicação", tint = tint)
             else Icon(Icons.Default.MoreVert, contentDescription = "Opções da publicação")
@@ -5216,7 +5216,7 @@ private fun QiblyShareDialog(
                                     QiblyAccountAvatar(username, "", 62.dp) { if (picked) chosen.remove(username) else chosen.add(username) }
                                 }
                                 if (picked) Box(Modifier.size(22.dp).background(QinblyBrand.Accent, CircleShape), contentAlignment = Alignment.Center) {
-                                    Text("✓", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    QinblyCheckIcon(Color.White, 16.dp)
                                 }
                             }
                             Text(name.ifBlank { username }, color = QiblyTheme.text, fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
@@ -5253,7 +5253,7 @@ private fun QiblyShareDialog(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(Modifier.size(52.dp).background(QinblyBrand.Accent.copy(alpha = 0.12f), CircleShape), contentAlignment = Alignment.Center) {
-                            Text("🔗", fontSize = 22.sp)
+                            QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Link, QinblyBrand.Accent, 26.dp)
                         }
                         Text("Copiar link", color = QiblyTheme.text, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                     }
@@ -6028,7 +6028,7 @@ private fun QinblyRankRow(rank: Int, post: QinblyApi.PostSummary, onClick: () ->
         Column(Modifier.weight(1f)) {
             Text(post.displayName.ifBlank { post.username }, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
             if (post.caption.isNotBlank()) Text(post.caption, color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-            Text("♥ ${QinblyEngagement.likeCount(post)}  ·  💬 ${post.comments}", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 13.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Favorite, RemoteAppearance.feedSecondaryTextColor, 15.dp); Text(" ${QinblyEngagement.likeCount(post)}   ", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 13.sp); QinblyIconOf(androidx.compose.material.icons.Icons.Filled.ChatBubble, RemoteAppearance.feedSecondaryTextColor, 15.dp); Text(" ${post.comments}", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 13.sp) }
         }
     }
 }
@@ -7773,7 +7773,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             messages.firstOrNull { it.id == pinnedId }?.let { pm ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(12.dp)).background(QiblyTheme.soft).padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("Fixada: " + qinblyMessageSnippet(pm), color = QiblyTheme.text, fontSize = 13.sp, maxLines = 1, modifier = Modifier.weight(1f))
-                    Text("✕", color = QiblyTheme.secondary, modifier = Modifier.clickable {
+                    QinblyCloseIcon(QiblyTheme.secondary, 16.dp, modifier = Modifier.clickable {
                         pinnedId = ""
                         context.getSharedPreferences("qinbly_pins", android.content.Context.MODE_PRIVATE).edit().putString("pin_" + recipientUsername, "").apply()
                     }.padding(start = 10.dp))
@@ -7911,7 +7911,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             replyingTo?.let { rt ->
                 Row(Modifier.fillMaxWidth().padding(top = 6.dp).clip(RoundedCornerShape(12.dp)).background(QiblyTheme.soft).padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("Respondendo: " + qinblyMessageSnippet(rt), color = QiblyTheme.text, fontSize = 13.sp, maxLines = 1, modifier = Modifier.weight(1f))
-                    Text("✕", color = QiblyTheme.secondary, modifier = Modifier.clickable { replyingTo = null }.padding(start = 10.dp))
+                    QinblyCloseIcon(QiblyTheme.secondary, 16.dp, modifier = Modifier.clickable { replyingTo = null }.padding(start = 10.dp))
                 }
             }
             if (recordingVoice) {
@@ -8244,7 +8244,7 @@ private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolea
                     })
         }
         if (textStory?.collab == true) {
-            Text("👥 Coletivo", color = Color(0xFF26215C), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).clip(RoundedCornerShape(12.dp)).background(Color.White).padding(horizontal = 8.dp, vertical = 3.dp))
+            Row(Modifier.align(Alignment.TopEnd).padding(8.dp).clip(RoundedCornerShape(12.dp)).background(Color.White).padding(horizontal = 8.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Groups, Color(0xFF26215C), 14.dp); Text(" Coletivo", color = Color(0xFF26215C), fontSize = 11.sp, fontWeight = FontWeight.SemiBold) }
             if (collabAvatars.isNotEmpty()) Row(Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = if (showAvatar) 54.dp else 40.dp)) {
                 collabAvatars.take(3).forEach { url ->
                     Box(Modifier.padding(end = 0.dp).offset(x = 0.dp).size(24.dp).clip(CircleShape).background(QiblyTheme.soft).border(1.5.dp, Color.White, CircleShape)) {
@@ -9690,7 +9690,7 @@ private fun SettingsLink(title: String, subtitle: String, icon: androidx.compose
                 Text(title, fontWeight = FontWeight.Medium, color = QiblyTheme.text, fontSize = 15.sp)
                 Text(subtitle, color = Muted, fontSize = 12.sp, lineHeight = 15.sp)
             }
-            Text("›", color = Muted, fontSize = 22.sp)
+            QinblyIconOf(androidx.compose.material.icons.Icons.Filled.KeyboardArrowRight, Muted, 26.dp)
         }
         androidx.compose.material3.HorizontalDivider(color = QiblyTheme.border, thickness = 0.5.dp)
     }
@@ -12446,8 +12446,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 Column(Modifier.weight(1f).height(140.dp).clip(RoundedCornerShape(14.dp)).background(QinblyBrand.Accent.copy(alpha = 0.06f)).padding(12.dp)) {
                     QinblyLegendField(capState, 2200, "Escreva uma legenda…", QiblyTheme.text, 15.sp, Modifier.fillMaxWidth().weight(1f)) { caption = it; captionCursor = it.length }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text("😊", fontSize = 22.sp, modifier = Modifier.clip(CircleShape).background(if (showCapEmojis) QinblyBrand.Accent.copy(alpha = 0.25f) else Color.Transparent).clickable { showCapEmojis = !showCapEmojis }.padding(horizontal = 6.dp, vertical = 2.dp))
-                        if (QinblyComposeSeed.story) Text("🎵", fontSize = 22.sp, modifier = Modifier.clip(CircleShape).background(if (storyMusic != null) QinblyBrand.Accent.copy(alpha = 0.25f) else Color.Transparent).clickable { showMusicPicker = true }.padding(horizontal = 6.dp, vertical = 2.dp))
+                        QinblyIconOf(androidx.compose.material.icons.Icons.Filled.EmojiEmotions, QiblyTheme.text, 26.dp, Modifier.clip(CircleShape).background(if (showCapEmojis) QinblyBrand.Accent.copy(alpha = 0.25f) else Color.Transparent).clickable { showCapEmojis = !showCapEmojis }.padding(horizontal = 4.dp, vertical = 2.dp))
+                        if (QinblyComposeSeed.story) QinblyIconOf(androidx.compose.material.icons.Icons.Filled.MusicNote, QiblyTheme.text, 26.dp, Modifier.clip(CircleShape).background(if (storyMusic != null) QinblyBrand.Accent.copy(alpha = 0.25f) else Color.Transparent).clickable { showMusicPicker = true }.padding(horizontal = 4.dp, vertical = 2.dp))
                         Spacer(Modifier.weight(1f))
                         Text("${caption.length} / 2200", color = Color.Gray, style = MaterialTheme.typography.labelSmall)
                     }
@@ -12456,7 +12456,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             val sm = storyMusic
             if (sm != null && QinblyComposeSeed.story) Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(QinblyBrand.Accent.copy(alpha = 0.10f)).padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 QinblyMusicLine(sm, Modifier.weight(1f), QiblyTheme.text)
-                Text("✕", color = QiblyTheme.text, fontSize = 14.sp, modifier = Modifier.clickable { storyMusic = null }.padding(10.dp))
+                QinblyCloseIcon(QiblyTheme.text, 19.dp, modifier = Modifier.clickable { storyMusic = null }.padding(10.dp))
             }
             if (showMusicPicker) QinblyMusicPicker(onPick = { storyMusic = it; showMusicPicker = false }, onDismiss = { showMusicPicker = false })
             if (showCapEmojis) QinblyEmojiPanel(Modifier.clip(RoundedCornerShape(16.dp)), QiblyTheme.card) { e ->

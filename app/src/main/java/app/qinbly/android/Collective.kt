@@ -95,7 +95,7 @@ internal fun MediaThumb(uri: Uri, video: Boolean, modifier: Modifier, size: Int 
     val b = bmp
     if (b != null) Image(b.asImageBitmap(), contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop)
     else if (!video) AsyncImage(model = uri, contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop)
-    else Box(modifier.background(Color(0xFF262628)), contentAlignment = Alignment.Center) { Text("▶", color = Color.White, fontSize = 22.sp) }
+    else Box(modifier.background(Color(0xFF262628)), contentAlignment = Alignment.Center) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.PlayArrow, Color.White, 28.dp) }
 }
 
 /**
@@ -159,13 +159,17 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
             if (step == "gallery") {
                 Column(Modifier.fillMaxSize().statusBarsPadding()) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable { onDismiss() }, contentAlignment = Alignment.Center) { Text("✕", color = Color.White, fontSize = 18.sp) }
+                        Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable { onDismiss() }, contentAlignment = Alignment.Center) { QinblyCloseIcon(Color.White, 22.dp) }
                         Text("Recentes", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f).padding(end = 40.dp))
                     }
                     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         @Composable fun Chip(label: String, onClick: () -> Unit, mod: Modifier) {
                             Box(mod.clip(RoundedCornerShape(22.dp)).background(Color(0xFF3A2D6B)).clickable { onClick() }.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
-                                Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    val ic = when { label.startsWith("📷") -> androidx.compose.material.icons.Icons.Filled.PhotoCamera; label.startsWith("Aa") -> androidx.compose.material.icons.Icons.Filled.TextFields; else -> null }
+                                    if (ic != null) { QinblyIconOf(ic, Color.White, 20.dp); Spacer(Modifier.width(8.dp)) }
+                                    Text(label.substringAfter("  "), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                                }
                             }
                         }
                         Chip("📷  Câmera", { onCamera() }, Modifier.weight(1f))
@@ -186,7 +190,7 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                             items(items, key = { it.uri.toString() }) { g ->
                                 Box(Modifier.aspectRatio(1f).clickable { qinblySetPickedMedia(g.uri, g.video); onCamera() }) {
                                     MediaThumb(g.uri, g.video, Modifier.fillMaxSize())
-                                    if (g.video) Text("▶", color = Color.White, fontSize = 14.sp, modifier = Modifier.align(Alignment.BottomStart).padding(6.dp))
+                                    if (g.video) QinblyIconOf(androidx.compose.material.icons.Icons.Filled.PlayArrow, Color.White, 20.dp, Modifier.align(Alignment.BottomStart).padding(6.dp))
                                 }
                             }
                         }
@@ -196,14 +200,14 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                 val item = picked
                 Column(Modifier.fillMaxSize().statusBarsPadding().imePadding().padding(bottom = if (showEmojis) 0.dp else qinblyNavBarPadding())) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable(enabled = !sending) { step = "gallery" }, contentAlignment = Alignment.Center) { Text("←", color = Color.White, fontSize = 18.sp) }
+                        Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable(enabled = !sending) { step = "gallery" }, contentAlignment = Alignment.Center) { QinblyBackIcon(Color.White, 22.dp) }
                     }
                     Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 14.dp), contentAlignment = Alignment.Center) {
                         if (item != null) MediaThumb(item.uri, item.video, Modifier.fillMaxSize().clip(RoundedCornerShape(18.dp)), size = 900)
                         val m = music
                         if (m != null) Row(Modifier.align(Alignment.TopStart).padding(10.dp).clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             QinblyMusicLine(m, Modifier.widthIn(max = 220.dp))
-                            Text("✕", color = Color.White, fontSize = 14.sp, modifier = Modifier.clickable { music = null }.padding(10.dp))
+                            QinblyCloseIcon(Color.White, 19.dp, modifier = Modifier.clickable { music = null }.padding(10.dp))
                         }
                     }
                     Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -212,8 +216,8 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                                 if (caption.isEmpty()) Text("Adicionar legenda…", color = Color(0xFF8E87A8), fontSize = 15.sp)
                                 BasicTextField(value = caption, onValueChange = { caption = it.take(300) }, textStyle = TextStyle(color = Color.White, fontSize = 15.sp), cursorBrush = SolidColor(Color.White), maxLines = 3, modifier = Modifier.fillMaxWidth())
                             }
-                            Box(Modifier.size(36.dp).clip(CircleShape).background(if (music != null) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = false; showMusic = true }, contentAlignment = Alignment.Center) { Text("🎵", fontSize = 19.sp) }
-                            Box(Modifier.size(36.dp).clip(CircleShape).background(if (showEmojis) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = !showEmojis }, contentAlignment = Alignment.Center) { Text("😊", fontSize = 20.sp) }
+                            Box(Modifier.size(36.dp).clip(CircleShape).background(if (music != null) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = false; showMusic = true }, contentAlignment = Alignment.Center) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.MusicNote, Color.White, 22.dp) }
+                            Box(Modifier.size(36.dp).clip(CircleShape).background(if (showEmojis) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = !showEmojis }, contentAlignment = Alignment.Center) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.EmojiEmotions, Color.White, 22.dp) }
                         }
                         Text(if (sending) "Enviando…" else if (newCollab) "Publicar story coletivo" else "Enviar ao coletivo", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 16.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Color.White).clickable(enabled = !sending) { confirm = true }.padding(vertical = 15.dp))

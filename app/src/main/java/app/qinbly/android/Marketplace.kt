@@ -245,7 +245,7 @@ internal fun QinblyNearbyHub(
                     Modifier.clip(RoundedCornerShape(20.dp)).background(if (selected) QiblyTheme.text else QiblyTheme.soft).clickable { cat = name }.padding(start = 6.dp, end = 14.dp, top = 5.dp, bottom = 5.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(Modifier.size(24.dp).clip(CircleShape).background(tone), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 12.sp) }
+                    Box(Modifier.size(24.dp).clip(CircleShape).background(tone), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 14.dp) }
                     Text(name, color = if (selected) QiblyTheme.background else secondary, fontSize = 13.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.padding(start = 7.dp))
                 }
             }
@@ -291,7 +291,7 @@ internal fun QinblyNearbyHub(
                         list.isEmpty() -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                             Box(Modifier.size(124.dp).clip(CircleShape).background(MarketBlue.copy(alpha = 0.22f)), contentAlignment = Alignment.Center) {
                                 Box(Modifier.size(84.dp).clip(CircleShape).background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(MarketBlue, Color(0xFF7C4DFF)))), contentAlignment = Alignment.Center) {
-                                    Text("+", color = Color.White, fontSize = 44.sp, fontWeight = FontWeight.Bold)
+                                    QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Add, Color.White, 48.dp)
                                 }
                             }
                             Text("Seja o primeiro de " + city.substringBefore(",").ifBlank { "sua cidade" }, color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 22.dp))
@@ -304,7 +304,7 @@ internal fun QinblyNearbyHub(
                                     listOf("Achados", "\uD83D\uDD0E", 0xFFE0457B, "achado"), listOf("Eventos", "\uD83C\uDF89", 0xFFFF4F9A, "evento")
                                 ).map { Quad(it[0] as String, it[1] as String, it[2] as Long, it[3] as String) }) {
                                     Column(Modifier.clickable { createKind = key }, horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Box(Modifier.size(46.dp).clip(CircleShape).background(Color(tone)), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 20.sp) }
+                                        Box(Modifier.size(46.dp).clip(CircleShape).background(Color(tone)), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 22.dp) }
                                         Text(label, color = textColor, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))
                                     }
                                 }
@@ -325,7 +325,7 @@ internal fun QinblyNearbyHub(
                                         Text("Doações perto de você", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                                         Text(if (donations == 1) "1 item de graça" else "$donations itens de graça", color = Color(0xFFE6FFF5), fontSize = 12.sp)
                                     }
-                                    Text("›", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                                    QinblyIconOf(androidx.compose.material.icons.Icons.Filled.KeyboardArrowRight, Color.White, 32.dp)
                                 }
                             }
                             if (cat == "Tudo" && mine == null) item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
@@ -367,7 +367,7 @@ internal fun QinblyNearbyHub(
                                 Modifier.weight(1f).clip(RoundedCornerShape(18.dp)).background(Color(0xFF262628)).clickable { showDrawer = false; mine = target }.padding(vertical = 14.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Box(Modifier.size(36.dp).clip(CircleShape).background(Color(color)), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 17.sp) }
+                                Box(Modifier.size(36.dp).clip(CircleShape).background(Color(color)), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 19.dp) }
                                 Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
                             }
                         }
@@ -383,16 +383,20 @@ internal fun QinblyNearbyHub(
                             }.padding(horizontal = 6.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(Modifier.size(34.dp).clip(CircleShape).background(Color(color)), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 16.sp) }
+                            Box(Modifier.size(34.dp).clip(CircleShape).background(Color(color)), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 18.dp) }
                             Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(start = 14.dp).weight(1f))
-                            Text("›", color = Color(0xFFA9B5C8), fontSize = 22.sp)
+                            QinblyIconOf(androidx.compose.material.icons.Icons.Filled.KeyboardArrowRight, Color(0xFFA9B5C8), 26.dp)
                         }
                     }
-                    if (mine != null) Text("← Voltar para Perto de mim", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF262628)).clickable { showDrawer = false; mine = null }.padding(horizontal = 16.dp, vertical = 14.dp))
+                    if (mine != null) Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF262628)).clickable { showDrawer = false; mine = null }.padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) { QinblyBackIcon(Color.White, 20.dp); Text("  Voltar para Perto de mim", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp) }
                     Spacer(Modifier.height(6.dp))
-                    Text("+ Novo anúncio", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(MarketBlue).clickable { showDrawer = false; showMenu = true }.padding(vertical = 14.dp))
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(MarketBlue).clickable { showDrawer = false; showMenu = true }.padding(vertical = 14.dp),
+                        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
+                    ) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Add, Color.White, 20.dp); Text(" Novo anúncio", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
                 }
             }
         }
@@ -473,7 +477,7 @@ internal fun QinblyNearbyHub(
                         Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         Text(sub2, color = Color(0xFFA9B5C8), fontSize = 12.sp)
                     }
-                    Text("›", color = Color(0xFFA9B5C8), fontSize = 22.sp)
+                    QinblyIconOf(androidx.compose.material.icons.Icons.Filled.KeyboardArrowRight, Color(0xFFA9B5C8), 26.dp)
                 }
             }
         }
@@ -514,7 +518,7 @@ private fun ListingDetail(
         Box(Modifier.fillMaxSize().background(QiblyTheme.background)) {
             Column(Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState())) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).clip(CircleShape).background(QiblyTheme.soft).clickable { onDismiss() }, contentAlignment = Alignment.Center) { Text("←", color = textColor, fontSize = 18.sp) }
+                    Box(Modifier.size(40.dp).clip(CircleShape).background(QiblyTheme.soft).clickable { onDismiss() }, contentAlignment = Alignment.Center) { QinblyBackIcon(textColor, 22.dp) }
                     Text(kindLabel(l.kind), color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.padding(start = 14.dp).weight(1f))
                     Text(if (saved) "Salvo" else "Salvar", color = if (saved) Color(0xFFFFC93C) else textColor, fontWeight = FontWeight.Bold, fontSize = 14.sp,
                         modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(QiblyTheme.soft).clickable { onSave() }.padding(horizontal = 16.dp, vertical = 9.dp))
@@ -594,7 +598,7 @@ private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPos
         Box(Modifier.fillMaxSize().background(QiblyTheme.background)) {
             Column(Modifier.fillMaxSize().statusBarsPadding().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).clip(CircleShape).background(QiblyTheme.soft).clickable { if (!posting) onDismiss() }, contentAlignment = Alignment.Center) { Text("✕", color = QiblyTheme.text, fontSize = 18.sp) }
+                    Box(Modifier.size(40.dp).clip(CircleShape).background(QiblyTheme.soft).clickable { if (!posting) onDismiss() }, contentAlignment = Alignment.Center) { QinblyCloseIcon(QiblyTheme.text, 22.dp) }
                     Text(heading, color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(start = 14.dp))
                 }
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -602,14 +606,14 @@ private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPos
                         Column(Modifier.size(92.dp).clip(RoundedCornerShape(14.dp)).background(QiblyTheme.soft).clickable {
                             picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                         }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                            Text("+", color = MarketBlue, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                            QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Add, MarketBlue, 34.dp)
                             Text("Foto", color = QiblyTheme.secondary, fontSize = 11.sp)
                         }
                     }
                     items(photos.toList()) { u ->
                         Box(Modifier.size(92.dp).clip(RoundedCornerShape(14.dp))) {
                             AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                            Text("✕", color = Color.White, fontSize = 12.sp, modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).clip(CircleShape).background(Color(0x99000000)).clickable { photos.remove(u) }.padding(horizontal = 7.dp, vertical = 3.dp))
+                            QinblyCloseIcon(Color.White, 17.dp, modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).clip(CircleShape).background(Color(0x99000000)).clickable { photos.remove(u) }.padding(horizontal = 7.dp, vertical = 3.dp))
                         }
                     }
                 }
@@ -687,7 +691,7 @@ private fun CityPicker(current: String, deviceCity: String, prefs: android.conte
                 Text("Usar minha localização", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 Text(deviceCity, color = Color(0xFFA9B5C8), fontSize = 12.sp)
             }
-            if (current == deviceCity) Text("✓", color = MarketBlue, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            if (current == deviceCity) QinblyCheckIcon(MarketBlue, 21.dp)
         }
         if (query.trim().length >= 3) {
             if (searching) Text("Buscando…", color = Color(0xFFA9B5C8), fontSize = 13.sp)
@@ -704,8 +708,29 @@ private fun CityPicker(current: String, deviceCity: String, prefs: android.conte
 private fun CityRow(name: String, selected: Boolean, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0xFF262628)).clickable { onClick() }.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(name, color = Color.White, fontSize = 15.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.weight(1f))
-        if (selected) Text("✓", color = MarketBlue, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        if (selected) QinblyCheckIcon(MarketBlue, 21.dp)
     }
+}
+
+/** Troca o emoji de categoria por um ícone de verdade. */
+@Composable
+private fun EmojiIcon(e: String, size: androidx.compose.ui.unit.Dp) {
+    val icon = when (e) {
+        "\uD83D\uDCB2" -> androidx.compose.material.icons.Icons.Filled.AttachMoney
+        "\uD83C\uDF81" -> androidx.compose.material.icons.Icons.Filled.CardGiftcard
+        "\uD83D\uDD0E" -> androidx.compose.material.icons.Icons.Filled.Search
+        "\uD83C\uDF89" -> androidx.compose.material.icons.Icons.Filled.Celebration
+        "\u2728" -> androidx.compose.material.icons.Icons.Filled.AutoAwesome
+        "\uD83D\uDEE0\uFE0F" -> androidx.compose.material.icons.Icons.Filled.Build
+        "\uD83D\uDCAC" -> androidx.compose.material.icons.Icons.Filled.ChatBubble
+        "\uD83C\uDFF7\uFE0F" -> androidx.compose.material.icons.Icons.Filled.Sell
+        "\uD83D\uDD16" -> androidx.compose.material.icons.Icons.Filled.Bookmark
+        "\uD83D\uDCCD" -> androidx.compose.material.icons.Icons.Filled.LocationOn
+        "\uD83D\uDEE1\uFE0F" -> androidx.compose.material.icons.Icons.Filled.Shield
+        "\uD83D\uDCCB" -> androidx.compose.material.icons.Icons.Filled.Assignment
+        else -> androidx.compose.material.icons.Icons.Filled.Info
+    }
+    androidx.compose.material3.Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(size))
 }
 
 private data class Quad(val a: String, val b: String, val c: Long, val d: String)

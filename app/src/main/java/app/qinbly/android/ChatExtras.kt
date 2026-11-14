@@ -147,7 +147,7 @@ internal fun QinblyTagPeopleDialog(token: String?, initial: List<String>, accent
                                 Text(user.displayName.ifBlank { user.username }, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                 Text("@" + user.username, fontSize = 12.sp, color = Color.Gray)
                             }
-                            if (on) Text("✓", color = accent, fontWeight = FontWeight.Bold)
+                            if (on) QinblyCheckIcon(accent, 18.dp)
                         }
                     }
                 }

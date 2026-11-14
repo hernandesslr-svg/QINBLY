@@ -120,6 +120,17 @@ internal fun qinblyToast(@Suppress("UNUSED_PARAMETER") original: (String) -> Uni
     return { m -> android.widget.Toast.makeText(ctx, m, android.widget.Toast.LENGTH_LONG).show() }
 }
 
+
+// ───────── Ícones de verdade no lugar de símbolos/emojis usados como botão ─────────
+private fun glyph(v: androidx.compose.ui.graphics.vector.ImageVector, color: Color, size: androidx.compose.ui.unit.Dp, modifier: Modifier): @Composable () -> Unit =
+    { androidx.compose.material3.Icon(v, contentDescription = null, tint = color, modifier = modifier.size(size)) }
+
+@Composable internal fun QinblyCloseIcon(color: Color, size: androidx.compose.ui.unit.Dp = 18.dp, modifier: Modifier = Modifier) = glyph(androidx.compose.material.icons.Icons.Filled.Close, color, size, modifier)()
+@Composable internal fun QinblyCheckIcon(color: Color, size: androidx.compose.ui.unit.Dp = 18.dp, modifier: Modifier = Modifier) = glyph(androidx.compose.material.icons.Icons.Filled.Check, color, size, modifier)()
+@Composable internal fun QinblySendIcon(color: Color, size: androidx.compose.ui.unit.Dp = 20.dp, modifier: Modifier = Modifier) = glyph(androidx.compose.material.icons.Icons.Filled.Send, color, size, modifier)()
+@Composable internal fun QinblyBackIcon(color: Color, size: androidx.compose.ui.unit.Dp = 22.dp, modifier: Modifier = Modifier) = glyph(androidx.compose.material.icons.Icons.Filled.ArrowBack, color, size, modifier)()
+@Composable internal fun QinblyIconOf(v: androidx.compose.ui.graphics.vector.ImageVector, color: Color, size: androidx.compose.ui.unit.Dp = 20.dp, modifier: Modifier = Modifier) = glyph(v, color, size, modifier)()
+
 /** Tela inteira com seta de voltar no topo (no lugar das "abinhas" que subiam de baixo). */
 @Composable
 internal fun QinblyFullScreen(
@@ -443,7 +454,7 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
             val pu = photoUri
             if (pu != null) Box(Modifier.padding(start = 6.dp)) {
                 AsyncImage(model = pu, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(10.dp)))
-                Box(Modifier.align(Alignment.TopEnd).padding(2.dp).size(20.dp).clip(CircleShape).background(Color(0xCC000000)).clickable { photoUri = null }, contentAlignment = Alignment.Center) { Text("✕", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+                Box(Modifier.align(Alignment.TopEnd).padding(2.dp).size(20.dp).clip(CircleShape).background(Color(0xCC000000)).clickable { photoUri = null }, contentAlignment = Alignment.Center) { QinblyCloseIcon(Color.White, 12.dp) }
             }
             LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 items(NOTICE_TAGS) { t ->
@@ -487,7 +498,7 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
                         if (photo != null) AsyncImage(model = photo, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(10.dp)))
                     }
                     val cnt = n.optJSONArray("neighborhood_comments")?.optJSONObject(0)?.optInt("count") ?: 0
-                    Text(if (cnt == 0) "💬  Comentar" else if (cnt == 1) "💬  1 comentário" else "💬  $cnt comentários", color = secondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Row(verticalAlignment = Alignment.CenterVertically) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.ChatBubbleOutline, secondary, 16.dp); Text(if (cnt == 0) "  Comentar" else if (cnt == 1) "  1 comentário" else "  $cnt comentários", color = secondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
                 }
             }
         }
@@ -634,7 +645,7 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                     )
                 }
                 val ready = input.text.isNotBlank() && !sending
-                Box(Modifier.size(42.dp).clip(CircleShape).background(if (ready) Color(0xFF1877F2) else Color(0xFF2E2E30)).clickable(enabled = ready) { send() }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, fontSize = 16.sp) }
+                Box(Modifier.size(42.dp).clip(CircleShape).background(if (ready) Color(0xFF1877F2) else Color(0xFF2E2E30)).clickable(enabled = ready) { send() }, contentAlignment = Alignment.Center) { QinblySendIcon(Color.White, 19.dp) }
             }
         }
     }

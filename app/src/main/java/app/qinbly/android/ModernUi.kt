@@ -194,13 +194,13 @@ internal fun QinblyCountrySheet(options: List<String>, selected: String, onPick:
             if (query.isBlank()) item {
                 Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { onPick("") }.padding(horizontal = 8.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("Não informar", color = QiblyTheme.text, fontSize = 16.sp, modifier = Modifier.weight(1f))
-                    if (selected.isBlank()) Text("✓", color = Color(0xFF63D68D), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    if (selected.isBlank()) QinblyCheckIcon(Color(0xFF63D68D), 21.dp)
                 }
             }
             items(shown, key = { it }) { country ->
                 Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { onPick(country) }.padding(horizontal = 8.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(country, color = QiblyTheme.text, fontSize = 16.sp, modifier = Modifier.weight(1f))
-                    if (country == selected) Text("✓", color = Color(0xFF63D68D), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    if (country == selected) QinblyCheckIcon(Color(0xFF63D68D), 21.dp)
                 }
             }
         }
