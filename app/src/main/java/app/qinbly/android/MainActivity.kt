@@ -204,6 +204,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.boundsInWindow
@@ -1315,7 +1316,7 @@ internal fun qinblyPvBake(context: android.content.Context, source: Uri, filter:
 /** Gera a foto final: recorte (proporção, zoom e posição), filtro, brilho/contraste e depois texto, sticker e desenho. */
 private fun qinblyRenderEditedPhoto(
     context: android.content.Context, source: Uri, ratio: String, zoom: Float, panX: Float, panY: Float,
-    matrix: ColorMatrix, text: String, sticker: String, strokes: List<List<Offset>>, textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap()
+    matrix: ColorMatrix, text: String, sticker: String, strokes: List<List<Offset>>, textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f
 ): Uri {
     val decoded = context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it) }
         ?: throw IllegalArgumentException("Não foi possível abrir a imagem para aplicar as edições.")
@@ -1338,10 +1339,10 @@ private fun qinblyRenderEditedPhoto(
     val file = File(context.cacheDir, "qinbly-final-${System.currentTimeMillis()}.jpg")
     FileOutputStream(file).use { output.compress(Bitmap.CompressFormat.JPEG, 93, it) }
     output.recycle()
-    return createEditorOverlayImage(context, Uri.fromFile(file), text, sticker, strokes, textFont, textColor, wordColors)
+    return createEditorOverlayImage(context, Uri.fromFile(file), text, sticker, strokes, textFont, textColor, wordColors, textDx, textDy)
 }
 
-private fun createEditorOverlayImage(context: android.content.Context, source: Uri, overlayText: String, sticker: String, strokes: List<List<Offset>> = emptyList(), textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap()): Uri {
+private fun createEditorOverlayImage(context: android.content.Context, source: Uri, overlayText: String, sticker: String, strokes: List<List<Offset>> = emptyList(), textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f): Uri {
     if (overlayText.isBlank() && sticker.isBlank() && strokes.isEmpty()) return source
     val bitmap = context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it) }
         ?.let { decoded -> decoded.copy(Bitmap.Config.ARGB_8888, true).also { if (it !== decoded) decoded.recycle() } }
@@ -1394,11 +1395,11 @@ private fun createEditorOverlayImage(context: android.content.Context, source: U
         }
         if (current.isNotEmpty()) lines.add(current)
         val lineHeight = textPaint.textSize * 1.25f
-        val startY = bitmap.height * 0.5f - (lines.size - 1) * lineHeight / 2f
+        val startY = bitmap.height * (0.5f + textDy) - (lines.size - 1) * lineHeight / 2f
         val spaceW = textPaint.measureText(" ")
         lines.forEachIndexed { index, line ->
             val total = textPaint.measureText(line.joinToString(" ") { it.first })
-            var x = (bitmap.width - total) / 2f
+            var x = (bitmap.width - total) / 2f + bitmap.width * textDx
             line.forEach { (word, idx) ->
                 val c = wordColors[idx] ?: textColor
                 textPaint.color = c
@@ -10576,6 +10577,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var videoDurationLabel by remember { mutableStateOf("") }
     var editorText by remember { mutableStateOf("") }
     var editorTextEditing by remember { mutableStateOf(false) }
+    var editorTextDx by remember { mutableFloatStateOf(0f) }
+    var editorTextDy by remember { mutableFloatStateOf(0f) }
+    var editorPreviewW by remember { mutableIntStateOf(0) }
+    var editorPreviewH by remember { mutableIntStateOf(0) }
     var editorTextFont by remember { mutableStateOf("Forte") }
     var editorTextColor by remember { mutableIntStateOf(android.graphics.Color.WHITE) }
     val editorWordColors = remember { androidx.compose.runtime.mutableStateMapOf<Int, Int>() }
@@ -10756,7 +10761,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             showComposer = false
             editorTool = "Filtros"
             sourceUri = null; selectedUri = null; bakedUri = null
-            editorText = ""; editorTextEditing = false; editorSticker = ""; editorWordColors.clear(); editorSelWord = -1
+            editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorSticker = ""; editorWordColors.clear(); editorSelWord = -1
             editorStrokes.clear()
             showCollabGallery = true
         } else if (initialMode == "gallery") returnToGallery()
@@ -10765,7 +10770,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             showComposer = false
             editorTool = "Filtros"
             sourceUri = null; selectedUri = null; bakedUri = null
-            editorText = ""; editorTextEditing = false; editorSticker = ""; editorWordColors.clear(); editorSelWord = -1
+            editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorSticker = ""; editorWordColors.clear(); editorSelWord = -1
             editorStrokes.clear()
             camTextMode = false; camTextEditing = false
         }
@@ -12071,13 +12076,18 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             if (editorSticker.isNotBlank()) {
                 Text(editorSticker, modifier = Modifier.align(Alignment.Center), color = Color.Black, style = MaterialTheme.typography.displayLarge)
             }
+            Box(Modifier.fillMaxSize().onSizeChanged { editorPreviewW = it.width; editorPreviewH = it.height })
             if (editorText.isBlank() && editorTool == "Texto" && !editorTextEditing) {
                 Text("Toque para escrever", color = Color(0xB3FFFFFF), fontSize = 28.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(12.dp)).clickable { editorTextEditing = true }.padding(horizontal = 28.dp, vertical = 16.dp))
             }
             if (editorTool == "Texto" && editorTextEditing) EditorTextOverlay { editorTextEditing = false }
             if (editorText.isNotBlank() && !(editorTool == "Texto" && editorTextEditing)) {
-                Text(qinblyColoredText(editorTextFont, editorText, editorTextColor, editorWordColors), modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(12.dp)).clickable(enabled = editorTool == "Texto") { editorTextEditing = true }.padding(horizontal = 28.dp, vertical = 72.dp),
+                Text(qinblyColoredText(editorTextFont, editorText, editorTextColor, editorWordColors), modifier = Modifier.align(Alignment.Center).offset { androidx.compose.ui.unit.IntOffset(editorTextDx.toInt(), editorTextDy.toInt()) }
+                        .clip(RoundedCornerShape(12.dp))
+                        .pointerInput(Unit) { detectDragGestures { change, drag -> change.consume(); editorTextDx += drag.x; editorTextDy += drag.y } }
+                        .clickable { editorTool = "Texto"; editorTextEditing = true }
+                        .padding(horizontal = 28.dp, vertical = 16.dp),
                     color = Color(editorTextColor), fontSize = 28.sp,
                     fontFamily = androidx.compose.ui.text.font.FontFamily(qinblyTypeface(editorTextFont)),
                     letterSpacing = qinblyTextSpacingEm(editorTextFont).em,
@@ -12391,10 +12401,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                     val src = selectedUri!!
                                     val ratioNow = editorRatio; val z = editorZoom; val px = editorPanX; val py = editorPanY
                                     val matrixNow = qinblyEditMatrix(selectedFilter, filterIntensity, editorBrightness, editorContrast)
-                                    val fontNow = editorTextFont; val colorNow = editorTextColor; val wordsNow = editorWordColors.toMap(); val textNow = editorText; val stickerNow = editorSticker; val strokesNow = editorStrokes.toList()
+                                    val dxNow = if (editorPreviewW > 0) editorTextDx / editorPreviewW else 0f; val dyNow = if (editorPreviewH > 0) editorTextDy / editorPreviewH else 0f; val fontNow = editorTextFont; val colorNow = editorTextColor; val wordsNow = editorWordColors.toMap(); val textNow = editorText; val stickerNow = editorSticker; val strokesNow = editorStrokes.toList()
                                     Thread {
                                         try {
-                                            val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow)
+                                            val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow)
                                             android.os.Handler(android.os.Looper.getMainLooper()).post { bakedUri = done; editorBusy = false; publishSettings = true }
                                         } catch (e: Exception) {
                                             // Se não der para aplicar as edições, publica a foto original em vez de travar.
