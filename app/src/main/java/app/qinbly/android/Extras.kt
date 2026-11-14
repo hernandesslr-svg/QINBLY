@@ -66,7 +66,7 @@ internal val LocalQinblyNavHandled = androidx.compose.runtime.compositionLocalOf
 
 /** Altura da barra de botões do celular, medida de três formas (insets do Compose, métricas da janela do app e medida do sistema). */
 @Composable
-internal fun qinblyNavBarPadding(): androidx.compose.ui.unit.Dp {
+internal fun qinblyNavBarPadding(floor: androidx.compose.ui.unit.Dp = 98.dp): androidx.compose.ui.unit.Dp {
     if (LocalQinblyNavHandled.current) return 0.dp
     val density = androidx.compose.ui.platform.LocalDensity.current
     val context = LocalContext.current
@@ -86,7 +86,7 @@ internal fun qinblyNavBarPadding(): androidx.compose.ui.unit.Dp {
         maxOf(fromWindow, if (gesture) minOf(sys, 24f) else sys)
     }
     // Mínimo fixo: em alguns aparelhos todas as medições chegam zeradas dentro de janelas flutuantes.
-    return maxOf(fromCompose, measured.dp, 98.dp)
+    return maxOf(fromCompose, measured.dp, floor)
 }
 
 /** Letras menores só dentro do conteúdo informado (usado nas telas de story). */

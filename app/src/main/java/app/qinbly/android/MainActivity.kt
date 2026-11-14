@@ -10471,7 +10471,8 @@ internal fun QinblyCameraCapture(onResult: (Uri) -> Unit, onDismiss: () -> Unit)
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false),
         lift = false
     ) {
-        Column(Modifier.fillMaxSize().background(Color.Black)) {
+        // Mesma altura do botão de tirar foto da câmera do Criar: acima da barra de botões do celular.
+        Column(Modifier.fillMaxSize().background(Color(0xFF080808)).padding(bottom = qinblyNavBarPadding(0.dp))) {
             PostPage(onNotice = { android.widget.Toast.makeText(ctx, it, android.widget.Toast.LENGTH_LONG).show() }, onCameraCancelled = onDismiss, initialMode = "camera", onCaptured = onResult)
         }
     }
