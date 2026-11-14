@@ -159,6 +159,8 @@ internal fun QinblyNearbyHub(
     var mine by remember { mutableStateOf<String?>(null) }
     var showDrawer by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
+    var searching by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
 
     LaunchedEffect(refresh) {
         val token = prefs.getString("token", null) ?: return@LaunchedEffect
@@ -205,13 +207,36 @@ internal fun QinblyNearbyHub(
                     Text(if (mine == "doacao") "Minhas doações" else if (mine == "saved") "Anúncios salvos" else "Meus anúncios", color = textColor, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                     Text("Toque nos três tracinhos para voltar", color = secondary, fontSize = 12.sp)
                 } else {
-                    Row(Modifier.clip(RoundedCornerShape(20.dp)).background(QiblyTheme.soft).clickable { showCityPicker = true }.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(if (city.isNotBlank()) city else "Escolher cidade", color = textColor, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                        Text("  ▾", color = secondary, fontSize = 13.sp)
+                    Text("Perto de mim", color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                    Row(Modifier.clip(RoundedCornerShape(10.dp)).clickable { showCityPicker = true }.padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(if (city.isNotBlank()) city else "Escolher cidade", color = secondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                        Text(" ▾", color = secondary, fontSize = 11.sp)
                     }
-                    Text("Anúncios somem em 7 dias", color = secondary, fontSize = 11.sp, modifier = Modifier.padding(start = 6.dp, top = 2.dp))
                 }
             }
+            if (mine == null && cat != "Mural") Box(
+                Modifier.size(44.dp).clip(CircleShape).clickable { searching = !searching; if (!searching) query = "" },
+                contentAlignment = Alignment.Center
+            ) {
+                val ic = if (searching) MarketBlue else textColor
+                androidx.compose.foundation.Canvas(Modifier.size(22.dp)) {
+                    val w = size.minDimension
+                    val sw = w * 0.11f
+                    drawCircle(ic, radius = w * 0.34f, center = androidx.compose.ui.geometry.Offset(w * 0.42f, w * 0.42f), style = androidx.compose.ui.graphics.drawscope.Stroke(sw))
+                    drawLine(ic, androidx.compose.ui.geometry.Offset(w * 0.66f, w * 0.66f), androidx.compose.ui.geometry.Offset(w * 0.92f, w * 0.92f), strokeWidth = sw, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                }
+            }
+            }
+        }
+        if (searching && mine == null && cat != "Mural") Box(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).clip(RoundedCornerShape(22.dp)).background(QiblyTheme.soft).padding(horizontal = 16.dp, vertical = 11.dp)
+        ) {
+            if (query.isEmpty()) Text("Buscar em " + city.substringBefore(",").ifBlank { "sua cidade" } + "…", color = secondary, fontSize = 14.sp)
+            androidx.compose.foundation.text.BasicTextField(
+                query, { query = it }, singleLine = true,
+                textStyle = androidx.compose.ui.text.TextStyle(color = textColor, fontSize = 14.sp),
+                cursorBrush = androidx.compose.ui.graphics.SolidColor(textColor), modifier = Modifier.fillMaxWidth()
+            )
         }
         if (mine == null) LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(vertical = 6.dp)) {
             items(marketCategories) { name ->
@@ -242,7 +267,8 @@ internal fun QinblyNearbyHub(
             if (cat == "Mural" && mine == null) {
                 QinblyNeighborhoodBoard(lat, lng, place, textColor, secondary, onRefreshLocation = onRefreshLocation, onNotice = onNotice)
             } else {
-                val list = listings
+                val q = query.trim()
+                val list = if (searching && q.isNotEmpty()) listings?.filter { it.title.contains(q, true) || it.description.contains(q, true) } else listings
                 var pulling by remember { mutableStateOf(false) }
                 LaunchedEffect(listings, failed) { if (listings != null || failed) pulling = false }
                 androidx.compose.material3.pulltorefresh.PullToRefreshBox(
@@ -259,6 +285,9 @@ internal fun QinblyNearbyHub(
                         list.isEmpty() && mine != null -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                             Text(if (mine == "saved") "Nenhum anúncio salvo ainda" else "Você ainda não publicou nada", color = textColor, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                             Text("Abra o menu (três tracinhos) e toque em Novo anúncio.", color = secondary, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
+                        }
+                        list.isEmpty() && searching && q.isNotEmpty() -> Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.Center) {
+                            Text("Nada encontrado para \"$q\"", color = secondary, fontSize = 14.sp, modifier = Modifier.padding(top = 120.dp))
                         }
                         list.isEmpty() -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                             Box(Modifier.size(124.dp).clip(CircleShape).background(MarketBlue.copy(alpha = 0.22f)), contentAlignment = Alignment.Center) {
