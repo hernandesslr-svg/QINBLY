@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -538,6 +539,8 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
     var replyTo by remember { mutableStateOf<JSONObject?>(null) }
     var input by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue("")) }
     var sending by remember { mutableStateOf(false) }
+    var menuFor by remember { mutableStateOf<String?>(null) }
+    var editing by remember { mutableStateOf<JSONObject?>(null) }
     val focus = remember { androidx.compose.ui.focus.FocusRequester() }
     LaunchedEffect(reload) {
         val token = prefs.getString("token", null) ?: run { comments = emptyList(); return@LaunchedEffect }
@@ -561,6 +564,18 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
     fun send() {
         val token = prefs.getString("token", null); val body = input.text.trim()
         if (token.isNullOrBlank() || body.isBlank() || sending) return
+        val ed = editing
+        if (ed != null) {
+            val eid = ed.optString("id"); val newBody = body.take(280)
+            sending = true
+            Thread {
+                try {
+                    QinblyApi.rest(token, "PATCH", "neighborhood_comments?id=eq.$eid", JSONObject().put("body", newBody).toString(), "return=minimal")
+                    main { comments = comments?.map { if (it.optString("id") == eid) JSONObject(it.toString()).put("body", newBody) else it }; input = androidx.compose.ui.text.input.TextFieldValue(""); editing = null; sending = false; onChanged() }
+                } catch (e: Exception) { main { sending = false; onNotice("Não foi possível editar o comentário.") } }
+            }.start()
+            return
+        }
         val target = replyTo
         val parent = target?.let { it.optString("parent_id").takeIf { x -> x.isNotBlank() && x != "null" } ?: it.optString("id") }
         sending = true
@@ -597,7 +612,12 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                             Text(nameOf(c).take(1).uppercase(), color = Color.White, fontSize = if (small) 11.sp else 13.sp, fontWeight = FontWeight.Bold)
                         }
                         Column(Modifier.weight(1f)) {
-                            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(FieldBg).padding(horizontal = 12.dp, vertical = 8.dp)) {
+                            val mine = c.optString("user_id") == myId
+                            val canMenu = mine || noticeOwner == myId
+                            Box {
+                            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(FieldBg)
+                                .pointerInput(c.optString("id"), canMenu) { if (canMenu) androidx.compose.foundation.gestures.detectTapGestures(onLongPress = { menuFor = c.optString("id") }) }
+                                .padding(horizontal = 12.dp, vertical = 8.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(nameOf(c), color = Color(0xFF6AA6F8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                     if (c.optString("user_id") == noticeOwner) Text("autor", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF1877F2)).padding(horizontal = 6.dp, vertical = 1.dp))
@@ -605,9 +625,18 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                                 }
                                 Text(mentionText(c.optString("body"), Color(0xFF6AA6F8)), color = Color.White, fontSize = 14.sp)
                             }
+                            androidx.compose.material3.DropdownMenu(expanded = menuFor == c.optString("id"), onDismissRequest = { menuFor = null }) {
+                                if (mine) androidx.compose.material3.DropdownMenuItem(text = { Text("Editar") }, onClick = {
+                                    menuFor = null; editing = c; replyTo = null
+                                    val t = c.optString("body")
+                                    input = androidx.compose.ui.text.input.TextFieldValue(t, androidx.compose.ui.text.TextRange(t.length))
+                                    try { focus.requestFocus() } catch (_: Exception) { }
+                                })
+                                androidx.compose.material3.DropdownMenuItem(text = { Text("Apagar", color = Color(0xFFE0457B)) }, onClick = { menuFor = null; delete(c) })
+                            }
+                            }
                             Row(Modifier.padding(start = 8.dp, top = 2.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                                 Text("Responder", color = Color(0xFF8E87A8), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { startReply(c) }.padding(vertical = 4.dp))
-                                if (c.optString("user_id") == myId || noticeOwner == myId) Text("Apagar", color = Color(0xFFE0457B), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { delete(c) }.padding(vertical = 4.dp))
                             }
                         }
                     }
@@ -623,9 +652,13 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                     }
                 }
             }
+            if (editing != null) Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Editando comentário", color = Color(0xFF6AA6F8), fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                QinblyCloseIcon(Color(0xFFB4B4BC), 18.dp, Modifier.clickable { editing = null; input = androidx.compose.ui.text.input.TextFieldValue("") })
+            }
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(FieldBg).padding(horizontal = 16.dp, vertical = 11.dp)) {
-                    if (input.text.isEmpty()) Text(if (replyTo != null) "Escreva uma resposta…" else "Escreva um comentário…", color = Color(0xFF8E87A8), fontSize = 14.sp)
+                    if (input.text.isEmpty()) Text(if (editing != null) "Edite o comentário…" else if (replyTo != null) "Escreva uma resposta…" else "Escreva um comentário…", color = Color(0xFF8E87A8), fontSize = 14.sp)
                     androidx.compose.foundation.text.BasicTextField(
                         input, { v -> input = androidx.compose.ui.text.input.TextFieldValue(v.text.take(280), v.selection, v.composition); if (v.text.isEmpty()) replyTo = null },
                         textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 14.sp), cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.White),
