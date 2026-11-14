@@ -5577,6 +5577,7 @@ private fun QinblyNearbyPage(onNotice: (String) -> Unit, onOpenConversation: (St
                 listOfNotNull(a?.subAdminArea ?: a?.locality, a?.adminArea).distinct().joinToString(", ")
             }
         } catch (_: Exception) { "" }
+        if (place.isNotBlank()) context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).edit().putString("device_place", place).apply()
         locating = false
     }
     val hereNow = here

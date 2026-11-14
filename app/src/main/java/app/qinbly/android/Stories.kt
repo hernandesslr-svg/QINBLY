@@ -1,5 +1,6 @@
 package app.qinbly.android
 
+import org.json.JSONObject
 import android.content.Context
 import android.net.Uri
 import android.os.Handler
@@ -335,8 +336,46 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
 
     LaunchedEffect(current.id) {
         if (!entry.mine && current.page == "story" && !token.isNullOrBlank()) {
-            Thread { try { QinblyApi.markStoryViewed(token, current.id) } catch (_: Exception) { } }.start()
+            Thread {
+                try {
+                    QinblyApi.markStoryViewed(token, current.id)
+                    // Guarda a cidade de quem viu (só a dona do story enxerga) para separar "Perto de você" de "De mais longe".
+                    val sp = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)
+                    val uid = QinblyApi.currentUserId(sp)
+                    val city = (sp.getString("market_city", null)?.takeIf { it.isNotBlank() } ?: sp.getString("device_place", null)).orEmpty()
+                    if (!uid.isNullOrBlank() && city.isNotBlank())
+                        QinblyApi.rest(token, "PATCH", "story_views?story_id=eq.${current.id}&viewer_id=eq.$uid", JSONObject().put("city", city).toString(), "return=minimal")
+                } catch (_: Exception) { }
+            }.start()
         }
+    }
+    // Curtidas do story: quem vê guarda a própria; a dona vê o total.
+    var liked by remember(current.id) { mutableStateOf(false) }
+    var likeCount by remember(current.id) { mutableIntStateOf(0) }
+    LaunchedEffect(current.id) {
+        if (token.isNullOrBlank() || current.page != "story") return@LaunchedEffect
+        val sp = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)
+        val uid = QinblyApi.currentUserId(sp)
+        try {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                if (entry.mine) likeCount = org.json.JSONArray(QinblyApi.rest(token, "GET", "story_likes?story_id=eq.${current.id}&select=user_id")).length()
+                else if (!uid.isNullOrBlank()) liked = org.json.JSONArray(QinblyApi.rest(token, "GET", "story_likes?story_id=eq.${current.id}&user_id=eq.$uid&select=story_id")).length() > 0
+            }
+        } catch (_: Exception) { }
+    }
+    fun toggleLike() {
+        val sp = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)
+        val uid = QinblyApi.currentUserId(sp)
+        if (token.isNullOrBlank() || uid.isNullOrBlank()) return
+        val id = current.id
+        val now = !liked
+        liked = now
+        Thread {
+            try {
+                if (now) QinblyApi.rest(token, "POST", "story_likes", JSONObject().put("story_id", id).put("user_id", uid).toString(), "return=minimal,resolution=ignore-duplicates")
+                else QinblyApi.rest(token, "DELETE", "story_likes?story_id=eq.$id&user_id=eq.$uid")
+            } catch (_: Exception) { Handler(Looper.getMainLooper()).post { liked = !now; onNotice("Não foi possível curtir agora.") } }
+        }.start()
     }
     LaunchedEffect(current.id, showViewers, showComments, replying, contribTarget) {
         if (showViewers || showComments || replying || contribTarget.isNotBlank()) { progress.stop(); return@LaunchedEffect }
@@ -400,7 +439,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                 } else if (current.page == "story" && !isCollab) {
                     // Sem comentários no story: quem vê só envia mensagem (texto) no privado da pessoa.
                     if (!entry.mine) QinblyStoryMessageBar(entry.username, Color(0x66000000), Color(0xCCFFFFFF), onNotice,
-                        onSent = { focusManager.clearFocus() }, onFocus = { replying = it })
+                        onSent = { focusManager.clearFocus() }, onFocus = { replying = it }, liked = liked, onLike = { toggleLike() })
                 }
                 val showViews = entry.mine && current.page == "story"
                 val canDelete = (entry.mine && current.page != "invite") || (current.page == "contrib" && current.authorMine)
@@ -409,18 +448,20 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                         if (showViews) Row(
                             Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0x66000000)).clickable {
                                 showViewers = true
-                                viewers = null
-                                if (!token.isNullOrBlank()) Thread {
-                                    val main = Handler(Looper.getMainLooper())
-                                    try { val list = QinblyApi.getStoryViewers(token, current.id); main.post { viewers = list } }
-                                    catch (e: Exception) { main.post { viewers = emptyList(); onNotice(e.message ?: "Não foi possível ver quem viu.") } }
-                                }.start()
                             }.padding(horizontal = 14.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(Icons.Outlined.Visibility, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
                             Text(current.views.toString(), color = Color.White, fontWeight = FontWeight.SemiBold)
+                        }
+                        if (showViews && likeCount > 0) Row(
+                            Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0x66000000)).clickable { showViewers = true }.padding(horizontal = 14.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            QinblyIconOf(QinblyIcon.Favorite, Color(0xFFE5484D), 18.dp)
+                            Spacer(Modifier.width(6.dp))
+                            Text(likeCount.toString(), color = Color.White, fontWeight = FontWeight.SemiBold)
                         }
                         if (canDelete) Icon(Icons.Outlined.Delete, contentDescription = if (current.page == "contrib") "Apagar resposta" else "Excluir story", tint = Color.White,
                             modifier = Modifier.size(28.dp).clickable {
@@ -451,35 +492,13 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     }
 
 
-    if (showViewers) {
-        val list = viewers
-        QinblyFullScreen("Visualizações" + (list?.let { " (${it.size})" } ?: ""), { showViewers = false }, scroll = false) {
-            if (list == null) Box(Modifier.fillMaxWidth().padding(vertical = 28.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = accent, modifier = Modifier.size(28.dp)) }
-            else if (list.isEmpty()) Text("Ninguém viu ainda.", color = Color(0xFFA9B5C8), fontSize = 15.sp, modifier = Modifier.padding(horizontal = 22.dp, vertical = 20.dp))
-            else LazyColumn(Modifier.fillMaxSize()) {
-                items(list, key = { it.username }) { v ->
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(46.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
-                            Text((v.displayName.ifBlank { v.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                            if (v.avatarUrl.isNotBlank()) AsyncImage(model = v.avatarUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                        }
-                        Spacer(Modifier.width(14.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(v.displayName.ifBlank { v.username }, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text("@" + v.username, color = Color(0xFFA9B5C8), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-                        Text(qinblyAgo(v.viewedAt), color = Color(0xFF8E87A8), fontSize = 12.sp)
-                    }
-                }
-            }
-        }
-    }
+    if (showViewers) QinblyStorySummary(current.id, current.createdAt, accent, { showViewers = false }, onNotice)
 }
 
 
 /** Mensagem de texto para o privado de quem postou o story (sem foto, áudio ou figurinha). */
 @Composable
-internal fun QinblyStoryMessageBar(username: String, fieldBg: Color, hintColor: Color, onNotice: (String) -> Unit, onSent: () -> Unit = {}, onFocus: (Boolean) -> Unit = {}) {
+internal fun QinblyStoryMessageBar(username: String, fieldBg: Color, hintColor: Color, onNotice: (String) -> Unit, onSent: () -> Unit = {}, onFocus: (Boolean) -> Unit = {}, liked: Boolean = false, onLike: () -> Unit = {}) {
     val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
@@ -508,7 +527,122 @@ internal fun QinblyStoryMessageBar(username: String, fieldBg: Color, hintColor: 
                 modifier = Modifier.fillMaxWidth().onFocusChanged { onFocus(it.isFocused) }
             )
         }
+        Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0x66000000)).clickable { onLike() }, contentAlignment = Alignment.Center) {
+            QinblyIconOf(if (liked) QinblyIcon.Favorite else QinblyIcon.FavoriteBorder, if (liked) Color(0xFFE5484D) else Color.White, 24.dp)
+        }
         val ready = draft.isNotBlank() && !sending
         Box(Modifier.size(46.dp).clip(CircleShape).background(if (ready) Color(0xFF1877F2) else Color(0x66000000)).clickable(enabled = ready) { send() }, contentAlignment = Alignment.Center) { QinblySendIcon(Color.White, 20.dp) }
+    }
+}
+
+/** Resumo do story, só para quem postou: quantos viram/curtiram, quando viram e quem está perto. Tudo numa rolagem só. */
+@Composable
+internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Color, onDismiss: () -> Unit, onNotice: (String) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val token = remember { prefs.getString("token", null) }
+    val ownerCity = remember { (prefs.getString("market_city", null)?.takeIf { it.isNotBlank() } ?: prefs.getString("device_place", null)).orEmpty() }
+    var viewers by remember { mutableStateOf<List<QinblyApi.StoryViewer>?>(null) }
+    var cities by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var likedBy by remember { mutableStateOf<Set<String>>(emptySet()) }
+    LaunchedEffect(storyId) {
+        if (token.isNullOrBlank()) { viewers = emptyList(); return@LaunchedEffect }
+        try {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val list = QinblyApi.getStoryViewers(token, storyId)
+                val cm = HashMap<String, String>()
+                try {
+                    val a = org.json.JSONArray(QinblyApi.rest(token, "GET", "story_views?story_id=eq.$storyId&select=city,profiles!story_views_viewer_id_fkey(username)"))
+                    for (i in 0 until a.length()) { val o = a.getJSONObject(i); val u = o.optJSONObject("profiles")?.optString("username").orEmpty(); val c = o.optString("city"); if (u.isNotBlank() && c.isNotBlank() && c != "null") cm[u] = c }
+                } catch (_: Exception) { }
+                val lk = HashSet<String>()
+                try {
+                    val a = org.json.JSONArray(QinblyApi.rest(token, "GET", "story_likes?story_id=eq.$storyId&select=profiles!story_likes_user_id_fkey(username)"))
+                    for (i in 0 until a.length()) { val u = a.getJSONObject(i).optJSONObject("profiles")?.optString("username").orEmpty(); if (u.isNotBlank()) lk.add(u) }
+                } catch (_: Exception) { }
+                cities = cm; likedBy = lk; viewers = list
+            }
+        } catch (e: Exception) { viewers = emptyList(); onNotice(e.message ?: "Não foi possível ver quem viu.") }
+    }
+    val list = viewers
+    QinblyFullScreen("Seu story", onDismiss, scroll = false) {
+        if (list == null) { Box(Modifier.fillMaxWidth().padding(vertical = 28.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = accent, modifier = Modifier.size(28.dp)) }; return@QinblyFullScreen }
+        val card = Color(0xFF1C1C20)
+        fun near(v: QinblyApi.StoryViewer): Boolean { val c = cities[v.username].orEmpty(); return c.isNotBlank() && ownerCity.isNotBlank() && c.equals(ownerCity, ignoreCase = true) }
+        val perto = list.filter { near(it) }
+        val longe = list.filterNot { near(it) }
+        // Barras do gráfico: 12 faixas de 2 h desde que o story foi postado.
+        val start = try { java.time.OffsetDateTime.parse(createdAt).toInstant().toEpochMilli() } catch (_: Exception) { 0L }
+        val buckets = IntArray(12)
+        for (v in list) {
+            val t = try { java.time.OffsetDateTime.parse(v.viewedAt).toInstant().toEpochMilli() } catch (_: Exception) { 0L }
+            if (start > 0 && t > 0) buckets[(((t - start) / 3_600_000L) / 2).toInt().coerceIn(0, 11)]++
+        }
+        val maxB = (buckets.maxOrNull() ?: 0).coerceAtLeast(1)
+        val peak = buckets.indices.maxByOrNull { buckets[it] } ?: 0
+        @Composable fun Person(v: QinblyApi.StoryViewer, sub: String) {
+            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(46.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
+                    Text((v.displayName.ifBlank { v.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    if (v.avatarUrl.isNotBlank()) AsyncImage(model = v.avatarUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(v.displayName.ifBlank { v.username }, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(sub + " · " + qinblyAgo(v.viewedAt), color = Color(0xFF8E87A8), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                if (v.username in likedBy) QinblyIconOf(QinblyIcon.Favorite, Color(0xFFE5484D), 20.dp)
+            }
+        }
+        LazyColumn(Modifier.fillMaxSize().padding(horizontal = 22.dp)) {
+            item {
+                Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Column(Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(card).padding(18.dp)) {
+                        Text(list.size.toString(), color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                        Text("viram", color = Color(0xFF8E87A8), fontSize = 14.sp)
+                    }
+                    Column(Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(card).padding(18.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(likedBy.size.toString(), color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.width(8.dp))
+                            QinblyIconOf(QinblyIcon.Favorite, Color(0xFFE5484D), 22.dp)
+                        }
+                        Text("curtiram", color = Color(0xFF8E87A8), fontSize = 14.sp)
+                    }
+                }
+            }
+            if (list.isNotEmpty()) item {
+                Column(Modifier.fillMaxWidth().padding(top = 22.dp)) {
+                    Text("Quando viram", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Row(Modifier.fillMaxWidth().height(96.dp).padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
+                        for (i in 0 until 12) {
+                            val h = (4 + 80f * buckets[i] / maxB).dp
+                            Box(Modifier.weight(1f).height(h).clip(RoundedCornerShape(6.dp)).background(if (i == peak && buckets[i] > 0) Color(0xFF1877F2) else Color(0xFF2B3A5C)))
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                        Text("início", color = Color(0xFF8E87A8), fontSize = 12.sp, modifier = Modifier.weight(1f))
+                        if (buckets[peak] > 0) Text("Pico: entre ${peak * 2}h e ${peak * 2 + 2}h depois de postar", color = Color(0xFF6AA6F8), fontSize = 12.sp)
+                        Text("24 h", color = Color(0xFF8E87A8), fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                    }
+                }
+            }
+            if (list.isEmpty()) item { Text("Ninguém viu ainda.", color = Color(0xFFA9B5C8), fontSize = 15.sp, modifier = Modifier.padding(vertical = 24.dp)) }
+            if (perto.isNotEmpty()) {
+                item { Row(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 4.dp)) {
+                    Text("Perto de você", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                    Text("${perto.size} pessoa" + if (perto.size > 1) "s" else "", color = Color(0xFF8E87A8), fontSize = 13.sp)
+                } }
+                items(perto, key = { "p" + it.username }) { Person(it, "Sua cidade") }
+            }
+            if (longe.isNotEmpty()) {
+                item { Row(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 4.dp)) {
+                    Text("De mais longe", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                    Text("${longe.size} pessoa" + if (longe.size > 1) "s" else "", color = Color(0xFF8E87A8), fontSize = 13.sp)
+                } }
+                items(longe, key = { "l" + it.username }) { v -> Person(v, cities[v.username]?.substringBefore(",") ?: "Cidade não informada") }
+            }
+            item { Spacer(Modifier.height(40.dp)) }
+        }
     }
 }

@@ -2,6 +2,7 @@ package app.qinbly.android
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.FavoriteBorder
 
 /** Ícones de verdade usados no lugar de emojis/símbolos. */
 internal object QinblyIcon {
@@ -22,6 +23,7 @@ internal object QinblyIcon {
     val Close = Icons.Filled.Close
     val EmojiEmotions = Icons.Filled.EmojiEmotions
     val Favorite = Icons.Filled.Favorite
+    val FavoriteBorder = Icons.Outlined.FavoriteBorder
     val FormatAlignCenter = Icons.Filled.FormatAlignCenter
     val FormatAlignLeft = Icons.Filled.FormatAlignLeft
     val FormatAlignRight = Icons.Filled.FormatAlignRight
