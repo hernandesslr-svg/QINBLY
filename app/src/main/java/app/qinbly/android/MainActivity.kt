@@ -12107,6 +12107,23 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             ) {
                 Icon(QinblyCameraIcons.close, contentDescription = "Voltar", tint = Color.White, modifier = Modifier.size(28.dp))
             }
+            // Música no topo, igual à câmera (antes ficava na etapa seguinte).
+            if (QinblyComposeSeed.story) {
+                val sm0 = storyMusic
+                Row(
+                    Modifier.align(Alignment.TopCenter).offset(x = (-14).dp).padding(top = 12.dp)
+                        .clip(CircleShape).background(Color(0x73000000)).clickable { showMusicPicker = true }
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(QinblyCameraIcons.music, contentDescription = null, tint = Color.White, modifier = Modifier.size(19.dp))
+                    Text(sm0?.title ?: "Adicionar som", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                        maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 130.dp))
+                    if (sm0 != null) QinblyCloseIcon(Color.White, 16.dp, modifier = Modifier.clickable { storyMusic = null })
+                }
+                if (showMusicPicker) QinblyMusicPicker(onPick = { storyMusic = it; showMusicPicker = false }, onDismiss = { showMusicPicker = false })
+            }
             Column(
                 modifier = Modifier.align(Alignment.TopEnd).padding(end = 12.dp, top = 92.dp).width(140.dp)
                     .then(if (editorSideExpanded) Modifier.fillMaxHeight().padding(bottom = 8.dp) else Modifier)
@@ -12526,18 +12543,11 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     QinblyLegendField(capState, 2200, "Escreva uma legenda…", QiblyTheme.text, 15.sp, Modifier.fillMaxWidth().weight(1f)) { caption = it; captionCursor = it.length }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         QinblyIconOf(QinblyIcon.EmojiEmotions, QiblyTheme.text, 26.dp, Modifier.clip(CircleShape).background(if (showCapEmojis) QinblyBrand.Accent.copy(alpha = 0.25f) else Color.Transparent).clickable { showCapEmojis = !showCapEmojis }.padding(horizontal = 4.dp, vertical = 2.dp))
-                        if (QinblyComposeSeed.story) QinblyIconOf(QinblyIcon.MusicNote, QiblyTheme.text, 26.dp, Modifier.clip(CircleShape).background(if (storyMusic != null) QinblyBrand.Accent.copy(alpha = 0.25f) else Color.Transparent).clickable { showMusicPicker = true }.padding(horizontal = 4.dp, vertical = 2.dp))
                         Spacer(Modifier.weight(1f))
                         Text("${caption.length} / 2200", color = Color.Gray, style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
-            val sm = storyMusic
-            if (sm != null && QinblyComposeSeed.story) Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(QinblyBrand.Accent.copy(alpha = 0.10f)).padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                QinblyMusicLine(sm, Modifier.weight(1f), QiblyTheme.text)
-                QinblyCloseIcon(QiblyTheme.text, 19.dp, modifier = Modifier.clickable { storyMusic = null }.padding(10.dp))
-            }
-            if (showMusicPicker) QinblyMusicPicker(onPick = { storyMusic = it; showMusicPicker = false }, onDismiss = { showMusicPicker = false })
             if (showCapEmojis) QinblyEmojiPanel(Modifier.clip(RoundedCornerShape(16.dp)), QiblyTheme.card) { e ->
                 capState.legend = (capState.legend + e).take(2200); caption = capState.full(); captionCursor = caption.length
             }
