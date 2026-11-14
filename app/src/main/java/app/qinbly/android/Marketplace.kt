@@ -274,21 +274,45 @@ internal fun QinblyNearbyHub(
                         .statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text("Perto de mim", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, modifier = Modifier.padding(start = 6.dp))
-                    if (city.isNotBlank()) Text(city, color = Color(0xFFA9B5C8), fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp, bottom = 8.dp))
-                    val entries = listOf("Meus anúncios", "Anúncios salvos", "Minhas doações", "Trocar cidade", "Dicas de segurança", "Regras da comunidade")
-                    for (e in entries) {
-                        Text(e, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
-                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF262628)).clickable {
+                    val myName = (prefs.getString("display_name", "")?.takeIf { it.isNotBlank() } ?: prefs.getString("username", "").orEmpty().removePrefix("@")).ifBlank { "Você" }
+                    Row(Modifier.padding(start = 4.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(52.dp).clip(CircleShape).background(Color(0xFF3C3C3E)), contentAlignment = Alignment.Center) {
+                            Text(myName.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                        }
+                        Column(Modifier.padding(start = 14.dp)) {
+                            Text(myName, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text((if (city.isNotBlank()) city else "Escolher cidade") + " ▾", color = Color(0xFFA9B5C8), fontSize = 13.sp,
+                                modifier = Modifier.clickable { showDrawer = false; mine = null; showCityPicker = true }.padding(top = 2.dp))
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        for ((label, emoji, color, target) in listOf(
+                            listOf("Anúncios", "\uD83C\uDFF7\uFE0F", 0xFF3A5BA5, "all"), listOf("Salvos", "\uD83D\uDD16", 0xFFE0A800, "saved"), listOf("Doações", "\uD83C\uDF81", 0xFF1D9E75, "doacao")
+                        ).map { Quad(it[0] as String, it[1] as String, it[2] as Long, it[3] as String) }) {
+                            Column(
+                                Modifier.weight(1f).clip(RoundedCornerShape(18.dp)).background(Color(0xFF262628)).clickable { showDrawer = false; mine = target }.padding(vertical = 14.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Box(Modifier.size(36.dp).clip(CircleShape).background(Color(color)), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 17.sp) }
+                                Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
+                            }
+                        }
+                    }
+                    Box(Modifier.fillMaxWidth().padding(vertical = 6.dp).height(1.dp).background(Color(0xFF2E2E30)))
+                    for ((label, emoji, color) in listOf(
+                        Triple("Trocar cidade", "\uD83D\uDCCD", 0xFF1877F2L), Triple("Dicas de segurança", "\uD83D\uDEE1\uFE0F", 0xFF7C4DFFL), Triple("Regras da comunidade", "\uD83D\uDCCB", 0xFF6B7280L)
+                    )) {
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable {
                                 showDrawer = false
-                                when (e) {
-                                    "Meus anúncios" -> mine = "all"
-                                    "Minhas doações" -> mine = "doacao"
-                                    "Anúncios salvos" -> mine = "saved"
-                                    "Trocar cidade" -> { mine = null; showCityPicker = true }
-                                    else -> info = e
-                                }
-                            }.padding(horizontal = 16.dp, vertical = 14.dp))
+                                if (label == "Trocar cidade") { mine = null; showCityPicker = true } else info = label
+                            }.padding(horizontal = 6.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(Modifier.size(34.dp).clip(CircleShape).background(Color(color)), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 16.sp) }
+                            Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(start = 14.dp).weight(1f))
+                            Text("›", color = Color(0xFFA9B5C8), fontSize = 22.sp)
+                        }
                     }
                     if (mine != null) Text("← Voltar para Perto de mim", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF262628)).clickable { showDrawer = false; mine = null }.padding(horizontal = 16.dp, vertical = 14.dp))
@@ -609,3 +633,5 @@ private fun CityRow(name: String, selected: Boolean, onClick: () -> Unit) {
         if (selected) Text("✓", color = MarketBlue, fontSize = 18.sp, fontWeight = FontWeight.Bold)
     }
 }
+
+private data class Quad(val a: String, val b: String, val c: Long, val d: String)
