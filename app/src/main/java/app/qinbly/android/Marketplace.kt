@@ -169,7 +169,7 @@ internal fun QinblyNearbyHub(
         listings = null; failed = false
         listings = try {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                val dLat = 0.05; val dLng = 0.05 / Math.cos(Math.toRadians(lat)).coerceAtLeast(0.2)
+                val dLat = 0.72; val dLng = 0.72 / Math.cos(Math.toRadians(lat)).coerceAtLeast(0.2)
                 val kindFilter = when (cat) {
                     "Vendas" -> "&kind=eq.venda"; "Doações" -> "&kind=eq.doacao"; "Achados" -> "&kind=eq.$sub"
                     "Eventos" -> "&kind=eq.evento"; "Serviços" -> "&kind=eq.servico"; else -> ""
@@ -187,7 +187,7 @@ internal fun QinblyNearbyHub(
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 12.dp, top = 6.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(if (place.isNotBlank()) place else "Perto de você", color = textColor, fontWeight = FontWeight.Bold, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("Até ~5 km • anúncios somem em 7 dias", color = secondary, fontSize = 12.sp)
+                Text("Até ~80 km • anúncios somem em 7 dias", color = secondary, fontSize = 12.sp)
             }
             Text("↻", fontSize = 22.sp, color = textColor, modifier = Modifier.clip(CircleShape).clickable { refresh++; onRefreshLocation() }.padding(8.dp))
             Box(Modifier.padding(start = 4.dp).size(38.dp).clip(CircleShape).background(MarketBlue).clickable { showMenu = true }, contentAlignment = Alignment.Center) {
