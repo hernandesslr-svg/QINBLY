@@ -10457,7 +10457,7 @@ internal fun QinblyCameraCapture(onResult: (Uri) -> Unit, onDismiss: () -> Unit)
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false),
         lift = false
     ) {
-        Box(Modifier.fillMaxSize().background(Color.Black)) {
+        Column(Modifier.fillMaxSize().background(Color.Black)) {
             PostPage(onNotice = { android.widget.Toast.makeText(ctx, it, android.widget.Toast.LENGTH_LONG).show() }, onCameraCancelled = onDismiss, initialMode = "camera", onCaptured = onResult)
         }
     }
@@ -11668,6 +11668,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         return@QinblySplit
      }
 }
+
+    // Câmera chamada por outra tela: só a câmera. Nada de galeria interna/editor/publicação empilhado por cima.
+    if (onCaptured != null) return
 
     if (galleryOpen) {
  QinblySplit {
