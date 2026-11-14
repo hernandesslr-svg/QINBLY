@@ -623,7 +623,8 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
                     }
                     Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
                         Text("início", color = Color(0xFF6E6E78), fontSize = 12.sp, modifier = Modifier.weight(1f))
-                        Text("24 h", color = Color(0xFF6E6E78), fontSize = 12.sp)
+                        if (buckets[peak] > 0) Text("pico entre ${peak * 2}h e ${peak * 2 + 2}h", color = Color(0xFF8E87A8), fontSize = 12.sp)
+                        Text("24 h", color = Color(0xFF6E6E78), fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
                     }
                 }
                 androidx.compose.material3.HorizontalDivider(Modifier.padding(top = 14.dp), color = line)
