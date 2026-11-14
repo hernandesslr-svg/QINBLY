@@ -10625,7 +10625,14 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             onNotice("Permita o acesso às fotos e vídeos para abrir a galeria do ${QinblyBrand.Name}.")
         }
     }
+    // Câmera chamada por outra tela (Mural, cápsula, chat…): devolve a foto direto, sem abrir editor nem tela de publicação.
+    fun handOff(u: Uri, video: Boolean = false): Boolean {
+        val cb = QinblyCameraRequest.onResult ?: return false
+        if (video) onNotice("Aqui só dá para enviar foto.") else cb(u)
+        return true
+    }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null && handOff(uri)) return@rememberLauncherForActivityResult
         if (uri != null) { sourceUri = uri; selectedUri = uri; selectedType = "foto"; showComposer = true }
     }
     val videoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -10633,6 +10640,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     }
     // Seletor do Android: não depende de permissão de acesso a toda a biblioteca.
     val multiPhotoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(10)) { uris ->
+        if (uris.isNotEmpty() && handOff(uris.first())) return@rememberLauncherForActivityResult
         if (uris.isNotEmpty()) {
             gallerySelection.clear()
             gallerySelection.addAll(uris.take(10))
@@ -10647,6 +10655,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         }
     }
     val mediaPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null && handOff(uri, context.contentResolver.getType(uri)?.startsWith("video/") == true)) return@rememberLauncherForActivityResult
         if (uri != null) {
             sourceUri = uri
             selectedUri = uri
@@ -10666,15 +10675,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         galleryOpen = false; publishSettings = false; showComposer = true; showCollabGallery = false
     }
     LaunchedEffect(Unit) { applyPicked() }
-    // Quando a câmera foi chamada por outra tela (Mural, cápsula, chat…), entrega a foto em vez de abrir o editor de publicação.
-    LaunchedEffect(showComposer) {
-        val cb = QinblyCameraRequest.onResult
-        if (showComposer && cb != null) {
-            val u = selectedUri ?: sourceUri
-            if (selectedType == "vídeo") { onNotice("Aqui só dá para enviar foto."); showComposer = false; selectedUri = null; sourceUri = null }
-            else if (u != null) cb(u)
-        }
-    }
     fun openQinblyGallery() {
         try { multiPhotoPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
         catch (e: Exception) { onNotice("Não foi possível abrir a galeria: " + (e.localizedMessage ?: "tente novamente")) }
@@ -11007,6 +11007,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         capture.takePicture(output, androidx.core.content.ContextCompat.getMainExecutor(context), object : androidx.camera.core.ImageCapture.OnImageSavedCallback {
             override fun onImageSaved(result: androidx.camera.core.ImageCapture.OutputFileResults) {
                 fun openEditor(uri: Uri) {
+                    if (handOff(uri)) return
                     sourceUri = uri
                     selectedUri = uri
                     selectedType = "foto"
