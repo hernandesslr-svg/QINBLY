@@ -10447,29 +10447,24 @@ private fun QinblyEffectsOverlay(effect: String, modifier: Modifier = Modifier) 
 }
 
 /** Pedido de foto para a câmera do app: quem chama recebe a foto no lugar de o PostPage abrir o editor de publicação. */
-internal object QinblyCameraRequest { var onResult: ((Uri) -> Unit)? = null }
 
 /** Câmera do próprio app (com galeria ao lado) em tela inteira. Devolve a foto escolhida/tirada. */
 @Composable
 internal fun QinblyCameraCapture(onResult: (Uri) -> Unit, onDismiss: () -> Unit) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
-    androidx.compose.runtime.DisposableEffect(Unit) {
-        QinblyCameraRequest.onResult = { u -> onResult(u) }
-        onDispose { QinblyCameraRequest.onResult = null }
-    }
     QinblyDialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false),
         lift = false
     ) {
         Box(Modifier.fillMaxSize().background(Color.Black)) {
-            PostPage(onNotice = { android.widget.Toast.makeText(ctx, it, android.widget.Toast.LENGTH_LONG).show() }, onCameraCancelled = onDismiss, initialMode = "camera")
+            PostPage(onNotice = { android.widget.Toast.makeText(ctx, it, android.widget.Toast.LENGTH_LONG).show() }, onCameraCancelled = onDismiss, initialMode = "camera", onCaptured = onResult)
         }
     }
 }
 
 @Composable
-private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, initialMode: String = "camera", onSwitchMode: (String) -> Unit = {}) {
+private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, initialMode: String = "camera", onSwitchMode: (String) -> Unit = {}, onCaptured: ((Uri) -> Unit)? = null) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
@@ -10627,9 +10622,18 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     }
     // Câmera chamada por outra tela (Mural, cápsula, chat…): devolve a foto direto, sem abrir editor nem tela de publicação.
     fun handOff(u: Uri, video: Boolean = false): Boolean {
-        val cb = QinblyCameraRequest.onResult ?: return false
+        val cb = onCaptured ?: return false
         if (video) onNotice("Aqui só dá para enviar foto.") else cb(u)
         return true
+    }
+    // Rede de segurança: no modo câmera-para-outra-tela o editor/publicação nunca aparece; a foto volta direto.
+    LaunchedEffect(showComposer) {
+        if (onCaptured != null && showComposer) {
+            val u = selectedUri ?: sourceUri
+            val vid = selectedType == "vídeo"
+            showComposer = false; selectedUri = null; sourceUri = null
+            if (vid) onNotice("Aqui só dá para enviar foto.") else if (u != null) onCaptured(u)
+        }
     }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null && handOff(uri)) return@rememberLauncherForActivityResult
@@ -11212,6 +11216,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         return
     }
 
+    if (onCaptured != null && showComposer) { Box(Modifier.fillMaxSize().background(Color.Black)); return }
     if (initialMode == "camera" && !showComposer) {
  QinblySplit {
         val frameRatio = when (selectedCameraFormat) { "1:1" -> 1f; "4:3" -> 3f / 4f; else -> 9f / 16f }
