@@ -69,7 +69,7 @@ private fun marketMain(block: () -> Unit) { Handler(Looper.getMainLooper()).post
 private data class QinblyListing(
     val id: String, val userId: String, val username: String, val displayName: String,
     val kind: String, val title: String, val description: String, val price: Double?, val extra: String,
-    val photos: List<String>, val lat: Double, val lng: Double, val createdAt: String
+    val photos: List<String>, val city: String, val createdAt: String
 )
 
 private val marketCategories = listOf("Tudo", "Vendas", "Doações", "Achados", "Eventos", "Serviços", "Mural")
@@ -95,14 +95,6 @@ private fun priceText(l: QinblyListing): String = when (l.kind) {
     else -> ""
 }
 
-private fun distanceText(lat1: Double, lng1: Double, lat2: Double, lng2: Double): String {
-    val r = 6371.0
-    val dLat = Math.toRadians(lat2 - lat1); val dLng = Math.toRadians(lng2 - lng1)
-    val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2)
-    val km = 2 * r * Math.asin(Math.sqrt(a))
-    return if (km < 1.0) "a menos de 1 km" else String.format(java.util.Locale("pt", "BR"), "a ~%.1f km", km)
-}
-
 private fun photoUrl(p: String): String = if (p.startsWith("http")) p else MARKET_STORAGE + p
 
 private fun parseListing(o: JSONObject): QinblyListing {
@@ -113,7 +105,7 @@ private fun parseListing(o: JSONObject): QinblyListing {
         o.optString("id"), o.optString("user_id"), p?.optString("username").orEmpty(), p?.optString("display_name").orEmpty(),
         o.optString("kind"), o.optString("title"), o.optString("description"),
         if (o.isNull("price")) null else o.optDouble("price"), o.optString("extra"), photos,
-        o.optDouble("lat"), o.optDouble("lng"), o.optString("created_at")
+        o.optString("city"), o.optString("created_at")
     )
 }
 
@@ -150,9 +142,11 @@ internal fun QinblyNearbyHub(
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     val myId = remember { QinblyApi.currentUserId(prefs) }
-    // Posição aproximada (~1 km) antes de gravar, para não expor o ponto exato de quem anuncia.
-    val gLat = Math.round(lat * 100) / 100.0
-    val gLng = Math.round(lng * 100) / 100.0
+    // Cidade: a da localização, ou a que a pessoa escolheu (fica guardada no aparelho).
+    var chosenCity by remember { mutableStateOf(prefs.getString("market_city", null)?.takeIf { it.isNotBlank() }) }
+    val city = chosenCity ?: place
+    var showCityPicker by remember { mutableStateOf(false) }
+    var savedIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     var cat by remember { mutableStateOf("Tudo") }
     var sub by remember { mutableStateOf("achado") }
     var listings by remember { mutableStateOf<List<QinblyListing>?>(null) }
@@ -165,23 +159,35 @@ internal fun QinblyNearbyHub(
     var showDrawer by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(cat, sub, refresh, gLat, gLng, mine) {
+    LaunchedEffect(refresh) {
+        val token = prefs.getString("token", null) ?: return@LaunchedEffect
+        try {
+            savedIds = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val a = JSONArray(QinblyApi.rest(token, "GET", "marketplace_saves?select=listing_id&limit=500"))
+                (0 until a.length()).map { a.getJSONObject(it).optString("listing_id") }.toSet()
+            }
+        } catch (_: Exception) { }
+    }
+    LaunchedEffect(cat, sub, refresh, city, mine) {
         if (cat == "Mural" && mine == null) return@LaunchedEffect
         val token = prefs.getString("token", null)
         if (token.isNullOrBlank()) { listings = emptyList(); return@LaunchedEffect }
         listings = null; failed = false
         listings = try {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                val dLat = 0.72; val dLng = 0.72 / Math.cos(Math.toRadians(lat)).coerceAtLeast(0.2)
                 val kindFilter = when (cat) {
                     "Vendas" -> "&kind=eq.venda"; "Doações" -> "&kind=eq.doacao"; "Achados" -> "&kind=eq.$sub"
                     "Eventos" -> "&kind=eq.evento"; "Serviços" -> "&kind=eq.servico"; else -> ""
                 }
+                val cols = "id,user_id,kind,title,description,price,extra,photos,city,created_at,profiles(username,display_name)"
+                if (mine == "saved") {
+                    val a = JSONArray(QinblyApi.rest(token, "GET", "marketplace_saves?select=created_at,marketplace_listings($cols)&order=created_at.desc&limit=100"))
+                    return@withContext (0 until a.length()).mapNotNull { a.getJSONObject(it).optJSONObject("marketplace_listings")?.let { o -> parseListing(o) } }
+                }
                 val q = if (mine != null) "marketplace_listings?user_id=eq.$myId" + (if (mine == "doacao") "&kind=eq.doacao" else "") +
-                    "&select=id,user_id,kind,title,description,price,extra,photos,lat,lng,created_at,profiles(username,display_name)&order=created_at.desc&limit=100"
-                else "marketplace_listings?lat=gte.${gLat - dLat}&lat=lte.${gLat + dLat}&lng=gte.${gLng - dLng}&lng=lte.${gLng + dLng}" +
-                    "&expires_at=gt.${java.time.Instant.now()}$kindFilter" +
-                    "&select=id,user_id,kind,title,description,price,extra,photos,lat,lng,created_at,profiles(username,display_name)&order=created_at.desc&limit=60"
+                    "&select=$cols&order=created_at.desc&limit=100"
+                else "marketplace_listings?city=eq.${java.net.URLEncoder.encode(city, "UTF-8")}" +
+                    "&expires_at=gt.${java.time.Instant.now()}$kindFilter&select=$cols&order=created_at.desc&limit=60"
                 val a = JSONArray(QinblyApi.rest(token, "GET", q))
                 (0 until a.length()).map { parseListing(a.getJSONObject(it)) }
             }
@@ -194,8 +200,16 @@ internal fun QinblyNearbyHub(
                 for (i in 0 until 3) Box(Modifier.padding(vertical = 2.5.dp).size(width = 20.dp, height = 2.5.dp).clip(CircleShape).background(textColor))
             }
             Column(Modifier.weight(1f).padding(start = 4.dp)) {
-                Text(if (mine != null) (if (mine == "doacao") "Minhas doações" else "Meus anúncios") else if (place.isNotBlank()) place else "Perto de você", color = textColor, fontWeight = FontWeight.Bold, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(if (mine != null) "Toque nos três tracinhos para voltar" else "Até ~80 km • anúncios somem em 7 dias", color = secondary, fontSize = 12.sp)
+                if (mine != null) {
+                    Text(if (mine == "doacao") "Minhas doações" else if (mine == "saved") "Anúncios salvos" else "Meus anúncios", color = textColor, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                    Text("Toque nos três tracinhos para voltar", color = secondary, fontSize = 12.sp)
+                } else {
+                    Row(Modifier.clip(RoundedCornerShape(20.dp)).background(QiblyTheme.soft).clickable { showCityPicker = true }.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(if (city.isNotBlank()) city else "Escolher cidade", color = textColor, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                        Text("  ▾", color = secondary, fontSize = 13.sp)
+                    }
+                    Text("Anúncios somem em 7 dias", color = secondary, fontSize = 11.sp, modifier = Modifier.padding(start = 6.dp, top = 2.dp))
+                }
             }
             Text("↻", fontSize = 22.sp, color = textColor, modifier = Modifier.clip(CircleShape).clickable { refresh++; onRefreshLocation() }.padding(8.dp))
         }
@@ -243,7 +257,7 @@ internal fun QinblyNearbyHub(
                         columns = GridCells.Fixed(2), contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()
                     ) {
-                        gridItems(list, key = { it.id }) { l -> ListingTile(l, lat, lng, cat == "Tudo", textColor, secondary) { open = l } }
+                        gridItems(list, key = { it.id }) { l -> ListingTile(l, cat == "Tudo", textColor, secondary) { open = l } }
                     }
                 }
             }
@@ -261,8 +275,8 @@ internal fun QinblyNearbyHub(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text("Perto de mim", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, modifier = Modifier.padding(start = 6.dp))
-                    if (place.isNotBlank()) Text(place, color = Color(0xFFA9B5C8), fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp, bottom = 8.dp))
-                    val entries = listOf("Meus anúncios", "Minhas doações", "Dicas de segurança", "Regras da comunidade")
+                    if (city.isNotBlank()) Text(city, color = Color(0xFFA9B5C8), fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp, bottom = 8.dp))
+                    val entries = listOf("Meus anúncios", "Anúncios salvos", "Minhas doações", "Trocar cidade", "Dicas de segurança", "Regras da comunidade")
                     for (e in entries) {
                         Text(e, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
                             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF262628)).clickable {
@@ -270,6 +284,8 @@ internal fun QinblyNearbyHub(
                                 when (e) {
                                     "Meus anúncios" -> mine = "all"
                                     "Minhas doações" -> mine = "doacao"
+                                    "Anúncios salvos" -> mine = "saved"
+                                    "Trocar cidade" -> { mine = null; showCityPicker = true }
                                     else -> info = e
                                 }
                             }.padding(horizontal = 16.dp, vertical = 14.dp))
@@ -301,9 +317,33 @@ internal fun QinblyNearbyHub(
             for (l in lines) Text("• " + l, color = Color(0xFFE6EAF2), fontSize = 15.sp)
         }
     }
+
+    if (showCityPicker) {
+        CityPicker(
+            current = city, deviceCity = place, prefs = prefs,
+            onPick = { c ->
+                chosenCity = c.takeIf { it != place }
+                prefs.edit().putString("market_city", if (c == place) "" else c).apply()
+                showCityPicker = false; mine = null
+                refresh++
+            },
+            onDismiss = { showCityPicker = false }
+        )
+    }
     open?.let { l ->
         ListingDetail(
-            l, lat, lng, mine = l.userId == myId, textColor = textColor, secondary = secondary,
+            l, mine = l.userId == myId, saved = l.id in savedIds, textColor = textColor, secondary = secondary,
+            onSave = {
+                val token = prefs.getString("token", null) ?: return@ListingDetail
+                val now = l.id !in savedIds
+                savedIds = if (now) savedIds + l.id else savedIds - l.id
+                Thread {
+                    try {
+                        if (now) QinblyApi.rest(token, "POST", "marketplace_saves", JSONObject().put("listing_id", l.id).toString(), "return=minimal")
+                        else QinblyApi.rest(token, "DELETE", "marketplace_saves?listing_id=eq.${l.id}")
+                    } catch (_: Exception) { }
+                }.start()
+            },
             onDismiss = { open = null },
             onChat = { open = null; if (l.username.isNotBlank()) onOpenConversation(l.username) },
             onDelete = {
@@ -341,7 +381,7 @@ internal fun QinblyNearbyHub(
         }
     }
     createKind?.let { k ->
-        ListingForm(k, gLat, gLng, onDismiss = { createKind = null }, onPosted = { posted ->
+        ListingForm(k, city, onDismiss = { createKind = null }, onPosted = { posted ->
             createKind = null
             cat = when (posted) { "venda" -> "Vendas"; "doacao" -> "Doações"; "achado", "perdido" -> "Achados"; "evento" -> "Eventos"; else -> "Serviços" }
             if (posted == "achado" || posted == "perdido") sub = posted
@@ -351,7 +391,7 @@ internal fun QinblyNearbyHub(
 }
 
 @Composable
-private fun ListingTile(l: QinblyListing, lat: Double, lng: Double, showTag: Boolean, textColor: Color, secondary: Color, onClick: () -> Unit) {
+private fun ListingTile(l: QinblyListing, showTag: Boolean, textColor: Color, secondary: Color, onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth().clickable { onClick() }) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)).background(QiblyTheme.soft)) {
             if (l.photos.isNotEmpty()) AsyncImage(model = photoUrl(l.photos.first()), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
@@ -363,21 +403,23 @@ private fun ListingTile(l: QinblyListing, lat: Double, lng: Double, showTag: Boo
         }
         Text(priceText(l), color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
         Text(l.title, color = textColor, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(distanceText(lat, lng, l.lat, l.lng), color = secondary, fontSize = 11.sp, maxLines = 1)
+        Text(qinblyAgo(l.createdAt), color = secondary, fontSize = 11.sp, maxLines = 1)
     }
 }
 
 @Composable
 private fun ListingDetail(
-    l: QinblyListing, lat: Double, lng: Double, mine: Boolean, textColor: Color, secondary: Color,
-    onDismiss: () -> Unit, onChat: () -> Unit, onDelete: () -> Unit
+    l: QinblyListing, mine: Boolean, saved: Boolean, textColor: Color, secondary: Color,
+    onSave: () -> Unit, onDismiss: () -> Unit, onChat: () -> Unit, onDelete: () -> Unit
 ) {
     QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = true) {
         Box(Modifier.fillMaxSize().background(QiblyTheme.background)) {
             Column(Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState())) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(40.dp).clip(CircleShape).background(QiblyTheme.soft).clickable { onDismiss() }, contentAlignment = Alignment.Center) { Text("←", color = textColor, fontSize = 18.sp) }
-                    Text(kindLabel(l.kind), color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.padding(start = 14.dp))
+                    Text(kindLabel(l.kind), color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.padding(start = 14.dp).weight(1f))
+                    Text(if (saved) "Salvo" else "Salvar", color = if (saved) Color(0xFFFFC93C) else textColor, fontWeight = FontWeight.Bold, fontSize = 14.sp,
+                        modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(QiblyTheme.soft).clickable { onSave() }.padding(horizontal = 16.dp, vertical = 9.dp))
                 }
                 if (l.photos.isNotEmpty()) {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), contentPadding = PaddingValues(horizontal = 12.dp)) {
@@ -390,7 +432,7 @@ private fun ListingDetail(
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (priceText(l).isNotBlank()) Text(priceText(l), color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp)
                     Text(l.title, color = textColor, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    Text(kindLabel(l.kind) + " • " + distanceText(lat, lng, l.lat, l.lng) + " • " + qinblyAgo(l.createdAt), color = secondary, fontSize = 13.sp)
+                    Text(kindLabel(l.kind) + (if (l.city.isNotBlank()) " • " + l.city else "") + " • " + qinblyAgo(l.createdAt), color = secondary, fontSize = 13.sp)
                     if (l.extra.isNotBlank() && l.kind != "evento") Text("Estado: " + l.extra, color = secondary, fontSize = 13.sp)
                     if (l.description.isNotBlank()) Text(l.description, color = textColor, fontSize = 15.sp, modifier = Modifier.padding(top = 8.dp))
                     Text("Anunciado por " + l.displayName.ifBlank { l.username }.ifBlank { "um vizinho" }, color = secondary, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
@@ -407,7 +449,7 @@ private fun ListingDetail(
 }
 
 @Composable
-private fun ListingForm(kind: String, lat: Double, lng: Double, onDismiss: () -> Unit, onPosted: (String) -> Unit, onNotice: (String) -> Unit) {
+private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPosted: (String) -> Unit, onNotice: (String) -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     var subKind by remember { mutableStateOf(if (kind == "achado") "achado" else kind) }
@@ -430,6 +472,7 @@ private fun ListingForm(kind: String, lat: Double, lng: Double, onDismiss: () ->
         if (token.isNullOrBlank() || uid.isNullOrBlank()) { onNotice("Entre na sua conta para publicar."); return }
         val t = title.trim()
         if (t.isBlank()) { onNotice("Escreva um título."); return }
+        if (city.isBlank()) { onNotice("Escolha a cidade no topo antes de publicar."); return }
         if (needsPhoto && photos.isEmpty()) { onNotice("Adicione pelo menos uma foto."); return }
         val price = priceTxt.trim().replace(",", ".").toDoubleOrNull()
         if (kind == "venda" && price == null) { onNotice("Informe o preço."); return }
@@ -439,7 +482,7 @@ private fun ListingForm(kind: String, lat: Double, lng: Double, onDismiss: () ->
             try {
                 val urls = picked.mapIndexed { i, u -> uploadMarketPhoto(context, token, uid, u, i) }
                 val body = JSONObject().put("kind", subKind).put("title", t.take(120)).put("description", desc.trim().take(2000))
-                    .put("extra", extra.trim().take(80)).put("photos", JSONArray(urls)).put("lat", lat).put("lng", lng)
+                    .put("extra", extra.trim().take(80)).put("photos", JSONArray(urls)).put("city", city)
                 if (hasPrice && price != null) body.put("price", price)
                 QinblyApi.rest(token, "POST", "marketplace_listings", body.toString(), "return=minimal")
                 marketMain { posting = false; onNotice("Publicado! Fica no ar por 7 dias."); onPosted(subKind) }
@@ -497,11 +540,72 @@ private fun ListingForm(kind: String, lat: Double, lng: Double, onDismiss: () ->
                     }
                 }
                 if (kind == "doacao") Text("Sem preço: aparece como “Grátis”.", color = Color(0xFF63D68D), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                Text("Local aproximado (~1 km): não mostramos o ponto exato. O anúncio some em 7 dias.", color = QiblyTheme.secondary, fontSize = 12.sp)
+                Text("Cidade do anúncio: " + city.ifBlank { "não definida" } + ". Para trocar, feche e escolha a cidade no topo. O anúncio some em 7 dias.", color = QiblyTheme.secondary, fontSize = 12.sp)
                 Text(if (posting) "Publicando…" else "Publicar", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp, textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(if (posting) Color(0xFF3C3C3E) else MarketBlue).clickable(enabled = !posting) { publish() }.padding(vertical = 15.dp))
                 Spacer(Modifier.height(12.dp))
             }
         }
+    }
+}
+
+/** Escolher a cidade: usar a da localização, buscar outra pelo nome ou voltar a uma recente. */
+@Composable
+private fun CityPicker(current: String, deviceCity: String, prefs: android.content.SharedPreferences, onPick: (String) -> Unit, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    var query by remember { mutableStateOf("") }
+    var results by remember { mutableStateOf<List<String>>(emptyList()) }
+    var searching by remember { mutableStateOf(false) }
+    val recents = remember {
+        val raw = prefs.getString("market_recent_cities", "[]") ?: "[]"
+        try { val a = JSONArray(raw); (0 until a.length()).map { a.optString(it) }.filter { it.isNotBlank() } } catch (_: Exception) { emptyList<String>() }
+    }
+    fun choose(c: String) {
+        val list = (listOf(c) + recents.filter { it != c }).take(6)
+        prefs.edit().putString("market_recent_cities", JSONArray(list).toString()).apply()
+        onPick(c)
+    }
+    LaunchedEffect(query) {
+        val q = query.trim()
+        if (q.length < 3) { results = emptyList(); return@LaunchedEffect }
+        kotlinx.coroutines.delay(500)
+        searching = true
+        results = try {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                @Suppress("DEPRECATION")
+                val found = android.location.Geocoder(context, java.util.Locale("pt", "BR")).getFromLocationName("$q, Brasil", 10).orEmpty()
+                found.mapNotNull { a -> listOfNotNull(a.subAdminArea ?: a.locality, a.adminArea).distinct().joinToString(", ").takeIf { it.contains(",") } }.distinct()
+            }
+        } catch (_: Exception) { emptyList() }
+        searching = false
+    }
+    QinblyBottomPanel("Escolha a cidade", onDismiss = onDismiss) {
+        QinblyPillField(query, { query = it.take(60) }, "Buscar cidade…", Modifier.fillMaxWidth())
+        if (deviceCity.isNotBlank()) Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF262628)).clickable { choose(deviceCity) }.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text("Usar minha localização", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text(deviceCity, color = Color(0xFFA9B5C8), fontSize = 12.sp)
+            }
+            if (current == deviceCity) Text("✓", color = MarketBlue, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        }
+        if (query.trim().length >= 3) {
+            if (searching) Text("Buscando…", color = Color(0xFFA9B5C8), fontSize = 13.sp)
+            else if (results.isEmpty()) Text("Nenhuma cidade encontrada.", color = Color(0xFFA9B5C8), fontSize = 13.sp)
+            for (c in results) CityRow(c, c == current) { choose(c) }
+        } else if (recents.isNotEmpty()) {
+            Text("Cidades recentes", color = Color(0xFFA9B5C8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            for (c in recents) CityRow(c, c == current) { choose(c) }
+        }
+    }
+}
+
+@Composable
+private fun CityRow(name: String, selected: Boolean, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0xFF262628)).clickable { onClick() }.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(name, color = Color.White, fontSize = 15.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.weight(1f))
+        if (selected) Text("✓", color = MarketBlue, fontSize = 18.sp, fontWeight = FontWeight.Bold)
     }
 }
