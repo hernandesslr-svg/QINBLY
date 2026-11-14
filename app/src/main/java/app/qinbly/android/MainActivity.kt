@@ -1232,8 +1232,9 @@ private fun QinblyTextStyleBar(
                 }
                 items(words.size) { i ->
                     val chosen = i == selWord
-                    Text(words[i], color = Color(wordColors[i] ?: color), fontSize = 13.sp, maxLines = 1,
-                        modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(Color(0x66000000))
+                    // Palavra enorme não estica a barra: a bolinha para de crescer e corta com "…" (o texto na foto continua inteiro).
+                    Text(words[i], color = Color(wordColors[i] ?: color), fontSize = 13.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 110.dp).clip(RoundedCornerShape(18.dp)).background(Color(0x66000000))
                             .border(if (chosen) 2.dp else 0.5.dp, if (chosen) Color.White else Color(0xB3FFFFFF), RoundedCornerShape(18.dp))
                             .clickable { onSelWord(i) }.padding(horizontal = 14.dp, vertical = 6.dp))
                 }
