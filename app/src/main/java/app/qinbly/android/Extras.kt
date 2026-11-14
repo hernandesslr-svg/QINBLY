@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -372,7 +373,7 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
         notices = try {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 val dLat = 0.05; val dLng = 0.05 / Math.cos(Math.toRadians(lat)).coerceAtLeast(0.2)
-                val q = "neighborhood_notices?lat=gte.${gLat - dLat}&lat=lte.${gLat + dLat}&lng=gte.${gLng - dLng}&lng=lte.${gLng + dLng}&expires_at=gt.${java.time.Instant.now()}&select=id,body,kind,photo,created_at,user_id,profiles(username,display_name)&order=created_at.desc&limit=50"
+                val q = "neighborhood_notices?lat=gte.${gLat - dLat}&lat=lte.${gLat + dLat}&lng=gte.${gLng - dLng}&lng=lte.${gLng + dLng}&expires_at=gt.${java.time.Instant.now()}&select=id,body,kind,photo,created_at,user_id,profiles!neighborhood_notices_user_id_fkey(username,display_name),neighborhood_comments(count)&order=created_at.desc&limit=50"
                 val a = JSONArray(QinblyApi.rest(token, "GET", q))
                 (0 until a.length()).map { a.getJSONObject(it) }
             }
@@ -452,6 +453,8 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
                         Text(n.optString("body"), color = Color.White, fontSize = 15.sp, maxLines = 4, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                         if (photo != null) AsyncImage(model = photo, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(10.dp)))
                     }
+                    val cnt = n.optJSONArray("neighborhood_comments")?.optJSONObject(0)?.optInt("count") ?: 0
+                    Text(if (cnt == 0) "💬  Comentar" else if (cnt == 1) "💬  1 comentário" else "💬  $cnt comentários", color = secondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -470,20 +473,133 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
         }
     }
     openNotice?.let { n ->
-        val p = n.optJSONObject("profiles")
-        val kindName = noticeKindLabel(n.optString("kind"))
-        val photo = n.optString("photo").takeIf { it.isNotBlank() && it != "null" }
-        val uname = p?.optString("username").orEmpty()
-        QinblyBottomPanel("Aviso", { openNotice = null }) {
-            Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (photo != null) AsyncImage(model = photo, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Fit, modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp).clip(RoundedCornerShape(16.dp)))
+        NoticeDetail(n, myId, prefs, onDismiss = { openNotice = null }, onNotice = onNotice, onChanged = { refresh++ })
+    }
+}
+
+private fun mentionText(body: String, color: Color): androidx.compose.ui.text.AnnotatedString {
+    val end = if (body.startsWith("@")) body.indexOfFirst { it.isWhitespace() }.let { if (it < 0) body.length else it } else 0
+    return androidx.compose.ui.text.buildAnnotatedString {
+        append(body)
+        if (end > 1) addStyle(androidx.compose.ui.text.SpanStyle(color = color, fontWeight = FontWeight.Bold), 0, end)
+    }
+}
+
+private object MentionTransform : androidx.compose.ui.text.input.VisualTransformation {
+    override fun filter(text: androidx.compose.ui.text.AnnotatedString) =
+        androidx.compose.ui.text.input.TransformedText(mentionText(text.text, Color(0xFF6AA6F8)), androidx.compose.ui.text.input.OffsetMapping.Identity)
+}
+
+/** Aviso aberto: foto, texto e comentários. As respostas ficam escondidas até tocar em "Ver respostas". */
+@Composable
+private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.SharedPreferences, onDismiss: () -> Unit, onNotice: (String) -> Unit, onChanged: () -> Unit) {
+    val noticeId = n.optString("id")
+    val noticeOwner = n.optString("user_id")
+    val p = n.optJSONObject("profiles")
+    val kindName = noticeKindLabel(n.optString("kind"))
+    val photo = n.optString("photo").takeIf { it.isNotBlank() && it != "null" }
+    var comments by remember { mutableStateOf<List<JSONObject>?>(null) }
+    var reload by remember { mutableStateOf(0) }
+    var expanded by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var replyTo by remember { mutableStateOf<JSONObject?>(null) }
+    var input by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue("")) }
+    var sending by remember { mutableStateOf(false) }
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    LaunchedEffect(reload) {
+        val token = prefs.getString("token", null) ?: run { comments = emptyList(); return@LaunchedEffect }
+        comments = try {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val a = JSONArray(QinblyApi.rest(token, "GET", "neighborhood_comments?notice_id=eq.$noticeId&select=id,parent_id,user_id,body,created_at,profiles!neighborhood_comments_user_id_fkey(username,display_name)&order=created_at.asc&limit=300"))
+                (0 until a.length()).map { a.getJSONObject(it) }
+            }
+        } catch (_: Exception) { comments ?: emptyList() }
+    }
+    fun nameOf(c: JSONObject): String { val pr = c.optJSONObject("profiles"); return pr?.optString("display_name").orEmpty().ifBlank { pr?.optString("username").orEmpty() }.ifBlank { "Alguém" } }
+    fun handleOf(c: JSONObject): String = c.optJSONObject("profiles")?.optString("username").orEmpty().removePrefix("@").ifBlank { nameOf(c).replace(" ", "") }
+    fun startReply(c: JSONObject) {
+        replyTo = c
+        val t = "@" + handleOf(c) + " "
+        input = androidx.compose.ui.text.input.TextFieldValue(t, androidx.compose.ui.text.TextRange(t.length))
+        val top = c.optString("parent_id").takeIf { it.isNotBlank() && it != "null" } ?: c.optString("id")
+        expanded = expanded + top
+        try { focus.requestFocus() } catch (_: Exception) { }
+    }
+    fun send() {
+        val token = prefs.getString("token", null); val body = input.text.trim()
+        if (token.isNullOrBlank() || body.isBlank() || sending) return
+        val target = replyTo
+        val parent = target?.let { it.optString("parent_id").takeIf { x -> x.isNotBlank() && x != "null" } ?: it.optString("id") }
+        sending = true
+        Thread {
+            try {
+                val j = JSONObject().put("notice_id", noticeId).put("body", body.take(280))
+                if (parent != null) j.put("parent_id", parent)
+                QinblyApi.rest(token, "POST", "neighborhood_comments", j.toString(), "return=minimal")
+                main { input = androidx.compose.ui.text.input.TextFieldValue(""); replyTo = null; sending = false; if (parent != null) expanded = expanded + parent; reload++; onChanged() }
+            } catch (e: Exception) { main { sending = false; onNotice(e.message ?: "Não foi possível comentar.") } }
+        }.start()
+    }
+    fun delete(c: JSONObject) {
+        val token = prefs.getString("token", null) ?: return
+        val id = c.optString("id")
+        comments = comments?.filterNot { it.optString("id") == id || it.optString("parent_id") == id }
+        Thread { try { QinblyApi.rest(token, "DELETE", "neighborhood_comments?id=eq.$id"); main { onChanged() } } catch (_: Exception) { } }.start()
+    }
+    QinblyBottomPanel("Aviso", onDismiss) {
+        Column(Modifier.heightIn(max = 560.dp)) {
+            Column(Modifier.weight(1f, fill = false).verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (photo != null) AsyncImage(model = photo, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Fit, modifier = Modifier.fillMaxWidth().heightIn(max = 260.dp).clip(RoundedCornerShape(16.dp)))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(kindName, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(noticeTagColor(kindName)).padding(horizontal = 9.dp, vertical = 3.dp))
-                    Text((p?.optString("display_name").orEmpty().ifBlank { uname }) + " • " + qinblyAgo(n.optString("created_at")), color = Color(0xFF6AA6F8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 8.dp))
+                    Text((p?.optString("display_name").orEmpty().ifBlank { p?.optString("username").orEmpty() }) + " • " + qinblyAgo(n.optString("created_at")), color = Color(0xFF6AA6F8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 8.dp))
                 }
                 Text(n.optString("body"), color = Color.White, fontSize = 16.sp)
-                if (uname.isNotBlank() && n.optString("user_id") != myId) Text("Chamar no chat", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Color(0xFF1877F2)).clickable { openNotice = null; onOpenConversation(uname) }.padding(vertical = 13.dp))
+                val all = comments
+                val tops = all?.filter { it.optString("parent_id").let { x -> x.isBlank() || x == "null" } }.orEmpty()
+                Text(if (all == null) "Carregando comentários…" else if (all.isEmpty()) "Nenhum comentário ainda. Seja o primeiro." else "${all.size} comentário" + (if (all.size > 1) "s" else ""), color = Color(0xFFB4B4BC), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                @Composable fun Bubble(c: JSONObject, small: Boolean) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(Modifier.size(if (small) 24.dp else 30.dp).clip(CircleShape).background(Color(0xFF3A3A3E)), contentAlignment = Alignment.Center) {
+                            Text(nameOf(c).take(1).uppercase(), color = Color.White, fontSize = if (small) 11.sp else 13.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(FieldBg).padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(nameOf(c), color = Color(0xFF6AA6F8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                    if (c.optString("user_id") == noticeOwner) Text("autor", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF1877F2)).padding(horizontal = 6.dp, vertical = 1.dp))
+                                    Text(" • " + qinblyAgo(c.optString("created_at")), color = Color(0xFF8E87A8), fontSize = 11.sp)
+                                }
+                                Text(mentionText(c.optString("body"), Color(0xFF6AA6F8)), color = Color.White, fontSize = 14.sp)
+                            }
+                            Row(Modifier.padding(start = 8.dp, top = 2.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                                Text("Responder", color = Color(0xFF8E87A8), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { startReply(c) }.padding(vertical = 4.dp))
+                                if (c.optString("user_id") == myId || noticeOwner == myId) Text("Apagar", color = Color(0xFFE0457B), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { delete(c) }.padding(vertical = 4.dp))
+                            }
+                        }
+                    }
+                }
+                for (c in tops) {
+                    Bubble(c, false)
+                    val replies = all.orEmpty().filter { it.optString("parent_id") == c.optString("id") }
+                    if (replies.isNotEmpty()) {
+                        val open = c.optString("id") in expanded
+                        Text(if (open) "—  Ocultar respostas ▴" else "—  Ver ${replies.size} resposta" + (if (replies.size > 1) "s" else "") + " ▾", color = Color(0xFF8E87A8), fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(start = 38.dp).clickable { expanded = if (open) expanded - c.optString("id") else expanded + c.optString("id") }.padding(vertical = 4.dp))
+                        if (open) Column(Modifier.padding(start = 38.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { for (r in replies) Bubble(r, true) }
+                    }
+                }
+            }
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(FieldBg).padding(horizontal = 16.dp, vertical = 11.dp)) {
+                    if (input.text.isEmpty()) Text(if (replyTo != null) "Escreva uma resposta…" else "Escreva um comentário…", color = Color(0xFF8E87A8), fontSize = 14.sp)
+                    androidx.compose.foundation.text.BasicTextField(
+                        input, { v -> input = androidx.compose.ui.text.input.TextFieldValue(v.text.take(280), v.selection, v.composition); if (v.text.isEmpty()) replyTo = null },
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 14.sp), cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.White),
+                        visualTransformation = MentionTransform, maxLines = 3, modifier = Modifier.fillMaxWidth().focusRequester(focus)
+                    )
+                }
+                val ready = input.text.isNotBlank() && !sending
+                Box(Modifier.size(42.dp).clip(CircleShape).background(if (ready) Color(0xFF1877F2) else Color(0xFF2E2E30)).clickable(enabled = ready) { send() }, contentAlignment = Alignment.Center) { Text("➤", color = Color.White, fontSize = 16.sp) }
             }
         }
     }
