@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.verticalScroll
@@ -125,10 +126,10 @@ internal fun qinblyToast(@Suppress("UNUSED_PARAMETER") original: (String) -> Uni
 private fun glyph(v: androidx.compose.ui.graphics.vector.ImageVector, color: Color, size: androidx.compose.ui.unit.Dp, modifier: Modifier): @Composable () -> Unit =
     { androidx.compose.material3.Icon(v, contentDescription = null, tint = color, modifier = modifier.size(size)) }
 
-@Composable internal fun QinblyCloseIcon(color: Color, size: androidx.compose.ui.unit.Dp = 18.dp, modifier: Modifier = Modifier) = glyph(androidx.compose.material.icons.Icons.Filled.Close, color, size, modifier)()
-@Composable internal fun QinblyCheckIcon(color: Color, size: androidx.compose.ui.unit.Dp = 18.dp, modifier: Modifier = Modifier) = glyph(androidx.compose.material.icons.Icons.Filled.Check, color, size, modifier)()
-@Composable internal fun QinblySendIcon(color: Color, size: androidx.compose.ui.unit.Dp = 20.dp, modifier: Modifier = Modifier) = glyph(androidx.compose.material.icons.Icons.Filled.Send, color, size, modifier)()
-@Composable internal fun QinblyBackIcon(color: Color, size: androidx.compose.ui.unit.Dp = 22.dp, modifier: Modifier = Modifier) = glyph(androidx.compose.material.icons.Icons.Filled.ArrowBack, color, size, modifier)()
+@Composable internal fun QinblyCloseIcon(color: Color, size: androidx.compose.ui.unit.Dp = 18.dp, modifier: Modifier = Modifier) = glyph(QinblyIcon.Close, color, size, modifier)()
+@Composable internal fun QinblyCheckIcon(color: Color, size: androidx.compose.ui.unit.Dp = 18.dp, modifier: Modifier = Modifier) = glyph(QinblyIcon.Check, color, size, modifier)()
+@Composable internal fun QinblySendIcon(color: Color, size: androidx.compose.ui.unit.Dp = 20.dp, modifier: Modifier = Modifier) = glyph(QinblyIcon.Send, color, size, modifier)()
+@Composable internal fun QinblyBackIcon(color: Color, size: androidx.compose.ui.unit.Dp = 22.dp, modifier: Modifier = Modifier) = glyph(QinblyIcon.ArrowBack, color, size, modifier)()
 @Composable internal fun QinblyIconOf(v: androidx.compose.ui.graphics.vector.ImageVector, color: Color, size: androidx.compose.ui.unit.Dp = 20.dp, modifier: Modifier = Modifier) = glyph(v, color, size, modifier)()
 
 /** Tela inteira com seta de voltar no topo (no lugar das "abinhas" que subiam de baixo). */
@@ -498,7 +499,7 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
                         if (photo != null) AsyncImage(model = photo, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(10.dp)))
                     }
                     val cnt = n.optJSONArray("neighborhood_comments")?.optJSONObject(0)?.optInt("count") ?: 0
-                    Row(verticalAlignment = Alignment.CenterVertically) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.ChatBubbleOutline, secondary, 16.dp); Text(if (cnt == 0) "  Comentar" else if (cnt == 1) "  1 comentário" else "  $cnt comentários", color = secondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
+                    Row(verticalAlignment = Alignment.CenterVertically) { QinblyIconOf(QinblyIcon.ChatBubbleOutline, secondary, 16.dp); Text(if (cnt == 0) "  Comentar" else if (cnt == 1) "  1 comentário" else "  $cnt comentários", color = secondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
                 }
             }
         }

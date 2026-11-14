@@ -73,7 +73,7 @@ internal fun qinblySearchMusic(query: String): List<QinblyMusic> {
 /** Linha "♪ título · artista" usada embaixo do nome e sobre as prévias. */
 @Composable
 internal fun QinblyMusicLine(m: QinblyMusic, modifier: Modifier = Modifier, color: Color = Color(0xE6FFFFFF)) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.MusicNote, color, 14.dp); Text(" " + m.title + " · " + m.artist, color = color, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) { QinblyIconOf(QinblyIcon.MusicNote, color, 14.dp); Text(" " + m.title + " · " + m.artist, color = color, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) }
 }
 
 /** Toca a música em repetição enquanto estiver na tela. */
@@ -130,13 +130,13 @@ internal fun QinblyMusicPicker(onPick: (QinblyMusic) -> Unit, onDismiss: () -> U
         else LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp, start = 16.dp, end = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             items(results, key = { it.url }) { m ->
                 Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { playing = ""; onPick(m) }.padding(vertical = 8.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF3A3260)), contentAlignment = Alignment.Center) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.MusicNote, Color(0xFF6AA6F8), 22.dp) }
+                    Box(Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF3A3260)), contentAlignment = Alignment.Center) { QinblyIconOf(QinblyIcon.MusicNote, Color(0xFF6AA6F8), 22.dp) }
                     Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                         Text(m.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(m.artist, color = Color(0xFFA9B5C8), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                     Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF262628)).clickable { playing = if (playing == m.url) "" else m.url }, contentAlignment = Alignment.Center) {
-                        QinblyIconOf(if (playing == m.url) androidx.compose.material.icons.Icons.Filled.Pause else androidx.compose.material.icons.Icons.Filled.PlayArrow, Color.White, 20.dp)
+                        QinblyIconOf(if (playing == m.url) QinblyIcon.Pause else QinblyIcon.PlayArrow, Color.White, 20.dp)
                     }
                 }
             }

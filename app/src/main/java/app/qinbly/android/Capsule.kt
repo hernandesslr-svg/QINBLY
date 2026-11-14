@@ -138,7 +138,7 @@ internal fun QinblyCapsuleInbox() {
             .background(Brush.horizontalGradient(listOf(Color(0xFF0F4AA8), Color(0xFF1877F2)))).clickable { viewing = c }.padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Mail, Color.White, 28.dp)
+        QinblyIconOf(QinblyIcon.Mail, Color.White, 28.dp)
         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
             Text("Sua cápsula abriu", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
             Text((if (c.fromId == c.toId) "Guardada por você" else "De @${c.fromName}") + " em ${capShort(c.createdAt)}", color = Color(0xCCFFFFFF), fontSize = 12.sp)
@@ -243,13 +243,13 @@ internal fun QinblyCapsuleHub(accent: Color, onDismiss: () -> Unit, onNotice: (S
                             .clickable { if (c.closed) onNotice("Ainda fechada. Abre em ${capShort(c.unlockAt)}.") else viewing = c }.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(Modifier.size(44.dp).clip(CircleShape).background(CapField), contentAlignment = Alignment.Center) { QinblyIconOf(if (c.closed) androidx.compose.material.icons.Icons.Filled.Lock else androidx.compose.material.icons.Icons.Filled.Mail, Color.White, 22.dp) }
+                        Box(Modifier.size(44.dp).clip(CircleShape).background(CapField), contentAlignment = Alignment.Center) { QinblyIconOf(if (c.closed) QinblyIcon.Lock else QinblyIcon.Mail, Color.White, 22.dp) }
                         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                             Text(title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                             Text(sub, color = CapMuted, fontSize = 12.sp)
                         }
                         if (c.closed) QinblyCheckIcon(Color(0xFF63D68D), 21.dp)
-                        else QinblyIconOf(androidx.compose.material.icons.Icons.Filled.KeyboardArrowRight, CapMuted, 26.dp)
+                        else QinblyIconOf(QinblyIcon.KeyboardArrowRight, CapMuted, 26.dp)
                     }
                 }
             }
@@ -384,7 +384,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                         @Composable fun Chip(label: String, onClick: () -> Unit, mod: Modifier) {
                             Box(mod.clip(RoundedCornerShape(22.dp)).background(Color(0xFF3A2D6B)).clickable { onClick() }.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    val ic = when { label.startsWith("📷") -> androidx.compose.material.icons.Icons.Filled.PhotoCamera; label.startsWith("Aa") -> androidx.compose.material.icons.Icons.Filled.TextFields; else -> null }
+                                    val ic = when { label.startsWith("📷") -> QinblyIcon.PhotoCamera; label.startsWith("Aa") -> QinblyIcon.TextFields; else -> null }
                                     if (ic != null) { QinblyIconOf(ic, Color.White, 20.dp); Spacer(Modifier.width(8.dp)) }
                                     Text(label.substringAfter("  "), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                                 }
@@ -410,7 +410,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                             gridItems(items, key = { it.uri.toString() }) { g ->
                                 Box(Modifier.aspectRatio(1f).clickable { picked = g; textBody = null; step = "edit" }) {
                                     MediaThumb(g.uri, g.video, Modifier.fillMaxSize())
-                                    if (g.video) QinblyIconOf(androidx.compose.material.icons.Icons.Filled.PlayArrow, Color.White, 20.dp, Modifier.align(Alignment.BottomStart).padding(6.dp))
+                                    if (g.video) QinblyIconOf(QinblyIcon.PlayArrow, Color.White, 20.dp, Modifier.align(Alignment.BottomStart).padding(6.dp))
                                 }
                             }
                         }
@@ -433,8 +433,8 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                                 if (message.isEmpty()) Text("Escreva uma mensagem para o futuro…", color = Color(0xFF8E87A8), fontSize = 15.sp)
                                 BasicTextField(value = message, onValueChange = { message = it.take(500) }, textStyle = TextStyle(color = Color.White, fontSize = 15.sp), cursorBrush = SolidColor(Color.White), maxLines = 4, modifier = Modifier.fillMaxWidth())
                             }
-                            Box(Modifier.size(36.dp).clip(CircleShape).background(if (music != null) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = false; showMusic = true }, contentAlignment = Alignment.Center) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.MusicNote, Color.White, 22.dp) }
-                            Box(Modifier.size(36.dp).clip(CircleShape).background(if (showEmojis) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = !showEmojis }, contentAlignment = Alignment.Center) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.EmojiEmotions, Color.White, 22.dp) }
+                            Box(Modifier.size(36.dp).clip(CircleShape).background(if (music != null) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = false; showMusic = true }, contentAlignment = Alignment.Center) { QinblyIconOf(QinblyIcon.MusicNote, Color.White, 22.dp) }
+                            Box(Modifier.size(36.dp).clip(CircleShape).background(if (showEmojis) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = !showEmojis }, contentAlignment = Alignment.Center) { QinblyIconOf(QinblyIcon.EmojiEmotions, Color.White, 22.dp) }
                         }
                         Text("Continuar", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
                             modifier = Modifier.clip(RoundedCornerShape(24.dp)).background(Color.White).clickable { showEmojis = false; step = "date" }.padding(horizontal = 20.dp, vertical = 13.dp))
@@ -467,7 +467,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                         }
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             val canBack = ym.isAfter(minYm); val canNext = ym.isBefore(maxYm)
-                            Box(Modifier.size(42.dp).clip(CircleShape).background(CapField).clickable(enabled = canBack) { goTo(ym.minusMonths(1)) }, contentAlignment = Alignment.Center) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.KeyboardArrowLeft, if (canBack) Color.White else Color(0xFF5C5575), 28.dp) }
+                            Box(Modifier.size(42.dp).clip(CircleShape).background(CapField).clickable(enabled = canBack) { goTo(ym.minusMonths(1)) }, contentAlignment = Alignment.Center) { QinblyIconOf(QinblyIcon.KeyboardArrowLeft, if (canBack) Color.White else Color(0xFF5C5575), 28.dp) }
                             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(CapMonths[month - 1].replaceFirstChar { it.uppercase() }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
                                 Row(Modifier.clip(RoundedCornerShape(14.dp)).clickable { yearOpen = !yearOpen }.padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -475,7 +475,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                                     Text(if (yearOpen) "  ▴" else "  ▾", color = Color(0xFF6AA6F8), fontSize = 15.sp)
                                 }
                             }
-                            Box(Modifier.size(42.dp).clip(CircleShape).background(CapField).clickable(enabled = canNext) { goTo(ym.plusMonths(1)) }, contentAlignment = Alignment.Center) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.KeyboardArrowRight, if (canNext) Color.White else Color(0xFF5C5575), 28.dp) }
+                            Box(Modifier.size(42.dp).clip(CircleShape).background(CapField).clickable(enabled = canNext) { goTo(ym.plusMonths(1)) }, contentAlignment = Alignment.Center) { QinblyIconOf(QinblyIcon.KeyboardArrowRight, if (canNext) Color.White else Color(0xFF5C5575), 28.dp) }
                         }
                         Box(Modifier.fillMaxWidth()) {
                             Column {
@@ -518,7 +518,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                     Column(Modifier.weight(1f).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         @Composable fun Person(label: String, sub: String, selected: Boolean, initial: String, onClick: () -> Unit) {
                             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(if (selected) Color(0xFF3A2D6B) else CapCard).clickable { onClick() }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(42.dp).clip(CircleShape).background(CapField), contentAlignment = Alignment.Center) { if (initial == "🙂") QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Person, Color.White, 22.dp) else Text(initial, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp) }
+                                Box(Modifier.size(42.dp).clip(CircleShape).background(CapField), contentAlignment = Alignment.Center) { if (initial == "🙂") QinblyIconOf(QinblyIcon.Person, Color.White, 22.dp) else Text(initial, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp) }
                                 Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                                     Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                                     if (sub.isNotBlank()) Text(sub, color = CapMuted, fontSize = 12.sp)

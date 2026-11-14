@@ -153,9 +153,9 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
                     Box(Modifier.size(42.dp).clip(CircleShape).background(if (on) Color.White else Color(0x44000000)).clickable { onClick() }, contentAlignment = Alignment.Center) { content() }
                 }
                 Tool(showFonts, { showFonts = !showFonts; if (showFonts) showEmojis = false }) { Text("Aa", color = if (showFonts) Color(0xFF26215C) else Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp) }
-                Tool(showBgs, { showBgs = !showBgs }) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Palette, Color.White, 22.dp) }
-                Tool(false, { align = (align + 1) % 3 }) { QinblyIconOf(when (align) { 0 -> androidx.compose.material.icons.Icons.Filled.FormatAlignLeft; 2 -> androidx.compose.material.icons.Icons.Filled.FormatAlignRight; else -> androidx.compose.material.icons.Icons.Filled.FormatAlignCenter }, Color.White, 22.dp) }
-                Tool(showEmojis, { showEmojis = !showEmojis; if (showEmojis) showFonts = false }) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.EmojiEmotions, Color.White, 22.dp) }
+                Tool(showBgs, { showBgs = !showBgs }) { QinblyIconOf(QinblyIcon.Palette, Color.White, 22.dp) }
+                Tool(false, { align = (align + 1) % 3 }) { QinblyIconOf(when (align) { 0 -> QinblyIcon.FormatAlignLeft; 2 -> QinblyIcon.FormatAlignRight; else -> QinblyIcon.FormatAlignCenter }, Color.White, 22.dp) }
+                Tool(showEmojis, { showEmojis = !showEmojis; if (showEmojis) showFonts = false }) { QinblyIconOf(QinblyIcon.EmojiEmotions, Color.White, 22.dp) }
             }
             Box(Modifier.fillMaxSize().statusBarsPadding().padding(top = 60.dp, bottom = 190.dp).padding(start = 24.dp, end = 64.dp), contentAlignment = Alignment.Center) {
                 Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
@@ -340,7 +340,7 @@ internal fun QinblyStoryReplyBar(
                         if (draft.isBlank()) Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF2E2E30)).clickable {
                             if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) startRec()
                             else micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
-                        }, contentAlignment = Alignment.Center) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Mic, Color.White, 22.dp) }
+                        }, contentAlignment = Alignment.Center) { QinblyIconOf(QinblyIcon.Mic, Color.White, 22.dp) }
                         else Box(Modifier.size(46.dp).clip(CircleShape).background(accent).clickable { send() }, contentAlignment = Alignment.Center) { QinblySendIcon(Color.White, 21.dp) }
                     }
                 }

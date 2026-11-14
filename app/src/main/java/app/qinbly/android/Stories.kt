@@ -381,7 +381,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                         if (music != null) QinblyMusicLine(music)
                     }
                     if (music != null) {
-                        QinblyIconOf(if (muted) androidx.compose.material.icons.Icons.Filled.VolumeOff else androidx.compose.material.icons.Icons.Filled.VolumeUp, Color.White, 28.dp, Modifier.clip(CircleShape).clickable { muted = !muted }.padding(horizontal = 6.dp, vertical = 4.dp))
+                        QinblyIconOf(if (muted) QinblyIcon.VolumeOff else QinblyIcon.VolumeUp, Color.White, 28.dp, Modifier.clip(CircleShape).clickable { muted = !muted }.padding(horizontal = 6.dp, vertical = 4.dp))
                         QinblyMusicPlayer(music.url, muted, paused = showViewers || showComments || replying || contribTarget.isNotBlank())
                     }
                     Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.White, modifier = Modifier.size(28.dp).clickable { onDismiss() })
@@ -402,7 +402,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                             Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0x55000000)).border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(26.dp)).clickable { showComments = true }.padding(horizontal = 20.dp, vertical = 13.dp),
                             horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
                         ) {
-                            QinblyIconOf(androidx.compose.material.icons.Icons.Filled.ChatBubbleOutline, Color.White, 20.dp)
+                            QinblyIconOf(QinblyIcon.ChatBubbleOutline, Color.White, 20.dp)
                             Text("  Ver comentários", color = Color.White, fontSize = 15.sp)
                         }
                     } else {

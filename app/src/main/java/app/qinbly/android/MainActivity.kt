@@ -4922,7 +4922,7 @@ private fun QinblyPostMenu(
         )
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        if (post.pinned) QinblyIconOf(androidx.compose.material.icons.Icons.Filled.PushPin, QiblyTheme.secondary, 18.dp)
+        if (post.pinned) QinblyIconOf(QinblyIcon.PushPin, QiblyTheme.secondary, 18.dp)
         IconButton(onClick = { expanded = true }) {
             if (tint != null) Icon(Icons.Default.MoreVert, contentDescription = "Opções da publicação", tint = tint)
             else Icon(Icons.Default.MoreVert, contentDescription = "Opções da publicação")
@@ -5253,7 +5253,7 @@ private fun QiblyShareDialog(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(Modifier.size(52.dp).background(QinblyBrand.Accent.copy(alpha = 0.12f), CircleShape), contentAlignment = Alignment.Center) {
-                            QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Link, QinblyBrand.Accent, 26.dp)
+                            QinblyIconOf(QinblyIcon.Link, QinblyBrand.Accent, 26.dp)
                         }
                         Text("Copiar link", color = QiblyTheme.text, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                     }
@@ -5672,9 +5672,9 @@ private fun QinblyLivesPage(lives: List<QinblyLive>, onNotice: (String) -> Unit)
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(androidx.compose.material.icons.Icons.Filled.Videocam, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                Icon(QinblyIcon.Videocam, null, tint = Color.White, modifier = Modifier.size(18.dp))
                 Text("Começar uma live", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                Icon(androidx.compose.material.icons.Icons.Filled.ChevronRight, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                Icon(QinblyIcon.ChevronRight, null, tint = Color.White, modifier = Modifier.size(18.dp))
             }
         }
         item { QinblyTopLives(lives, liveSort, { liveSort = it }, livesPrefs, onOpen = { openLive = it }, onSeeMore = { allOpen = true }, title = "Lives em alta") }
@@ -5736,13 +5736,13 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
             "setup" -> {
                 Row(Modifier.fillMaxWidth().statusBarsPadding().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(34.dp).clip(CircleShape).background(glass).clickable { onClose() }, contentAlignment = Alignment.Center) {
-                        Icon(androidx.compose.material.icons.Icons.Filled.Close, "Fechar", tint = Color.White, modifier = Modifier.size(18.dp))
+                        Icon(QinblyIcon.Close, "Fechar", tint = Color.White, modifier = Modifier.size(18.dp))
                     }
                     Spacer(Modifier.weight(1f))
                     Text("Prévia", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 13.sp, modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(glass).padding(horizontal = 12.dp, vertical = 5.dp))
                     Spacer(Modifier.weight(1f))
                     Box(Modifier.size(34.dp).clip(CircleShape).background(glass).clickable { liveFront = !liveFront }, contentAlignment = Alignment.Center) {
-                        Icon(androidx.compose.material.icons.Icons.Filled.Cameraswitch, "Virar câmera", tint = Color.White, modifier = Modifier.size(18.dp))
+                        Icon(QinblyIcon.Cameraswitch, "Virar câmera", tint = Color.White, modifier = Modifier.size(18.dp))
                     }
                 }
                 Column(
@@ -5799,7 +5799,7 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
                         Column {
                             Text("Você", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 13.sp)
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(androidx.compose.material.icons.Icons.Filled.Favorite, null, tint = Color(0xFFFF2D3F), modifier = Modifier.size(11.dp))
+                                Icon(QinblyIcon.Favorite, null, tint = Color(0xFFFF2D3F), modifier = Modifier.size(11.dp))
                                 Spacer(Modifier.width(3.dp))
                                 Text("0", color = Color.White, fontSize = 11.sp)
                             }
@@ -5835,8 +5835,8 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
                         })
                     )
                     listOf(
-                        Triple(androidx.compose.material.icons.Icons.Filled.Cameraswitch, "Virar câmera", { liveFront = !liveFront }),
-                        Triple(if (micOn) Icons.Default.Mic else androidx.compose.material.icons.Icons.Filled.MicOff, if (micOn) "Silenciar" else "Ligar microfone", { micOn = !micOn }),
+                        Triple(QinblyIcon.Cameraswitch, "Virar câmera", { liveFront = !liveFront }),
+                        Triple(if (micOn) Icons.Default.Mic else QinblyIcon.MicOff, if (micOn) "Silenciar" else "Ligar microfone", { micOn = !micOn }),
                         Triple(Icons.Default.Pause, "Pausar", { paused = !paused })
                     ).forEach { (icon, desc, action) ->
                         Box(Modifier.size(38.dp).clip(CircleShape).background(glass).clickable { action() }, contentAlignment = Alignment.Center) {
@@ -5855,7 +5855,7 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
                     .background(if (fxOpen) QinblyBrand.Accent else glass).clickable { fxOpen = !fxOpen },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(androidx.compose.material.icons.Icons.Filled.AutoAwesome, "Efeitos", tint = Color.White, modifier = Modifier.size(20.dp))
+                Icon(QinblyIcon.AutoAwesome, "Efeitos", tint = Color.White, modifier = Modifier.size(20.dp))
             }
             if (fxOpen) {
                 LazyRow(
@@ -5919,25 +5919,25 @@ private fun QinblyLiveRoom(live: QinblyLive, onClose: () -> Unit, onNotice: (Str
             Column(Modifier.weight(1f)) {
                 Text(live.host, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(androidx.compose.material.icons.Icons.Filled.Favorite, null, tint = Color(0xFFFF2D3F), modifier = Modifier.size(15.dp))
+                    Icon(QinblyIcon.Favorite, null, tint = Color(0xFFFF2D3F), modifier = Modifier.size(15.dp))
                     Spacer(Modifier.width(4.dp))
                     Text("$likes", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
             }
-            Icon(androidx.compose.material.icons.Icons.Filled.Visibility, null, tint = Color.White, modifier = Modifier.size(15.dp))
+            Icon(QinblyIcon.Visibility, null, tint = Color.White, modifier = Modifier.size(15.dp))
             Text("${live.viewers}", color = Color.White, fontSize = 13.sp)
             IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
-                Icon(androidx.compose.material.icons.Icons.Filled.Close, "Sair da live", tint = Color.White)
+                Icon(QinblyIcon.Close, "Sair da live", tint = Color.White)
             }
         }
         if (heartBurst > 0) {
             key(heartBurst) {
-                Icon(androidx.compose.material.icons.Icons.Filled.Favorite, null, tint = Color(0xFFFF2D3F), modifier = Modifier.align(Alignment.Center).size(88.dp).alpha(0.9f))
+                Icon(QinblyIcon.Favorite, null, tint = Color(0xFFFF2D3F), modifier = Modifier.align(Alignment.Center).size(88.dp).alpha(0.9f))
             }
             LaunchedEffect(heartBurst) { kotlinx.coroutines.delay(700); if (heartBurst > 0) heartBurst = 0 }
         }
         Column(Modifier.align(Alignment.TopEnd).padding(top = 56.dp, end = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("pin" to androidx.compose.material.icons.Icons.Filled.PushPin, "poll" to androidx.compose.material.icons.Icons.Filled.Poll).forEach { (id, icon) ->
+            listOf("pin" to QinblyIcon.PushPin, "poll" to QinblyIcon.Poll).forEach { (id, icon) ->
                 Box(
                     Modifier.size(26.dp).clip(CircleShape).background(if (panel == id) QinblyBrand.Accent else Color(0x29FFFFFF))
                         .clickable { panel = if (panel == id) "" else id },
@@ -5973,7 +5973,7 @@ private fun QinblyLiveRoom(live: QinblyLive, onClose: () -> Unit, onNotice: (Str
                 })
             )
             Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x24FFFFFF)).clickable { onNotice("Presentes: em breve.") }, contentAlignment = Alignment.Center) {
-                Icon(androidx.compose.material.icons.Icons.Filled.CardGiftcard, "Presente", tint = Color.White, modifier = Modifier.size(20.dp))
+                Icon(QinblyIcon.CardGiftcard, "Presente", tint = Color.White, modifier = Modifier.size(20.dp))
             }
             Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x24FFFFFF)).clickable {
                 try {
@@ -5982,7 +5982,7 @@ private fun QinblyLiveRoom(live: QinblyLive, onClose: () -> Unit, onNotice: (Str
                     shareContext.startActivity(android.content.Intent.createChooser(send, "Compartilhar live").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
                 } catch (_: Exception) { onNotice("Não foi possível abrir o compartilhamento.") }
             }, contentAlignment = Alignment.Center) {
-                Icon(androidx.compose.material.icons.Icons.Filled.Share, "Compartilhar", tint = Color.White, modifier = Modifier.size(20.dp))
+                Icon(QinblyIcon.Share, "Compartilhar", tint = Color.White, modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -6028,7 +6028,7 @@ private fun QinblyRankRow(rank: Int, post: QinblyApi.PostSummary, onClick: () ->
         Column(Modifier.weight(1f)) {
             Text(post.displayName.ifBlank { post.username }, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
             if (post.caption.isNotBlank()) Text(post.caption, color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-            Row(verticalAlignment = Alignment.CenterVertically) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Favorite, RemoteAppearance.feedSecondaryTextColor, 15.dp); Text(" ${QinblyEngagement.likeCount(post)}   ", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 13.sp); QinblyIconOf(androidx.compose.material.icons.Icons.Filled.ChatBubble, RemoteAppearance.feedSecondaryTextColor, 15.dp); Text(" ${post.comments}", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 13.sp) }
+            Row(verticalAlignment = Alignment.CenterVertically) { QinblyIconOf(QinblyIcon.Favorite, RemoteAppearance.feedSecondaryTextColor, 15.dp); Text(" ${QinblyEngagement.likeCount(post)}   ", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 13.sp); QinblyIconOf(QinblyIcon.ChatBubble, RemoteAppearance.feedSecondaryTextColor, 15.dp); Text(" ${post.comments}", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 13.sp) }
         }
     }
 }
@@ -8244,7 +8244,7 @@ private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolea
                     })
         }
         if (textStory?.collab == true) {
-            Row(Modifier.align(Alignment.TopEnd).padding(8.dp).clip(RoundedCornerShape(12.dp)).background(Color.White).padding(horizontal = 8.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) { QinblyIconOf(androidx.compose.material.icons.Icons.Filled.Groups, Color(0xFF26215C), 14.dp); Text(" Coletivo", color = Color(0xFF26215C), fontSize = 11.sp, fontWeight = FontWeight.SemiBold) }
+            Row(Modifier.align(Alignment.TopEnd).padding(8.dp).clip(RoundedCornerShape(12.dp)).background(Color.White).padding(horizontal = 8.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) { QinblyIconOf(QinblyIcon.Groups, Color(0xFF26215C), 14.dp); Text(" Coletivo", color = Color(0xFF26215C), fontSize = 11.sp, fontWeight = FontWeight.SemiBold) }
             if (collabAvatars.isNotEmpty()) Row(Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = if (showAvatar) 54.dp else 40.dp)) {
                 collabAvatars.take(3).forEach { url ->
                     Box(Modifier.padding(end = 0.dp).offset(x = 0.dp).size(24.dp).clip(CircleShape).background(QiblyTheme.soft).border(1.5.dp, Color.White, CircleShape)) {
@@ -9690,7 +9690,7 @@ private fun SettingsLink(title: String, subtitle: String, icon: androidx.compose
                 Text(title, fontWeight = FontWeight.Medium, color = QiblyTheme.text, fontSize = 15.sp)
                 Text(subtitle, color = Muted, fontSize = 12.sp, lineHeight = 15.sp)
             }
-            QinblyIconOf(androidx.compose.material.icons.Icons.Filled.KeyboardArrowRight, Muted, 26.dp)
+            QinblyIconOf(QinblyIcon.KeyboardArrowRight, Muted, 26.dp)
         }
         androidx.compose.material3.HorizontalDivider(color = QiblyTheme.border, thickness = 0.5.dp)
     }
@@ -12446,8 +12446,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 Column(Modifier.weight(1f).height(140.dp).clip(RoundedCornerShape(14.dp)).background(QinblyBrand.Accent.copy(alpha = 0.06f)).padding(12.dp)) {
                     QinblyLegendField(capState, 2200, "Escreva uma legenda…", QiblyTheme.text, 15.sp, Modifier.fillMaxWidth().weight(1f)) { caption = it; captionCursor = it.length }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        QinblyIconOf(androidx.compose.material.icons.Icons.Filled.EmojiEmotions, QiblyTheme.text, 26.dp, Modifier.clip(CircleShape).background(if (showCapEmojis) QinblyBrand.Accent.copy(alpha = 0.25f) else Color.Transparent).clickable { showCapEmojis = !showCapEmojis }.padding(horizontal = 4.dp, vertical = 2.dp))
-                        if (QinblyComposeSeed.story) QinblyIconOf(androidx.compose.material.icons.Icons.Filled.MusicNote, QiblyTheme.text, 26.dp, Modifier.clip(CircleShape).background(if (storyMusic != null) QinblyBrand.Accent.copy(alpha = 0.25f) else Color.Transparent).clickable { showMusicPicker = true }.padding(horizontal = 4.dp, vertical = 2.dp))
+                        QinblyIconOf(QinblyIcon.EmojiEmotions, QiblyTheme.text, 26.dp, Modifier.clip(CircleShape).background(if (showCapEmojis) QinblyBrand.Accent.copy(alpha = 0.25f) else Color.Transparent).clickable { showCapEmojis = !showCapEmojis }.padding(horizontal = 4.dp, vertical = 2.dp))
+                        if (QinblyComposeSeed.story) QinblyIconOf(QinblyIcon.MusicNote, QiblyTheme.text, 26.dp, Modifier.clip(CircleShape).background(if (storyMusic != null) QinblyBrand.Accent.copy(alpha = 0.25f) else Color.Transparent).clickable { showMusicPicker = true }.padding(horizontal = 4.dp, vertical = 2.dp))
                         Spacer(Modifier.weight(1f))
                         Text("${caption.length} / 2200", color = Color.Gray, style = MaterialTheme.typography.labelSmall)
                     }
