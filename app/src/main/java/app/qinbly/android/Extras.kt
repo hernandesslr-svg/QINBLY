@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -355,7 +356,6 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
     var posting by remember { mutableStateOf(false) }
     var openNotice by remember { mutableStateOf<JSONObject?>(null) }
     var pendingCamera by remember { mutableStateOf<android.net.Uri?>(null) }
-    val galleryLauncher = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) photoUri = uri }
     val cameraLauncher = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.TakePicture()) { ok ->
         if (ok) photoUri = pendingCamera
         pendingCamera = null
@@ -407,13 +407,10 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
                     if (draft.isEmpty()) Text("Avise a vizinhança…", color = Color(0xFF8E87A8), fontSize = 16.sp)
                     androidx.compose.foundation.text.BasicTextField(draft, { draft = it.take(280) }, textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 16.sp), cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.White), maxLines = 4, modifier = Modifier.fillMaxWidth())
                 }
-                Box(Modifier.size(40.dp).clip(CircleShape).clickable {
+                Box(Modifier.size(38.dp).clip(CircleShape).background(Color(0xFF2E2E30)).clickable {
                     if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) launchCamera()
                     else cameraPermission.launch(android.Manifest.permission.CAMERA)
-                }, contentAlignment = Alignment.Center) { Text("📷", fontSize = 20.sp) }
-                Box(Modifier.size(40.dp).clip(CircleShape).clickable {
-                    galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly))
-                }, contentAlignment = Alignment.Center) { Text("🖼", fontSize = 20.sp) }
+                }, contentAlignment = Alignment.Center) { CameraGlyph(Color.White, Modifier.size(20.dp)) }
             }
             val pu = photoUri
             if (pu != null) Box(Modifier.padding(start = 6.dp)) {
@@ -471,6 +468,19 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
 
     openNotice?.let { n ->
         NoticeDetail(n, myId, prefs, onDismiss = { openNotice = null }, onNotice = onNotice, onChanged = { refresh++ })
+    }
+}
+
+@Composable
+private fun CameraGlyph(color: Color, modifier: Modifier) {
+    androidx.compose.foundation.Canvas(modifier) {
+        val k = size.minDimension / 24f
+        val body = androidx.compose.ui.graphics.vector.PathParser().parsePathString("M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2c.5 0 1-.3 1.2-.7l.5-1c.2-.4.6-.7 1.1-.7h3c.5 0 .9.3 1.1.7l.5 1c.2.4.7.7 1.2.7h1.2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z").toPath()
+        val stroke = androidx.compose.ui.graphics.drawscope.Stroke(1.6f, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
+        withTransform({ scale(k, k, pivot = androidx.compose.ui.geometry.Offset.Zero) }) {
+            drawPath(body, color, style = stroke)
+            drawCircle(color, radius = 3.4f, center = androidx.compose.ui.geometry.Offset(12f, 12.5f), style = stroke)
+        }
     }
 }
 
