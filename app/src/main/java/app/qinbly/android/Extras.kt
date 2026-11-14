@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -616,7 +617,7 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                             val canMenu = mine || noticeOwner == myId
                             Box {
                             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(FieldBg)
-                                .pointerInput(c.optString("id"), canMenu) { if (canMenu) androidx.compose.foundation.gestures.detectTapGestures(onLongPress = { menuFor = c.optString("id") }) }
+                                .pointerInput(c.optString("id"), canMenu) { if (canMenu) detectTapGestures(onLongPress = { menuFor = c.optString("id") }) }
                                 .padding(horizontal = 12.dp, vertical = 8.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(nameOf(c), color = Color(0xFF6AA6F8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
