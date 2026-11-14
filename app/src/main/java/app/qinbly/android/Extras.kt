@@ -646,7 +646,7 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                     val replies = all.orEmpty().filter { it.optString("parent_id") == c.optString("id") }
                     if (replies.isNotEmpty()) {
                         val open = c.optString("id") in expanded
-                        Text(if (open) "—  Ocultar respostas ▴" else "—  Ver ${replies.size} resposta" + (if (replies.size > 1) "s" else "") + " ▾", color = Color(0xFF8E87A8), fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                        Text(if (open) "Ocultar respostas ▴" else "Ver ${replies.size} resposta" + (if (replies.size > 1) "s" else "") + " ▾", color = Color(0xFF8E87A8), fontSize = 12.sp, fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(start = 38.dp).clickable { expanded = if (open) expanded - c.optString("id") else expanded + c.optString("id") }.padding(vertical = 4.dp))
                         if (open) Column(Modifier.padding(start = 38.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { for (r in replies) Bubble(r, true) }
                     }

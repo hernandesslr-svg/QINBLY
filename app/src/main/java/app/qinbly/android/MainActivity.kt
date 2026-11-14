@@ -4234,8 +4234,8 @@ private fun QinblyCommentsDialog(
                                             fontWeight = FontWeight.Medium,
                                             modifier = Modifier.clickable {
                                                 replyTo = comment
-                                                // Respondendo ao comentário principal: sem marcação. Respondendo a uma resposta: marca quem está sendo respondido.
-                                                commentDraft = if (comment.parentId.isBlank()) "" else "@${comment.username} "
+                                                // Padrão do app: sempre marca quem está sendo respondido, dentro do campo de escrever.
+                                                commentDraft = "@${comment.username} "
                                                 val topId = comment.parentId.ifBlank { comment.id }
                                                 if (topId !in expandedThreads) expandedThreads.add(topId)
                                             }
@@ -4337,15 +4337,6 @@ private fun QinblyCommentsDialog(
                                 }.start()
                             }
                         }
-                        replyTo?.let { target ->
-                            Row(
-                                Modifier.fillMaxWidth().background(RemoteAppearance.commentInputBackgroundColor).padding(horizontal = 18.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("Respondendo a @${target.username}", color = RemoteAppearance.commentSecondaryTextColor, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                                QinblyCloseIcon(RemoteAppearance.commentSecondaryTextColor, 16.dp, modifier = Modifier.clickable { replyTo = null; commentDraft = "" }.padding(6.dp))
-                            }
-                        }
                         HorizontalDivider(color = RemoteAppearance.commentDividerColor)
                         Row(
                             modifier = Modifier.fillMaxWidth()
@@ -4360,7 +4351,7 @@ private fun QinblyCommentsDialog(
                         }
                         OutlinedTextField(
                             value = commentDraft,
-                            onValueChange = { commentDraft = it.take(1200) },
+                            onValueChange = { commentDraft = it.take(1200); if (it.isEmpty()) replyTo = null },
                             visualTransformation = QinblyTagTransformation,
                             placeholder = { Text("Adicione um comentário...", color = RemoteAppearance.commentSecondaryTextColor) },
                             modifier = Modifier.weight(1f).padding(start = 10.dp).onFocusChanged { if (it.isFocused) showCommentEmojis = false },
