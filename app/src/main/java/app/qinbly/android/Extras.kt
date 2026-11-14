@@ -338,6 +338,7 @@ internal fun QinblyStickerPacksDialog(accent: Color, onDismiss: () -> Unit, onNo
 }
 
 // ───────── Mural do bairro ─────────
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, textColor: Color, secondary: Color, onRefreshLocation: () -> Unit, onNotice: (String) -> Unit, onOpenConversation: (String) -> Unit = {}) {
     val context = LocalContext.current
@@ -399,7 +400,6 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
                 Text("Mural do bairro", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = textColor)
                 Text(if (place.isNotBlank()) "Perto de $place • avisos somem em 48 h" else "Avisos de até ~5 km • somem em 48 h", color = secondary, fontSize = 12.sp)
             }
-            Text("↻", fontSize = 22.sp, color = textColor, modifier = Modifier.clip(CircleShape).clickable { refresh++; onRefreshLocation() }.padding(10.dp))
         }
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(FieldBg).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
@@ -436,9 +436,13 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
             if (draft.isNotBlank() && tag == null) Text("Escolha o tipo do aviso para publicar.", color = secondary, fontSize = 11.sp, modifier = Modifier.padding(start = 6.dp))
         }
         val list = notices
-        if (list == null) Text("Carregando…", color = secondary)
-        else if (list.isEmpty()) Text("Nenhum aviso por perto ainda. Escreva o primeiro: achados e perdidos, eventos, recomendações…", color = secondary, fontSize = 14.sp)
-        else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        var pulling by remember { mutableStateOf(false) }
+        LaunchedEffect(notices) { if (notices != null) pulling = false }
+        LaunchedEffect(pulling) { if (pulling) { kotlinx.coroutines.delay(2500); pulling = false } }
+        androidx.compose.material3.pulltorefresh.PullToRefreshBox(isRefreshing = pulling, onRefresh = { pulling = true; refresh++; onRefreshLocation() }, modifier = Modifier.weight(1f).fillMaxWidth()) {
+        if (list == null) Column(Modifier.fillMaxSize().verticalScroll(androidx.compose.foundation.rememberScrollState())) { Text("Carregando…", color = secondary) }
+        else if (list.isEmpty()) Column(Modifier.fillMaxSize().verticalScroll(androidx.compose.foundation.rememberScrollState())) { Text("Nenhum aviso por perto ainda. Escreva o primeiro: achados e perdidos, eventos, recomendações…", color = secondary, fontSize = 14.sp) }
+        else LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(list, key = { it.optString("id") }) { n ->
                 val p = n.optJSONObject("profiles")
                 val kindName = noticeKindLabel(n.optString("kind"))
@@ -461,6 +465,7 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
                     Text(if (cnt == 0) "💬  Comentar" else if (cnt == 1) "💬  1 comentário" else "💬  $cnt comentários", color = secondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
+        }
         }
     }
 
