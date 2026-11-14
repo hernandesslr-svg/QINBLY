@@ -224,7 +224,6 @@ internal fun QinblyNearbyHub(
                     val sw = w * 0.11f
                     drawCircle(ic, radius = w * 0.34f, center = androidx.compose.ui.geometry.Offset(w * 0.42f, w * 0.42f), style = androidx.compose.ui.graphics.drawscope.Stroke(sw))
                     drawLine(ic, androidx.compose.ui.geometry.Offset(w * 0.66f, w * 0.66f), androidx.compose.ui.geometry.Offset(w * 0.92f, w * 0.92f), strokeWidth = sw, cap = androidx.compose.ui.graphics.StrokeCap.Round)
-                }
             }
             }
         }
