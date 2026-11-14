@@ -10575,6 +10575,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var coverBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var videoDurationLabel by remember { mutableStateOf("") }
     var editorText by remember { mutableStateOf("") }
+    var editorTextEditing by remember { mutableStateOf(false) }
     var editorTextFont by remember { mutableStateOf("Forte") }
     var editorTextColor by remember { mutableIntStateOf(android.graphics.Color.WHITE) }
     val editorWordColors = remember { androidx.compose.runtime.mutableStateMapOf<Int, Int>() }
@@ -10625,6 +10626,56 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             galleryOpen = true
         } else {
             onNotice("Permita o acesso às fotos e vídeos para abrir a galeria do ${QinblyBrand.Name}.")
+        }
+    }
+    // Texto direto na tela (mesmo jeito do modo TEXTO da câmera): escreve em cima da foto, com fonte e cor embaixo.
+    @Composable
+    fun EditorTextOverlay(onDone: () -> Unit) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = onDone,
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+        ) {
+            val focus = remember { FocusRequester() }
+            val keyboard = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+            LaunchedEffect(Unit) { focus.requestFocus(); keyboard?.show() }
+            val noRipple = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+            Box(Modifier.fillMaxSize().background(Color(0x99000000))) {
+                Column(
+                    Modifier.fillMaxSize().clickable(indication = null, interactionSource = noRipple) { keyboard?.hide(); onDone() }.imePadding().padding(bottom = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
+                        androidx.compose.foundation.text.BasicTextField(
+                            value = editorText,
+                            onValueChange = { editorText = it.take(120) },
+                            textStyle = androidx.compose.ui.text.TextStyle(
+                                color = Color(editorTextColor), fontSize = 28.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily(qinblyTypeface(editorTextFont)),
+                                letterSpacing = qinblyTextSpacingEm(editorTextFont).em,
+                                shadow = androidx.compose.ui.graphics.Shadow(Color(0xCC000000), blurRadius = 10f)
+                            ),
+                            cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.White),
+                            visualTransformation = androidx.compose.ui.text.input.VisualTransformation { t ->
+                                androidx.compose.ui.text.input.TransformedText(qinblyColoredText("Forte", t.text, editorTextColor, editorWordColors), androidx.compose.ui.text.input.OffsetMapping.Identity)
+                            },
+                            modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                            decorationBox = { inner ->
+                                Box(contentAlignment = Alignment.Center) {
+                                    if (editorText.isEmpty()) Text("Digite aqui", color = Color(0x99FFFFFF), fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                                    inner()
+                                }
+                            }
+                        )
+                    }
+                    QinblyTextStyleBar(
+                        editorTextFont, editorTextColor, { editorTextFont = it },
+                        { c -> if (editorSelWord in 0 until qinblyTextWords(editorText).size) editorWordColors[editorSelWord] = c else { editorTextColor = c; editorWordColors.clear() } },
+                        qinblyTextWords(editorText), editorWordColors, editorSelWord, { editorSelWord = it }
+                    )
+                }
+                Text("Pronto", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp,
+                    modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(16.dp).clickable { keyboard?.hide(); onDone() })
+            }
         }
     }
     // Câmera chamada por outra tela (Mural, cápsula, chat…): devolve a foto direto, sem abrir editor nem tela de publicação.
@@ -10705,7 +10756,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             showComposer = false
             editorTool = "Filtros"
             sourceUri = null; selectedUri = null; bakedUri = null
-            editorText = ""; editorSticker = ""; editorWordColors.clear(); editorSelWord = -1
+            editorText = ""; editorTextEditing = false; editorSticker = ""; editorWordColors.clear(); editorSelWord = -1
             editorStrokes.clear()
             showCollabGallery = true
         } else if (initialMode == "gallery") returnToGallery()
@@ -10714,7 +10765,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             showComposer = false
             editorTool = "Filtros"
             sourceUri = null; selectedUri = null; bakedUri = null
-            editorText = ""; editorSticker = ""; editorWordColors.clear(); editorSelWord = -1
+            editorText = ""; editorTextEditing = false; editorSticker = ""; editorWordColors.clear(); editorSelWord = -1
             editorStrokes.clear()
             camTextMode = false; camTextEditing = false
         }
@@ -12020,8 +12071,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             if (editorSticker.isNotBlank()) {
                 Text(editorSticker, modifier = Modifier.align(Alignment.Center), color = Color.Black, style = MaterialTheme.typography.displayLarge)
             }
-            if (editorText.isNotBlank()) {
-                Text(qinblyColoredText(editorTextFont, editorText, editorTextColor, editorWordColors), modifier = Modifier.align(Alignment.Center).padding(horizontal = 28.dp, vertical = 72.dp),
+            if (editorText.isBlank() && editorTool == "Texto" && !editorTextEditing) {
+                Text("Toque para escrever", color = Color(0xB3FFFFFF), fontSize = 28.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(12.dp)).clickable { editorTextEditing = true }.padding(horizontal = 28.dp, vertical = 16.dp))
+            }
+            if (editorTool == "Texto" && editorTextEditing) EditorTextOverlay { editorTextEditing = false }
+            if (editorText.isNotBlank() && !(editorTool == "Texto" && editorTextEditing)) {
+                Text(qinblyColoredText(editorTextFont, editorText, editorTextColor, editorWordColors), modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(12.dp)).clickable(enabled = editorTool == "Texto") { editorTextEditing = true }.padding(horizontal = 28.dp, vertical = 72.dp),
                     color = Color(editorTextColor), fontSize = 28.sp,
                     fontFamily = androidx.compose.ui.text.font.FontFamily(qinblyTypeface(editorTextFont)),
                     letterSpacing = qinblyTextSpacingEm(editorTextFont).em,
@@ -12055,7 +12111,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     photoVideoPending = emptyList()
                     photoVideoOpen = true
                 }
-                QinblyCameraSideItem(QinblyCreateIcons.text, "Texto", on = editorTool == "Texto") { editorTool = if (editorTool == "Texto") "Filtros" else "Texto" }
+                QinblyCameraSideItem(QinblyCreateIcons.text, "Texto", on = editorTool == "Texto") { editorTool = if (editorTool == "Texto") "Filtros" else "Texto"; editorTextEditing = editorTool == "Texto" }
                 QinblyCameraSideItem(QinblyCreateIcons.sticker, "Stickers", on = editorTool == "Stickers") { editorTool = if (editorTool == "Stickers") "Filtros" else "Stickers" }
                 QinblyCameraSideItem(QinblyCameraIcons.format, "Formato", on = editorTool == "Ajustar") { editorTool = if (editorTool == "Ajustar") "Filtros" else "Ajustar" }
                 if (selectedType == "foto") QinblyCameraSideItem(QinblyCameraIcons.crop, "Recortar") {
@@ -12166,7 +12222,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                             "Neon" -> "Cinema"; "Cinema" -> "Noir"; else -> "Original"
                                         }
                                     }
-                                    "Texto" -> editorTool = "Texto"
+                                    "Texto" -> { editorTool = "Texto"; editorTextEditing = true }
                                     "Stickers" -> editorTool = "Stickers"
                                     "Editar vídeo" -> if (selectedType == "vídeo") editorTool = "Vídeo" else videoPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
                                     "Camadas" -> editorTool = "Camadas"
@@ -12301,27 +12357,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         }
                     }
                 }
-                if (editorTool == "Texto") {
- QinblySplit {
-                    QinblyTextStyleBar(
-                        editorTextFont, editorTextColor, { editorTextFont = it },
-                        { c -> if (editorSelWord in 0 until qinblyTextWords(editorText).size) editorWordColors[editorSelWord] = c else { editorTextColor = c; editorWordColors.clear() } },
-                        qinblyTextWords(editorText), editorWordColors, editorSelWord, { editorSelWord = it }
-                    )
-                    OutlinedTextField(
-                        value = editorText,
-                        onValueChange = { editorText = it },
-                        placeholder = { Text("Digite o texto da foto", color = Color.LightGray) },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White, unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color.White, unfocusedBorderColor = Color.LightGray,
-                            cursorColor = Color.White
-                        )
-                    )
-                 }
-}
                 if (editorTool == "Stickers") {
                     androidx.compose.foundation.lazy.LazyRow(
                         modifier = Modifier.fillMaxWidth(),
