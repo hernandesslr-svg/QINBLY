@@ -352,7 +352,6 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
     var tag by remember { mutableStateOf<String?>(null) }
     var photoUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var posting by remember { mutableStateOf(false) }
-    var showPhotoMenu by remember { mutableStateOf(false) }
     var openNotice by remember { mutableStateOf<JSONObject?>(null) }
     var pendingCamera by remember { mutableStateOf<android.net.Uri?>(null) }
     val galleryLauncher = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) photoUri = uri }
@@ -403,9 +402,18 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
             Text("↻", fontSize = 22.sp, color = textColor, modifier = Modifier.clip(CircleShape).clickable { refresh++; onRefreshLocation() }.padding(10.dp))
         }
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(FieldBg).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp)) {
-                if (draft.isEmpty()) Text("Avise a vizinhança…", color = Color(0xFF8E87A8), fontSize = 16.sp)
-                androidx.compose.foundation.text.BasicTextField(draft, { draft = it.take(280) }, textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 16.sp), cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.White), maxLines = 4, modifier = Modifier.fillMaxWidth())
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                Box(Modifier.weight(1f).padding(start = 6.dp, top = 8.dp, end = 4.dp)) {
+                    if (draft.isEmpty()) Text("Avise a vizinhança…", color = Color(0xFF8E87A8), fontSize = 16.sp)
+                    androidx.compose.foundation.text.BasicTextField(draft, { draft = it.take(280) }, textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 16.sp), cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.White), maxLines = 4, modifier = Modifier.fillMaxWidth())
+                }
+                Box(Modifier.size(40.dp).clip(CircleShape).clickable {
+                    if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) launchCamera()
+                    else cameraPermission.launch(android.Manifest.permission.CAMERA)
+                }, contentAlignment = Alignment.Center) { Text("📷", fontSize = 20.sp) }
+                Box(Modifier.size(40.dp).clip(CircleShape).clickable {
+                    galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }, contentAlignment = Alignment.Center) { Text("🖼", fontSize = 20.sp) }
             }
             val pu = photoUri
             if (pu != null) Box(Modifier.padding(start = 6.dp)) {
@@ -420,10 +428,6 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Row(Modifier.clip(RoundedCornerShape(20.dp)).clickable { showPhotoMenu = true }.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("📷", fontSize = 16.sp)
-                    Text(if (photoUri == null) "Foto" else "Trocar foto", color = Color(0xFFB4B4BC), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 6.dp))
-                }
                 Spacer(Modifier.weight(1f))
                 val ready = draft.isNotBlank() && tag != null && !posting
                 Text(if (posting) "Enviando…" else "Publicar", color = if (ready) Color.White else Color(0xFF8E87A8), fontWeight = FontWeight.Bold, fontSize = 14.sp,
@@ -460,18 +464,6 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
         }
     }
 
-    if (showPhotoMenu) QinblyBottomPanel("Foto do aviso", { showPhotoMenu = false }) {
-        for ((label, cam) in listOf("📷  Tirar foto agora" to true, "🖼  Escolher da galeria" to false)) {
-            Text(label, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp).clip(RoundedCornerShape(20.dp)).background(FieldBg)
-                    .clickable {
-                        showPhotoMenu = false
-                        if (!cam) galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly))
-                        else if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) launchCamera()
-                        else cameraPermission.launch(android.Manifest.permission.CAMERA)
-                    }.padding(horizontal = 18.dp, vertical = 16.dp))
-        }
-    }
     openNotice?.let { n ->
         NoticeDetail(n, myId, prefs, onDismiss = { openNotice = null }, onNotice = onNotice, onChanged = { refresh++ })
     }
