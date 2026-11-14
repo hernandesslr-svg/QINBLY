@@ -161,9 +161,12 @@ internal fun QinblyNearbyHub(
     var open by remember { mutableStateOf<QinblyListing?>(null) }
     var showMenu by remember { mutableStateOf(false) }
     var createKind by remember { mutableStateOf<String?>(null) }
+    var mine by remember { mutableStateOf<String?>(null) }
+    var showDrawer by remember { mutableStateOf(false) }
+    var info by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(cat, sub, refresh, gLat, gLng) {
-        if (cat == "Mural") return@LaunchedEffect
+    LaunchedEffect(cat, sub, refresh, gLat, gLng, mine) {
+        if (cat == "Mural" && mine == null) return@LaunchedEffect
         val token = prefs.getString("token", null)
         if (token.isNullOrBlank()) { listings = emptyList(); return@LaunchedEffect }
         listings = null; failed = false
@@ -174,7 +177,9 @@ internal fun QinblyNearbyHub(
                     "Vendas" -> "&kind=eq.venda"; "Doações" -> "&kind=eq.doacao"; "Achados" -> "&kind=eq.$sub"
                     "Eventos" -> "&kind=eq.evento"; "Serviços" -> "&kind=eq.servico"; else -> ""
                 }
-                val q = "marketplace_listings?lat=gte.${gLat - dLat}&lat=lte.${gLat + dLat}&lng=gte.${gLng - dLng}&lng=lte.${gLng + dLng}" +
+                val q = if (mine != null) "marketplace_listings?user_id=eq.$myId" + (if (mine == "doacao") "&kind=eq.doacao" else "") +
+                    "&select=id,user_id,kind,title,description,price,extra,photos,lat,lng,created_at,profiles(username,display_name)&order=created_at.desc&limit=100"
+                else "marketplace_listings?lat=gte.${gLat - dLat}&lat=lte.${gLat + dLat}&lng=gte.${gLng - dLng}&lng=lte.${gLng + dLng}" +
                     "&expires_at=gt.${java.time.Instant.now()}$kindFilter" +
                     "&select=id,user_id,kind,title,description,price,extra,photos,lat,lng,created_at,profiles(username,display_name)&order=created_at.desc&limit=60"
                 val a = JSONArray(QinblyApi.rest(token, "GET", q))
@@ -184,17 +189,17 @@ internal fun QinblyNearbyHub(
     }
 
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 12.dp, top = 6.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(if (place.isNotBlank()) place else "Perto de você", color = textColor, fontWeight = FontWeight.Bold, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("Até ~80 km • anúncios somem em 7 dias", color = secondary, fontSize = 12.sp)
+        Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 12.dp, top = 6.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.size(44.dp).clip(CircleShape).clickable { showDrawer = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                for (i in 0 until 3) Box(Modifier.padding(vertical = 2.5.dp).size(width = 20.dp, height = 2.5.dp).clip(CircleShape).background(textColor))
+            }
+            Column(Modifier.weight(1f).padding(start = 4.dp)) {
+                Text(if (mine != null) (if (mine == "doacao") "Minhas doações" else "Meus anúncios") else if (place.isNotBlank()) place else "Perto de você", color = textColor, fontWeight = FontWeight.Bold, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(if (mine != null) "Toque nos três tracinhos para voltar" else "Até ~80 km • anúncios somem em 7 dias", color = secondary, fontSize = 12.sp)
             }
             Text("↻", fontSize = 22.sp, color = textColor, modifier = Modifier.clip(CircleShape).clickable { refresh++; onRefreshLocation() }.padding(8.dp))
-            Box(Modifier.padding(start = 4.dp).size(38.dp).clip(CircleShape).background(MarketBlue).clickable { showMenu = true }, contentAlignment = Alignment.Center) {
-                Text("+", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            }
         }
-        LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(vertical = 6.dp)) {
+        if (mine == null) LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(vertical = 6.dp)) {
             items(marketCategories) { name ->
                 val selected = name == cat
                 Text(
@@ -205,7 +210,7 @@ internal fun QinblyNearbyHub(
                 )
             }
         }
-        if (cat == "Achados") {
+        if (cat == "Achados" && mine == null) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 for ((key, label) in listOf("achado" to "Achados", "perdido" to "Perdidos")) {
                     val selected = sub == key
@@ -218,7 +223,7 @@ internal fun QinblyNearbyHub(
             }
         }
         Box(Modifier.fillMaxWidth().weight(1f)) {
-            if (cat == "Mural") {
+            if (cat == "Mural" && mine == null) {
                 QinblyNeighborhoodBoard(lat, lng, place, textColor, secondary, onRefreshLocation = onRefreshLocation, onNotice = onNotice)
             } else {
                 val list = listings
@@ -231,8 +236,8 @@ internal fun QinblyNearbyHub(
                             modifier = Modifier.padding(top = 14.dp).clip(RoundedCornerShape(20.dp)).background(MarketBlue).clickable { refresh++ }.padding(horizontal = 20.dp, vertical = 10.dp))
                     }
                     list.isEmpty() -> Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                        Text("Nada por perto ainda", color = textColor, fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                        Text("Seja o primeiro: toque no + para publicar.", color = secondary, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
+                        Text(if (mine != null) "Você ainda não publicou nada" else "Nada por perto ainda", color = textColor, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                        Text("Abra o menu (três tracinhos) e toque em Novo anúncio.", color = secondary, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
                     }
                     else -> LazyVerticalGrid(
                         columns = GridCells.Fixed(2), contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 16.dp),
@@ -245,6 +250,57 @@ internal fun QinblyNearbyHub(
         }
     }
 
+
+    if (showDrawer) {
+        QinblyDialog(onDismissRequest = { showDrawer = false }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
+            Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { showDrawer = false }) {
+                Column(
+                    Modifier.align(Alignment.CenterStart).fillMaxSize().padding(end = 64.dp).background(Color(0xFF1F1F21))
+                        .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { }
+                        .statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text("Perto de mim", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, modifier = Modifier.padding(start = 6.dp))
+                    if (place.isNotBlank()) Text(place, color = Color(0xFFA9B5C8), fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp, bottom = 8.dp))
+                    val entries = listOf("Meus anúncios", "Minhas doações", "Dicas de segurança", "Regras da comunidade")
+                    for (e in entries) {
+                        Text(e, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF262628)).clickable {
+                                showDrawer = false
+                                when (e) {
+                                    "Meus anúncios" -> mine = "all"
+                                    "Minhas doações" -> mine = "doacao"
+                                    else -> info = e
+                                }
+                            }.padding(horizontal = 16.dp, vertical = 14.dp))
+                    }
+                    if (mine != null) Text("← Voltar para Perto de mim", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF262628)).clickable { showDrawer = false; mine = null }.padding(horizontal = 16.dp, vertical = 14.dp))
+                    Spacer(Modifier.height(6.dp))
+                    Text("+ Novo anúncio", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(MarketBlue).clickable { showDrawer = false; showMenu = true }.padding(vertical = 14.dp))
+                }
+            }
+        }
+    }
+    info?.let { which ->
+        QinblyBottomPanel(which, onDismiss = { info = null }) {
+            val lines = if (which == "Dicas de segurança") listOf(
+                "Combine a troca em local público e movimentado, de preferência de dia.",
+                "Não envie dinheiro adiantado nem códigos que chegarem por mensagem.",
+                "Confira o item antes de pagar e desconfie de preço bom demais.",
+                "Seu endereço não aparece: o anúncio mostra só a cidade e uma distância aproximada.",
+                "Algo suspeito? Pare a conversa e avise a equipe do QINBLY."
+            ) else listOf(
+                "Anuncie só o que é seu e que você pode entregar.",
+                "Nada de armas, drogas, animais silvestres, produtos falsificados ou conteúdo adulto.",
+                "Respeite os vizinhos: sem ofensas, golpes ou spam.",
+                "Doações são de graça de verdade: não cobre nada de quem pedir.",
+                "Anúncios que quebram as regras podem ser removidos."
+            )
+            for (l in lines) Text("• " + l, color = Color(0xFFE6EAF2), fontSize = 15.sp)
+        }
+    }
     open?.let { l ->
         ListingDetail(
             l, lat, lng, mine = l.userId == myId, textColor = textColor, secondary = secondary,
