@@ -179,7 +179,7 @@ internal fun QinblyNearbyHub(
                     "Vendas" -> "&kind=eq.venda"; "Doações" -> "&kind=eq.doacao"; "Achados" -> "&kind=eq.$sub"
                     "Eventos" -> "&kind=eq.evento"; "Serviços" -> "&kind=eq.servico"; else -> ""
                 }
-                val cols = "id,user_id,kind,title,description,price,extra,photos,city,created_at,profiles(username,display_name)"
+                val cols = "id,user_id,kind,title,description,price,extra,photos,city,created_at,profiles!marketplace_listings_user_id_fkey(username,display_name)"
                 if (mine == "saved") {
                     val a = JSONArray(QinblyApi.rest(token, "GET", "marketplace_saves?select=created_at,marketplace_listings($cols)&order=created_at.desc&limit=100"))
                     return@withContext (0 until a.length()).mapNotNull { a.getJSONObject(it).optJSONObject("marketplace_listings")?.let { o -> parseListing(o) } }
