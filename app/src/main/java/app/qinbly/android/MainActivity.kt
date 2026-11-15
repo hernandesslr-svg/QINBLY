@@ -8454,8 +8454,15 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
         QinblyStoryReturn.entry?.let { viewingIndex = QinblyStoryReturn.index; viewingStory = it; QinblyStoryReturn.entry = null }
     }
     viewingStory?.let { entry ->
+        // Fila de pessoas na ordem da faixa: o seu story primeiro, depois quem você segue.
+        val storyQueue = listOfNotNull(myStoryEntry?.takeIf { it.stories.isNotEmpty() }) + trayOthers
+        val personPos = storyQueue.indexOfFirst { it.username.equals(entry.username, ignoreCase = true) }
         QinblyStoryViewer(entry, QinblyBrand.Accent, onNotice, onDismiss = { viewingStory = null; storyRefresh++ }, onCamera = { id -> qinblyStartContribution(id); onAddStory() },
             startIndex = viewingIndex,
+            hasNextPerson = personPos >= 0 && personPos < storyQueue.lastIndex,
+            hasPreviousPerson = personPos > 0,
+            onNextPerson = { viewingIndex = 0; viewingStory = storyQueue[personPos + 1] },
+            onPreviousPerson = { viewingIndex = Int.MAX_VALUE; viewingStory = storyQueue[personPos - 1] },
             onOpenProfile = { username, idx ->
                 viewingStory = null
                 QinblyResume.push { QinblyStoryReturn.index = idx; QinblyStoryReturn.entry = entry }

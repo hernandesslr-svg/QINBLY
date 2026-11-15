@@ -313,7 +313,8 @@ internal fun qinblyDownloadToCache(context: Context, url: String, ext: String): 
  */
 @Composable
 internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNotice: (String) -> Unit, onDismiss: () -> Unit, onCamera: (String) -> Unit = {}, startIndex: Int = 0,
-                               onOpenProfile: (String, Int) -> Unit = { _, _ -> }, onOpenOriginal: (QinblyStoryOrigin, Int) -> Unit = { _, _ -> }) {
+                               onOpenProfile: (String, Int) -> Unit = { _, _ -> }, onOpenOriginal: (QinblyStoryOrigin, Int) -> Unit = { _, _ -> },
+                               hasNextPerson: Boolean = false, hasPreviousPerson: Boolean = false, onNextPerson: () -> Unit = {}, onPreviousPerson: () -> Unit = {}) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     val token = remember { prefs.getString("token", null) }
@@ -326,7 +327,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
             }
         }
     }
-    var index by remember(entry.username) { mutableIntStateOf(startIndex.coerceAtLeast(0)) }
+    var index by remember(entry.username) { mutableIntStateOf(startIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0))) }
     var showViewers by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
@@ -366,8 +367,9 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     val openedAt = remember { System.currentTimeMillis() }
     fun tooSoon() = System.currentTimeMillis() - openedAt < 500
     fun closeSafe() { if (!tooSoon()) onDismiss() }
-    fun next() { if (index < items.lastIndex) index++ else closeSafe() }
-    fun previous() { if (index > 0) index-- }
+    // Fim dos stories de uma pessoa: segue para a próxima da fila (como no Instagram); só fecha quando acabam todas.
+    fun next() { if (index < items.lastIndex) index++ else if (hasNextPerson) onNextPerson() else closeSafe() }
+    fun previous() { if (index > 0) index-- else if (hasPreviousPerson) onPreviousPerson() }
 
     LaunchedEffect(current.id) {
         if (!entry.mine && current.page == "story" && !token.isNullOrBlank()) {
