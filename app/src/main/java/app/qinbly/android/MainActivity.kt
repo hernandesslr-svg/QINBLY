@@ -1232,6 +1232,17 @@ private fun qinblyColoredText(font: String, text: String, base: Int, wordColors:
     }
 }
 
+/** Botão pequeno em forma de pílula das barras de ferramenta do editor (Desenho, Fundo, HDR). */
+@Composable
+private fun QinblyEditorChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Text(
+        label, color = if (selected) Color(0xFF111111) else Color.White, fontSize = 13.sp, maxLines = 1,
+        modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(if (selected) Color.White else Color(0x33000000))
+            .border(0.5.dp, Color(0xB3FFFFFF), RoundedCornerShape(18.dp))
+            .clickable { onClick() }.padding(horizontal = 14.dp, vertical = 7.dp)
+    )
+}
+
 /** Fileiras de palavras, fontes e cores do texto sobre a foto (câmera e editor). */
 @Composable
 private fun QinblyTextStyleBar(
@@ -1338,7 +1349,7 @@ internal fun qinblyPvBake(context: android.content.Context, source: Uri, filter:
 /** Gera a foto final: recorte (proporção, zoom e posição), filtro, brilho/contraste e depois texto, sticker e desenho. */
 private fun qinblyRenderEditedPhoto(
     context: android.content.Context, source: Uri, ratio: String, zoom: Float, panX: Float, panY: Float,
-    matrix: ColorMatrix, text: String, stickers: List<QinblyStickerSpec>, strokes: List<List<Offset>>, textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f, blurFill: Boolean = true
+    matrix: ColorMatrix, text: String, stickers: List<QinblyStickerSpec>, strokes: List<List<Offset>>, textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f, blurFill: Boolean = true, textScale: Float = 1f, strokeStyles: List<Pair<Int, Float>> = emptyList()
 ): Uri {
     val decoded = context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it) }
         ?: throw IllegalArgumentException("Não foi possível abrir a imagem para aplicar as edições.")
@@ -1371,10 +1382,10 @@ private fun qinblyRenderEditedPhoto(
     val file = File(context.cacheDir, "qinbly-final-${System.currentTimeMillis()}.jpg")
     FileOutputStream(file).use { output.compress(Bitmap.CompressFormat.JPEG, 93, it) }
     output.recycle()
-    return createEditorOverlayImage(context, Uri.fromFile(file), text, stickers, strokes, textFont, textColor, wordColors, textDx, textDy)
+    return createEditorOverlayImage(context, Uri.fromFile(file), text, stickers, strokes, textFont, textColor, wordColors, textDx, textDy, textScale, strokeStyles)
 }
 
-private fun createEditorOverlayImage(context: android.content.Context, source: Uri, overlayText: String, stickers: List<QinblyStickerSpec>, strokes: List<List<Offset>> = emptyList(), textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f): Uri {
+private fun createEditorOverlayImage(context: android.content.Context, source: Uri, overlayText: String, stickers: List<QinblyStickerSpec>, strokes: List<List<Offset>> = emptyList(), textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f, textScale: Float = 1f, strokeStyles: List<Pair<Int, Float>> = emptyList()): Uri {
     if (overlayText.isBlank() && stickers.isEmpty() && strokes.isEmpty()) return source
     val bitmap = context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it) }
         ?.let { decoded -> decoded.copy(Bitmap.Config.ARGB_8888, true).also { if (it !== decoded) decoded.recycle() } }
@@ -1407,8 +1418,11 @@ private fun createEditorOverlayImage(context: android.content.Context, source: U
             strokeWidth = (bitmap.width * 0.009f).coerceIn(8f, 24f)
             setShadowLayer(3f, 1f, 1f, android.graphics.Color.BLACK)
         }
-        strokes.forEach { points ->
+        strokes.forEachIndexed { sIdx, points ->
             if (points.size > 1) {
+                val style = strokeStyles.getOrNull(sIdx)
+                strokePaint.color = style?.first ?: android.graphics.Color.rgb(255, 42, 157)
+                strokePaint.strokeWidth = ((style?.second ?: 0.009f) * bitmap.width).coerceAtLeast(3f)
                 val path = android.graphics.Path()
                 path.moveTo(points.first().x * bitmap.width, points.first().y * bitmap.height)
                 points.drop(1).forEach { path.lineTo(it.x * bitmap.width, it.y * bitmap.height) }
@@ -1420,7 +1434,7 @@ private fun createEditorOverlayImage(context: android.content.Context, source: U
         textPaint.typeface = qinblyTypeface(textFont)
         textPaint.letterSpacing = qinblyTextSpacingEm(textFont)
         textPaint.textAlign = Paint.Align.LEFT
-        textPaint.textSize = (bitmap.width * 0.075f).coerceIn(32f, 150f)
+        textPaint.textSize = (bitmap.width * 0.075f).coerceIn(32f, 150f) * textScale
         val maxWidth = bitmap.width * 0.86f
         val words = qinblyTextWords(qinblyStyledText(textFont, overlayText))
         val lines = mutableListOf<List<Pair<String, Int>>>()
@@ -6004,11 +6018,6 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
                             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(swatch[0], swatch[0], swatch[1], swatch[2]))))
                         }
                     }
-                    items(QinblyFaceFilterNames) { fname ->
-                        QinblyFilterBubble(fname, liveFace == fname, { liveFace = if (liveFace == fname) "Nenhum" else fname }) {
-                            QinblyFaceThumb(fname, Modifier.fillMaxSize())
-                        }
-                    }
                 }
             }
         }
@@ -10475,8 +10484,13 @@ private fun extractQinblyVideoFrames(context: android.content.Context, uri: Uri)
 /** Intensidade (0–1) do filtro de cor escolhido na câmera; usada na prévia e na exportação. */
 private object QinblyFilterIntensity { var value: Float = 1f }
 
-private val QinblyColorFilterNames = listOf("Original", "Aurora", "Pôr do sol", "Neon", "Filme", "Pastel", "Noir", "Oceano", "Vintage", "Sonho", "Dourado", "Cinema")
-private val QinblyAnimatedEffectNames = listOf("Corações", "Confete", "Neve", "Brilho", "Bolhas", "Chuva", "Fogo")
+private val QinblyColorFilterNames = listOf(
+    "Original", "Aurora", "Pôr do sol", "Neon", "Filme", "Pastel", "Noir", "Oceano", "Vintage", "Sonho", "Dourado", "Cinema",
+    "Quente", "Frio", "Verão", "Inverno", "Outono", "Rosé", "Pêssego", "Cereja", "Menta", "Lavanda",
+    "Meia-noite", "Neblina", "Café", "Praia", "Floresta", "Cyberpunk", "Vaporwave", "Matrix", "Sépia", "P&B",
+    "Prata", "Dramático", "Alto contraste", "Desbotado", "Polaroid", "Kodak", "Lomo", "Retrô 80s", "Laranja e azul",
+    "Luz do dia", "Chiclete", "Instantâneo", "Brilhante", "Glow", "VHS", "Vívido", "Suave", "Rosado"
+)
 
 /** Monta um "look" de cor: saturação, contraste ao redor do cinza médio, ganho por canal (R,G,B) e deslocamento por canal. */
 private fun qinblyLook(sat: Float, con: Float, rm: Float, gm: Float, bm: Float, ro: Float, go: Float, bo: Float): ColorMatrix {
@@ -10502,6 +10516,34 @@ private fun qinblyFilterMatrix(name: String, intensity: Float = QinblyFilterInte
         "Sonho" -> matrix.set(qinblyLook(1.10f, 0.90f, 1.08f, 1.00f, 1.10f, 30f, 22f, 34f).array)
         "Dourado" -> matrix.set(qinblyLook(1.15f, 1.05f, 1.12f, 1.04f, 0.78f, 14f, 8f, -10f).array)
         "Cinema" -> matrix.set(qinblyLook(0.90f, 1.15f, 1.10f, 1.00f, 0.95f, -6f, 0f, 10f).array)
+        "Verão" -> matrix.set(qinblyLook(1.25f, 1.06f, 1.10f, 1.02f, 0.88f, 8f, 4f, -4f).array)
+        "Inverno" -> matrix.set(qinblyLook(0.90f, 1.05f, 0.92f, 1.00f, 1.14f, -4f, 2f, 12f).array)
+        "Outono" -> matrix.set(qinblyLook(1.10f, 1.05f, 1.12f, 0.98f, 0.80f, 12f, 4f, -8f).array)
+        "Rosé" -> matrix.set(qinblyLook(1.05f, 0.95f, 1.10f, 0.96f, 1.04f, 22f, 10f, 16f).array)
+        "Pêssego" -> matrix.set(qinblyLook(1.10f, 0.95f, 1.10f, 1.00f, 0.92f, 20f, 12f, 6f).array)
+        "Cereja" -> matrix.set(qinblyLook(1.20f, 1.08f, 1.16f, 0.86f, 0.94f, 6f, -8f, 0f).array)
+        "Menta" -> matrix.set(qinblyLook(1.05f, 0.95f, 0.92f, 1.08f, 1.04f, 6f, 18f, 14f).array)
+        "Lavanda" -> matrix.set(qinblyLook(0.95f, 0.92f, 1.02f, 0.96f, 1.10f, 16f, 10f, 24f).array)
+        "Meia-noite" -> matrix.set(qinblyLook(0.85f, 1.12f, 0.80f, 0.92f, 1.20f, -10f, -4f, 12f).array)
+        "Neblina" -> matrix.set(qinblyLook(0.60f, 0.80f, 1.00f, 1.00f, 1.02f, 30f, 32f, 38f).array)
+        "Café" -> matrix.set(qinblyLook(0.65f, 1.05f, 1.10f, 0.98f, 0.80f, 10f, 4f, -6f).array)
+        "Praia" -> matrix.set(qinblyLook(1.25f, 1.04f, 1.02f, 1.06f, 1.08f, 6f, 8f, 8f).array)
+        "Floresta" -> matrix.set(qinblyLook(1.10f, 1.06f, 0.90f, 1.10f, 0.88f, -4f, 6f, -6f).array)
+        "Cyberpunk" -> matrix.set(qinblyLook(1.60f, 1.20f, 1.08f, 0.82f, 1.25f, 6f, -10f, 16f).array)
+        "Vaporwave" -> matrix.set(qinblyLook(1.40f, 1.00f, 1.10f, 0.90f, 1.20f, 18f, 0f, 30f).array)
+        "Matrix" -> matrix.set(qinblyLook(0.80f, 1.20f, 0.70f, 1.15f, 0.75f, -12f, 10f, -10f).array)
+        "Prata" -> matrix.set(qinblyLook(0f, 0.92f, 1f, 1f, 1f, 12f, 12f, 12f).array)
+        "Dramático" -> matrix.set(qinblyLook(0.85f, 1.35f, 1f, 1f, 1f, -8f, -8f, -8f).array)
+        "Alto contraste" -> matrix.set(qinblyLook(1.10f, 1.45f, 1f, 1f, 1f, -14f, -14f, -14f).array)
+        "Polaroid" -> matrix.set(qinblyLook(0.85f, 0.92f, 1.08f, 1.02f, 0.90f, 20f, 14f, 6f).array)
+        "Kodak" -> matrix.set(qinblyLook(1.20f, 1.10f, 1.12f, 1.00f, 0.86f, 4f, 0f, -6f).array)
+        "Lomo" -> matrix.set(qinblyLook(1.35f, 1.25f, 1.05f, 1.00f, 0.95f, -8f, -6f, 6f).array)
+        "Retrô 80s" -> matrix.set(qinblyLook(1.30f, 0.95f, 1.12f, 0.95f, 1.16f, 14f, 2f, 22f).array)
+        "Laranja e azul" -> matrix.set(qinblyLook(1.15f, 1.18f, 1.14f, 1.00f, 0.92f, 6f, -2f, 8f).array)
+        "Luz do dia" -> matrix.set(qinblyLook(1.08f, 1.04f, 1.04f, 1.03f, 1.00f, 4f, 4f, 2f).array)
+        "Chiclete" -> matrix.set(qinblyLook(1.35f, 0.95f, 1.12f, 0.92f, 1.14f, 22f, 6f, 24f).array)
+        "Instantâneo" -> matrix.set(qinblyLook(1.10f, 1.00f, 1.06f, 1.02f, 0.94f, 12f, 8f, 0f).array)
+        "Brilhante" -> matrix.set(qinblyLook(1.15f, 1.02f, 1.10f, 1.10f, 1.10f, 12f, 12f, 12f).array)
         "P&B", "Preto e branco" -> matrix.setSaturation(0f)
         "Vivo", "Vívido" -> matrix.setSaturation(1.45f)
         "Quente" -> matrix.set(floatArrayOf(1.08f,0f,0f,0f,12f, 0f,1f,0f,0f,2f, 0f,0f,0.9f,0f,0f, 0f,0f,0f,1f,0f))
@@ -10525,6 +10567,16 @@ private fun qinblyFilterMatrix(name: String, intensity: Float = QinblyFilterInte
     val identity = floatArrayOf(1f,0f,0f,0f,0f, 0f,1f,0f,0f,0f, 0f,0f,1f,0f,0f, 0f,0f,0f,1f,0f)
     val target = matrix.array
     return ColorMatrix(FloatArray(20) { identity[it] + (target[it] - identity[it]) * amount })
+}
+
+/** Cobertura leve que imita um filtro novo na prévia de vídeo: o cinza médio depois do filtro, com transparência. */
+private fun qinblyAutoTint(name: String): Color {
+    val m = qinblyFilterMatrix(name, 1f).array
+    val g = 128f
+    val r = ((m[0] * g + m[1] * g + m[2] * g + m[4]) / 255f).coerceIn(0f, 1f)
+    val gg = ((m[5] * g + m[6] * g + m[7] * g + m[9]) / 255f).coerceIn(0f, 1f)
+    val b = ((m[10] * g + m[11] * g + m[12] * g + m[14]) / 255f).coerceIn(0f, 1f)
+    return Color(r, gg, b, 0.22f)
 }
 
 /** Três cores neutras de exemplo (céu claro, pele, chão bege), já com o filtro aplicado: servem de miniatura da bolinha. */
@@ -10737,102 +10789,6 @@ internal fun qinblySaveMediaCopy(context: android.content.Context, source: Uri, 
     } catch (_: Exception) { false }
 }
 
-/** Efeitos animados por cima da câmera: partículas desenhadas em tempo real (sem rastrear o rosto). */
-@Composable
-private fun QinblyEffectsOverlay(effect: String, modifier: Modifier = Modifier) {
-    if (effect.isBlank() || effect == "Original") return
-    var time by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(effect) {
-        var last = 0L
-        while (true) {
-            withFrameNanos { now ->
-                if (last != 0L) time += (now - last) / 1_000_000_000f
-                last = now
-            }
-        }
-    }
-    val particles = remember(effect) {
-        val rnd = kotlin.random.Random(effect.hashCode())
-        List(28) { floatArrayOf(rnd.nextFloat(), rnd.nextFloat(), 0.5f + rnd.nextFloat(), rnd.nextFloat() * 6.28f, rnd.nextInt(5).toFloat()) }
-    }
-    val confettiColors = listOf(Color(0xFFFF5C8A), Color(0xFFFFD54F), Color(0xFF5CC8FF), Color(0xFF7CE38B), Color(0xFFB18CFF))
-    androidx.compose.foundation.Canvas(modifier.fillMaxSize()) {
-        val w = size.width
-        val h = size.height
-        val d = density
-        particles.forEach { p ->
-            val speed = p[2]
-            val phase = p[3]
-            when (effect) {
-                "Corações" -> {
-                    val prog = (p[1] + time * 0.10f * speed) % 1f
-                    val x = p[0] * w + kotlin.math.sin(time * speed + phase) * 16f * d
-                    val y = prog * (h + 80f * d) - 40f * d
-                    val s = (9f + 9f * speed) * d
-                    val a = (1f - kotlin.math.abs(prog - 0.5f) * 1.4f).coerceIn(0.15f, 1f)
-                    val c = Color(0xFFFF5C8A).copy(alpha = a)
-                    drawCircle(c, s * 0.27f, Offset(x - s * 0.23f, y - s * 0.1f))
-                    drawCircle(c, s * 0.27f, Offset(x + s * 0.23f, y - s * 0.1f))
-                    val path = androidx.compose.ui.graphics.Path().apply {
-                        moveTo(x - s * 0.49f, y - s * 0.02f)
-                        lineTo(x + s * 0.49f, y - s * 0.02f)
-                        lineTo(x, y + s * 0.55f)
-                        close()
-                    }
-                    drawPath(path, c)
-                }
-                "Confete" -> {
-                    val prog = (p[1] + time * 0.14f * speed) % 1f
-                    val x = p[0] * w + kotlin.math.sin(time * speed * 1.3f + phase) * 22f * d
-                    val y = prog * (h + 60f * d) - 30f * d
-                    val c = confettiColors[p[4].toInt() % 5]
-                    withTransform({ rotate(time * 140f * speed + phase * 50f, Offset(x, y)) }) {
-                        drawRect(c, Offset(x - 4f * d, y - 7f * d), androidx.compose.ui.geometry.Size(8f * d, 14f * d))
-                    }
-                }
-                "Neve" -> {
-                    val prog = (p[1] + time * 0.07f * speed) % 1f
-                    val x = p[0] * w + kotlin.math.sin(time * 0.8f * speed + phase) * 20f * d
-                    val y = prog * (h + 40f * d) - 20f * d
-                    drawCircle(Color.White.copy(alpha = 0.85f), (2f + 2.5f * speed) * d, Offset(x, y))
-                }
-                "Chuva" -> {
-                    val prog = (p[1] + time * 0.55f * speed) % 1f
-                    val x = p[0] * w
-                    val y = prog * (h + 40f * d) - 20f * d
-                    drawLine(Color(0xCCCFE6FF), Offset(x, y), Offset(x - 5f * d, y + 20f * d), strokeWidth = 1.6f * d)
-                }
-                "Brilho" -> {
-                    val x = p[0] * w
-                    val y = p[1] * h
-                    val a = (0.5f + 0.5f * kotlin.math.sin(time * 2f * speed + phase)).coerceIn(0f, 1f)
-                    val s = (6f + 8f * speed) * d * a
-                    val c = Color.White.copy(alpha = a)
-                    drawLine(c, Offset(x - s, y), Offset(x + s, y), strokeWidth = 2f * d)
-                    drawLine(c, Offset(x, y - s), Offset(x, y + s), strokeWidth = 2f * d)
-                    drawCircle(c, 2f * d, Offset(x, y))
-                }
-                "Bolhas" -> {
-                    val prog = ((p[1] - time * 0.07f * speed) % 1f + 1f) % 1f
-                    val x = p[0] * w + kotlin.math.sin(time * speed + phase) * 12f * d
-                    val y = prog * h
-                    drawCircle(Color.White.copy(alpha = 0.75f), (6f + 10f * speed) * d, Offset(x, y),
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.6f * d))
-                }
-                "Fogo" -> {
-                    val prog = (p[1] + time * 0.22f * speed) % 1f
-                    val x = p[0] * w + kotlin.math.sin(time * 2f * speed + phase) * 10f * d
-                    val y = h - prog * h * 0.6f
-                    val r = (7f - 5f * prog) * d * (0.6f + 0.4f * speed)
-                    val c = androidx.compose.ui.graphics.lerp(Color(0xFFFF6A00), Color(0xFFFFD54F), prog)
-                    drawCircle(c.copy(alpha = (1f - prog).coerceIn(0f, 1f)), r, Offset(x, y))
-                }
-                else -> {}
-            }
-        }
-    }
-}
-
 /** Pedido de foto para a câmera do app: quem chama recebe a foto no lugar de o PostPage abrir o editor de publicação. */
 
 /** Câmera do próprio app (com galeria ao lado) em tela inteira. Devolve a foto escolhida/tirada. */
@@ -10875,16 +10831,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var cameraError by remember { mutableStateOf("") }
     var lensFacing by remember { mutableIntStateOf(androidx.camera.core.CameraSelector.LENS_FACING_BACK) }
     var selectedFilter by remember { mutableStateOf("Original") }
-    var selectedEffect by remember { mutableStateOf("Original") }
-    var selectedFace by remember { mutableStateOf("Nenhum") }
     var stabilizeOn by remember { mutableStateOf(false) }
     var stabilizeSupported by remember { mutableStateOf(false) }
-    val faceState = remember { QinblyFaceState() }
-    val faceTracker = remember { QinblyFaceTracker3D(context, faceState.track) }
-    val faceAnalyzer = remember { QinblyFaceAnalyzer(faceState, faceTracker) }
-    val faceExecutor = remember { java.util.concurrent.Executors.newSingleThreadExecutor() }
-    faceAnalyzer.enabled = selectedFace != "Nenhum"
-    faceAnalyzer.use3d = selectedFace == "Cachorro"
     var activeCameraPanel by remember { mutableStateOf("") }
     var selectedCameraFormat by remember { mutableStateOf("9:16") }
     var selectedVideoSpeed by remember { mutableStateOf("1×") }
@@ -10980,6 +10928,23 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     val editorStickers = remember { mutableStateListOf<QinblyEditorSticker>() }
     var stickerHintShown by remember { mutableStateOf(false) }
     var editorSelSticker by remember { mutableStateOf<QinblyEditorSticker?>(null) }
+    var editorTextScale by remember { mutableFloatStateOf(1f) }
+    var editorTextSelected by remember { mutableStateOf(false) }
+    // Efeitos de foto do editor (sempre recalculados a partir da foto original; nada acumula).
+    var fxBase by remember(sourceUri) { mutableStateOf<Uri?>(null) }
+    var fxResult by remember(sourceUri) { mutableStateOf<Uri?>(null) }
+    var edRetouch by remember(sourceUri) { mutableStateOf(false) }
+    var edHdr by remember(sourceUri) { mutableFloatStateOf(0f) }
+    var edBgMode by remember(sourceUri) { mutableStateOf("") }
+    var edBgIntensity by remember(sourceUri) { mutableFloatStateOf(0.5f) }
+    var edBgColor by remember(sourceUri) { mutableIntStateOf(0xFF222222.toInt()) }
+    var edBgIndex by remember(sourceUri) { mutableIntStateOf(0) }
+    var edBgImage by remember(sourceUri) { mutableStateOf<Uri?>(null) }
+    // Desenho: cor, espessura e estilo de cada traço (lista paralela a editorStrokes).
+    var editorDrawColor by remember { mutableIntStateOf(0xFFFF2A9D.toInt()) }
+    var editorDrawWidth by remember { mutableFloatStateOf(0.012f) }
+    var editorEraser by remember { mutableStateOf(false) }
+    val editorStrokeMeta = remember { mutableStateListOf<Pair<Int, Float>>() }
     var editorRatio by remember { mutableStateOf("Original") }
     var editorZoom by remember { mutableFloatStateOf(1f) }
     var editorPanX by remember { mutableFloatStateOf(0f) }
@@ -11042,11 +11007,29 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             LaunchedEffect(Unit) { focus.requestFocus(); keyboard?.show() }
             val noRipple = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
             // Teclado fechado: as barras de estilo ficam acima dos botões do celular; teclado aberto: logo acima do teclado.
-            val imeUp = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
-            val navPad = qinblyNavBarPadding()
+            val dens = androidx.compose.ui.platform.LocalDensity.current
+            val imePx = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(dens)
+            // Medida própria do teclado (janela visível): se os insets do Dialog vierem menores que o teclado de verdade,
+            // a barra de palavras/fontes/cores ficava parte escondida atrás dele. Aqui a barra sempre sobe até o topo do teclado.
+            val rootView = androidx.compose.ui.platform.LocalView.current
+            var measuredKbPx by remember { mutableIntStateOf(0) }
+            DisposableEffect(rootView) {
+                val l = android.view.ViewTreeObserver.OnGlobalLayoutListener {
+                    val r = android.graphics.Rect()
+                    rootView.getWindowVisibleDisplayFrame(r)
+                    measuredKbPx = (rootView.rootView.height - r.bottom).coerceAtLeast(0)
+                }
+                rootView.viewTreeObserver.addOnGlobalLayoutListener(l)
+                onDispose { rootView.viewTreeObserver.removeOnGlobalLayoutListener(l) }
+            }
+            val kbThreshold = with(dens) { 150.dp.roundToPx() }
+            val extraKbPx = if (measuredKbPx > kbThreshold) (measuredKbPx - imePx).coerceAtLeast(0) else 0
+            val imeUp = imePx > 0 || measuredKbPx > kbThreshold
+            // Teclado fechado: a barra fica ACIMA do 6h/12h/24h (altura da base da janela), não colada nos botões do celular.
+            val closedBottom = 175.dp
             Box(Modifier.fillMaxSize().background(Color(0x99000000))) {
                 Column(
-                    Modifier.fillMaxSize().clickable(indication = null, interactionSource = noRipple) { keyboard?.hide(); onDone() }.imePadding().padding(bottom = if (imeUp) QinblyKeyboardGap else navPad),
+                    Modifier.fillMaxSize().clickable(indication = null, interactionSource = noRipple) { keyboard?.hide(); onDone() }.imePadding().padding(bottom = (if (imeUp) QinblyKeyboardGap else closedBottom) + with(dens) { extraKbPx.toDp() }),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
@@ -11060,8 +11043,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 shadow = androidx.compose.ui.graphics.Shadow(Color(0xCC000000), blurRadius = 10f)
                             ),
                             cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.White),
-                            visualTransformation = androidx.compose.ui.text.input.VisualTransformation { t ->
-                                androidx.compose.ui.text.input.TransformedText(qinblyColoredText("Forte", t.text, editorTextColor, editorWordColors), androidx.compose.ui.text.input.OffsetMapping.Identity)
+                            // Chave explícita nas cores: a cor escolhida embaixo aparece NA HORA no letreiro, também com o teclado aberto.
+                            visualTransformation = remember(editorTextColor, editorWordColors.toMap()) {
+                                val baseColor = editorTextColor
+                                val wordsMap = editorWordColors.toMap()
+                                androidx.compose.ui.text.input.VisualTransformation { t ->
+                                    androidx.compose.ui.text.input.TransformedText(qinblyColoredText("Forte", t.text, baseColor, wordsMap), androidx.compose.ui.text.input.OffsetMapping.Identity)
+                                }
                             },
                             modifier = Modifier.fillMaxWidth().focusRequester(focus),
                             decorationBox = { inner ->
@@ -11167,8 +11155,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             showComposer = false
             editorTool = "Filtros"
             sourceUri = null; selectedUri = null; bakedUri = null
-            editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorStickers.clear(); editorSelSticker = null; editorWordColors.clear(); editorSelWord = -1
-            editorStrokes.clear()
+            editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorStickers.clear(); editorSelSticker = null; editorTextScale = 1f; editorTextSelected = false; editorWordColors.clear(); editorSelWord = -1
+            editorStrokes.clear(); editorStrokeMeta.clear()
             showCollabGallery = true
         } else if (initialMode == "gallery") returnToGallery()
         else {
@@ -11176,8 +11164,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             showComposer = false
             editorTool = "Filtros"
             sourceUri = null; selectedUri = null; bakedUri = null
-            editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorStickers.clear(); editorSelSticker = null; editorWordColors.clear(); editorSelWord = -1
-            editorStrokes.clear()
+            editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorStickers.clear(); editorSelSticker = null; editorTextScale = 1f; editorTextSelected = false; editorWordColors.clear(); editorSelWord = -1
+            editorStrokes.clear(); editorStrokeMeta.clear()
             camTextMode = false; camTextEditing = false
         }
     }
@@ -11189,7 +11177,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         publishSettings = false
     }
     // Ferramenta aberta no editor (Formato, Stickers, Desenho, Texto): voltar fecha a ferramenta primeiro, depois sai do editor.
-    BackHandler(enabled = showComposer && !publishSettings && (editorTool == "Ajustar" || editorTool == "Stickers" || editorTool == "Desenho" || editorTool == "Texto")) {
+    BackHandler(enabled = showComposer && !publishSettings && (editorTool == "Ajustar" || editorTool == "Stickers" || editorTool == "Desenho" || editorTool == "Texto" || editorTool == "Fundo" || editorTool == "HDR")) {
         if (editorTextEditing) editorTextEditing = false else editorTool = "Filtros"
     }
     if (showCollabGallery) QinblyContributeFlow(
@@ -11367,23 +11355,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         val selector = androidx.camera.core.CameraSelector.Builder().requireLensFacing(lensFacing).build()
                         val frame = when (selectedCameraFormat) { "1:1" -> android.util.Rational(1, 1); "4:3" -> android.util.Rational(3, 4); else -> if (cameraBoxW > 0 && cameraBoxH > 0) android.util.Rational(cameraBoxW, cameraBoxH) else android.util.Rational(9, 16) }
                         val viewPort = androidx.camera.core.ViewPort.Builder(frame, view.display?.rotation ?: android.view.Surface.ROTATION_0).build()
-                        val analysis = androidx.camera.core.ImageAnalysis.Builder()
-                            .setBackpressureStrategy(androidx.camera.core.ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                            .build().also { it.setAnalyzer(faceExecutor, faceAnalyzer) }
-                        fun buildGroup(withAnalysis: Boolean): androidx.camera.core.UseCaseGroup {
-                            val b = androidx.camera.core.UseCaseGroup.Builder().setViewPort(viewPort)
-                                .addUseCase(preview).addUseCase(capture).addUseCase(video)
-                            if (withAnalysis) b.addUseCase(analysis)
-                            return b.build()
-                        }
+                        val group = androidx.camera.core.UseCaseGroup.Builder().setViewPort(viewPort)
+                            .addUseCase(preview).addUseCase(capture).addUseCase(video).build()
                         provider.unbindAll()
-                        // Alguns aparelhos não aceitam 4 usos da câmera juntos: nesse caso segue sem o filtro de rosto.
-                        val boundCamera = try {
-                            provider.bindToLifecycle(lifecycleOwner, selector, buildGroup(true))
-                        } catch (_: Exception) {
-                            provider.unbindAll()
-                            provider.bindToLifecycle(lifecycleOwner, selector, buildGroup(false))
-                        }
+                        val boundCamera = provider.bindToLifecycle(lifecycleOwner, selector, group)
                         cameraControl = boundCamera
                         zoomRatio = 1f
                         capture.flashMode = if (flashEnabled) androidx.camera.core.ImageCapture.FLASH_MODE_ON else androidx.camera.core.ImageCapture.FLASH_MODE_OFF
@@ -11515,12 +11490,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         }
                     } else finishPhoto(uri)
                 }
-                if (selectedFace != "Nenhum") {
-                    flashLabel = "Aplicando filtro…"
-                    qinblyBakeFaceFilter(context, file, selectedFace) { baked -> withEffects(baked) }
-                } else {
-                    withEffects(Uri.fromFile(file))
-                }
+                withEffects(Uri.fromFile(file))
             }
             override fun onError(exception: androidx.camera.core.ImageCaptureException) { cameraError = "Falha ao tirar foto: " + (exception.message ?: "tente novamente") }
         })
@@ -11699,7 +11669,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
  QinblySplit {
         val frameRatio = when (selectedCameraFormat) { "1:1" -> 1f; "4:3" -> 3f / 4f; else -> 9f / 16f }
         val sideScroll = rememberScrollState()
-        val bubbleItems = remember { QinblyColorFilterNames.map { it to false } + QinblyAnimatedEffectNames.map { it to true } }
         BackHandler(enabled = cameraSheet.isNotBlank()) { cameraSheet = "" }
         Box(Modifier.fillMaxSize().background(Color(0xFF080808))) {
  QinblySplit {
@@ -11738,9 +11707,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         } catch (_: Exception) { }
                     }
                 )
-                if (selectedFace != "Nenhum") {
-                    QinblyFaceOverlay(selectedFace, faceState, lensFacing == androidx.camera.core.CameraSelector.LENS_FACING_FRONT, Modifier.fillMaxSize())
-                }
                 if (gridOn) {
                     androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
                         val line = Color.White.copy(alpha = 0.35f)
@@ -11750,7 +11716,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         }
                     }
                 }
-                QinblyEffectsOverlay(selectedEffect, Modifier.fillMaxSize())
                 if (captureMode == "Foto" && camTextMode && !camTextEditing) {
                     Text(
                         if (editorText.isBlank()) androidx.compose.ui.text.AnnotatedString("Toque para escrever") else qinblyColoredText(editorTextFont, editorText, editorTextColor, editorWordColors),
@@ -11993,32 +11958,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 contentPadding = PaddingValues(horizontal = 14.dp),
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                items(bubbleItems) { (name, animated) ->
-                                    if (!animated) {
-                                        QinblyFilterBubble(name, selectedFilter == name, {
-                                            selectedFilter = name
-                                            filterIntensity = 1f
-                                            flashLabel = name
-                                        }) {
-                                            QinblyFilterSample(name)
-                                        }
-                                    } else {
-                                        QinblyFilterBubble(name, selectedEffect == name, {
-                                            selectedEffect = if (selectedEffect == name) "Original" else name
-                                            flashLabel = if (selectedEffect == "Original") "Efeito desligado" else name
-                                        }) {
-                                            Box(Modifier.fillMaxSize().background(Color(0xCC10151E)), contentAlignment = Alignment.Center) {
-                                                Icon(QinblyCameraIcons.effect(name), contentDescription = name, tint = Color.White, modifier = Modifier.size(24.dp))
-                                            }
-                                        }
-                                    }
-                                }
-                                items(QinblyFaceFilterNames) { faceName ->
-                                    QinblyFilterBubble(faceName, selectedFace == faceName, {
-                                        selectedFace = if (selectedFace == faceName) "Nenhum" else faceName
-                                        flashLabel = if (selectedFace == "Nenhum") "Filtro de rosto desligado" else faceName
+                                items(QinblyColorFilterNames) { name ->
+                                    QinblyFilterBubble(name, selectedFilter == name, {
+                                        selectedFilter = name
+                                        filterIntensity = 1f
+                                        flashLabel = name
                                     }) {
-                                        QinblyFaceThumb(faceName, Modifier.fillMaxSize())
+                                        QinblyFilterSample(name)
                                     }
                                 }
                             }
@@ -12296,15 +12242,49 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         return
      }
 
-    fun applyEditorEffect(retouch: Boolean, blur: Boolean, hdr: Boolean, done: String) {
-        val current = selectedUri
-        if (selectedType != "foto" || current == null) { onNotice("Esse efeito só funciona em fotos."); return }
+    // Aplica os efeitos ligados (retoque, HDR, fundo) UMA vez, sempre partindo da foto original. Tudo desligado = foto original de volta.
+    fun runEditorFx(done: String) {
+        val cur = selectedUri
+        if (selectedType != "foto" || cur == null) { onNotice("Esse efeito só funciona em fotos."); return }
         if (editorBusy) return
+        val base = if (fxBase != null && cur == fxResult) fxBase!! else cur
+        fxBase = base
+        val spec = QinblyFxSpec(edRetouch, edHdr, edBgMode, edBgIntensity, edBgColor, edBgIndex, edBgImage)
+        if (spec.isEmpty) {
+            selectedUri = base; fxResult = null; fxBase = null; bakedUri = null
+            if (done.isNotBlank()) onNotice(done)
+            return
+        }
         editorBusy = true
-        qinblyApplyPhotoEffects(context, current, retouch, blur, hdr) { fx, note ->
+        qinblyApplyPhotoFx(context, base, spec) { fx, note ->
             editorBusy = false
-            if (fx != null) { selectedUri = fx; bakedUri = null }
-            onNotice(if (note.isNotBlank()) note else if (fx != null) done else "Não foi possível aplicar o efeito.")
+            if (fx != null) { selectedUri = fx; fxResult = fx; bakedUri = null }
+            val msg = if (note.isNotBlank()) note else if (fx != null) done else "Não foi possível aplicar o efeito."
+            if (msg.isNotBlank()) onNotice(msg)
+        }
+    }
+    val bgPhotoPicker = rememberQinblyPhotoLauncher { picked ->
+        if (picked != null) { edBgImage = picked; edBgMode = "image"; runEditorFx("Fundo trocado.") }
+    }
+    // Recorta a pessoa (sem fundo) e salva nas figurinhas do usuário.
+    fun cutPersonToSticker() {
+        val cur = selectedUri
+        if (selectedType != "foto" || cur == null) { onNotice("Recortar pessoa só funciona em fotos."); return }
+        val src = if (fxBase != null && cur == fxResult) fxBase!! else cur
+        val token = context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).getString("token", null)
+        if (token.isNullOrBlank()) { onNotice("Entre na sua conta para criar figurinhas."); return }
+        onNotice("Recortando a pessoa…")
+        qinblyMakeSticker(context, src, true) { file, info ->
+            if (file == null) { onNotice(info.ifBlank { "Não foi possível criar a figurinha." }); return@qinblyMakeSticker }
+            Thread {
+                val mainH = android.os.Handler(android.os.Looper.getMainLooper())
+                try {
+                    QinblyApi.createSticker(context, token, file, "image/png")
+                    mainH.post { onNotice(if (info.isNotBlank()) info else "Pessoa recortada e salva nas suas figurinhas.") }
+                } catch (e: Exception) {
+                    mainH.post { onNotice(e.message ?: "Não foi possível salvar a figurinha.") }
+                } finally { file.delete() }
+            }.start()
         }
     }
     if (cropOpen && selectedType == "foto" && selectedUri != null) {
@@ -12542,10 +12522,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                     val src = selectedUri!!
                                     val ratioNow = editorRatio; val z = editorZoom; val px = editorPanX; val py = editorPanY
                                     val matrixNow = qinblyEditMatrix(selectedFilter, filterIntensity, editorBrightness, editorContrast)
-                                    val blurNow = editorBlur; val dxNow = if (editorFrame.w > 0f) editorTextDx / editorFrame.w else 0f; val dyNow = if (editorFrame.h > 0f) editorTextDy / editorFrame.h else 0f; val fontNow = editorTextFont; val colorNow = editorTextColor; val wordsNow = editorWordColors.toMap(); val textNow = editorText; val stickerNow = editorStickers.map { QinblyStickerSpec(it.emoji, it.nx, it.ny, it.scale, it.rot) }; val strokesNow = editorStrokes.toList()
+                                    val blurNow = editorBlur; val dxNow = if (editorFrame.w > 0f) editorTextDx / editorFrame.w else 0f; val dyNow = if (editorFrame.h > 0f) editorTextDy / editorFrame.h else 0f; val fontNow = editorTextFont; val colorNow = editorTextColor; val wordsNow = editorWordColors.toMap(); val textNow = editorText; val stickerNow = editorStickers.map { QinblyStickerSpec(it.emoji, it.nx, it.ny, it.scale, it.rot) }; val strokesNow = editorStrokes.toList(); val strokeMetaNow = editorStrokeMeta.toList()
                                     Thread {
                                         try {
-                                            val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow, blurNow)
+                                            val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow, blurNow, editorTextScale, strokeMetaNow)
                                             android.os.Handler(android.os.Looper.getMainLooper()).post { bakedUri = done; editorBusy = false; afterEdit() }
                                         } catch (e: Exception) {
                                             // Se não der para aplicar as edições, publica a foto original em vez de travar.
@@ -12592,6 +12572,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 QinblyFullscreenVideo(url = uri.toString(), modifier = Modifier.fillMaxSize(), showProgress = false)
             }
             val editorFilterTint = when (selectedFilter) {
+                in QinblyColorFilterNames.drop(12) -> qinblyAutoTint(selectedFilter)
                 "Aurora" -> Color(0x22B9A6F0)
                 "Pôr do sol" -> Color(0x33F4A261)
                 "Neon" -> Color(0x22FF4FD8)
@@ -12617,20 +12598,30 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             if (editorFilterTint != Color.Transparent && selectedType == "vídeo") {
                 Box(Modifier.fillMaxSize().alpha(filterIntensity).background(editorFilterTint))
             }
-            QinblyEffectsOverlay(selectedEffect, Modifier.fillMaxSize())
             if (editorTool == "Desenho") {
  QinblySplit {
                 androidx.compose.foundation.Canvas(
                     modifier = Modifier.offset { androidx.compose.ui.unit.IntOffset(editorFrame.left.toInt(), editorFrame.top.toInt()) }
                         .size(with(androidx.compose.ui.platform.LocalDensity.current) { editorFrame.w.toDp() }, with(androidx.compose.ui.platform.LocalDensity.current) { editorFrame.h.toDp() })
-                        .pointerInput(editorTool) {
+                        .pointerInput(editorTool, editorEraser, editorDrawColor, editorDrawWidth) {
+                        // Borracha: apaga os traços que o dedo encostar. Caneta: cria um traço novo com a cor e a espessura escolhidas.
+                        fun eraseAt(pos: Offset) {
+                            val reach = 22.dp.toPx()
+                            for (i in editorStrokes.indices.reversed()) {
+                                if (editorStrokes[i].any { pt -> kotlin.math.hypot(pt.x * size.width - pos.x, pt.y * size.height - pos.y) < reach }) {
+                                    editorStrokes.removeAt(i); if (i < editorStrokeMeta.size) editorStrokeMeta.removeAt(i)
+                                }
+                            }
+                        }
                         detectDragGestures(
                             onDragStart = { start ->
-                                editorStrokes.add(listOf(Offset(start.x / size.width, start.y / size.height)))
+                                if (editorEraser) eraseAt(start)
+                                else { editorStrokes.add(listOf(Offset(start.x / size.width, start.y / size.height))); editorStrokeMeta.add(editorDrawColor to editorDrawWidth) }
                             },
                             onDrag = { change, _ ->
                                 change.consume()
-                                if (editorStrokes.isNotEmpty()) {
+                                if (editorEraser) eraseAt(change.position)
+                                else if (editorStrokes.isNotEmpty()) {
                                     val last = editorStrokes.last()
                                     editorStrokes[editorStrokes.lastIndex] = last + Offset(
                                         (change.position.x / size.width).coerceIn(0f, 1f),
@@ -12641,12 +12632,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         )
                     }
                 ) {
-                    editorStrokes.forEach { points ->
+                    editorStrokes.forEachIndexed { idx, points ->
                         if (points.size > 1) {
+                            val meta = editorStrokeMeta.getOrNull(idx)
                             val path = androidx.compose.ui.graphics.Path()
                             path.moveTo(points.first().x * size.width, points.first().y * size.height)
                             points.drop(1).forEach { path.lineTo(it.x * size.width, it.y * size.height) }
-                            drawPath(path, Color(0xFFFF2A9D), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 7.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round))
+                            drawPath(path, Color(meta?.first ?: 0xFFFF2A9D.toInt()), style = androidx.compose.ui.graphics.drawscope.Stroke(width = ((meta?.second ?: 0.012f) * size.width).coerceAtLeast(2f), cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
                         }
                     }
                 }
@@ -12655,6 +12647,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             // Camada transparente de cima: mede a tela, troca filtro passando o dedo e recebe o gesto de mover/dar zoom na foto.
             // (O gesto da foto fica AQUI, nesta camada de cima, porque uma camada com gesto bloqueia o que está embaixo dela.)
             Box(Modifier.fillMaxSize().onSizeChanged { editorPreviewW = it.width; editorPreviewH = it.height }
+                .pointerInput(Unit) { detectTapGestures { editorSelSticker = null; editorTextSelected = false } }
                 .qinblySwipeFilters(enabled = editorTool == "Filtros" && selectedType == "foto" && editorZoom <= 1.01f) { dir ->
                     // Igual à câmera: passar o dedo para o lado troca o filtro de cor.
                     val names = QinblyColorFilterNames
@@ -12665,6 +12658,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     picker = editorTool == "Ajustar", ratio = editorRatio, imageRatio = editorImageRatio, areaW = editorPreviewW, areaH = editorPreviewH,
                     zoom = { editorZoom }, panX = { editorPanX }, panY = { editorPanY },
                     ignoreSinglePan = { editorTool == "Filtros" && editorZoom <= 1.01f },
+                    // Enquanto um emote ou o texto está selecionado, a pinça vale SÓ nele; a foto só dá zoom quando nada está selecionado.
+                    selectedActive = { editorSelSticker != null || editorTextSelected },
+                    onSelectedTransform = { gz, rot ->
+                        val st = editorSelSticker
+                        if (st != null) { st.scale = (st.scale * gz).coerceIn(0.3f, 8f); st.rot += rot }
+                        else if (editorTextSelected) editorTextScale = (editorTextScale * gz).coerceIn(0.4f, 4f)
+                    },
                     onChange = { z, x, y -> editorZoom = z; editorPanX = x; editorPanY = y }
                 ) else Modifier))
             if (swipeFilterLabel.isNotBlank()) {
@@ -12679,10 +12679,12 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             if (editorText.isNotBlank() && !(editorTool == "Texto" && editorTextEditing) && editorTool != "Ajustar") {
                 Text(qinblyColoredText(editorTextFont, editorText, editorTextColor, editorWordColors), modifier = Modifier.align(Alignment.Center).offset { androidx.compose.ui.unit.IntOffset(editorTextDx.toInt(), editorTextDy.toInt()) }
                         .clip(RoundedCornerShape(12.dp))
-                        .pointerInput(Unit) { detectDragGestures { change, drag -> change.consume(); editorTextDx += drag.x; editorTextDy += drag.y } }
-                        .clickable { editorTool = "Texto"; editorTextEditing = true }
+                        .then(if (editorTextSelected) Modifier.border(1.5.dp, Color.White, RoundedCornerShape(12.dp)) else Modifier)
+                        .pointerInput(Unit) { detectDragGestures(onDragStart = { editorTextSelected = true; editorSelSticker = null }) { change, drag -> change.consume(); editorTextDx += drag.x; editorTextDy += drag.y } }
+                        // 1º toque seleciona (moldura; a pinça passa a valer só no texto); toque no texto já selecionado abre a edição.
+                        .clickable { if (editorTextSelected) { editorTool = "Texto"; editorTextEditing = true } else { editorTextSelected = true; editorSelSticker = null } }
                         .padding(horizontal = 28.dp, vertical = 16.dp),
-                    color = Color(editorTextColor), fontSize = 28.sp,
+                    color = Color(editorTextColor), fontSize = (28f * editorTextScale).sp,
                     fontFamily = androidx.compose.ui.text.font.FontFamily(qinblyTypeface(editorTextFont)),
                     letterSpacing = qinblyTextSpacingEm(editorTextFont).em,
                     style = MaterialTheme.typography.headlineMedium.copy(shadow = androidx.compose.ui.graphics.Shadow(if (editorTextColor == android.graphics.Color.BLACK || editorTextColor == 0xFF111111.toInt()) Color(0xCCFFFFFF) else Color(0xCC000000), blurRadius = 8f)),
@@ -12695,10 +12697,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 Box(
                     Modifier.size(120.dp)
                         .offset { androidx.compose.ui.unit.IntOffset((editorFrame.left + st.nx * editorFrame.w).toInt() - half, (editorFrame.top + st.ny * editorFrame.h).toInt() - half) }
-                        .pointerInput(st) { detectTapGestures(onTap = { editorSelSticker = if (editorSelSticker === st) null else st }, onDoubleTap = { editorStickers.remove(st); if (editorSelSticker === st) editorSelSticker = null }) }
+                        .pointerInput(st) { detectTapGestures(onTap = { editorSelSticker = if (editorSelSticker === st) null else st; editorTextSelected = false }, onDoubleTap = { editorStickers.remove(st); if (editorSelSticker === st) editorSelSticker = null }) }
                         .pointerInput(st) {
                             detectTransformGestures { _, pan, zoom, rotation ->
-                                editorSelSticker = st
+                                editorSelSticker = st; editorTextSelected = false
                                 if (editorFrame.w > 0f && editorFrame.h > 0f) {
                                     st.nx = (st.nx + pan.x / editorFrame.w).coerceIn(0f, 1f)
                                     st.ny = (st.ny + pan.y / editorFrame.h).coerceIn(0f, 1f)
@@ -12734,7 +12736,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
  QinblySplit {
             // Mesmo visual da câmera: X no canto e ferramentas de edição de foto na lateral (ícone de linha fina + nome).
             var editorSideExpanded by remember { mutableStateOf(false) }
-            val editorBubbles = remember { QinblyColorFilterNames.map { it to false } + QinblyAnimatedEffectNames.map { it to true } }
             IconButton(
                 onClick = { leaveEditor() },
                 modifier = Modifier.align(Alignment.TopStart).padding(start = 8.dp, top = 8.dp)
@@ -12780,7 +12781,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     cropRatio = editorRatio; cropZoom = editorZoom; cropPanX = editorPanX; cropPanY = editorPanY
                     cropOpen = true
                 }
-                QinblyCameraSideItem(QinblyCameraIcons.retouch, "Retoque") { applyEditorEffect(true, false, false, "Pele suavizada.") }
+                QinblyCameraSideItem(QinblyCameraIcons.retouch, "Retoque", on = edRetouch) { if (!editorBusy) { edRetouch = !edRetouch; runEditorFx(if (edRetouch) "Pele suavizada." else "Retoque tirado.") } }
                 QinblyCameraSideItem(QinblyCameraIcons.filters, "Filtros", on = editorTool == "Filtros" && storyFiltersOpen) {
                     // Igual à câmera: a faixa de filtros só aparece quando a pessoa toca em Filtros.
                     storyFiltersOpen = !(editorTool == "Filtros" && storyFiltersOpen); editorTool = "Filtros"
@@ -12797,10 +12798,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         val matrixNow = qinblyEditMatrix(selectedFilter, filterIntensity, editorBrightness, editorContrast)
                         val blurNow = editorBlur; val dxNow = if (editorFrame.w > 0f) editorTextDx / editorFrame.w else 0f; val dyNow = if (editorFrame.h > 0f) editorTextDy / editorFrame.h else 0f
                         val fontNow = editorTextFont; val colorNow = editorTextColor; val wordsNow = editorWordColors.toMap(); val textNow = editorText
-                        val stickerNow = editorStickers.map { QinblyStickerSpec(it.emoji, it.nx, it.ny, it.scale, it.rot) }; val strokesNow = editorStrokes.toList()
+                        val stickerNow = editorStickers.map { QinblyStickerSpec(it.emoji, it.nx, it.ny, it.scale, it.rot) }; val strokesNow = editorStrokes.toList(); val strokeMetaNow = editorStrokeMeta.toList()
                         Thread {
                             val ok = try {
-                                val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow, blurNow)
+                                val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow, blurNow, editorTextScale, strokeMetaNow)
                                 qinblySaveMediaCopy(context, done, false)
                             } catch (_: Exception) { false }
                             android.os.Handler(android.os.Looper.getMainLooper()).post {
@@ -12814,7 +12815,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
  QinblySplit {
                     QinblyCameraSideItem(QinblyCameraIcons.pen, "Desenho", on = editorTool == "Desenho") {
                         editorTool = if (editorTool == "Desenho") "Filtros" else "Desenho"
-                        if (editorTool == "Desenho") editorStrokes.clear()
                     }
                     if (selectedType == "foto") {
  QinblySplit {
@@ -12833,8 +12833,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                             }
                         }
                         QinblyCameraSideItem(QinblyCameraIcons.adjust, "Ajustes", on = editorTool == "Ajustes") { editorTool = if (editorTool == "Ajustes") "Filtros" else "Ajustes" }
-                        QinblyCameraSideItem(QinblyCameraIcons.hdr, "HDR") { applyEditorEffect(false, false, true, "HDR aplicado.") }
-                        QinblyCameraSideItem(QinblyCameraIcons.background, "Fundo") { applyEditorEffect(false, true, false, "Fundo desfocado.") }
+                        QinblyCameraSideItem(QinblyCameraIcons.hdr, "HDR", on = edHdr > 0f) {
+                            if (!editorBusy) {
+                                if (edHdr > 0f) { edHdr = 0f; if (editorTool == "HDR") editorTool = "Filtros"; runEditorFx("HDR tirado.") }
+                                else { edHdr = 0.65f; editorTool = "HDR"; runEditorFx("HDR aplicado.") }
+                            }
+                        }
+                        QinblyCameraSideItem(QinblyCameraIcons.background, "Fundo", on = edBgMode.isNotBlank() || editorTool == "Fundo") { editorTool = if (editorTool == "Fundo") "Filtros" else "Fundo" }
                      }
 }
                  }
@@ -13000,17 +13005,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         contentPadding = PaddingValues(horizontal = 14.dp),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        items(editorBubbles) { (name, animated) ->
-                            if (!animated) {
-                                QinblyFilterBubble(name, selectedFilter == name, { selectedFilter = name; filterIntensity = 1f }) {
-                                    QinblyFilterSample(name)
-                                }
-                            } else {
-                                QinblyFilterBubble(name, selectedEffect == name, { selectedEffect = if (selectedEffect == name) "Original" else name }) {
-                                    Box(Modifier.fillMaxSize().background(Color(0xCC10151E)), contentAlignment = Alignment.Center) {
-                                        Icon(QinblyCameraIcons.effect(name), contentDescription = name, tint = Color.White, modifier = Modifier.size(24.dp))
-                                    }
-                                }
+                        items(QinblyColorFilterNames) { name ->
+                            QinblyFilterBubble(name, selectedFilter == name, { selectedFilter = name; filterIntensity = 1f }) {
+                                QinblyFilterSample(name)
                             }
                         }
                     }
@@ -13065,9 +13062,108 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     ) {
                         items(qinblyEditorEmojis) { sticker ->
                             Text(sticker, modifier = Modifier.clip(CircleShape).clickable {
-                                    editorStickers.add(QinblyEditorSticker(sticker).also { it.ny = 0.4f; editorSelSticker = it })
+                                    editorStickers.add(QinblyEditorSticker(sticker).also { it.ny = 0.4f; editorSelSticker = it; editorTextSelected = false })
                                     if (!stickerHintShown) { stickerHintShown = true; onNotice("Toque no emote para selecionar. Arraste move, dois dedos ampliam e giram, o X remove.") }
                                 }.padding(8.dp), style = MaterialTheme.typography.headlineSmall)
+                        }
+                    }
+                }
+                if (newEditorChrome && editorTool == "Desenho") {
+                    Column(Modifier.padding(horizontal = 14.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(QinblyTextColors) { argb ->
+                                val chosen = argb == editorDrawColor && !editorEraser
+                                Box(
+                                    Modifier.size(28.dp).clip(CircleShape).background(Color(argb))
+                                        .border(if (chosen) 3.dp else 1.dp, if (chosen) Color.White else Color(0x99FFFFFF), CircleShape)
+                                        .clickable { editorDrawColor = argb; editorEraser = false }
+                                )
+                            }
+                        }
+                        Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            listOf(0.006f to 8, 0.012f to 14, 0.022f to 22).forEach { (wf, dot) ->
+                                val chosen = editorDrawWidth == wf
+                                Box(
+                                    Modifier.size(34.dp).clip(CircleShape).border(if (chosen) 2.dp else 0.5.dp, if (chosen) Color.White else Color(0x99FFFFFF), CircleShape)
+                                        .clickable { editorDrawWidth = wf; editorEraser = false },
+                                    contentAlignment = Alignment.Center
+                                ) { Box(Modifier.size(dot.dp).clip(CircleShape).background(Color.White)) }
+                            }
+                            QinblyEditorChip("Desfazer", false) {
+                                if (editorStrokes.isNotEmpty()) { editorStrokes.removeAt(editorStrokes.lastIndex); if (editorStrokeMeta.isNotEmpty()) editorStrokeMeta.removeAt(editorStrokeMeta.lastIndex) }
+                            }
+                            QinblyEditorChip("Borracha", editorEraser) { editorEraser = !editorEraser }
+                        }
+                        Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            QinblyEditorChip("Limpar tudo", false) { editorStrokes.clear(); editorStrokeMeta.clear() }
+                            QinblyEditorChip("Pronto", true) { editorEraser = false; editorTool = "Filtros" }
+                        }
+                    }
+                }
+                if (newEditorChrome && editorTool == "HDR" && edHdr > 0f) {
+                    Row(Modifier.padding(horizontal = 14.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("HDR", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        listOf("Fraco" to 0.35f, "Médio" to 0.65f, "Forte" to 1f).forEach { (label, v) ->
+                            QinblyEditorChip(label, edHdr == v) { if (!editorBusy) { edHdr = v; runEditorFx("") } }
+                        }
+                        QinblyEditorChip("Pronto", false) { editorTool = "Filtros" }
+                    }
+                }
+                if (newEditorChrome && editorTool == "Fundo") {
+                    Column(Modifier.padding(horizontal = 14.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            val modes = listOf("Nenhum" to "", "Desfocar" to "blur", "Bokeh" to "bokeh", "Movimento" to "motion", "P&B" to "bw", "Escurecer" to "dim", "Clarear" to "light", "Cores" to "color", "Degradês" to "gradient", "Cenários" to "scene", "Galeria" to "image")
+                            items(modes) { (label, mode) ->
+                                QinblyEditorChip(label, if (mode.isBlank()) edBgMode.isBlank() else edBgMode == mode) {
+                                    if (!editorBusy) {
+                                        if (mode == "image") bgPhotoPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                        else {
+                                            edBgMode = mode
+                                            if (mode == "gradient" || mode == "scene") edBgIndex = 0
+                                            runEditorFx(if (mode.isBlank()) "Fundo original." else "")
+                                        }
+                                    }
+                                }
+                            }
+                            item { QinblyEditorChip("Recortar pessoa", false) { cutPersonToSticker() } }
+                            item { QinblyEditorChip("Pronto", false) { editorTool = "Filtros" } }
+                        }
+                        when (edBgMode) {
+                            "blur", "bokeh", "motion", "dim", "light" -> Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("Intensidade", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(76.dp))
+                                Slider(
+                                    value = edBgIntensity, onValueChange = { edBgIntensity = it }, onValueChangeFinished = { runEditorFx("") },
+                                    colors = SliderDefaults.colors(thumbColor = Color.White, activeTrackColor = Color.White, inactiveTrackColor = Color(0x55FFFFFF)),
+                                    modifier = Modifier.weight(1f).height(30.dp)
+                                )
+                            }
+                            "color" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                items(QinblyTextColors) { argb ->
+                                    val chosen = argb == edBgColor
+                                    Box(
+                                        Modifier.size(28.dp).clip(CircleShape).background(Color(argb))
+                                            .border(if (chosen) 3.dp else 1.dp, if (chosen) Color.White else Color(0x99FFFFFF), CircleShape)
+                                            .clickable { if (!editorBusy) { edBgColor = argb; runEditorFx("") } }
+                                    )
+                                }
+                            }
+                            "gradient" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                items(QinblyBgGradients.size) { i ->
+                                    val chosen = i == edBgIndex
+                                    Box(
+                                        Modifier.size(34.dp).clip(CircleShape)
+                                            .background(Brush.linearGradient(listOf(Color(QinblyBgGradients[i].first), Color(QinblyBgGradients[i].second))))
+                                            .border(if (chosen) 3.dp else 1.dp, if (chosen) Color.White else Color(0x99FFFFFF), CircleShape)
+                                            .clickable { if (!editorBusy) { edBgIndex = i; runEditorFx("") } }
+                                    )
+                                }
+                            }
+                            "scene" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items(QinblyBgSceneNames.size) { i ->
+                                    QinblyEditorChip(QinblyBgSceneNames[i], i == edBgIndex) { if (!editorBusy) { edBgIndex = i; runEditorFx("") } }
+                                }
+                            }
+                            else -> {}
                         }
                     }
                 }

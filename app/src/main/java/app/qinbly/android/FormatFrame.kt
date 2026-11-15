@@ -231,13 +231,17 @@ internal fun QinblyFormatPicker(
 internal fun Modifier.qinblyFormatGestures(
     picker: Boolean, ratio: String, imageRatio: Float, areaW: Int, areaH: Int,
     zoom: () -> Float, panX: () -> Float, panY: () -> Float, ignoreSinglePan: () -> Boolean,
+    selectedActive: () -> Boolean = { false }, onSelectedTransform: (Float, Float) -> Unit = { _, _ -> },
     onChange: (Float, Float, Float) -> Unit
 ): Modifier = this.pointerInput(picker, ratio, imageRatio, areaW, areaH) {
-    detectTransformGestures { _, pan, gz, _ ->
+    detectTransformGestures { _, pan, gz, rot ->
+        // Emote ou texto selecionado: a pinça (e o giro) valem só nele, a foto não se mexe.
+        if (selectedActive()) { if (gz != 1f || rot != 0f) onSelectedTransform(gz, rot); return@detectTransformGestures }
         if (areaW <= 0 || areaH <= 0) return@detectTransformGestures
         val frameRatio = qinblyRatioValue(ratio, imageRatio)
         val factor = qinblyFitFactor(imageRatio, frameRatio)
-        val nz = (zoom() * gz).coerceIn(minOf(factor, 1f), 6f)
+        // Formato (picker): o que muda é o tamanho do QUADRO. Abrir os dedos aumenta o quadro (zoom menor), fechar diminui.
+        val nz = (if (picker) zoom() / gz else zoom() * gz).coerceIn(minOf(factor, 1f), 6f)
         val lim = qinblyMaxPan(imageRatio, frameRatio, nz)
         val dx: Float; val dy: Float
         if (picker) {

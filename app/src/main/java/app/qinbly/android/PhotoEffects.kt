@@ -36,17 +36,37 @@ import kotlin.math.roundToInt
  * Roda fora da tela principal; o resultado volta em [onDone] na thread principal.
  * [onDone] recebe o arquivo novo (ou null se falhou) e um aviso para mostrar à pessoa (pode ser vazio).
  */
-internal fun qinblyApplyPhotoEffects(
-    context: Context, source: Uri, retouch: Boolean, blurBackground: Boolean, hdr: Boolean,
-    onDone: (Uri?, String) -> Unit
+/**
+ * Tudo que o editor pode aplicar numa foto, sempre a partir da foto ORIGINAL (nada acumula):
+ * retoque (liga/desliga), HDR (0 = desligado, 0..1 = intensidade) e fundo (bgMode vazio = sem troca de fundo).
+ * bgMode: blur, bokeh, motion, bw, dim, light, color, gradient, scene, image.
+ */
+internal data class QinblyFxSpec(
+    val retouch: Boolean = false,
+    val hdr: Float = 0f,
+    val bgMode: String = "",
+    val bgIntensity: Float = 0.5f,
+    val bgColor: Int = 0xFF222222.toInt(),
+    val bgIndex: Int = 0,
+    val bgImage: Uri? = null
 ) {
+    val isEmpty: Boolean get() = !retouch && hdr <= 0f && bgMode.isBlank()
+}
+
+internal val QinblyBgGradients: List<Pair<Int, Int>> = listOf(
+    0xFFFF9A8B.toInt() to 0xFFFF6A88.toInt(), 0xFF4FACFE.toInt() to 0xFF00F2FE.toInt(), 0xFF43E97B.toInt() to 0xFF38F9D7.toInt(),
+    0xFF7F00FF.toInt() to 0xFFE100FF.toInt(), 0xFFFDC830.toInt() to 0xFFF37335.toInt(), 0xFF141E30.toInt() to 0xFF243B55.toInt()
+)
+internal val QinblyBgSceneNames = listOf("Pôr do sol", "Noite estrelada", "Cidade à noite", "Neon")
+
+internal fun qinblyApplyPhotoFx(context: Context, source: Uri, spec: QinblyFxSpec, onDone: (Uri?, String) -> Unit) {
     val main = Handler(Looper.getMainLooper())
     Thread {
         var uri: Uri? = null
         var note = ""
         try {
             val notes = ArrayList<String>()
-            uri = qinblyPhotoEffectsSync(context, source, retouch, blurBackground, hdr, notes)
+            uri = qinblyPhotoFxSync(context, source, spec, notes)
             note = notes.joinToString(" ")
         } catch (t: Throwable) {
             note = "Não foi possível aplicar o efeito nesta foto."
@@ -54,6 +74,11 @@ internal fun qinblyApplyPhotoEffects(
         main.post { onDone(uri, note) }
     }.start()
 }
+
+internal fun qinblyApplyPhotoEffects(
+    context: Context, source: Uri, retouch: Boolean, blurBackground: Boolean, hdr: Boolean,
+    onDone: (Uri?, String) -> Unit
+) = qinblyApplyPhotoFx(context, source, QinblyFxSpec(retouch = retouch, hdr = if (hdr) 1f else 0f, bgMode = if (blurBackground) "blur" else "", bgIntensity = 0.5f), onDone)
 
 private fun fxExifMatrix(exif: android.media.ExifInterface): Matrix {
     val m = Matrix()
@@ -98,12 +123,13 @@ private fun fxSoftBlur(src: Bitmap, divisor: Int): Bitmap {
     return up
 }
 
-private fun fxApplyHdr(bmp: Bitmap) {
+private fun fxApplyHdr(bmp: Bitmap, k: Float = 1f) {
     val lut = IntArray(256) { i ->
         val y = i / 255f
-        val lifted = y.toDouble().pow(0.82).toFloat()
+        val lifted = y.toDouble().pow((1.0 - 0.18 * k)).toFloat()
         val s = lifted * lifted * (3f - 2f * lifted)
-        ((lifted * 0.6f + s * 0.4f) * 255f).roundToInt().coerceIn(0, 255)
+        val mixS = 0.4f * k
+        ((lifted * (1f - mixS) + s * mixS) * 255f).roundToInt().coerceIn(0, 255)
     }
     val w = bmp.width
     val h = bmp.height
@@ -114,12 +140,16 @@ private fun fxApplyHdr(bmp: Bitmap) {
         px[i] = (p and 0xFF000000.toInt()) or (lut[(p shr 16) and 0xFF] shl 16) or (lut[(p shr 8) and 0xFF] shl 8) or lut[p and 0xFF]
     }
     bmp.setPixels(px, 0, w, 0, 0, w, h)
-    val saturated = Paint().apply { colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(1.12f) }) }
+    val saturated = Paint().apply { colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(1f + 0.12f * k) }) }
     val copy = bmp.copy(Bitmap.Config.ARGB_8888, false)
     Canvas(bmp).drawBitmap(copy, 0f, 0f, saturated)
     copy.recycle()
 }
 
+/**
+ * Retoque de pele de verdade: só suaviza os pixels de PELE dentro de cada rosto e preserva as bordas
+ * (olhos, sobrancelhas, boca, cabelo, contorno ficam nítidos). Aplicado uma única vez a partir da foto original.
+ */
 private fun fxRetouch(bmp: Bitmap, notes: MutableList<String>) {
     val detector = FaceDetection.getClient(
         FaceDetectorOptions.Builder().setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE).build()
@@ -127,23 +157,65 @@ private fun fxRetouch(bmp: Bitmap, notes: MutableList<String>) {
     val faces = try { Tasks.await(detector.process(InputImage.fromBitmap(bmp, 0))) } finally { detector.close() }
     if (faces.isEmpty()) { notes.add("Não achei rosto para o retoque."); return }
     val soft = fxSoftBlur(bmp, 4)
-    val canvas = Canvas(bmp)
+    val bw = bmp.width
+    val bh = bmp.height
     faces.forEach { face ->
         val box = face.boundingBox
         val cx = box.exactCenterX()
         val cy = box.exactCenterY()
-        val r = max(box.width(), box.height()) * 0.62f
-        val fade = RadialGradient(cx, cy, r, intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0x00FFFFFF), floatArrayOf(0f, 0.55f, 1f), Shader.TileMode.CLAMP)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            shader = ComposeShader(BitmapShader(soft, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP), fade, PorterDuff.Mode.DST_IN)
-            alpha = (255 * 0.65f).toInt()
+        val rx = box.width() * 0.62f
+        val ry = box.height() * 0.70f
+        val x0 = max(0, (cx - rx).toInt()); val y0 = max(0, (cy - ry).toInt())
+        val x1 = minOf(bw, (cx + rx).toInt() + 1); val y1 = minOf(bh, (cy + ry).toInt() + 1)
+        val rw = x1 - x0; val rh = y1 - y0
+        if (rw <= 2 || rh <= 2) return@forEach
+        val orig = IntArray(rw * rh); val blur = IntArray(rw * rh)
+        bmp.getPixels(orig, 0, rw, x0, y0, rw, rh)
+        soft.getPixels(blur, 0, rw, x0, y0, rw, rh)
+        for (yy in 0 until rh) for (xx in 0 until rw) {
+            val i = yy * rw + xx
+            val dx = ((x0 + xx) - cx) / rx; val dy = ((y0 + yy) - cy) / ry
+            val d2 = dx * dx + dy * dy
+            if (d2 >= 1f) continue
+            val p = orig[i]
+            val r = (p shr 16) and 0xFF; val g = (p shr 8) and 0xFF; val b = p and 0xFF
+            // Só pele: faixa Cb/Cr de pele (YCbCr). Olhos, boca, sobrancelhas e cabelo ficam de fora.
+            val cb = 128f - 0.168736f * r - 0.331264f * g + 0.5f * b
+            val cr = 128f + 0.5f * r - 0.418688f * g - 0.081312f * b
+            if (cb < 77f || cb > 127f || cr < 133f || cr > 173f) continue
+            val q = blur[i]
+            val br = (q shr 16) and 0xFF; val bg = (q shr 8) and 0xFF; val bb = q and 0xFF
+            val lo = 0.299f * r + 0.587f * g + 0.114f * b
+            val lb = 0.299f * br + 0.587f * bg + 0.114f * bb
+            // Borda forte (diferença grande entre o pixel e a versão borrada) fica como está; só o "ruído" fino da pele é alisado.
+            val edge = kotlin.math.abs(lo - lb)
+            val keep = (1f - edge / 26f).coerceIn(0f, 1f)
+            val falloff = (1f - d2).coerceIn(0f, 1f).let { it * it * (3f - 2f * it) }
+            val w = 0.85f * keep * falloff
+            if (w <= 0f) continue
+            val nr = (r + (br - r) * w).roundToInt().coerceIn(0, 255)
+            val ng = (g + (bg - g) * w).roundToInt().coerceIn(0, 255)
+            val nb = (b + (bb - b) * w).roundToInt().coerceIn(0, 255)
+            orig[i] = (p and 0xFF000000.toInt()) or (nr shl 16) or (ng shl 8) or nb
         }
-        canvas.drawCircle(cx, cy, r, paint)
+        bmp.setPixels(orig, 0, rw, x0, y0, rw, rh)
     }
     soft.recycle()
 }
 
-private fun fxBlurBackground(bmp: Bitmap, notes: MutableList<String>): Bitmap {
+private fun qinblyPhotoFxSync(context: Context, source: Uri, spec: QinblyFxSpec, notes: MutableList<String>): Uri {
+    var bmp = fxLoadUpright(context, source)
+    if (spec.hdr > 0f) fxApplyHdr(bmp, spec.hdr.coerceIn(0.1f, 1f))
+    if (spec.retouch) fxRetouch(bmp, notes)
+    if (spec.bgMode.isNotBlank()) bmp = fxReplaceBackground(context, bmp, spec, notes)
+    val out = File(context.cacheDir, "qinbly-fx-${System.currentTimeMillis()}.jpg")
+    FileOutputStream(out).use { bmp.compress(Bitmap.CompressFormat.JPEG, 94, it) }
+    bmp.recycle()
+    return Uri.fromFile(out)
+}
+
+/** Máscara da pessoa (alfa) do tamanho da foto, ou null se não achar uma pessoa. */
+private fun fxPersonMask(bmp: Bitmap): Bitmap? {
     val segmenter = Segmentation.getClient(
         SelfieSegmenterOptions.Builder().setDetectorMode(SelfieSegmenterOptions.SINGLE_IMAGE_MODE).build()
     )
@@ -160,33 +232,117 @@ private fun fxBlurBackground(bmp: Bitmap, notes: MutableList<String>): Bitmap {
         if (a > 128) person++
         px[i] = (a shl 24) or 0x00FFFFFF
     }
-    if (person < px.size / 50) { notes.add("Não achei uma pessoa para separar do fundo."); return bmp }
+    if (person < px.size / 50) return null
     val maskSmall = Bitmap.createBitmap(px, mw, mh, Bitmap.Config.ARGB_8888)
     val maskFull = Bitmap.createScaledBitmap(maskSmall, bmp.width, bmp.height, true)
     maskSmall.recycle()
-    val out = fxSoftBlur(bmp, 16).copy(Bitmap.Config.ARGB_8888, true)
+    return maskFull
+}
+
+private fun fxScene(w: Int, h: Int, index: Int): Bitmap {
+    val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+    val c = Canvas(out)
+    val p = Paint(Paint.ANTI_ALIAS_FLAG)
+    val fw = w.toFloat(); val fh = h.toFloat()
+    fun sky(top: Int, bottom: Int) { p.shader = android.graphics.LinearGradient(0f, 0f, 0f, fh, top, bottom, Shader.TileMode.CLAMP); c.drawRect(0f, 0f, fw, fh, p); p.shader = null }
+    when (index) {
+        0 -> { // pôr do sol
+            sky(0xFF2B1055.toInt(), 0xFFFF9966.toInt())
+            p.color = 0xFFFFE08A.toInt(); c.drawCircle(fw * 0.5f, fh * 0.62f, fw * 0.16f, p)
+            p.color = 0xFF1B1030.toInt(); c.drawRect(0f, fh * 0.78f, fw, fh, p)
+        }
+        1 -> { // noite estrelada
+            sky(0xFF050A24.toInt(), 0xFF1B2A5C.toInt())
+            p.color = Color_WHITE
+            val rnd = java.util.Random(7)
+            for (i in 0 until 90) { p.alpha = 120 + rnd.nextInt(135); c.drawCircle(rnd.nextFloat() * fw, rnd.nextFloat() * fh * 0.8f, 1.5f + rnd.nextFloat() * 3f, p) }
+            p.alpha = 255; p.color = 0xFFF5F3CE.toInt(); c.drawCircle(fw * 0.78f, fh * 0.16f, fw * 0.06f, p)
+        }
+        2 -> { // cidade à noite
+            sky(0xFF0B1026.toInt(), 0xFF3A2D5F.toInt())
+            val rnd = java.util.Random(11)
+            var x = 0f
+            while (x < fw) {
+                val bwid = fw * (0.06f + rnd.nextFloat() * 0.08f); val bh = fh * (0.22f + rnd.nextFloat() * 0.3f)
+                p.color = 0xFF0A0D1A.toInt(); c.drawRect(x, fh - bh, x + bwid, fh, p)
+                p.color = 0xFFFFD66B.toInt()
+                var wy = fh - bh + bwid * 0.2f
+                while (wy < fh - bwid * 0.3f) { var wx = x + bwid * 0.15f; while (wx < x + bwid * 0.8f) { if (rnd.nextInt(3) != 0) c.drawRect(wx, wy, wx + bwid * 0.1f, wy + bwid * 0.12f, p); wx += bwid * 0.22f }; wy += bwid * 0.28f }
+                x += bwid
+            }
+        }
+        else -> { // neon
+            sky(0xFF14002E.toInt(), 0xFF00122E.toInt())
+            p.style = Paint.Style.STROKE; p.strokeWidth = fw * 0.012f
+            val cols = intArrayOf(0xFFFF2A9D.toInt(), 0xFF00E5FF.toInt(), 0xFF9B4DFF.toInt())
+            for (i in 0 until 9) { p.color = cols[i % 3]; c.drawLine(-fw * 0.1f, fh * (0.1f + i * 0.1f), fw * 1.1f, fh * (0.0f + i * 0.12f), p) }
+            p.style = Paint.Style.FILL
+        }
+    }
+    return out
+}
+private const val Color_WHITE = -1
+
+/** Troca/modifica só o FUNDO e mantém a pessoa nítida na frente. Se não achar pessoa, devolve a foto como está. */
+private fun fxReplaceBackground(context: Context, bmp: Bitmap, spec: QinblyFxSpec, notes: MutableList<String>): Bitmap {
+    val mask = fxPersonMask(bmp)
+    if (mask == null) { notes.add("Não achei uma pessoa para separar do fundo."); return bmp }
+    val w = bmp.width; val h = bmp.height
+    val k = spec.bgIntensity.coerceIn(0f, 1f)
+    val bg: Bitmap = when (spec.bgMode) {
+        "blur" -> fxSoftBlur(bmp, (4 + (28 * k)).roundToInt().coerceIn(4, 32)).copy(Bitmap.Config.ARGB_8888, true)
+        "bokeh" -> {
+            val b = fxSoftBlur(bmp, (8 + (24 * k)).roundToInt().coerceIn(8, 32)).copy(Bitmap.Config.ARGB_8888, true)
+            val c = Canvas(b); val p = Paint(Paint.ANTI_ALIAS_FLAG); val rnd = java.util.Random(5)
+            for (i in 0 until 26) {
+                val rr = w * (0.025f + rnd.nextFloat() * 0.05f)
+                p.color = 0xFFFFFFFF.toInt(); p.alpha = 40 + rnd.nextInt(60)
+                c.drawCircle(rnd.nextFloat() * w, rnd.nextFloat() * h, rr, p)
+            }
+            b
+        }
+        "motion" -> {
+            val steps = (6 + (30 * k)).roundToInt().coerceIn(6, 36)
+            val small = Bitmap.createScaledBitmap(bmp, max(2, w / steps), h, true)
+            Bitmap.createScaledBitmap(small, w, h, true).also { small.recycle() }.copy(Bitmap.Config.ARGB_8888, true)
+        }
+        "bw" -> {
+            val o = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+            Canvas(o).drawBitmap(bmp, 0f, 0f, Paint().apply { colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) }) })
+            o
+        }
+        "dim" -> bmp.copy(Bitmap.Config.ARGB_8888, true).also { Canvas(it).drawColor(android.graphics.Color.argb((40 + 180 * k).toInt().coerceIn(0, 255), 0, 0, 0)) }
+        "light" -> bmp.copy(Bitmap.Config.ARGB_8888, true).also { Canvas(it).drawColor(android.graphics.Color.argb((40 + 160 * k).toInt().coerceIn(0, 255), 255, 255, 255)) }
+        "color" -> Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also { it.eraseColor(spec.bgColor or 0xFF000000.toInt()) }
+        "gradient" -> {
+            val g = QinblyBgGradients[spec.bgIndex.coerceIn(0, QinblyBgGradients.lastIndex)]
+            Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also {
+                Canvas(it).drawRect(0f, 0f, w.toFloat(), h.toFloat(), Paint().apply { shader = android.graphics.LinearGradient(0f, 0f, w.toFloat() * 0.4f, h.toFloat(), g.first, g.second, Shader.TileMode.CLAMP) })
+            }
+        }
+        "scene" -> fxScene(w, h, spec.bgIndex)
+        "image" -> {
+            val img = spec.bgImage?.let { try { fxLoadUpright(context, it) } catch (_: Throwable) { null } }
+            if (img == null) { notes.add("Não consegui abrir a foto de fundo."); mask.recycle(); return bmp }
+            val scale = max(w.toFloat() / img.width, h.toFloat() / img.height)
+            val o = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+            val dw = img.width * scale; val dh = img.height * scale
+            Canvas(o).drawBitmap(img, null, android.graphics.RectF((w - dw) / 2f, (h - dh) / 2f, (w + dw) / 2f, (h + dh) / 2f), Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
+            img.recycle(); o
+        }
+        else -> bmp.copy(Bitmap.Config.ARGB_8888, true)
+    }
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         shader = ComposeShader(
             BitmapShader(bmp, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP),
-            BitmapShader(maskFull, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP),
+            BitmapShader(mask, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP),
             PorterDuff.Mode.DST_IN
         )
     }
-    Canvas(out).drawRect(0f, 0f, bmp.width.toFloat(), bmp.height.toFloat(), paint)
-    maskFull.recycle()
+    Canvas(bg).drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
+    mask.recycle()
     bmp.recycle()
-    return out
-}
-
-private fun qinblyPhotoEffectsSync(context: Context, source: Uri, retouch: Boolean, blurBackground: Boolean, hdr: Boolean, notes: MutableList<String>): Uri {
-    var bmp = fxLoadUpright(context, source)
-    if (hdr) fxApplyHdr(bmp)
-    if (retouch) fxRetouch(bmp, notes)
-    if (blurBackground) bmp = fxBlurBackground(bmp, notes)
-    val out = File(context.cacheDir, "qinbly-fx-${System.currentTimeMillis()}.jpg")
-    FileOutputStream(out).use { bmp.compress(Bitmap.CompressFormat.JPEG, 94, it) }
-    bmp.recycle()
-    return Uri.fromFile(out)
+    return bg
 }
 
 /** Recorta a pessoa da foto: devolve uma imagem com fundo transparente, ou null se não achar uma pessoa. */
