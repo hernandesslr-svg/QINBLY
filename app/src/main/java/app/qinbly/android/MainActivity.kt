@@ -12438,12 +12438,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         blurBg = editorBlur, colorFilter = previewMatrix, adjusting = false,
                         onChange = { z, x, y -> editorZoom = z; editorPanX = x; editorPanY = y },
                         modifier = Modifier.fillMaxSize()
-                            // Igual à câmera: passar o dedo para o lado troca o filtro (só com a foto sem zoom; com zoom o dedo move a foto).
-                            .qinblySwipeFilters(enabled = editorTool == "Filtros" && selectedType == "foto" && editorZoom <= 1.01f) { dir ->
-                                val names = QinblyColorFilterNames
-                                val next = names[(names.indexOf(selectedFilter).coerceAtLeast(0) + dir + names.size) % names.size]
-                                selectedFilter = next; filterIntensity = 1f; swipeFilterLabel = next
-                            }
                     )
                  }
 }
@@ -12514,8 +12508,21 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 }
              }
 }
-            // Só mede o tamanho da tela. NÃO pode ter gesto aqui: uma camada por cima com gesto bloqueia o arrastar e o zoom da foto.
-            Box(Modifier.fillMaxSize().onSizeChanged { editorPreviewW = it.width; editorPreviewH = it.height })
+            // Camada transparente de cima: mede a tela, troca filtro passando o dedo e recebe o gesto de mover/dar zoom na foto.
+            // (O gesto da foto fica AQUI, nesta camada de cima, porque uma camada com gesto bloqueia o que está embaixo dela.)
+            Box(Modifier.fillMaxSize().onSizeChanged { editorPreviewW = it.width; editorPreviewH = it.height }
+                .qinblySwipeFilters(enabled = editorTool == "Filtros" && selectedType == "foto" && editorZoom <= 1.01f) { dir ->
+                    // Igual à câmera: passar o dedo para o lado troca o filtro de cor.
+                    val names = QinblyColorFilterNames
+                    val next = names[(names.indexOf(selectedFilter).coerceAtLeast(0) + dir + names.size) % names.size]
+                    selectedFilter = next; filterIntensity = 1f; swipeFilterLabel = next
+                }
+                .then(if (selectedType == "foto") Modifier.qinblyFormatGestures(
+                    picker = editorTool == "Ajustar", ratio = editorRatio, imageRatio = editorImageRatio, areaW = editorPreviewW, areaH = editorPreviewH,
+                    zoom = { editorZoom }, panX = { editorPanX }, panY = { editorPanY },
+                    ignoreSinglePan = { editorTool == "Filtros" && editorZoom <= 1.01f },
+                    onChange = { z, x, y -> editorZoom = z; editorPanX = x; editorPanY = y }
+                ) else Modifier))
             if (swipeFilterLabel.isNotBlank()) {
                 Text(swipeFilterLabel, modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(horizontal = 16.dp, vertical = 8.dp),
                     color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)

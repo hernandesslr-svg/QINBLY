@@ -97,15 +97,7 @@ internal fun QinblyFormatFrame(
         val fwDp = with(density) { rect.w.toDp() }
         val fhDp = with(density) { rect.h.toDp() }
         Box(
-            Modifier.size(fwDp, fhDp).pointerInput(ratio, imageRatio) {
-                detectTransformGestures { _, pan, gestureZoom, _ ->
-                    val nz = (z * gestureZoom).coerceIn(minOf(factor, 1f), 6f)
-                    val lim = qinblyMaxPan(imageRatio, frameRatio, nz)
-                    val nx = (px + pan.x / size.width).coerceIn(-lim.first, lim.first)
-                    val ny = (py + pan.y / size.height).coerceIn(-lim.second, lim.second)
-                    change(nz, nx, ny)
-                }
-            }
+            Modifier.size(fwDp, fhDp)
         ) {
             if (adjusting) {
                 // O que fica fora do quadro aparece escurecido: não vai sair na foto.
@@ -207,15 +199,7 @@ internal fun QinblyFormatPicker(
         val fw = ww * pw; val fh = wh * ph
         val fcx = aw / 2f - panX * ww * pw; val fcy = ah / 2f - panY * wh * ph
         Box(
-            Modifier.fillMaxSize().pointerInput(ratio, imageRatio) {
-                detectTransformGestures { _, pan, gestureZoom, _ ->
-                    val nz = (z * gestureZoom).coerceIn(minOf(factor, 1f), 6f)
-                    val lim = qinblyMaxPan(imageRatio, frameRatio, nz)
-                    val nx = (px - (pan.x / pw) / (cw / nz)).coerceIn(-lim.first, lim.first)
-                    val ny = (py - (pan.y / ph) / (ch / nz)).coerceIn(-lim.second, lim.second)
-                    change(nz, nx, ny)
-                }
-            }
+            Modifier.fillMaxSize()
         ) {
             AsyncImage(model = uri, contentDescription = "Foto", contentScale = ContentScale.Fit, colorFilter = colorFilter, modifier = Modifier.fillMaxSize())
             Canvas(Modifier.fillMaxSize()) {
@@ -236,5 +220,39 @@ internal fun QinblyFormatPicker(
                 drawLine(Color.White, Offset(r, b), Offset(r - len, b), sw); drawLine(Color.White, Offset(r, b), Offset(r, b - len), sw)
             }
         }
+    }
+}
+
+
+/**
+ * Gesto de mover/dar zoom na foto: vive NA CAMADA DE CIMA da prévia (a mesma camada transparente que mede a tela),
+ * por cima de tudo que é só imagem. picker = ferramenta Formato (a foto fica parada e o quadro se move); senão a foto se move dentro do quadro.
+ */
+internal fun Modifier.qinblyFormatGestures(
+    picker: Boolean, ratio: String, imageRatio: Float, areaW: Int, areaH: Int,
+    zoom: () -> Float, panX: () -> Float, panY: () -> Float, ignoreSinglePan: () -> Boolean,
+    onChange: (Float, Float, Float) -> Unit
+): Modifier = this.pointerInput(picker, ratio, imageRatio, areaW, areaH) {
+    detectTransformGestures { _, pan, gz, _ ->
+        if (areaW <= 0 || areaH <= 0) return@detectTransformGestures
+        val frameRatio = qinblyRatioValue(ratio, imageRatio)
+        val factor = qinblyFitFactor(imageRatio, frameRatio)
+        val nz = (zoom() * gz).coerceIn(minOf(factor, 1f), 6f)
+        val lim = qinblyMaxPan(imageRatio, frameRatio, nz)
+        val dx: Float; val dy: Float
+        if (picker) {
+            val pw = if (imageRatio > areaW.toFloat() / areaH) areaW.toFloat() else areaH * imageRatio
+            val ph = pw / imageRatio
+            val cw = if (imageRatio > frameRatio) frameRatio / imageRatio else 1f
+            val ch = if (imageRatio > frameRatio) 1f else imageRatio / frameRatio
+            dx = -(pan.x / pw) / (cw / nz); dy = -(pan.y / ph) / (ch / nz)
+        } else {
+            val r = qinblyFrameRect(areaW, areaH, frameRatio)
+            dx = if (r.w > 0f) pan.x / r.w else 0f; dy = if (r.h > 0f) pan.y / r.h else 0f
+        }
+        val usePan = !(ignoreSinglePan() && gz == 1f)
+        val nx = (panX() + (if (usePan) dx else 0f)).coerceIn(-lim.first, lim.first)
+        val ny = (panY() + (if (usePan) dy else 0f)).coerceIn(-lim.second, lim.second)
+        onChange(nz, nx, ny)
     }
 }

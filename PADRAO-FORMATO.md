@@ -27,4 +27,4 @@ Texto, emotes/figurinhas e desenho: arrastar para mover (emote: dois dedos para 
 Em qualquer lugar (Criar, cápsula, chat, comunidade, story coletivo) a foto escolhida da galeria passa pelo MESMO editor da câmera antes de seguir. Vídeo da cápsula ainda segue direto.
 
 ## Regra de ouro dos gestos no editor
-Nenhuma camada de tela cheia por cima da foto pode ter `pointerInput`/`clickable`: ela bloqueia o arrastar e o zoom da foto (o Compose só entrega o toque para a camada de cima). O gesto de trocar filtro passando o dedo fica NA PRÓPRIA prévia (só quando a foto está sem zoom).
+A camada transparente de tela cheia por cima da foto (a que mede a tela e troca filtro passando o dedo) CONTINUA existindo, e o gesto de mover/dar zoom na foto vive NELA (`qinblyFormatGestures`), por cima da imagem. Motivo: uma camada com gesto bloqueia o que está embaixo, então o gesto da foto não pode ficar na imagem de baixo. Texto, emotes e desenho ficam ainda mais acima, com seus próprios gestos.
