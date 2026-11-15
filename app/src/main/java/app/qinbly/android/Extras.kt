@@ -91,6 +91,21 @@ internal fun qinblyNavBarPadding(floor: androidx.compose.ui.unit.Dp = 98.dp): an
     return maxOf(fromCompose, measured.dp, floor)
 }
 
+/** Espacinho padrão entre qualquer barra de escrever (comentário, mensagem, legenda) e o teclado aberto. */
+internal val QinblyKeyboardGap = 6.dp
+
+/**
+ * Folga de baixo de uma barra de escrever, igual no app todo: teclado aberto = espacinho fixo colado nele;
+ * teclado fechado = acima dos botões do celular. Precisa ser chamada DENTRO da janela da barra (o Dialog recebe o teclado,
+ * a tela de trás não), por isso não dá para ler o teclado lá fora e repassar.
+ */
+@Composable
+internal fun qinblyInputBottomPadding(closedExtra: androidx.compose.ui.unit.Dp = 0.dp): androidx.compose.ui.unit.Dp {
+    val imeOpen = WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
+    val nav = qinblyNavBarPadding()
+    return if (imeOpen) QinblyKeyboardGap else nav + closedExtra
+}
+
 /** Letras menores só dentro do conteúdo informado (usado nas telas de story). */
 @Composable
 internal fun QinblySmallText(content: @Composable () -> Unit) {

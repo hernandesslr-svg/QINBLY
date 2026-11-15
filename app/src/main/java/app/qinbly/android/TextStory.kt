@@ -173,7 +173,7 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
                     )
                 }
             }
-            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().padding(bottom = if (showEmojis) 0.dp else 12.dp + qinblyNavBarPadding()), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().padding(bottom = if (showEmojis) 0.dp else qinblyInputBottomPadding(12.dp)), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (showFonts) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     qinblyFontNames.forEachIndexed { i, name ->
                         Text(name, color = if (font == i) Color(0xFF26215C) else Color.White, fontFamily = qinblyTextFonts[i].second, fontWeight = qinblyFontWeight(i), fontSize = 14.sp,

@@ -414,7 +414,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                         }
                     }
                 }
-                "edit" -> Column(Modifier.fillMaxSize().imePadding().padding(bottom = if (showEmojis) 0.dp else qinblyNavBarPadding())) {
+                "edit" -> Column(Modifier.fillMaxSize().imePadding().padding(bottom = if (showEmojis) 0.dp else qinblyInputBottomPadding())) {
                     TopBar("Sua lembrança")
                     val item = picked
                     Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 14.dp), contentAlignment = Alignment.Center) {

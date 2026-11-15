@@ -7962,10 +7962,10 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                             }.start()
                         }
                     },
-                    modifier = Modifier.padding(bottom = if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0) 4.dp else 2.dp, top = 8.dp)
+                    modifier = Modifier.padding(bottom = if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0) QinblyKeyboardGap else 2.dp, top = 8.dp)
                 )
             } else
-            Row(Modifier.fillMaxWidth().padding(bottom = if (showEmojiPicker) 0.dp else if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0) 4.dp else 2.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().padding(bottom = if (showEmojiPicker) 0.dp else if (WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0) QinblyKeyboardGap else 2.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 androidx.compose.material3.TextField(
                     value = draft,
                     onValueChange = { draft = it.take(2000) },
@@ -10748,7 +10748,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             val navPad = qinblyNavBarPadding()
             Box(Modifier.fillMaxSize().background(Color(0x99000000))) {
                 Column(
-                    Modifier.fillMaxSize().clickable(indication = null, interactionSource = noRipple) { keyboard?.hide(); onDone() }.imePadding().padding(bottom = if (imeUp) 10.dp else navPad),
+                    Modifier.fillMaxSize().clickable(indication = null, interactionSource = noRipple) { keyboard?.hide(); onDone() }.imePadding().padding(bottom = if (imeUp) QinblyKeyboardGap else navPad),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
@@ -11468,7 +11468,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     Column(
                         Modifier.fillMaxSize().background(Color(0x66000000))
                             .clickable(indication = null, interactionSource = noRippleText) { camTextEditing = false; keyboard?.hide() }
-                            .imePadding().padding(bottom = 10.dp),
+                            .imePadding().padding(bottom = QinblyKeyboardGap),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
  QinblySplit {

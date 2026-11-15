@@ -199,7 +199,7 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                 }
             } else {
                 val item = picked
-                Column(Modifier.fillMaxSize().statusBarsPadding().imePadding().padding(bottom = if (showEmojis) 0.dp else qinblyNavBarPadding())) {
+                Column(Modifier.fillMaxSize().statusBarsPadding().imePadding().padding(bottom = if (showEmojis) 0.dp else qinblyInputBottomPadding())) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable(enabled = !sending) { step = "gallery" }, contentAlignment = Alignment.Center) { QinblyBackIcon(Color.White, 22.dp) }
                     }
