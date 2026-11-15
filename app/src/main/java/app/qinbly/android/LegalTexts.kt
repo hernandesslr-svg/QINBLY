@@ -24,7 +24,7 @@ private val PrivacyBlocks = listOf(
     "Localização" to "Se você permitir, o app usa sua localização para o Perto de mim, o Mural do bairro e o Mercado. Guardamos a sua cidade no perfil, e cada aviso do Mural guarda a posição onde foi publicado. Você pode desligar a localização e apagar esses dados em Configurações > Localização.",
     "Câmera, microfone, fotos e contatos" to "Só são usados quando você usa o recurso: tirar foto, gravar vídeo ou voz, escolher mídia da galeria ou enviar um contato em uma conversa. O app não envia sua lista de contatos para o servidor.",
     "Quem vê o que" to "Publicações aparecem no feed. Em Privacidade você decide quem vê seus stories, quem pode falar com você e quem pode comentar. Mensagens diretas só são visíveis para quem participa da conversa.",
-    "Onde ficam os dados" to "Os dados ficam em um serviço de banco de dados e armazenamento na nuvem (Supabase). Não vendemos seus dados.",
+    "Onde ficam os dados" to "Os dados ficam guardados em servidores seguros na nuvem. Não vendemos seus dados.",
     "Seus direitos" to "Você pode baixar seus dados e excluir a conta em Configurações > Dados e armazenamento e Conta. Também pode pedir correção ou esclarecimento pelo contato indicado no app.",
     "Crianças" to "O QINBLY não é feito para menores de 13 anos. Se descobrirmos uma conta assim, ela será removida."
 )
