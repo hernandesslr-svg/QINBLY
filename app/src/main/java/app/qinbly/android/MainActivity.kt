@@ -1233,6 +1233,43 @@ private fun qinblyColoredText(font: String, text: String, base: Int, wordColors:
 }
 
 /** Botão pequeno em forma de pílula das barras de ferramenta do editor (Desenho, Fundo, HDR). */
+/** Borracha de verdade: apaga só o pedaço do traço que o dedo cobre; o que sobra do traço continua (vira pedaços separados). */
+private fun qinblyEraseAt(
+    strokes: androidx.compose.runtime.snapshots.SnapshotStateList<List<Offset>>,
+    meta: androidx.compose.runtime.snapshots.SnapshotStateList<Pair<Int, Float>>,
+    pos: Offset, w: Float, h: Float, reach: Float
+) {
+    var i = strokes.size - 1
+    while (i >= 0) {
+        val pts = strokes[i]
+        // Enche o traço de pontos intermediários, para o dedo não "pular" trechos entre dois pontos distantes.
+        val dense = ArrayList<Offset>()
+        for (k in pts.indices) {
+            if (k > 0) {
+                val a = pts[k - 1]; val b = pts[k]
+                val d = kotlin.math.hypot((b.x - a.x) * w, (b.y - a.y) * h)
+                val n = (d / (reach / 2f)).toInt()
+                for (st in 1..n) { val t = st / (n + 1f); dense.add(Offset(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)) }
+            }
+            dense.add(pts[k])
+        }
+        val hit = BooleanArray(dense.size) { kotlin.math.hypot(dense[it].x * w - pos.x, dense[it].y * h - pos.y) < reach }
+        if (hit.any { it }) {
+            val pieces = ArrayList<List<Offset>>()
+            var cur = ArrayList<Offset>()
+            for (k in dense.indices) {
+                if (hit[k]) { if (cur.size >= 2) pieces.add(cur); cur = ArrayList() } else cur.add(dense[k])
+            }
+            if (cur.size >= 2) pieces.add(cur)
+            val m = meta.getOrNull(i) ?: (0xFFFF2A9D.toInt() to 0.012f)
+            strokes.removeAt(i)
+            if (i < meta.size) meta.removeAt(i)
+            pieces.forEachIndexed { idx, piece -> strokes.add(i + idx, piece); meta.add(minOf(i + idx, meta.size), m) }
+        }
+        i--
+    }
+}
+
 @Composable
 private fun QinblyEditorChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Text(
@@ -10637,6 +10674,10 @@ private object QinblyCameraIcons {
     val crop by lazy { build("cam_recortar", "M7 3v14h14", "M3 7h14v14") }
     val editor by lazy { build("cam_editar", "M4 8h9M17 8h3M4 16h3M11 16h9", "M15 6v4M9 14v4") }
     val pen by lazy { build("cam_desenho", "M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z", "M14 7l3 3") }
+    val undo by lazy { build("cam_desfazer", "M9 14L4 9l5-5", "M4 9h10.5a5.5 5.5 0 0 1 0 11H11") }
+    val eraser by lazy { build("cam_borracha", "M16.2 3.8l4 4a1.5 1.5 0 0 1 0 2.1L11 19.2H6.5L3.8 16.5a1.5 1.5 0 0 1 0-2.1L14.1 3.8a1.5 1.5 0 0 1 2.1 0z", "M8.5 9.5l6 6M11 19.2h9") }
+    val trash by lazy { build("cam_lixeira", "M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13", "M10 11v5M14 11v5") }
+    val check by lazy { build("cam_visto", "M5 12.5l4.5 4.5L19 7") }
     val retouch by lazy { build("cam_retoque", "M3.5 13.5a7 7 0 1 0 14 0a7 7 0 1 0 -14 0", "M7.9 12.5h.01M12.9 12.5h.01", "M8 16c1.4 1.4 3.6 1.4 5 0", "M19 2.5v5M16.5 5h5M20.5 14v3M19 15.5h3") }
     val filters by lazy { build("cam_filtros", "M3 12a6 6 0 1 0 12 0a6 6 0 1 0 -12 0", "M9 12a6 6 0 1 0 12 0a6 6 0 1 0 -12 0") }
     val grid by lazy { build("cam_grade", "M5.5 3.5h13a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2z", "M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17") }
@@ -12594,15 +12635,14 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 androidx.compose.foundation.Canvas(
                     modifier = Modifier.offset { androidx.compose.ui.unit.IntOffset(editorFrame.left.toInt(), editorFrame.top.toInt()) }
                         .size(with(androidx.compose.ui.platform.LocalDensity.current) { editorFrame.w.toDp() }, with(androidx.compose.ui.platform.LocalDensity.current) { editorFrame.h.toDp() })
+                        .pointerInput(editorEraser) { detectTapGestures { pos -> if (editorEraser) qinblyEraseAt(editorStrokes, editorStrokeMeta, pos, size.width.toFloat(), size.height.toFloat(), 18.dp.toPx()) } }
                         .pointerInput(editorTool, editorEraser, editorDrawColor, editorDrawWidth) {
-                        // Borracha: apaga os traços que o dedo encostar. Caneta: cria um traço novo com a cor e a espessura escolhidas.
-                        fun eraseAt(pos: Offset) {
-                            val reach = 22.dp.toPx()
-                            for (i in editorStrokes.indices.reversed()) {
-                                if (editorStrokes[i].any { pt -> kotlin.math.hypot(pt.x * size.width - pos.x, pt.y * size.height - pos.y) < reach }) {
-                                    editorStrokes.removeAt(i); if (i < editorStrokeMeta.size) editorStrokeMeta.removeAt(i)
-                                }
-                            }
+                        // Borracha: apaga só o pedaço por onde o dedo passa. Caneta: cria um traço novo com a cor e a espessura escolhidas.
+                        val reach = 18.dp.toPx()
+                        fun eraseAt(pos: Offset) = qinblyEraseAt(editorStrokes, editorStrokeMeta, pos, size.width.toFloat(), size.height.toFloat(), reach)
+                        fun eraseLine(a: Offset, b: Offset) {
+                            val steps = (kotlin.math.hypot(b.x - a.x, b.y - a.y) / (reach / 2f)).toInt().coerceAtLeast(1)
+                            for (st in 0..steps) { val t = st / steps.toFloat(); eraseAt(Offset(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)) }
                         }
                         detectDragGestures(
                             onDragStart = { start ->
@@ -12611,7 +12651,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                             },
                             onDrag = { change, _ ->
                                 change.consume()
-                                if (editorEraser) eraseAt(change.position)
+                                if (editorEraser) eraseLine(change.previousPosition, change.position)
                                 else if (editorStrokes.isNotEmpty()) {
                                     val last = editorStrokes.last()
                                     editorStrokes[editorStrokes.lastIndex] = last + Offset(
@@ -13062,34 +13102,71 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     }
                 }
                 if (newEditorChrome && editorTool == "Desenho") {
+                    // Cor do traço de amostra: a cor escolhida (branco quando a borracha está ligada).
+                    val drawInk = if (editorEraser) Color.White else Color(editorDrawColor)
                     Column(Modifier.padding(horizontal = 14.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             items(QinblyTextColors) { argb ->
                                 val chosen = argb == editorDrawColor && !editorEraser
                                 Box(
-                                    Modifier.size(28.dp).clip(CircleShape).background(Color(argb))
+                                    Modifier.size(34.dp).clip(CircleShape).background(Color(argb))
                                         .border(if (chosen) 3.dp else 1.dp, if (chosen) Color.White else Color(0x99FFFFFF), CircleShape)
                                         .clickable { editorDrawColor = argb; editorEraser = false }
                                 )
                             }
                         }
-                        Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            listOf(0.006f to 8, 0.012f to 14, 0.022f to 22).forEach { (wf, dot) ->
-                                val chosen = editorDrawWidth == wf
+                        Box(Modifier.padding(horizontal = 12.dp).fillMaxWidth().height(0.5.dp).background(Color(0x33FFFFFF)))
+                        Row(Modifier.padding(horizontal = 12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                            // Espessura da ponta: um pedacinho de traço desenhado de cada grossura, na cor escolhida.
+                            listOf(0.006f to 2f, 0.012f to 4f, 0.020f to 7f, 0.032f to 11f).forEach { (wf, px) ->
+                                val chosen = editorDrawWidth == wf && !editorEraser
                                 Box(
-                                    Modifier.size(34.dp).clip(CircleShape).border(if (chosen) 2.dp else 0.5.dp, if (chosen) Color.White else Color(0x99FFFFFF), CircleShape)
+                                    Modifier.size(width = 28.dp, height = 44.dp).clip(RoundedCornerShape(10.dp))
+                                        .border(if (chosen) 2.dp else 1.dp, if (chosen) Color.White else Color(0x99FFFFFF), RoundedCornerShape(10.dp))
                                         .clickable { editorDrawWidth = wf; editorEraser = false },
                                     contentAlignment = Alignment.Center
-                                ) { Box(Modifier.size(dot.dp).clip(CircleShape).background(Color.White)) }
+                                ) {
+                                    androidx.compose.foundation.Canvas(Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 9.dp)) {
+                                        val sample = androidx.compose.ui.graphics.Path()
+                                        sample.moveTo(size.width * 0.5f, size.height)
+                                        sample.cubicTo(size.width * 0.1f, size.height * 0.65f, size.width * 0.9f, size.height * 0.35f, size.width * 0.5f, 0f)
+                                        drawPath(sample, drawInk, style = androidx.compose.ui.graphics.drawscope.Stroke(width = px.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round))
+                                    }
+                                }
                             }
-                            QinblyEditorChip("Desfazer", false) {
-                                if (editorStrokes.isNotEmpty()) { editorStrokes.removeAt(editorStrokes.lastIndex); if (editorStrokeMeta.isNotEmpty()) editorStrokeMeta.removeAt(editorStrokeMeta.lastIndex) }
+                            Spacer(Modifier.weight(1f))
+                            // Botões redondos grandes: Desfazer, Borracha e Limpar tudo.
+                            listOf("Desfazer", "Borracha", "Limpar").forEach { name ->
+                                val active = name == "Borracha" && editorEraser
+                                Column(Modifier.width(46.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Box(
+                                        Modifier.size(42.dp).clip(CircleShape).background(if (active) Color.White else Color.Transparent)
+                                            .border(1.2.dp, if (active) Color.White else Color(0xFF8A909C), CircleShape)
+                                            .clickable {
+                                                when (name) {
+                                                    "Desfazer" -> if (editorStrokes.isNotEmpty()) { editorStrokes.removeAt(editorStrokes.lastIndex); if (editorStrokeMeta.isNotEmpty()) editorStrokeMeta.removeAt(editorStrokeMeta.lastIndex) }
+                                                    "Borracha" -> editorEraser = !editorEraser
+                                                    else -> { editorStrokes.clear(); editorStrokeMeta.clear() }
+                                                }
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            when (name) { "Desfazer" -> QinblyCameraIcons.undo; "Borracha" -> QinblyCameraIcons.eraser; else -> QinblyCameraIcons.trash },
+                                            contentDescription = name, tint = if (active) Color(0xFF0F1115) else Color.White, modifier = Modifier.size(26.dp)
+                                        )
+                                    }
+                                    Text(name, color = Color(0xFF9AA0AC), fontSize = 8.sp, maxLines = 1, softWrap = false, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                }
                             }
-                            QinblyEditorChip("Borracha", editorEraser) { editorEraser = !editorEraser }
-                        }
-                        Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            QinblyEditorChip("Limpar tudo", false) { editorStrokes.clear(); editorStrokeMeta.clear() }
-                            QinblyEditorChip("Pronto", true) { editorEraser = false; editorTool = "Filtros" }
+                            // Pronto: círculo branco com o visto.
+                            Column(Modifier.width(44.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                    Modifier.size(38.dp).clip(CircleShape).background(Color.White).clickable { editorEraser = false; editorTool = "Filtros" },
+                                    contentAlignment = Alignment.Center
+                                ) { Icon(QinblyCameraIcons.check, contentDescription = "Pronto", tint = Color(0xFF0F1115), modifier = Modifier.size(26.dp)) }
+                                Text("Pronto", color = Color(0xFF9AA0AC), fontSize = 8.sp, maxLines = 1, softWrap = false, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            }
                         }
                     }
                 }
