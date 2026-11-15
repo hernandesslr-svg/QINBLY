@@ -16,3 +16,12 @@ Em qualquer lugar onde a pessoa escolhe o formato de uma foto (editor de post/st
 Código: `FormatFrame.kt` (`QinblyFormatFrame`, `QinblyFormatBar`, `qinblyFrameRect`, `qinblyFitFactor`, `qinblyFacePanY`) e `qinblyRenderEditedPhoto` (gera a foto final, com fundo desfocado quando a foto fica menor que o quadro).
 
 Pendente: a câmera ainda corta a foto no instante do clique pelo formato escolhido (ViewPort do CameraX); o editor depois só enxerga a parte já capturada.
+
+## Tudo que fica por cima da foto é móvel (padrão)
+Texto, emotes/figurinhas e desenho: arrastar para mover (emote: dois dedos para ampliar/girar, toque duplo apaga). Vale no editor, na câmera (modo TEXTO) e no story de texto (a posição vai dentro da legenda: `qinbly:text:bg:fonte:alinh:dx:dy`, em milésimos da tela).
+
+## Zoom
+Dois dedos direto na foto, ou a barra "Zoom" na ferramenta Formato (de menor que 1 = foto inteira, até 4x).
+
+## Foto da galeria
+Em qualquer lugar (Criar, cápsula, chat, comunidade, story coletivo) a foto escolhida da galeria passa pelo MESMO editor da câmera antes de seguir. Vídeo da cápsula ainda segue direto.

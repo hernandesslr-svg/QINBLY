@@ -13,6 +13,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -55,7 +59,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
 /** Story de texto: o texto e o estilo vão dentro da legenda ("qinbly:text:<cor>:<fonte>:<alinhamento>\n<texto>"). */
-internal data class QinblyTextStory(val bg: Int, val font: Int, val align: Int, val text: String, val collab: Boolean = false)
+internal data class QinblyTextStory(val bg: Int, val font: Int, val align: Int, val text: String, val collab: Boolean = false, val dx: Int = 0, val dy: Int = 0)
 
 internal val qinblyTextBgs: List<List<Color>> = listOf(
     listOf(Color(0xFF1877F2), Color(0xFF0F4AA8)), listOf(Color(0xFFE0457B), Color(0xFF8A2A5A)), listOf(Color(0xFF1D9E75), Color(0xFF0F6E56)),
@@ -66,7 +70,7 @@ private val qinblyTextFonts = listOf("Aa" to FontFamily.Default, "Aa" to FontFam
 private val qinblyFontNames = listOf("Moderno", "Clássico", "Máquina", "Negrito")
 private fun qinblyFontWeight(i: Int) = if (i == 3) FontWeight.Bold else FontWeight.Medium
 
-internal fun qinblyEncodeTextStory(s: QinblyTextStory): String = "qinbly:${if (s.collab) "collab" else "text"}:${s.bg}:${s.font}:${s.align}\n${s.text}"
+internal fun qinblyEncodeTextStory(s: QinblyTextStory): String = "qinbly:${if (s.collab) "collab" else "text"}:${s.bg}:${s.font}:${s.align}:${s.dx}:${s.dy}\n${s.text}"
 
 /** Story coletivo que começa com foto/vídeo: a legenda leva a marca "coletivo" na frente. */
 internal fun qinblyCollabCaption(legend: String): String = "qinbly:collab:0:0:1\n" + legend.trim()
@@ -79,7 +83,7 @@ internal fun qinblyParseTextStory(caption: String): QinblyTextStory? {
     val nl = caption.indexOf('\n')
     val head = (if (nl >= 0) caption.substring(0, nl) else caption).split(":")
     if (head.size < 5) return null
-    return QinblyTextStory(head[2].toIntOrNull() ?: 0, head[3].toIntOrNull() ?: 0, head[4].toIntOrNull() ?: 1, if (nl >= 0) caption.substring(nl + 1) else "", collab)
+    return QinblyTextStory(head[2].toIntOrNull() ?: 0, head[3].toIntOrNull() ?: 0, head[4].toIntOrNull() ?: 1, if (nl >= 0) caption.substring(nl + 1) else "", collab, head.getOrNull(5)?.toIntOrNull() ?: 0, head.getOrNull(6)?.toIntOrNull() ?: 0)
 }
 
 private fun textSizeFor(len: Int): Int = when { len < 40 -> 32; len < 100 -> 26; len < 220 -> 21; len < 450 -> 18; len < 900 -> 16; else -> 14 }
@@ -89,8 +93,10 @@ private fun alignOf(i: Int) = when (i) { 0 -> TextAlign.Start; 2 -> TextAlign.En
 @Composable
 internal fun QinblyTextStoryContent(s: QinblyTextStory, modifier: Modifier = Modifier) {
     val colors = qinblyTextBgs[s.bg.coerceIn(0, qinblyTextBgs.lastIndex)]
-    Box(modifier.background(Brush.verticalGradient(colors)), contentAlignment = Alignment.Center) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 110.dp), verticalArrangement = Arrangement.Center) {
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier.background(Brush.verticalGradient(colors)), contentAlignment = Alignment.Center) {
+        // O texto fica onde a pessoa deixou (arrastou) ao escrever: posição em milésimos da tela.
+        val offX = (s.dx / 1000f * constraints.maxWidth).toInt(); val offY = (s.dy / 1000f * constraints.maxHeight).toInt()
+        Column(Modifier.fillMaxSize().offset { androidx.compose.ui.unit.IntOffset(offX, offY) }.verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 110.dp), verticalArrangement = Arrangement.Center) {
             Text(s.text, color = Color.White, fontSize = textSizeFor(s.text.length).sp, lineHeight = (textSizeFor(s.text.length) * 1.3f).sp,
                 fontFamily = qinblyTextFonts[s.font.coerceIn(0, qinblyTextFonts.lastIndex)].second, fontWeight = qinblyFontWeight(s.font.coerceIn(0, qinblyTextFonts.lastIndex)),
                 textAlign = alignOf(s.align), modifier = Modifier.fillMaxWidth())
@@ -113,6 +119,12 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
     var confirmExit by remember { mutableStateOf(false) }
     var confirmSend by remember { mutableStateOf(false) }
     var sending by remember { mutableStateOf(false) }
+    var textOffX by remember { mutableStateOf(0f) }
+    var textOffY by remember { mutableStateOf(0f) }
+    var screenW by remember { mutableStateOf(0) }
+    var screenH by remember { mutableStateOf(0) }
+    val dxMil = if (screenW > 0) (textOffX / screenW * 1000f).toInt() else 0
+    val dyMil = if (screenH > 0) (textOffY / screenH * 1000f).toInt() else 0
     val focus = remember { androidx.compose.ui.focus.FocusRequester() }
     LaunchedEffect(Unit) { try { focus.requestFocus() } catch (_: Exception) { } }
     fun tryExit() { if (text.isBlank()) onDismiss() else confirmExit = true }
@@ -121,24 +133,24 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
         val token = prefs.getString("token", null)
         val uid = QinblyApi.currentUserId(prefs)
         if (text.isBlank()) { onNotice("Escreva alguma coisa."); return }
-        if (onCompose != null) { onCompose(qinblyEncodeTextStory(QinblyTextStory(bg, font, align, text.trim(), false))); return }
+        if (onCompose != null) { onCompose(qinblyEncodeTextStory(QinblyTextStory(bg, font, align, text.trim(), false, dxMil, dyMil))); return }
         if (token.isNullOrBlank() || uid.isNullOrBlank()) { onNotice("Entre na sua conta."); return }
         sending = true
         Thread {
             val main = Handler(Looper.getMainLooper())
             try {
                 if (contributeTo != null) {
-                    QinblyApi.addContribution(token, contributeTo, null, "text", qinblyEncodeTextStory(QinblyTextStory(bg, font, align, text.trim(), false)))
+                    QinblyApi.addContribution(token, contributeTo, null, "text", qinblyEncodeTextStory(QinblyTextStory(bg, font, align, text.trim(), false, dxMil, dyMil)))
                     main.post { onNotice("Resposta enviada."); onPublished() }
                 } else {
-                    QinblyApi.createTextStory(token, uid, qinblyEncodeTextStory(QinblyTextStory(bg, font, align, text.trim(), collab)))
+                    QinblyApi.createTextStory(token, uid, qinblyEncodeTextStory(QinblyTextStory(bg, font, align, text.trim(), collab, dxMil, dyMil)))
                     main.post { onNotice("Story publicado. Fica no ar por 24 horas."); onPublished() }
                 }
             } catch (e: Exception) { main.post { sending = false; onNotice(e.message ?: "Não foi possível publicar.") } }
         }.start()
     }
     QinblyDialog(onDismissRequest = { tryExit() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnBackPress = false), lift = false) {
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(qinblyTextBgs[bg]))) {
+        Box(Modifier.fillMaxSize().onSizeChanged { screenW = it.width; screenH = it.height }.background(Brush.verticalGradient(qinblyTextBgs[bg]))) {
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x33000000)).clickable { tryExit() }, contentAlignment = Alignment.Center) { QinblyCloseIcon(Color.White, 22.dp) }
                 Spacer(Modifier.weight(1f))
@@ -158,7 +170,10 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
                 Tool(showEmojis, { showEmojis = !showEmojis; if (showEmojis) showFonts = false }) { QinblyIconOf(QinblyIcon.EmojiEmotions, Color.White, 22.dp) }
             }
             Box(Modifier.fillMaxSize().statusBarsPadding().padding(top = 60.dp, bottom = 190.dp).padding(start = 24.dp, end = 64.dp), contentAlignment = Alignment.Center) {
-                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                // Texto móvel (padrão do app): arrasta com o dedo para onde quiser.
+                Column(Modifier.fillMaxWidth().offset { androidx.compose.ui.unit.IntOffset(textOffX.toInt(), textOffY.toInt()) }
+                    .pointerInput(Unit) { detectDragGestures { change, drag -> change.consume(); textOffX += drag.x; textOffY += drag.y } }
+                    .verticalScroll(rememberScrollState())) {
                     val size = textSizeFor(text.length)
                     BasicTextField(
                         value = text, onValueChange = { text = it },

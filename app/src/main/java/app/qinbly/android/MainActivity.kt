@@ -6809,12 +6809,13 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
     val cDocPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) sendCWith { token, cid -> QinblyApi.sendCommunityFile(context, token, cid, uri) }
     }
-    val cGalleryPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) sendCWith { token, cid -> QinblyApi.sendCommunityImage(context, token, cid, uri) }
-    }
-    var pendingCPhoto by remember { mutableStateOf<java.io.File?>(null) }
     // Câmera padrão do app (a mesma do Criar), em vez da câmera do celular.
     var showCAppCamera by remember { mutableStateOf(false) }
+    // Foto da galeria passa pelo MESMO editor da câmera (padrão do app) antes de enviar.
+    val cGalleryPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) { qinblySetPickedMedia(uri, false); showCAppCamera = true }
+    }
+    var pendingCPhoto by remember { mutableStateOf<java.io.File?>(null) }
     fun launchCCamera() { showCAppCamera = true }
     if (showCAppCamera) QinblyCameraCapture(
         onResult = { u ->
@@ -7377,12 +7378,13 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     val chatDocPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) sendWith { token -> QinblyApi.sendFileMessage(context, token, recipientUsername, uri) }
     }
-    val chatGalleryPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) sendWith { token -> QinblyApi.sendImageMessage(context, token, recipientUsername, uri) }
-    }
-    var pendingChatPhoto by remember { mutableStateOf<java.io.File?>(null) }
     // Câmera padrão do app (a mesma do Criar), em vez da câmera do celular.
     var showChatAppCamera by remember { mutableStateOf(false) }
+    // Foto da galeria passa pelo MESMO editor da câmera (padrão do app) antes de enviar.
+    val chatGalleryPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) { qinblySetPickedMedia(uri, false); showChatAppCamera = true }
+    }
+    var pendingChatPhoto by remember { mutableStateOf<java.io.File?>(null) }
     fun launchChatCamera() { showChatAppCamera = true }
     if (showChatAppCamera) QinblyCameraCapture(
         onResult = { u ->
@@ -12851,6 +12853,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 if (editorTool == "Ajustar") {
                     QinblyFormatBar(
                         ratio = editorRatio, imageRatio = editorImageRatio, zoom = editorZoom, blurBg = editorBlur,
+                        onZoom = { z ->
+                            val lim = qinblyMaxPan(editorImageRatio, qinblyRatioValue(editorRatio, editorImageRatio), z)
+                            editorZoom = z; editorPanX = editorPanX.coerceIn(-lim.first, lim.first); editorPanY = editorPanY.coerceIn(-lim.second, lim.second)
+                        },
                         onRatio = { r ->
                             editorRatio = r; editorZoom = 1f; editorPanX = 0f; editorPanY = 0f
                             val u = selectedUri
