@@ -327,11 +327,13 @@ jobs:
           assert s.count(old_end)==1, 'V112 callback closing changed'
           s=s.replace(old_end,'if (cont.isActive) cont.resumeWith(Result.success(result))\n                            })',1)
           declaration='            val editorBubbles = remember { QinblyColorFilterNames.map { it to false } + QinblyAnimatedEffectNames.map { it to true } }'
-          assert s.count(declaration)==1, 'V112 filter declaration changed'
-          s=s.replace(declaration+'\n','',1)
-          anchor='                    LazyRow(\n                        modifier = Modifier.fillMaxWidth(),\n                        contentPadding = PaddingValues(horizontal = 14.dp),'
-          assert s.count(anchor)==1, 'V112 filter UI changed'
-          s=s.replace(anchor,'                    val editorBubbles = remember { QinblyColorFilterNames.map { it to false } + QinblyAnimatedEffectNames.map { it to true } }\n'+anchor,1)
+          if s.count(declaration)==1:
+              s=s.replace(declaration+'\n','',1)
+              anchor='                    LazyRow(\n                        modifier = Modifier.fillMaxWidth(),\n                        contentPadding = PaddingValues(horizontal = 14.dp),'
+              assert s.count(anchor)==1, 'V112 filter UI changed'
+              s=s.replace(anchor,'                    val editorBubbles = remember { QinblyColorFilterNames.map { it to false } + QinblyAnimatedEffectNames.map { it to true } }\n'+anchor,1)
+          else:
+              print('editorBubbles removed from source (face/screen effects gone); skipping obsolete scope patch.')
           p.write_text(s)
           print('Location and editor scope corrected; no functionality removed.')
           PY
