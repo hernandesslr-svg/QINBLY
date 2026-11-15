@@ -12,7 +12,7 @@
 - Item que ainda não funciona aparece com "em breve" — nunca esconder.
 
 ## Visualizações (só o dono do story)
-- Embaixo: até 3 avatares de quem viu por último (34 dp, sobrepostos) e o texto "Visualizações", sem fundo, sem número, sem seta.
+- No cantinho de baixo à ESQUERDA (como no Instagram): até 3 avatares de quem viu por último (34 dp, sobrepostos) e o texto "Visualizações", sem fundo, sem número, sem seta.
 - Tocar ou arrastar pra cima (parte de baixo da tela) abre a lista completa; tocar numa pessoa da lista abre o perfil dela e o voltar reabre o story.
 - Quem não é dono do story nunca vê isso.
 

@@ -532,9 +532,9 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                 if (entry.mine && current.page == "story") {
                     val recent = (viewers ?: emptyList()).take(3)
                     Column(
-                        Modifier.align(Alignment.CenterHorizontally).clip(RoundedCornerShape(16.dp)).clickable { showViewers = true }.padding(horizontal = 18.dp, vertical = 6.dp)
+                        Modifier.align(Alignment.Start).clip(RoundedCornerShape(16.dp)).clickable { showViewers = true }.padding(horizontal = 4.dp, vertical = 6.dp)
                             .pointerInput(Unit) { detectVerticalDragGestures { _, dy -> if (dy < -8f) showViewers = true } },
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.Start
                     ) {
                         if (recent.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy((-10).dp)) {
                             recent.forEach { v ->
