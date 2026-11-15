@@ -10484,12 +10484,23 @@ private fun extractQinblyVideoFrames(context: android.content.Context, uri: Uri)
 /** Intensidade (0–1) do filtro de cor escolhido na câmera; usada na prévia e na exportação. */
 private object QinblyFilterIntensity { var value: Float = 1f }
 
+// Os 12 primeiros são os originais, na ordem de sempre (o drop(12) abaixo depende disso). Os novos vêm depois, agrupados por tipo.
 private val QinblyColorFilterNames = listOf(
     "Original", "Aurora", "Pôr do sol", "Neon", "Filme", "Pastel", "Noir", "Oceano", "Vintage", "Sonho", "Dourado", "Cinema",
-    "Quente", "Frio", "Verão", "Inverno", "Outono", "Rosé", "Pêssego", "Cereja", "Menta", "Lavanda",
-    "Meia-noite", "Neblina", "Café", "Praia", "Floresta", "Cyberpunk", "Vaporwave", "Matrix", "Sépia", "P&B",
-    "Prata", "Dramático", "Alto contraste", "Desbotado", "Polaroid", "Kodak", "Lomo", "Retrô 80s", "Laranja e azul",
-    "Luz do dia", "Chiclete", "Instantâneo", "Brilhante", "Glow", "VHS", "Vívido", "Suave", "Rosado"
+    // Quentes e frios
+    "Quente", "Frio", "Verão", "Inverno", "Outono", "Luz do dia", "Laranja e azul",
+    // Rosados e doces
+    "Rosé", "Pêssego", "Cereja", "Chiclete", "Rosado", "Lavanda", "Menta",
+    // Natureza e clima
+    "Praia", "Floresta", "Neblina", "Meia-noite", "Café",
+    // Cinema e retrô
+    "Sépia", "Polaroid", "Kodak", "Lomo", "Retrô 80s", "VHS", "Desbotado", "Dramático",
+    // Preto e branco
+    "P&B", "Prata", "Alto contraste",
+    // Neon e diferentes
+    "Cyberpunk", "Vaporwave", "Matrix",
+    // Brilho e cor viva
+    "Vívido", "Brilhante", "Glow", "Instantâneo", "Suave"
 )
 
 /** Monta um "look" de cor: saturação, contraste ao redor do cinza médio, ganho por canal (R,G,B) e deslocamento por canal. */
@@ -10998,77 +11009,57 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     // Texto direto na tela (mesmo jeito do modo TEXTO da câmera): escreve em cima da foto, com fonte e cor embaixo.
     @Composable
     fun EditorTextOverlay(onDone: () -> Unit) {
-        androidx.compose.ui.window.Dialog(
-            onDismissRequest = onDone,
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
-        ) {
-            val focus = remember { FocusRequester() }
-            val keyboard = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
-            LaunchedEffect(Unit) { focus.requestFocus(); keyboard?.show() }
-            val noRipple = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-            // Teclado fechado: as barras de estilo ficam acima dos botões do celular; teclado aberto: logo acima do teclado.
-            val dens = androidx.compose.ui.platform.LocalDensity.current
-            val imePx = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(dens)
-            // Medida própria do teclado (janela visível): se os insets do Dialog vierem menores que o teclado de verdade,
-            // a barra de palavras/fontes/cores ficava parte escondida atrás dele. Aqui a barra sempre sobe até o topo do teclado.
-            val rootView = androidx.compose.ui.platform.LocalView.current
-            var measuredKbPx by remember { mutableIntStateOf(0) }
-            DisposableEffect(rootView) {
-                val l = android.view.ViewTreeObserver.OnGlobalLayoutListener {
-                    val r = android.graphics.Rect()
-                    rootView.getWindowVisibleDisplayFrame(r)
-                    measuredKbPx = (rootView.rootView.height - r.bottom).coerceAtLeast(0)
-                }
-                rootView.viewTreeObserver.addOnGlobalLayoutListener(l)
-                onDispose { rootView.viewTreeObserver.removeOnGlobalLayoutListener(l) }
-            }
-            val kbThreshold = with(dens) { 150.dp.roundToPx() }
-            val extraKbPx = if (measuredKbPx > kbThreshold) (measuredKbPx - imePx).coerceAtLeast(0) else 0
-            val imeUp = imePx > 0 || measuredKbPx > kbThreshold
-            // Teclado fechado: a barra fica ACIMA do 6h/12h/24h (altura da base da janela), não colada nos botões do celular.
-            val closedBottom = 175.dp
-            Box(Modifier.fillMaxSize().background(Color(0x99000000))) {
-                Column(
-                    Modifier.fillMaxSize().clickable(indication = null, interactionSource = noRipple) { keyboard?.hide(); onDone() }.imePadding().padding(bottom = (if (imeUp) QinblyKeyboardGap else closedBottom) + with(dens) { extraKbPx.toDp() }),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
-                        androidx.compose.foundation.text.BasicTextField(
-                            value = editorText,
-                            onValueChange = { editorText = it.take(120) },
-                            textStyle = androidx.compose.ui.text.TextStyle(
-                                color = Color(editorTextColor), fontSize = 28.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily(qinblyTypeface(editorTextFont)),
-                                letterSpacing = qinblyTextSpacingEm(editorTextFont).em,
-                                shadow = androidx.compose.ui.graphics.Shadow(Color(0xCC000000), blurRadius = 10f)
-                            ),
-                            cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.White),
-                            // Chave explícita nas cores: a cor escolhida embaixo aparece NA HORA no letreiro, também com o teclado aberto.
-                            visualTransformation = remember(editorTextColor, editorWordColors.toMap()) {
-                                val baseColor = editorTextColor
-                                val wordsMap = editorWordColors.toMap()
-                                androidx.compose.ui.text.input.VisualTransformation { t ->
-                                    androidx.compose.ui.text.input.TransformedText(qinblyColoredText("Forte", t.text, baseColor, wordsMap), androidx.compose.ui.text.input.OffsetMapping.Identity)
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth().focusRequester(focus),
-                            decorationBox = { inner ->
-                                Box(contentAlignment = Alignment.Center) {
-                                    if (editorText.isEmpty()) Text("Digite aqui", color = Color(0x99FFFFFF), fontSize = 28.sp, fontWeight = FontWeight.Bold)
-                                    inner()
-                                }
+        // Sem janela (Dialog) própria: igual ao texto da câmera, que já sobe certinho com o teclado.
+        // A janela separada não recebia o tamanho do teclado e a barra de cores ficava escondida atrás dele.
+        BackHandler { onDone() }
+        val focus = remember { FocusRequester() }
+        val keyboard = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+        LaunchedEffect(Unit) { focus.requestFocus(); keyboard?.show() }
+        val noRipple = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+        val imeUp = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
+        // Teclado fechado: a barra fica ACIMA do 6h/12h/24h; teclado aberto: logo acima do teclado.
+        val closedBottom = 175.dp
+        Box(Modifier.fillMaxSize().zIndex(20f).background(Color(0x99000000))) {
+            Column(
+                Modifier.fillMaxSize().clickable(indication = null, interactionSource = noRipple) { keyboard?.hide(); onDone() }.imePadding().padding(bottom = if (imeUp) QinblyKeyboardGap else closedBottom),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = editorText,
+                        onValueChange = { editorText = it.take(120) },
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            color = Color(editorTextColor), fontSize = 28.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily(qinblyTypeface(editorTextFont)),
+                            letterSpacing = qinblyTextSpacingEm(editorTextFont).em,
+                            shadow = androidx.compose.ui.graphics.Shadow(Color(0xCC000000), blurRadius = 10f)
+                        ),
+                        cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.White),
+                        // Chave explícita nas cores: a cor escolhida embaixo aparece NA HORA no letreiro, também com o teclado aberto.
+                        visualTransformation = remember(editorTextColor, editorWordColors.toMap()) {
+                            val baseColor = editorTextColor
+                            val wordsMap = editorWordColors.toMap()
+                            androidx.compose.ui.text.input.VisualTransformation { t ->
+                                androidx.compose.ui.text.input.TransformedText(qinblyColoredText("Forte", t.text, baseColor, wordsMap), androidx.compose.ui.text.input.OffsetMapping.Identity)
                             }
-                        )
-                    }
-                    QinblyTextStyleBar(
-                        editorTextFont, editorTextColor, { editorTextFont = it },
-                        { c -> if (editorSelWord in 0 until qinblyTextWords(editorText).size) editorWordColors[editorSelWord] = c else { editorTextColor = c; editorWordColors.clear() } },
-                        qinblyTextWords(editorText), editorWordColors, editorSelWord, { editorSelWord = it }
+                        },
+                        modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                        decorationBox = { inner ->
+                            Box(contentAlignment = Alignment.Center) {
+                                if (editorText.isEmpty()) Text("Digite aqui", color = Color(0x99FFFFFF), fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                                inner()
+                            }
+                        }
                     )
                 }
-                Text("Pronto", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp,
-                    modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(16.dp).clickable { keyboard?.hide(); onDone() })
+                QinblyTextStyleBar(
+                    editorTextFont, editorTextColor, { editorTextFont = it },
+                    { c -> if (editorSelWord in 0 until qinblyTextWords(editorText).size) editorWordColors[editorSelWord] = c else { editorTextColor = c; editorWordColors.clear() } },
+                    qinblyTextWords(editorText), editorWordColors, editorSelWord, { editorSelWord = it }
+                )
             }
+            Text("Pronto", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp,
+                modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(16.dp).clickable { keyboard?.hide(); onDone() })
         }
     }
     // Câmera chamada por outra tela (Mural, cápsula, chat…): a foto passa pelo MESMO editor do Criar e, no fim, volta para a tela que chamou.
@@ -12647,6 +12638,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             // Camada transparente de cima: mede a tela, troca filtro passando o dedo e recebe o gesto de mover/dar zoom na foto.
             // (O gesto da foto fica AQUI, nesta camada de cima, porque uma camada com gesto bloqueia o que está embaixo dela.)
             Box(Modifier.fillMaxSize().onSizeChanged { editorPreviewW = it.width; editorPreviewH = it.height }
+                // Desenhando: esta camada de gestos sai da frente, senão ela engole o toque e o lápis não risca.
+                .then(if (editorTool == "Desenho") Modifier else Modifier
                 .pointerInput(Unit) { detectTapGestures { editorSelSticker = null; editorTextSelected = false } }
                 .qinblySwipeFilters(enabled = editorTool == "Filtros" && selectedType == "foto" && editorZoom <= 1.01f) { dir ->
                     // Igual à câmera: passar o dedo para o lado troca o filtro de cor.
@@ -12666,7 +12659,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         else if (editorTextSelected) editorTextScale = (editorTextScale * gz).coerceIn(0.4f, 4f)
                     },
                     onChange = { z, x, y -> editorZoom = z; editorPanX = x; editorPanY = y }
-                ) else Modifier))
+                ) else Modifier)))
             if (swipeFilterLabel.isNotBlank()) {
                 Text(swipeFilterLabel, modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(horizontal = 16.dp, vertical = 8.dp),
                     color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
@@ -12839,7 +12832,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 else { edHdr = 0.65f; editorTool = "HDR"; runEditorFx("HDR aplicado.") }
                             }
                         }
-                        QinblyCameraSideItem(QinblyCameraIcons.background, "Fundo", on = edBgMode.isNotBlank() || editorTool == "Fundo") { editorTool = if (editorTool == "Fundo") "Filtros" else "Fundo" }
+                        QinblyCameraSideItem(QinblyCameraIcons.background, "Fundo", on = editorTool == "Fundo") { editorTool = if (editorTool == "Fundo") "Filtros" else "Fundo" }
                      }
 }
                  }

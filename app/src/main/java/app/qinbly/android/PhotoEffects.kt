@@ -69,7 +69,7 @@ internal fun qinblyApplyPhotoFx(context: Context, source: Uri, spec: QinblyFxSpe
             uri = qinblyPhotoFxSync(context, source, spec, notes)
             note = notes.joinToString(" ")
         } catch (t: Throwable) {
-            note = "Não foi possível aplicar o efeito nesta foto."
+            note = "Não foi possível aplicar o efeito nesta foto (${t.javaClass.simpleName})."
         }
         main.post { onDone(uri, note) }
     }.start()
@@ -126,9 +126,9 @@ private fun fxSoftBlur(src: Bitmap, divisor: Int): Bitmap {
 private fun fxApplyHdr(bmp: Bitmap, k: Float = 1f) {
     val lut = IntArray(256) { i ->
         val y = i / 255f
-        val lifted = y.toDouble().pow((1.0 - 0.18 * k)).toFloat()
+        val lifted = y.toDouble().pow((1.0 - 0.32 * k)).toFloat()
         val s = lifted * lifted * (3f - 2f * lifted)
-        val mixS = 0.4f * k
+        val mixS = 0.55f * k
         ((lifted * (1f - mixS) + s * mixS) * 255f).roundToInt().coerceIn(0, 255)
     }
     val w = bmp.width
@@ -139,8 +139,25 @@ private fun fxApplyHdr(bmp: Bitmap, k: Float = 1f) {
         val p = px[i]
         px[i] = (p and 0xFF000000.toInt()) or (lut[(p shr 16) and 0xFF] shl 16) or (lut[(p shr 8) and 0xFF] shl 8) or lut[p and 0xFF]
     }
+    // Contraste local (o "HDR" que se vê): realça textura e detalhe comparando cada pixel com a vizinhança borrada.
+    val lifted = bmp.copy(Bitmap.Config.ARGB_8888, true)
+    lifted.setPixels(px, 0, w, 0, 0, w, h)
+    val soft = fxSoftBlur(lifted, 16)
+    lifted.recycle()
+    val bl = IntArray(w * h)
+    soft.getPixels(bl, 0, w, 0, 0, w, h)
+    soft.recycle()
+    val amt = 0.85f * k
+    for (i in px.indices) {
+        val p = px[i]; val q = bl[i]
+        val r = (p shr 16) and 0xFF; val g = (p shr 8) and 0xFF; val b = p and 0xFF
+        val nr = (r + amt * (r - ((q shr 16) and 0xFF))).roundToInt().coerceIn(0, 255)
+        val ng = (g + amt * (g - ((q shr 8) and 0xFF))).roundToInt().coerceIn(0, 255)
+        val nb = (b + amt * (b - (q and 0xFF))).roundToInt().coerceIn(0, 255)
+        px[i] = (p and 0xFF000000.toInt()) or (nr shl 16) or (ng shl 8) or nb
+    }
     bmp.setPixels(px, 0, w, 0, 0, w, h)
-    val saturated = Paint().apply { colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(1f + 0.12f * k) }) }
+    val saturated = Paint().apply { colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(1f + 0.22f * k) }) }
     val copy = bmp.copy(Bitmap.Config.ARGB_8888, false)
     Canvas(bmp).drawBitmap(copy, 0f, 0f, saturated)
     copy.recycle()

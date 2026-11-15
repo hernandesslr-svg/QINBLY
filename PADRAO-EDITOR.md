@@ -5,7 +5,7 @@ Regra do dono do app: texto, emote, adesivo ou qualquer coisa que a pessoa coloq
 ## Como está
 - **Texto:** arrastar com um dedo (já era assim).
 - **Emotes/adesivos** (`QinblyEditorSticker` em MainActivity.kt): tocar na lista adiciona um novo (pode ter vários; lista `qinblyEditorEmojis`, ~90 emotes); tocar no emote já colocado o SELECIONA (moldura branca + X no canto que remove só ele); arrastar move; dois dedos ampliam e giram (só aquele emote, de 0,3x a 8x); toque duas vezes também apaga. Posição, tamanho e giro vão para a imagem final (`createEditorOverlayImage`).
-- **Desenho:** livre na tela, com barra acima do 6h/12h/24h: cores, 3 espessuras, Desfazer, Borracha (apaga o traço que o dedo encostar), Limpar tudo e Pronto. Cada traço guarda sua cor e espessura (`editorStrokeMeta`, lista paralela a `editorStrokes`); reabrir o Desenho NÃO apaga o que já foi feito.
+- **Desenho:** livre na tela, com barra acima do 6h/12h/24h: cores, 3 espessuras, Desfazer, Borracha (apaga o traço que o dedo encostar), Limpar tudo e Pronto. Cada traço guarda sua cor e espessura (`editorStrokeMeta`, lista paralela a `editorStrokes`); reabrir o Desenho NÃO apaga o que já foi feito. Com o Desenho aberto a camada de gestos da foto sai da frente (senão ela engole o toque e o lápis não risca). O botão Fundo só fica azul enquanto a barra do Fundo está aberta.
 
 ## Para qualquer coisa nova que entre na foto
 Guardar posição (fração 0..1), escala e giro; mover com `detectTransformGestures`; desenhar na imagem final com a mesma posição.
