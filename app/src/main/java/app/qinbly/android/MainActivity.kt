@@ -2115,7 +2115,9 @@ private fun QinblyApp() {
                     EditProfilePhotoPage(
                         onBack = handleBack,
                         onSaved = {
+                            // Salvou a foto: continua na tela de Editar perfil (não volta para o início nem para o perfil).
                             showEditProfilePhoto = false
+                            showEditProfile = true
                             profilePhotoRefreshKey++
                             qiblyAvatarRefreshVersion.intValue++
                             notice = "Foto do perfil atualizada."
