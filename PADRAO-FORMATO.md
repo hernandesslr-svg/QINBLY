@@ -3,7 +3,7 @@
 Em qualquer lugar onde a pessoa escolhe o formato de uma foto (editor de post/story, e onde mais surgir):
 
 1. **Quadro com guias**: borda, linhas de terços e cantos grossos. O que fica fora do quadro aparece escurecido (não vai sair).
-2. **Mover a foto dentro do quadro**: arrastar e dar zoom com dois dedos. A pessoa escolhe a posição que quer publicar.
+2. **Ferramenta Formato: a foto fica INTEIRA e parada; o que muda é o QUADRADO em cima dela.** Ao trocar o formato, o quadro muda de forma; a pessoa arrasta o quadro para escolher o ângulo e dá zoom com dois dedos (o quadro cresce/diminui). O que fica fora do quadro aparece escurecido. Ao salvar/publicar, a foto sai exatamente no quadro escolhido. (`QinblyFormatPicker`)
 3. **Cortada ou inteira, quem decide é a pessoa**:
    - **Preencher**: foto cobre o quadro (corta), já começando com o rosto em foco (rosto perto de 1/3 do quadro).
    - **Inteira**: foto toda dentro do quadro, sobras pretas.

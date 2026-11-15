@@ -12418,9 +12418,14 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 }
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
  QinblySplit {
-                    QinblyFormatFrame(
+                    if (editorTool == "Ajustar") QinblyFormatPicker(
                         uri = uri, ratio = editorRatio, imageRatio = editorImageRatio, zoom = editorZoom, panX = editorPanX, panY = editorPanY,
-                        blurBg = editorBlur, colorFilter = previewMatrix, adjusting = editorTool == "Ajustar",
+                        colorFilter = previewMatrix,
+                        onChange = { z, x, y -> editorZoom = z; editorPanX = x; editorPanY = y },
+                        modifier = Modifier.fillMaxSize()
+                    ) else QinblyFormatFrame(
+                        uri = uri, ratio = editorRatio, imageRatio = editorImageRatio, zoom = editorZoom, panX = editorPanX, panY = editorPanY,
+                        blurBg = editorBlur, colorFilter = previewMatrix, adjusting = false,
                         onChange = { z, x, y -> editorZoom = z; editorPanX = x; editorPanY = y },
                         modifier = Modifier.fillMaxSize()
                     )
@@ -12509,7 +12514,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(12.dp)).clickable { editorTextEditing = true }.padding(horizontal = 28.dp, vertical = 16.dp))
             }
             if (editorTool == "Texto" && editorTextEditing) EditorTextOverlay { editorTextEditing = false }
-            if (editorText.isNotBlank() && !(editorTool == "Texto" && editorTextEditing)) {
+            if (editorText.isNotBlank() && !(editorTool == "Texto" && editorTextEditing) && editorTool != "Ajustar") {
                 Text(qinblyColoredText(editorTextFont, editorText, editorTextColor, editorWordColors), modifier = Modifier.align(Alignment.Center).offset { androidx.compose.ui.unit.IntOffset(editorTextDx.toInt(), editorTextDy.toInt()) }
                         .clip(RoundedCornerShape(12.dp))
                         .pointerInput(Unit) { detectDragGestures { change, drag -> change.consume(); editorTextDx += drag.x; editorTextDy += drag.y } }
@@ -12522,7 +12527,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
             // Adesivos/emotes: arraste para mover, dois dedos para ampliar e girar, toque duas vezes para apagar.
-            editorStickers.forEach { st ->
+            if (editorTool != "Ajustar") editorStickers.forEach { st ->
                 val half = with(androidx.compose.ui.platform.LocalDensity.current) { 60.dp.roundToPx() }
                 Box(
                     Modifier.size(120.dp)

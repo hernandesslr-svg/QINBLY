@@ -31,7 +31,9 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -173,6 +175,65 @@ internal fun QinblyFormatBar(
                 Pill("Preencher", mode == "fill") { onFill("fill") }
                 Pill("Inteira", mode == "fit") { onFill("fit") }
                 Pill("Desfocar", mode == "blur") { onFill("blur") }
+            }
+        }
+    }
+}
+
+/**
+ * Ferramenta Formato (padrão do app): a foto aparece INTEIRA, parada, e o que muda é o QUADRADO em cima dela.
+ * Arrasta o quadro para escolher o ângulo; dois dedos (zoom) aumentam/diminuem o quadro. O que fica fora do quadro
+ * aparece escurecido: não vai sair. Depois de salvar/publicar, a foto sai exatamente naquele quadro.
+ */
+@Composable
+internal fun QinblyFormatPicker(
+    uri: Uri, ratio: String, imageRatio: Float, zoom: Float, panX: Float, panY: Float,
+    colorFilter: ColorFilter?, onChange: (Float, Float, Float) -> Unit, modifier: Modifier = Modifier
+) {
+    val frameRatio = qinblyRatioValue(ratio, imageRatio)
+    val factor = qinblyFitFactor(imageRatio, frameRatio)
+    val z by rememberUpdatedState(zoom)
+    val px by rememberUpdatedState(panX)
+    val py by rememberUpdatedState(panY)
+    val change by rememberUpdatedState(onChange)
+    // Quanto da foto o quadro cobre quando o zoom é 1 (preencher), em fração da largura/altura da foto.
+    val cw = if (imageRatio > frameRatio) frameRatio / imageRatio else 1f
+    val ch = if (imageRatio > frameRatio) 1f else imageRatio / frameRatio
+    BoxWithConstraints(modifier.clipToBounds(), contentAlignment = Alignment.Center) {
+        val aw = constraints.maxWidth.toFloat(); val ah = constraints.maxHeight.toFloat()
+        val pw = if (imageRatio > aw / ah) aw else ah * imageRatio
+        val ph = pw / imageRatio
+        val ww = cw / zoom; val wh = ch / zoom
+        val fw = ww * pw; val fh = wh * ph
+        val fcx = aw / 2f - panX * ww * pw; val fcy = ah / 2f - panY * wh * ph
+        Box(
+            Modifier.fillMaxSize().pointerInput(ratio, imageRatio) {
+                detectTransformGestures { _, pan, gestureZoom, _ ->
+                    val nz = (z * gestureZoom).coerceIn(minOf(factor, 1f), 6f)
+                    val lim = qinblyMaxPan(imageRatio, frameRatio, nz)
+                    val nx = (px - (pan.x / pw) / (cw / nz)).coerceIn(-lim.first, lim.first)
+                    val ny = (py - (pan.y / ph) / (ch / nz)).coerceIn(-lim.second, lim.second)
+                    change(nz, nx, ny)
+                }
+            }
+        ) {
+            AsyncImage(model = uri, contentDescription = "Foto", contentScale = ContentScale.Fit, colorFilter = colorFilter, modifier = Modifier.fillMaxSize())
+            Canvas(Modifier.fillMaxSize()) {
+                val l = fcx - fw / 2f; val t = fcy - fh / 2f; val r = l + fw; val b = t + fh
+                clipRect(l, t, r, b, ClipOp.Difference) {
+                    drawRect(Color(0xAA000000))
+                }
+                drawRect(Color.White, topLeft = Offset(l, t), size = androidx.compose.ui.geometry.Size(fw, fh), style = Stroke(width = 1.dp.toPx()))
+                val line = Color(0x99FFFFFF)
+                for (i in 1..2) {
+                    drawLine(line, Offset(l + fw * i / 3f, t), Offset(l + fw * i / 3f, b), strokeWidth = 0.5.dp.toPx())
+                    drawLine(line, Offset(l, t + fh * i / 3f), Offset(r, t + fh * i / 3f), strokeWidth = 0.5.dp.toPx())
+                }
+                val len = 18.dp.toPx(); val sw = 3.dp.toPx()
+                drawLine(Color.White, Offset(l, t), Offset(l + len, t), sw); drawLine(Color.White, Offset(l, t), Offset(l, t + len), sw)
+                drawLine(Color.White, Offset(r, t), Offset(r - len, t), sw); drawLine(Color.White, Offset(r, t), Offset(r, t + len), sw)
+                drawLine(Color.White, Offset(l, b), Offset(l + len, b), sw); drawLine(Color.White, Offset(l, b), Offset(l, b - len), sw)
+                drawLine(Color.White, Offset(r, b), Offset(r - len, b), sw); drawLine(Color.White, Offset(r, b), Offset(r, b - len), sw)
             }
         }
     }
