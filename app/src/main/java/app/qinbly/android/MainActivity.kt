@@ -4186,7 +4186,7 @@ private fun QinblyCommentsDialog(
                     ) {
                         // Fio: cada comentário seguido das suas respostas (um nível).
                         // Respostas ficam escondidas até a pessoa tocar em "Ver respostas".
-                        val threaded = comments.filter { it.parentId.isBlank() }.flatMap { top ->
+                        val threaded = comments.filter { it.parentId.isBlank() }.sortedWith(compareByDescending<QinblyApi.CommentSummary> { it.likes }.thenByDescending { it.createdAt }).flatMap { top ->
                             listOf(top) + if (top.id in expandedThreads) comments.filter { it.parentId == top.id } else emptyList()
                         } + comments.filter { it.parentId.isNotBlank() && comments.none { c -> c.id == it.parentId } }
                         items(threaded, key = { it.id }) { comment ->
