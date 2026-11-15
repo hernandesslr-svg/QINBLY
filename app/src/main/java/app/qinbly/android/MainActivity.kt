@@ -2380,7 +2380,6 @@ private fun NotificationsPage(
         if (token.isNotBlank()) followRequests = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { QinblyApi.getFollowRequests(token) }.getOrDefault(emptyList()) }
     }
     if (showFollowRequests) QinblyFollowRequestsScreen(token, followRequests, { followRequests = it }, { showFollowRequests = false }, onNotice)
-    var expandedOthers by remember { mutableStateOf(false) }
     var showAllBack by remember { mutableStateOf(false) }
     // "Seguir de volta": quem segue você e você ainda não segue (lista fixada ao abrir, para o botão virar "Seguindo" sem sumir).
     var followBackList by remember { mutableStateOf<List<QinblyApi.UserSummary>>(emptyList()) }
@@ -2563,11 +2562,9 @@ private fun NotificationsPage(
                         )
                     }
                 }
-                // Primeiras 5 notificações sempre visíveis; o resto abre para baixo na barrinha.
-                val limit = if (expandedOthers) Int.MAX_VALUE else 5
-                val freshShown = fresh.take(limit)
-                val olderShown = older.take((limit - freshShown.size).coerceAtLeast(0))
-                val hiddenCount = visible.size - freshShown.size - olderShown.size
+                // Todas as notificações aparecem direto, sem barra de "mais notificações".
+                val freshShown = fresh
+                val olderShown = older
                 LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 20.dp)) {
                     if (freshShown.isNotEmpty()) {
                         item(key = "h_new") { Text("Novas", color = QiblyTheme.text, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 4.dp, bottom = 6.dp)) }
@@ -2576,13 +2573,6 @@ private fun NotificationsPage(
                     if (olderShown.isNotEmpty()) {
                         item(key = "h_old") { Text(if (fresh.isEmpty()) "Recentes" else "Anteriores", color = QiblyTheme.text, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp, bottom = 6.dp)) }
                         items(olderShown, key = { it.id }) { NotificationRow(it) }
-                    }
-                    if (visible.size > 5) item(key = "more_bar") {
-                        Text(
-                            if (expandedOthers) "▴ Mostrar menos" else "▾ Mais notificações ($hiddenCount)",
-                            color = QinblyBrand.Accent, fontWeight = FontWeight.Medium, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(14.dp)).background(QiblyTheme.soft).clickable { expandedOthers = !expandedOthers }.padding(vertical = 10.dp)
-                        )
                     }
                     if (selectedFilter == "Todas" && followBackList.isNotEmpty()) {
                         item(key = "fb_header") {
