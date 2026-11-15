@@ -10,6 +10,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.ui.platform.LocalContext
 import coil.imageLoader
 import coil.request.ImageRequest
@@ -95,3 +98,24 @@ internal fun rememberQinblyFaceAlignment(url: String, imageRatio: Float, frameRa
     val top = if (fy != null && fy >= 0f) (fy - 0.33f * visible).coerceIn(0f, room) else 0.2f * room
     return BiasAlignment(0f, 2f * top / room - 1f)
 }
+
+/** Miniatura quadrada/retangular do perfil: o corte segue o rosto (a cabeça nunca fica de fora). */
+@Composable
+internal fun QinblyFaceThumb(url: String, modifier: Modifier = Modifier, frameRatio: Float = 0.75f, description: String? = null) {
+    var ratio by remember(url) { mutableStateOf(QinblyFaceThumbRatios.map[url] ?: 0.75f) }
+    val alignment = rememberQinblyFaceAlignment(url, ratio, frameRatio)
+    AsyncImage(
+        model = url, contentDescription = description, modifier = modifier,
+        contentScale = ContentScale.Crop, alignment = alignment,
+        onSuccess = { r ->
+            val d = r.result.drawable
+            if (d.intrinsicWidth > 0 && d.intrinsicHeight > 0) {
+                val v = d.intrinsicWidth.toFloat() / d.intrinsicHeight.toFloat()
+                QinblyFaceThumbRatios.map[url] = v
+                ratio = v
+            }
+        }
+    )
+}
+
+private object QinblyFaceThumbRatios { val map = ConcurrentHashMap<String, Float>() }

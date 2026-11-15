@@ -8733,7 +8733,8 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     items(visiblePosts.size) { index ->
                         val post = visiblePosts[index]
                         Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(8.dp)).background(qinblyPlaceholderColor).clickable { if (post.mediaUrl.isNotBlank()) viewerPostId = post.id }) {
-                            if (post.mediaUrl.isNotBlank()) AsyncImage(model = post.mediaUrl, contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                            if (post.mediaUrl.isNotBlank() && post.mediaType != "video") QinblyFaceThumb(post.mediaUrl, Modifier.fillMaxSize(), 0.75f, "Publicação")
+                            else if (post.mediaUrl.isNotBlank()) AsyncImage(model = post.mediaUrl, contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                             else Text(post.caption.ifBlank { QinblyBrand.Name }, color = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.Center).padding(8.dp), maxLines = 4)
                             if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.TopEnd).padding(5.dp))
                         }
