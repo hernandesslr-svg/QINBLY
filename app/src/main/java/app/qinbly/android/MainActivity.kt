@@ -11082,6 +11082,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var edBgIndex by remember(sourceUri) { mutableIntStateOf(0) }
     var edBgImage by remember(sourceUri) { mutableStateOf<Uri?>(null) }
     var edBgTab by remember { mutableStateOf("Efeitos") }
+    // Aviso DENTRO do editor (o aviso geral do app aparecia por trás da tela do editor e ninguém via).
+    var fxStatus by remember { mutableStateOf("") }
+    LaunchedEffect(fxStatus) { if (fxStatus.isNotBlank() && fxStatus != "Aplicando…") { kotlinx.coroutines.delay(4000); fxStatus = "" } }
     val edBgUsed = remember { mutableStateListOf<Uri>() }
     // Desenho: cor, espessura e estilo de cada traço (lista paralela a editorStrokes).
     var editorDrawColor by remember { mutableIntStateOf(0xFFFF2A9D.toInt()) }
@@ -12370,21 +12373,24 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     // Aplica os efeitos ligados (retoque, HDR, fundo) UMA vez, sempre partindo da foto original. Tudo desligado = foto original de volta.
     fun runEditorFx(done: String) {
         val cur = selectedUri
-        if (selectedType != "foto" || cur == null) { onNotice("Esse efeito só funciona em fotos."); return }
+        if (selectedType != "foto" || cur == null) { fxStatus = "Esse efeito só funciona em fotos."; onNotice("Esse efeito só funciona em fotos."); return }
         if (editorBusy) return
         val base = if (fxBase != null && cur == fxResult) fxBase!! else cur
         fxBase = base
         val spec = QinblyFxSpec(edRetouch, edHdr, edBgMode, edBgIntensity, edBgColor, edBgIndex, edBgImage)
         if (spec.isEmpty) {
             selectedUri = base; fxResult = null; fxBase = null; bakedUri = null
+            fxStatus = if (done.isNotBlank()) done else "Foto original"
             if (done.isNotBlank()) onNotice(done)
             return
         }
         editorBusy = true
+        fxStatus = "Aplicando…"
         qinblyApplyPhotoFx(context, base, spec) { fx, note ->
             editorBusy = false
             if (fx != null) { selectedUri = fx; fxResult = fx; bakedUri = null }
             val msg = if (note.isNotBlank()) note else if (fx != null) done else "Não foi possível aplicar o efeito."
+            fxStatus = if (msg.isNotBlank()) msg else "Pronto"
             if (msg.isNotBlank()) onNotice(msg)
         }
     }
@@ -12793,6 +12799,16 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     },
                     onChange = { z, x, y -> editorZoom = z; editorPanX = x; editorPanY = y }
                 ) else Modifier)))
+            if (fxStatus.isNotBlank()) {
+                Row(
+                    Modifier.align(Alignment.TopCenter).padding(top = 80.dp, start = 24.dp, end = 24.dp).zIndex(30f)
+                        .clip(RoundedCornerShape(22.dp)).background(Color(0xDD000000)).padding(horizontal = 18.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    if (fxStatus == "Aplicando…") CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                    Text(fxStatus, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
             if (swipeFilterLabel.isNotBlank()) {
                 Text(swipeFilterLabel, modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(horizontal = 16.dp, vertical = 8.dp),
                     color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)

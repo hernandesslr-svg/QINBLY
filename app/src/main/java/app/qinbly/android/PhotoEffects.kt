@@ -69,7 +69,7 @@ internal fun qinblyApplyPhotoFx(context: Context, source: Uri, spec: QinblyFxSpe
             uri = qinblyPhotoFxSync(context, source, spec, notes)
             note = notes.joinToString(" ")
         } catch (t: Throwable) {
-            note = "Não foi possível aplicar o efeito nesta foto (${t.javaClass.simpleName})."
+            note = "Efeito falhou: ${t.javaClass.simpleName}${t.message?.let { ": " + it.take(90) } ?: ""}"
         }
         main.post { onDone(uri, note) }
     }.start()
