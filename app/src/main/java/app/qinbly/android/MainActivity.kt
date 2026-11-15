@@ -542,6 +542,8 @@ private fun qinblyNotificationText(kind: String): String = when (kind) {
     "verification_approved" -> "Sua conta foi verificada! Parabéns."
     "verification_rejected" -> "Seu pedido de verificação não foi aprovado."
     "follow" -> "começou a seguir você"
+    "follow_request" -> "pediu para seguir você"
+    "follow_accepted" -> "aceitou seu pedido de seguir"
     "like" -> "curtiu sua publicação"
     "comment" -> "comentou na sua publicação"
     "mention" -> "mencionou você em uma publicação"
@@ -2372,6 +2374,12 @@ private fun NotificationsPage(
     val notifContext = androidx.compose.ui.platform.LocalContext.current
     val notifPrefs = remember { notifContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
     var showNotifSettings by remember { mutableStateOf(false) }
+    var followRequests by remember { mutableStateOf<List<QinblyApi.FollowRequest>>(emptyList()) }
+    var showFollowRequests by remember { mutableStateOf(false) }
+    LaunchedEffect(token) {
+        if (token.isNotBlank()) followRequests = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { QinblyApi.getFollowRequests(token) }.getOrDefault(emptyList()) }
+    }
+    if (showFollowRequests) QinblyFollowRequestsScreen(token, followRequests, { followRequests = it }, { showFollowRequests = false }, onNotice)
     var expandedOthers by remember { mutableStateOf(false) }
     var showAllBack by remember { mutableStateOf(false) }
     // "Seguir de volta": quem segue você e você ainda não segue (lista fixada ao abrir, para o botão virar "Seguindo" sem sumir).
@@ -2410,7 +2418,7 @@ private fun NotificationsPage(
     }
     // Mensagens pertencem à aba Mensagens; Avisos mostra somente atividade e avisos do sistema.
     val visible = notifications.filter { item ->
-        item.kind != "message" && when (selectedFilter) {
+        item.kind != "message" && item.kind != "follow_request" && when (selectedFilter) {
             "Atividades" -> item.kind != "system"
             "Do ${QinblyBrand.Name}" -> item.kind == "system"
             else -> true
@@ -2452,7 +2460,7 @@ private fun NotificationsPage(
                     Triple("Curtidas", "setting_notice_likes", ""),
                     Triple("Comentários", "setting_notice_comments", ""),
                     Triple("Menções", "setting_notice_mentions", "Quando alguém marcar você com @ em um comentário ou publicação"),
-                    Triple("Novos seguidores", "setting_notice_followers", ""),
+                    Triple("Novos seguidores e pedidos de seguir", "setting_notice_followers", ""),
                     Triple("Avisos do ${QinblyBrand.Name}", "setting_notice_system", "")
                 ).forEach { (label, key, hint) ->
                     val inverted = key == "setting_notifications"
@@ -2482,6 +2490,19 @@ private fun NotificationsPage(
                 }
             }
         }
+        if (followRequests.isNotEmpty()) {
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(16.dp)).clickable { showFollowRequests = true }.padding(horizontal = 10.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Box(Modifier.size(52.dp).clip(CircleShape).background(QinblyBrand.Accent.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) { Icon(Icons.Default.PersonAdd, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(26.dp)) }
+                Column(Modifier.weight(1f)) {
+                    Text("Pedidos de seguir", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(followRequests.first().let { it.displayName.ifBlank { it.username } } + if (followRequests.size > 1) " e mais ${followRequests.size - 1}" else "", color = QiblyTheme.secondary, fontSize = 13.sp, maxLines = 1)
+                }
+                Box(Modifier.clip(CircleShape).background(QinblyBrand.Accent).padding(horizontal = 9.dp, vertical = 3.dp)) { Text("${followRequests.size}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+            }
+        }
         when {
             loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = QinblyBrand.Accent) }
             token.isBlank() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Entre na sua conta para ver as notificações.", color = RemoteAppearance.screenSecondaryTextColor) }
@@ -2504,7 +2525,7 @@ private fun NotificationsPage(
                     val unread = item.readAt.isBlank()
                     val (kindIcon, kindColor) = when (item.kind) {
                         "like" -> Icons.Default.Favorite to Color(0xFFE5365B)
-                        "follow" -> Icons.Default.PersonAdd to QinblyBrand.Accent
+                        "follow", "follow_accepted", "follow_request" -> Icons.Default.PersonAdd to QinblyBrand.Accent
                         "comment", "reply" -> Icons.Default.ChatBubbleOutline to Color(0xFF2FA36B)
                         "mention", "mention_comment", "tag" -> Icons.Default.AlternateEmail to Color(0xFF1877F2)
                         else -> Icons.Default.Info to Color(0xFF6B7280)
@@ -6110,7 +6131,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                                 "like" -> sp.getBoolean("setting_notice_likes", true)
                                 "comment", "reply" -> sp.getBoolean("setting_notice_comments", true)
                                 "mention", "mention_comment", "tag" -> sp.getBoolean("setting_notice_mentions", true)
-                                "follow" -> sp.getBoolean("setting_notice_followers", true)
+                                "follow", "follow_request", "follow_accepted" -> sp.getBoolean("setting_notice_followers", true)
                                 else -> sp.getBoolean("setting_notice_system", true)
                             }
                         }?.let { n ->
@@ -9610,6 +9631,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                     item { SettingsLink("Excluir conta", "Apagar sua conta e seus dados definitivamente", Icons.Outlined.DeleteOutline) { deleteConfirmText = ""; showDeleteAccount = true } }
                 }
                 "privacy" -> {
+                    item { QinblyAccountPrivacyControls(prefs, onNotice) }
                     item { Text("QUEM VÊ SEUS STORIES (PADRÃO)", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)) }
                     item {
                         var chosen by remember { mutableStateOf(prefs.getString("story_default_audience", "all") ?: "all") }
@@ -13142,5 +13164,104 @@ private fun QinblyHiddenWordsScreen(prefs: android.content.SharedPreferences, on
             value = text, onValueChange = { text = it }, label = { Text("Ex.: palavra1, palavra2") },
             minLines = 3, modifier = Modifier.fillMaxWidth()
         )
+    }
+}
+
+
+/** Pedidos de seguir: aprovar ou recusar (tela cheia, aberta pelo sininho). */
+@Composable
+private fun QinblyFollowRequestsScreen(token: String, requests: List<QinblyApi.FollowRequest>, onChange: (List<QinblyApi.FollowRequest>) -> Unit, onDismiss: () -> Unit, onNotice: (String) -> Unit) {
+    var busyId by remember { mutableStateOf("") }
+    QinblyFullScreen("Pedidos de seguir", onDismiss, background = QiblyTheme.background, contentColor = QiblyTheme.text) {
+        if (requests.isEmpty()) Text("Nenhum pedido no momento.", color = QiblyTheme.secondary, fontSize = 14.sp)
+        requests.forEach { r ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                QiblyAccountAvatar(r.username, r.avatarUrl, 48.dp) { }
+                Column(Modifier.weight(1f)) {
+                    Text(r.displayName.ifBlank { r.username }, color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
+                    if (r.username.isNotBlank()) Text("@" + r.username.removePrefix("@"), color = QiblyTheme.secondary, fontSize = 13.sp, maxLines = 1)
+                }
+                val busy = busyId == r.userId
+                Button(
+                    enabled = busyId.isBlank(),
+                    onClick = {
+                        busyId = r.userId
+                        Thread {
+                            val ok = try { QinblyApi.approveFollowRequest(token, r.userId); true } catch (_: Exception) { false }
+                            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                busyId = ""
+                                if (ok) onChange(requests.filter { it.userId != r.userId }) else onNotice("Não foi possível aprovar agora.")
+                            }
+                        }.start()
+                    },
+                    shape = RoundedCornerShape(20.dp), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
+                ) { if (busy) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White) else Text("Aprovar", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+                OutlinedButton(
+                    enabled = busyId.isBlank(),
+                    onClick = {
+                        busyId = r.userId
+                        Thread {
+                            val ok = try { QinblyApi.rejectFollowRequest(token, r.userId); true } catch (_: Exception) { false }
+                            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                busyId = ""
+                                if (ok) onChange(requests.filter { it.userId != r.userId }) else onNotice("Não foi possível recusar agora.")
+                            }
+                        }.start()
+                    },
+                    shape = RoundedCornerShape(20.dp), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                ) { Text("Recusar", fontSize = 13.sp, color = QiblyTheme.text) }
+            }
+        }
+    }
+}
+
+/** Conta privada, quem pode falar com você e quem pode comentar (guardado no servidor, o banco faz valer). */
+@Composable
+private fun QinblyAccountPrivacyControls(prefs: android.content.SharedPreferences, onNotice: (String) -> Unit) {
+    val token = prefs.getString("token", null).orEmpty()
+    var loaded by remember { mutableStateOf(false) }
+    var failed by remember { mutableStateOf(false) }
+    var isPrivate by remember { mutableStateOf(false) }
+    var whoMessage by remember { mutableStateOf("all") }
+    var whoComment by remember { mutableStateOf("all") }
+    LaunchedEffect(token) {
+        val r = if (token.isBlank()) null else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { QinblyApi.getPrivacy(token) }.getOrNull() }
+        if (r != null) { isPrivate = r.optBoolean("is_private"); whoMessage = r.optString("who_can_message", "all"); whoComment = r.optString("who_can_comment", "all") } else failed = true
+        loaded = true
+    }
+    fun save(field: String, value: Any, undo: () -> Unit) {
+        Thread {
+            val ok = try { QinblyApi.setPrivacy(token, field, value); true } catch (_: Exception) { false }
+            android.os.Handler(android.os.Looper.getMainLooper()).post { if (!ok) { undo(); onNotice("Não foi possível salvar agora. Tente de novo.") } }
+        }.start()
+    }
+    @Composable
+    fun Choices(options: List<Pair<String, String>>, value: String, onPick: (String) -> Unit) {
+        options.forEach { (key, label) ->
+            val on = value == key
+            Row(Modifier.fillMaxWidth().clickable { onPick(key) }.padding(horizontal = 8.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(if (on) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked, contentDescription = null, tint = if (on) QinblyBrand.Accent else Muted, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(14.dp))
+                Text(label, color = QiblyTheme.text, fontSize = 15.sp)
+            }
+        }
+    }
+    Column(Modifier.fillMaxWidth()) {
+        if (!loaded) { Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp, color = QinblyBrand.Accent) }; return@Column }
+        if (failed) { Text("Não foi possível carregar a privacidade da conta agora.", color = Muted, fontSize = 13.sp, modifier = Modifier.padding(8.dp)); return@Column }
+        SettingSwitch("Conta privada", "Só quem você aprovar segue você e vê suas publicações e stories", isPrivate, Icons.Outlined.Lock) { on ->
+            val before = isPrivate; isPrivate = on
+            save("is_private", on) { isPrivate = before }
+        }
+        Text("QUEM PODE FALAR COM VOCÊ", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 14.dp, bottom = 2.dp))
+        Choices(listOf("all" to "Todos", "following" to "Só quem você segue", "nobody" to "Ninguém"), whoMessage) { v ->
+            val before = whoMessage; whoMessage = v; save("who_can_message", v) { whoMessage = before }
+        }
+        Text("Quem já recebeu mensagem sua ainda pode responder.", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 8.dp))
+        Text("QUEM PODE COMENTAR SUAS PUBLICAÇÕES", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 14.dp, bottom = 2.dp))
+        Choices(listOf("all" to "Todos", "followers" to "Só seus seguidores", "nobody" to "Ninguém"), whoComment) { v ->
+            val before = whoComment; whoComment = v; save("who_can_comment", v) { whoComment = before }
+        }
     }
 }

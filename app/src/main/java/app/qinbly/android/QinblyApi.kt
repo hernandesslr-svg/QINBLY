@@ -1129,8 +1129,48 @@ object QinblyApi {
         val isFollowing: Boolean = false
     )
 
+    /** Seguir uma conta privada vira pedido (ou cancela o pedido). Não muda o estado de "seguindo". */
+    class FollowRequestException(message: String) : Exception(message)
+
+    data class FollowRequest(val userId: String, val username: String, val displayName: String, val avatarUrl: String)
+
+    fun getFollowRequests(token: String): List<FollowRequest> {
+        val me = userIdFromToken(token) ?: return emptyList()
+        val arr = org.json.JSONArray(rest(token, "GET", "follow_requests?target_id=eq.$me&select=requester_id,created_at,profiles!follow_requests_requester_id_fkey(username,display_name,avatar_path)&order=created_at.desc&limit=100"))
+        return (0 until arr.length()).map { i ->
+            val o = arr.getJSONObject(i); val p = o.optJSONObject("profiles")
+            FollowRequest(o.optString("requester_id"), p?.optString("username").orEmpty(), p?.optString("display_name").orEmpty(), pubUrl(p?.optString("avatar_path")))
+        }
+    }
+
+    fun approveFollowRequest(token: String, requesterId: String) {
+        rest(token, "POST", "rpc/approve_follow_request", JSONObject().put("requester", requesterId).toString())
+    }
+
+    fun rejectFollowRequest(token: String, requesterId: String) {
+        val me = userIdFromToken(token) ?: return
+        rest(token, "DELETE", "follow_requests?requester_id=eq.$requesterId&target_id=eq.$me")
+    }
+
+    /** Privacidade da conta: is_private, who_can_message, who_can_comment. */
+    fun getPrivacy(token: String): JSONObject? {
+        val me = userIdFromToken(token) ?: return null
+        val arr = org.json.JSONArray(rest(token, "GET", "profiles?id=eq.$me&select=is_private,who_can_message,who_can_comment"))
+        return arr.optJSONObject(0)
+    }
+
+    fun setPrivacy(token: String, field: String, value: Any) {
+        require(field in setOf("is_private", "who_can_message", "who_can_comment"))
+        val me = userIdFromToken(token) ?: throw IllegalStateException("Entre na sua conta primeiro.")
+        rest(token, "PATCH", "profiles?id=eq.$me", JSONObject().put(field, value).toString(), "return=minimal")
+    }
+
     fun toggleFollow(token: String, userId: String): Boolean {
         require(token.isNotBlank() && userId.isNotBlank()) { "Conta ou sessão inválida para seguir." }
+        // Conta privada: o banco decide se vira pedido. Se a função não existir/falhar, segue o caminho antigo.
+        val decision = try { rest(token, "POST", "rpc/request_follow", JSONObject().put("target", userId).toString()).trim().trim('"') } catch (_: Exception) { "" }
+        if (decision == "requested") throw FollowRequestException("Pedido enviado. Você passa a seguir quando a pessoa aprovar.")
+        if (decision == "cancelled") throw FollowRequestException("Pedido de seguir cancelado.")
         val response = request("POST", "/api/users/" + userId + "/follow", JSONObject(), token)
         if (!response.has("following") || response.isNull("following")) {
             throw IllegalStateException("O servidor não confirmou a alteração de seguimento.")
