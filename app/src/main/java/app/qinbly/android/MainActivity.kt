@@ -10531,6 +10531,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var filterIntensity by remember { mutableFloatStateOf(1f) }
     var gridOn by remember { mutableStateOf(false) }
     var mirrorOn by remember { mutableStateOf(false) }
+    // Tamanho real da área da câmera na tela: a foto é cortada exatamente nesse enquadramento (o que você vê é o que sai).
+    var cameraBoxW by remember { mutableIntStateOf(0) }
+    var cameraBoxH by remember { mutableIntStateOf(0) }
     var handsFreeOn by remember { mutableStateOf(false) }
     var exposureIndex by remember { mutableIntStateOf(0) }
     var nightOn by remember { mutableStateOf(false) }
@@ -10943,7 +10946,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         if (granted) startVideoRecording()
         else cameraError = "Permita o microfone para gravar vídeos com áudio."
     }
-    LaunchedEffect(cameraGranted, lensFacing, showComposer, previewView, selectedCameraFormat, qualityChoice, stabilizeOn) {
+    LaunchedEffect(cameraGranted, lensFacing, showComposer, previewView, selectedCameraFormat, qualityChoice, stabilizeOn, cameraBoxW, cameraBoxH) {
         if (initialMode == "camera" && cameraGranted && !showComposer && previewView != null) {
             try {
                 val future = androidx.camera.lifecycle.ProcessCameraProvider.getInstance(context)
@@ -10961,7 +10964,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         stabilizeSupported = try { androidx.camera.video.Recorder.getVideoCapabilities(provider.getCameraInfo(androidx.camera.core.CameraSelector.Builder().requireLensFacing(lensFacing).build())).isStabilizationSupported } catch (_: Exception) { false }
                         val video = androidx.camera.video.VideoCapture.Builder(recorder).setVideoStabilizationEnabled(stabilizeOn && stabilizeSupported).build()
                         val selector = androidx.camera.core.CameraSelector.Builder().requireLensFacing(lensFacing).build()
-                        val frame = when (selectedCameraFormat) { "1:1" -> android.util.Rational(1, 1); "4:3" -> android.util.Rational(3, 4); else -> android.util.Rational(9, 16) }
+                        val frame = when (selectedCameraFormat) { "1:1" -> android.util.Rational(1, 1); "4:3" -> android.util.Rational(3, 4); else -> if (cameraBoxW > 0 && cameraBoxH > 0) android.util.Rational(cameraBoxW, cameraBoxH) else android.util.Rational(9, 16) }
                         val viewPort = androidx.camera.core.ViewPort.Builder(frame, view.display?.rotation ?: android.view.Surface.ROTATION_0).build()
                         val analysis = androidx.camera.core.ImageAnalysis.Builder()
                             .setBackpressureStrategy(androidx.camera.core.ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
@@ -11078,7 +11081,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         if (capture == null) { cameraError = "A câmera ainda está iniciando. Tente novamente."; return }
         val file = File(context.cacheDir, "qinbly-camera-" + System.currentTimeMillis() + ".jpg")
         val metadata = androidx.camera.core.ImageCapture.Metadata().apply {
-            isReversedHorizontal = mirrorOn && lensFacing == androidx.camera.core.CameraSelector.LENS_FACING_FRONT
+            // A tela mostra a câmera da frente espelhada; a foto sai igual ao que você viu (o botão Espelhar inverte isso).
+            isReversedHorizontal = lensFacing == androidx.camera.core.CameraSelector.LENS_FACING_FRONT && !mirrorOn
         }
         val output = androidx.camera.core.ImageCapture.OutputFileOptions.Builder(file).setMetadata(metadata).build()
         capture.takePicture(output, androidx.core.content.ContextCompat.getMainExecutor(context), object : androidx.camera.core.ImageCapture.OnImageSavedCallback {
@@ -11298,7 +11302,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         BackHandler(enabled = cameraSheet.isNotBlank()) { cameraSheet = "" }
         Box(Modifier.fillMaxSize().background(Color(0xFF080808))) {
  QinblySplit {
-            Box((if (selectedCameraFormat == "9:16") Modifier.fillMaxSize() else Modifier.align(Alignment.Center).fillMaxWidth().aspectRatio(frameRatio)).clipToBounds()) {
+            Box((if (selectedCameraFormat == "9:16") Modifier.fillMaxSize() else Modifier.align(Alignment.Center).fillMaxWidth().aspectRatio(frameRatio)).clipToBounds().onSizeChanged { cameraBoxW = it.width; cameraBoxH = it.height }) {
  QinblySplit {
                 androidx.compose.ui.viewinterop.AndroidView(
                     factory = { ctx -> androidx.camera.view.PreviewView(ctx).also {
