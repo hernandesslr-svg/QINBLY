@@ -220,17 +220,21 @@ object QinblyApi {
         val savedByMe: Boolean = false, val repostedByMe: Boolean = false, val reposts: Int = 0,
         val pinned: Boolean = false, val archived: Boolean = false,
         val taggedUsers: List<String> = emptyList(),
-        val verified: Boolean = false
+        val verified: Boolean = false,
+        /** Música escolhida no post (vem escondida no fim da legenda e é separada aqui). */
+        val musicTitle: String = "", val musicArtist: String = "", val musicUrl: String = ""
     )
 
     /** Converte uma publicação do JSON da API. `fallback` (dono do perfil) preenche o autor quando a lista não o traz. */
     private fun parsePost(post: JSONObject, fallback: JSONObject? = null): PostSummary {
         val author = post.optJSONObject("author") ?: JSONObject()
+        val (cleanCaption, music) = qinblySplitMusic(post.optString("caption"))
         return PostSummary(
+        musicTitle = music?.title.orEmpty(), musicArtist = music?.artist.orEmpty(), musicUrl = music?.url.orEmpty(),
         verified = author.optBoolean("verified", fallback?.optBoolean("verified") ?: false),
         authorId = author.optString("id").ifBlank { fallback?.optString("id").orEmpty() },
         id = post.optString("id"),
-        caption = post.optString("caption"),
+        caption = cleanCaption,
         mediaUrl = post.optString("mediaUrl"),
         mediaType = post.optString("mediaType"),
         username = author.optString("username").ifBlank { fallback?.optString("username").orEmpty() },

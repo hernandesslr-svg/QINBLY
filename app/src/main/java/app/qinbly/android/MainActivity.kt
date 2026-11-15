@@ -4011,6 +4011,7 @@ private fun QinblyPostViewer(
                             }
                         }
                         if (post.caption.isNotBlank()) QinblyViewerCaption(post.caption)
+                        if (post.musicUrl.isNotBlank()) QinblyPostMusicChip(post, Modifier.padding(top = 6.dp))
                     }
                 }
             }
@@ -4591,6 +4592,9 @@ private fun QinblyPostCard(
             if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video") && post.caption.isNotBlank()) {
                 QinblyFeedCaption(post.caption, Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp))
             }
+            if (post.musicUrl.isNotBlank() && post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) {
+                QinblyPostMusicChip(post, Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp), RemoteAppearance.feedTextColor)
+            }
             if (post.mediaUrl.isNotBlank() && post.mediaType == "image") {
                 val demoGallery = remember(post.id) {
                     when (post.id) {
@@ -5029,7 +5033,7 @@ private fun QinblyEditCaptionDialog(
         QinblyHashtagStore.record(tagContext, text)
         Thread {
             try {
-                val updated = QinblyApi.editPostFull(token, post.id, text.trim(), null, "", false)
+                val updated = QinblyApi.editPostFull(token, post.id, qinblyAttachMusic(text.trim(), post.music()), null, "", false)
                 android.os.Handler(android.os.Looper.getMainLooper()).post { busy = false; onSaved(updated); onNotice("Publicação atualizada."); onDismiss() }
             } catch (e: Exception) {
                 android.os.Handler(android.os.Looper.getMainLooper()).post { busy = false; onNotice(e.message ?: "Não foi possível salvar.") }
@@ -12166,7 +12170,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         else -> {
                             publishError = ""
                             publishing = true
-                            val musicToSend = if (QinblyComposeSeed.story) storyMusic else null
+                            val musicToSend = if (onCaptured == null) storyMusic else null
+                            val postCaption = qinblyAttachMusic(caption, musicToSend)
                             val directNow = storyDirect; val hoursNow = storyHours; val audienceNow = storyAudience; val feedNow = storyAlsoFeed
                             val cityNow = QinblyApi.myCity(prefs)
                             QinblyHashtagStore.record(context, caption)
@@ -12228,9 +12233,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                                             "qinbly-album-${System.currentTimeMillis()}-${index}.${extraExt}", extraMime, extraSize))
                                                     } finally { extraFile.delete() }
                                                 }
-                                                QinblyApi.createPhotoAlbum(token, caption, uploadedIds, if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList())
+                                                QinblyApi.createPhotoAlbum(token, postCaption, uploadedIds, if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList())
                                             } else {
-                                                QinblyApi.createMediaPost(token, caption, fileId, if (mime.startsWith("video/")) "video" else "image", if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList())
+                                                QinblyApi.createMediaPost(token, postCaption, fileId, if (mime.startsWith("video/")) "video" else "image", if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList())
                                             }
                                         } finally {
                                             tempUploadFile?.delete()
@@ -12448,8 +12453,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             ) {
                 Icon(QinblyCameraIcons.close, contentDescription = "Voltar", tint = Color.White, modifier = Modifier.size(28.dp))
             }
-            // Música no topo, igual à câmera (antes ficava na etapa seguinte).
-            if (QinblyComposeSeed.story) {
+            // Música no topo, igual à câmera. Vale para story e para post (não aparece quando a câmera só devolve a foto para o chat etc.).
+            if (onCaptured == null) {
                 val sm0 = storyMusic
                 Row(
                     Modifier.align(Alignment.TopCenter).offset(x = (-14).dp).padding(top = 12.dp)
@@ -12463,7 +12468,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 130.dp))
                     if (sm0 != null) QinblyCloseIcon(Color.White, 16.dp, modifier = Modifier.clickable { storyMusic = null })
                 }
-                if (showMusicPicker) QinblyMusicPicker(onPick = { storyMusic = it; showMusicPicker = false }, onDismiss = { showMusicPicker = false })
+                if (showMusicPicker) QinblyMusicPicker(onPick = { storyMusic = it; showMusicPicker = false }, onDismiss = { showMusicPicker = false }, freeOnly = !QinblyComposeSeed.story)
             }
             Column(
                 modifier = Modifier.align(Alignment.TopEnd).padding(end = 12.dp, top = 92.dp).width(140.dp)
