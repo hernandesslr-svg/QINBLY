@@ -10,3 +10,6 @@
 - Existe **um editor só**: o do `PostPage`. A câmera chamada por outras telas (`QinblyCameraCapture`, com `editBeforeReturn = true`) abre esse mesmo editor depois da foto e devolve a foto já editada para a tela que chamou (botão "Pronto").
 - O editor abre limpo: a faixa de filtros só aparece quando a pessoa toca em Filtros.
 - Só o editor do **story comum** do Criar tem a barra nova (botão "Story", horas, Quem vê, + Feed).
+
+## Trocar filtro passando o dedo
+- Na câmera e no editor de foto: um dedo arrastando para a esquerda/direita troca o filtro de cor (Original, Aurora, Pôr do sol…), sem abrir a faixa de filtros. Não troca filtro de rosto nem efeitos animados.

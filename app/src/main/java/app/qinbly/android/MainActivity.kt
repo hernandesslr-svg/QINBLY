@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -10567,6 +10568,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var showComposer by remember { mutableStateOf(false) }
     var publishSettings by remember { mutableStateOf(false) }
     var editorTool by remember { mutableStateOf("Filtros") }
+    var swipeFilterLabel by remember { mutableStateOf("") }
+    LaunchedEffect(swipeFilterLabel) { if (swipeFilterLabel.isNotBlank()) { kotlinx.coroutines.delay(900); swipeFilterLabel = "" } }
     var storyHours by remember { mutableIntStateOf(24) }
     var storyAudience by remember { mutableStateOf("all") }
     var storyAlsoFeed by remember { mutableStateOf(false) }
@@ -11313,7 +11316,12 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         it.implementationMode = androidx.camera.view.PreviewView.ImplementationMode.COMPATIBLE
                         previewView = it
                     } },
-                    modifier = Modifier.fillMaxSize().pointerInput(cameraControl) {
+                    modifier = Modifier.fillMaxSize().qinblySwipeFilters { dir ->
+                        // Passar o dedo para o lado troca o filtro de cor (sem abrir a faixa de filtros).
+                        val names = QinblyColorFilterNames
+                        val next = names[(names.indexOf(selectedFilter).coerceAtLeast(0) + dir + names.size) % names.size]
+                        selectedFilter = next; filterIntensity = 1f; flashLabel = next
+                    }.pointerInput(cameraControl) {
                         detectTransformGestures { _, _, zoomChange, _ ->
                             val camera = cameraControl ?: return@detectTransformGestures
                             val maxZoom = camera.cameraInfo.zoomState.value?.maxZoomRatio ?: 1f
@@ -12246,7 +12254,17 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             if (editorSticker.isNotBlank()) {
                 Text(editorSticker, modifier = Modifier.align(Alignment.Center), color = Color.Black, style = MaterialTheme.typography.displayLarge)
             }
-            Box(Modifier.fillMaxSize().onSizeChanged { editorPreviewW = it.width; editorPreviewH = it.height })
+            Box(Modifier.fillMaxSize().onSizeChanged { editorPreviewW = it.width; editorPreviewH = it.height }
+                .qinblySwipeFilters(enabled = editorTool == "Filtros" && selectedType == "foto") { dir ->
+                    // Igual à câmera: passar o dedo para o lado troca o filtro de cor.
+                    val names = QinblyColorFilterNames
+                    val next = names[(names.indexOf(selectedFilter).coerceAtLeast(0) + dir + names.size) % names.size]
+                    selectedFilter = next; filterIntensity = 1f; swipeFilterLabel = next
+                })
+            if (swipeFilterLabel.isNotBlank()) {
+                Text(swipeFilterLabel, modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(horizontal = 16.dp, vertical = 8.dp),
+                    color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
             if (editorText.isBlank() && editorTool == "Texto" && !editorTextEditing) {
                 Text("Toque para escrever", color = Color(0xB3FFFFFF), fontSize = 28.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(12.dp)).clickable { editorTextEditing = true }.padding(horizontal = 28.dp, vertical = 16.dp))
@@ -12919,5 +12937,25 @@ private fun QinblyStoryPublishBar(
                 }
             }
         }
+    }
+}
+
+/** Passar o dedo na tela para a esquerda/direita (um dedo só) troca de filtro: +1 = próximo, -1 = anterior. Não atrapalha zoom nem toque. */
+private fun Modifier.qinblySwipeFilters(enabled: Boolean = true, onSwipe: (Int) -> Unit): Modifier = this.pointerInput(enabled) {
+    if (!enabled) return@pointerInput
+    androidx.compose.foundation.gestures.awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = false, pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+        var multi = false
+        var dx = 0f
+        var dy = 0f
+        while (true) {
+            val event = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+            if (event.changes.size > 1) multi = true
+            val c = event.changes.firstOrNull { it.id == down.id } ?: break
+            dx = c.position.x - down.position.x
+            dy = c.position.y - down.position.y
+            if (!c.pressed) break
+        }
+        if (!multi && kotlin.math.abs(dx) > 90.dp.toPx() && kotlin.math.abs(dx) > kotlin.math.abs(dy) * 1.5f) onSwipe(if (dx < 0) 1 else -1)
     }
 }
