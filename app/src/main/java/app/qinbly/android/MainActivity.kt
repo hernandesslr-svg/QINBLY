@@ -3115,10 +3115,9 @@ private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, sh
 @Composable
 private fun QiblyPublicationVideo(url: String, modifier: Modifier = Modifier) {
     val saverContext = androidx.compose.ui.platform.LocalContext.current
-    // Economia de dados: com a opção ligada, o vídeo só carrega quando a pessoa aperta play.
-    val dataSaver = remember { saverContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).getBoolean("setting_data_saver", false) }
+    // Padrão do app: o vídeo já começa sozinho (sem som) e repete até a pessoa pausar.
     Box(modifier.clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
-        InlineVideoPlayer(url = url, modifier = Modifier.fillMaxSize(), autoplay = !dataSaver)
+        InlineVideoPlayer(url = url, modifier = Modifier.fillMaxSize(), autoplay = true)
     }
 }
 
@@ -3135,14 +3134,14 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
     var resumePos by remember(url) { mutableLongStateOf(0L) }
     val videoPrefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
     // Reprodução automática no feed começa sem som; o botão do alto-falante liga.
-    var muted by remember(url) { mutableStateOf(!QinblyVideoFocus.soundOn && (autoplay || videoPrefs.getBoolean("setting_video_muted", false))) }
+    var muted by remember(url) { mutableStateOf(!QinblyVideoFocus.soundOn) }
     val instanceKey = remember { java.util.UUID.randomUUID().toString() }
     var progress by remember(url) { mutableFloatStateOf(0f) }
     val player = remember(url) {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(url))
-            volume = if (!QinblyVideoFocus.soundOn && (autoplay || videoPrefs.getBoolean("setting_video_muted", false))) 0f else 1f
-            repeatMode = if (autoplay || videoPrefs.getBoolean("setting_video_loop", false)) androidx.media3.common.Player.REPEAT_MODE_ONE else androidx.media3.common.Player.REPEAT_MODE_OFF
+            volume = if (!QinblyVideoFocus.soundOn) 0f else 1f
+            repeatMode = androidx.media3.common.Player.REPEAT_MODE_ONE
             // Só começa a tocar quando este vídeo for o que está em foco na tela (veja QinblyVideoFocus).
             playWhenReady = false
             addListener(object : androidx.media3.common.Player.Listener {
@@ -9459,7 +9458,6 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
         "lives" -> "Lives e transmissão"
         "storage" -> "Dados e armazenamento"
         "help" -> "Ajuda e suporte"
-        "feed" -> "Vídeos"
         "camera_settings" -> "Publicações"
         "messages_settings" -> "Mensagens"
         "friends_settings" -> "Amigos e seguidores"
@@ -9499,7 +9497,6 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                 val categories = listOf(
                     Triple("account", "Conta", "Perfil, contas bloqueadas e exclusão"),
                     Triple("notifications", "Notificações", "Escolha quais avisos receber"),
-                    Triple("feed", "Vídeos", "Som e repetição"),
                     Triple("appearance", "Tela", "Tema escuro e fontes"),
                     Triple("accessibility", "Acessibilidade", "Texto maior e menos animações"),
                     Triple("storage", "Dados e armazenamento", "Cache e seus dados"),
@@ -9606,11 +9603,6 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                         }
                         androidx.compose.material3.HorizontalDivider(color = QiblyTheme.border, thickness = 0.5.dp)
                     }
-                }
-                "feed" -> {
-                    item { VideoPrefSwitch("Economia de dados", "Vídeos só carregam quando você aperta play", "setting_data_saver", false, prefs, Icons.Outlined.DataSaverOn) }
-                    item { VideoPrefSwitch("Iniciar vídeos sem som", "Os vídeos começam mudos; toque no som para ligar", "setting_video_muted", false, prefs, Icons.Outlined.VolumeOff) }
-                    item { VideoPrefSwitch("Repetir vídeos", "Quando o vídeo termina, ele recomeça sozinho", "setting_video_loop", false, prefs, Icons.Outlined.Repeat) }
                 }
                 "accessibility" -> {
                     item {
