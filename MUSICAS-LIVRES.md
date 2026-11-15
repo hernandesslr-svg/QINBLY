@@ -15,3 +15,6 @@ Inspiradoras: Elevate Inspirate, Horizon Flare, Shining Stars, Hopeful, Inspirat
 
 ## Para adicionar faixa
 Cortar em 30 s (mp3, nome minúsculo com `_`), colocar em `assets/music/` e acrescentar uma linha `free("arquivo_sem_mp3", "Título")` em `qinblyFreeTracks` (Music.kt).
+
+## Padrão (regra do dono do app)
+Em **qualquer lugar** do app onde aparecer a opção de adicionar música/som, ela tem que abrir a mesma folha (`QinblyMusicPicker`) com as músicas livres do Qinbly. Hoje: câmera (pílula do topo → "Sons do Qinbly"), editor de foto/vídeo (pílula do topo), Cápsula e Story coletivo. Tela nova com música = chamar `QinblyMusicPicker`, não criar outra folha. Em posts comuns usar `freeOnly = true`.

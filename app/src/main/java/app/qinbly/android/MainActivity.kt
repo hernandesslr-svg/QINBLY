@@ -10720,6 +10720,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             } catch (_: Exception) { }
             soundName = label
             soundUri = uri
+            storyMusic = null
             cameraSheet = ""
             onNotice("Som escolhido. Ele será misturado ao vídeo que você gravar.")
         }
@@ -11594,9 +11595,11 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(QinblyCameraIcons.music, contentDescription = null, tint = Color.White, modifier = Modifier.size(19.dp))
-                        Text(if (soundName.isBlank()) "Adicionar som" else soundName, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                        Text(if (soundName.isNotBlank()) soundName else storyMusic?.title ?: "Adicionar som", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold,
                             maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 130.dp))
                     }
+                    // Mesma folha de músicas do editor (padrão do app): as músicas livres do Qinbly.
+                    if (showMusicPicker && onCaptured == null) QinblyMusicPicker(onPick = { storyMusic = it; soundName = ""; soundUri = null; showMusicPicker = false }, onDismiss = { showMusicPicker = false }, freeOnly = !QinblyComposeSeed.story)
                 } else {
                     Text("%d:%02d".format(recElapsed / 60, recElapsed % 60), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp,
                         modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp).clip(RoundedCornerShape(14.dp))
@@ -11884,9 +11887,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         Text("Escolher som", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         QinblyCameraSheetRow(QinblyCameraIcons.headphones, "Do seu celular", "Escolha uma música ou áudio seu") { soundPicker.launch("audio/*") }
                         QinblyCameraSheetRow(QinblyCameraIcons.mic, "Gravar narração", "Fale sobre o vídeo", soon = true) { }
-                        QinblyCameraSheetRow(QinblyCameraIcons.music, "Sons do Qinbly", "Catálogo de músicas", soon = true) { }
-                        if (soundName.isNotBlank()) {
-                            TextButton(onClick = { soundName = ""; soundUri = null; cameraSheet = "" }) { Text("Remover som escolhido", color = QinblyBrand.Accent) }
+                        if (onCaptured == null) QinblyCameraSheetRow(QinblyCameraIcons.music, "Sons do Qinbly", "Músicas livres para usar no post") { cameraSheet = ""; showMusicPicker = true }
+                        if (soundName.isNotBlank() || storyMusic != null) {
+                            TextButton(onClick = { soundName = ""; soundUri = null; storyMusic = null; cameraSheet = "" }) { Text("Remover som escolhido", color = QinblyBrand.Accent) }
                         }
                     } else if (cameraSheet == "Exposição") {
                         val state = cameraControl?.cameraInfo?.exposureState
