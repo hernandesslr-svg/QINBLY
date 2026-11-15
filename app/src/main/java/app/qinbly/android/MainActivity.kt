@@ -9247,6 +9247,7 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
     var dragX by remember { mutableFloatStateOf(0f) }
     var dragY by remember { mutableFloatStateOf(0f) }
     var profilePhotoScale by remember { mutableFloatStateOf(1f) }
+    var maxZoom by remember { mutableFloatStateOf(4f) }
     val density = androidx.compose.ui.platform.LocalDensity.current
     val screenWidthDp = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp
     val previewWidthPx = with(density) { (screenWidthDp - 16).coerceAtLeast(1).dp.toPx() }
@@ -9265,6 +9266,25 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
     }
 
     LaunchedEffect(Unit) { profilePhotoPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+
+    // Enquadramento automático: a foto já abre preenchendo o círculo e centrada no rosto, sem passar do zoom em que ainda fica nítida.
+    LaunchedEffect(selectedProfilePhoto) {
+        val uri = selectedProfilePhoto ?: return@LaunchedEffect
+        val info = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { qinblyPhotoInfo(context, uri) } ?: return@LaunchedEffect
+        val w = previewWidthPx
+        val iw = info.width.toFloat(); val ih = info.height.toFloat()
+        val fit = minOf(w / iw, w / ih)
+        val cover = maxOf(w / iw, w / ih) / fit
+        // Nitidez: a parte da foto que aparece no círculo precisa ter pelo menos 1080 px (tamanho da imagem salva).
+        val sharpMax = maxOf(cover, minOf(4f, w / (fit * 1080f)))
+        val scale = if (info.hasFace && info.faceW > 0.01f) (0.45f * w / (info.faceW * iw * fit)).coerceIn(cover, sharpMax) else cover
+        val fgW = iw * fit * scale; val fgH = ih * fit * scale
+        val maxX = maxOf(0f, (fgW - w) / 2f); val maxY = maxOf(0f, (fgH - w) / 2f)
+        maxZoom = sharpMax
+        profilePhotoScale = scale
+        dragX = (-(info.faceCx - 0.5f) * fgW).coerceIn(-maxX, maxX)
+        dragY = (-(info.faceCy - 0.5f) * fgH).coerceIn(-maxY, maxY)
+    }
 
     Column(Modifier.fillMaxSize().background(Color.Black)) {
         Row(
@@ -9305,7 +9325,7 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
                         .pointerInput(selectedProfilePhoto) {
                             detectTransformGestures { centroid, pan, zoom, _ ->
                                 // Permite arrastar e ampliar/reduzir a foto para ajustar o enquadramento 16:9.
-                                profilePhotoScale = (profilePhotoScale * zoom).coerceIn(0.5f, 4f)
+                                profilePhotoScale = (profilePhotoScale * zoom).coerceIn(0.5f, maxOf(maxZoom, 1f))
                                 dragX += pan.x
                                 dragY += pan.y
                             }
@@ -9386,6 +9406,7 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
                                 // Salva exatamente o enquadramento mostrado no editor, na mesma proporção 16:9 da capa.
                                 source = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
                                     ?: throw IllegalStateException("Não foi possível abrir a imagem.")
+                                source = qinblyUpright(context, uri, source!!)
                                 val outW = 1080
                                 val outH = 1080
                                 output = Bitmap.createBitmap(outW, outH, Bitmap.Config.ARGB_8888)

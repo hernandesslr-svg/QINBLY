@@ -168,3 +168,68 @@ internal class QinblyFaceTracker3D(
         landmarker = null
     }
 }
+
+/** Giro (graus) que o EXIF pede para a foto ficar em pé. */
+internal fun qinblyExifRotation(context: Context, uri: android.net.Uri): Int = try {
+    context.contentResolver.openInputStream(uri)?.use { s ->
+        when (android.media.ExifInterface(s).getAttributeInt(android.media.ExifInterface.TAG_ORIENTATION, android.media.ExifInterface.ORIENTATION_NORMAL)) {
+            android.media.ExifInterface.ORIENTATION_ROTATE_90 -> 90
+            android.media.ExifInterface.ORIENTATION_ROTATE_180 -> 180
+            android.media.ExifInterface.ORIENTATION_ROTATE_270 -> 270
+            else -> 0
+        }
+    } ?: 0
+} catch (_: Throwable) { 0 }
+
+/** Devolve a foto girada como o celular a mostra (a decodificação crua ignora o EXIF). */
+internal fun qinblyUpright(context: Context, uri: android.net.Uri, bmp: android.graphics.Bitmap): android.graphics.Bitmap {
+    val rot = qinblyExifRotation(context, uri)
+    if (rot == 0) return bmp
+    val m = android.graphics.Matrix().apply { postRotate(rot.toFloat()) }
+    val out = android.graphics.Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, m, true)
+    if (out !== bmp) bmp.recycle()
+    return out
+}
+
+/** Tamanho da foto (já em pé) e, se achar, o rosto maior: centro e largura em fração da foto (0..1). */
+internal class QinblyPhotoInfo(val width: Int, val height: Int, val hasFace: Boolean, val faceCx: Float, val faceCy: Float, val faceW: Float)
+
+internal fun qinblyPhotoInfo(context: Context, uri: android.net.Uri): QinblyPhotoInfo? {
+    try {
+        val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        context.contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, bounds) }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        val rot = qinblyExifRotation(context, uri)
+        val w = if (rot == 90 || rot == 270) bounds.outHeight else bounds.outWidth
+        val h = if (rot == 90 || rot == 270) bounds.outWidth else bounds.outHeight
+        var face: Triple<Float, Float, Float>? = null
+        var landmarker: FaceLandmarker? = null
+        try {
+            var sample = 1
+            while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 1024) sample *= 2
+            val small = context.contentResolver.openInputStream(uri)?.use {
+                android.graphics.BitmapFactory.decodeStream(it, null, android.graphics.BitmapFactory.Options().apply { inSampleSize = sample })
+            }
+            if (small != null) {
+                val upright = qinblyUpright(context, uri, small)
+                val base = BaseOptions.builder().setModelAssetPath("face_landmarker.task").build()
+                val options = FaceLandmarker.FaceLandmarkerOptions.builder()
+                    .setBaseOptions(base).setRunningMode(RunningMode.IMAGE).setNumFaces(3).build()
+                val lm = FaceLandmarker.createFromOptions(context.applicationContext, options)
+                landmarker = lm
+                val result = lm.detect(BitmapImageBuilder(upright).build())
+                var best = 0f
+                for (pts in result.faceLandmarks()) {
+                    if (pts.isEmpty()) continue
+                    val minX = pts.minOf { it.x() }; val maxX = pts.maxOf { it.x() }
+                    val minY = pts.minOf { it.y() }; val maxY = pts.maxOf { it.y() }
+                    val area = (maxX - minX) * (maxY - minY)
+                    if (area > best) { best = area; face = Triple((minX + maxX) / 2f, (minY + maxY) / 2f, maxX - minX) }
+                }
+                upright.recycle()
+            }
+        } catch (_: Throwable) {
+        } finally { try { landmarker?.close() } catch (_: Throwable) { } }
+        return QinblyPhotoInfo(w, h, face != null, face?.first ?: 0.5f, face?.second ?: 0.38f, face?.third ?: 0f)
+    } catch (_: Throwable) { return null }
+}
