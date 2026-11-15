@@ -4634,6 +4634,8 @@ private fun QinblyPostCard(
                 var imageAspectRatio by remember(shownPhoto) { mutableFloatStateOf(QinblyImageRatioCache.map[shownPhoto] ?: 0.8f) }
                 var dragDistance by remember(post.id) { mutableFloatStateOf(0f) }
                 var likeBurst by remember(post.id) { mutableIntStateOf(0) }
+                // O corte do quadro acompanha o rosto (a cabeça nunca fica de fora); a foto inteira abre ao tocar.
+                val faceAlignment = rememberQinblyFaceAlignment(shownPhoto, imageAspectRatio, imageAspectRatio.coerceIn(0.8f, 1.8f))
                 Box(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
                         // Altura máxima 4:5 (como o vídeo): fotos muito altas não empurram os botões para fora da tela.
@@ -4687,6 +4689,7 @@ private fun QinblyPostCard(
                                     }
                                 )
                             },
+                        alignment = faceAlignment,
                         contentScale = androidx.compose.ui.layout.ContentScale.Crop
                     )
                     QinblyHeartBurst(likeBurst, Modifier.align(Alignment.Center))

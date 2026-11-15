@@ -12,3 +12,6 @@ Guardar posição (fração 0..1), escala e giro; mover com `detectTransformGest
 
 ## Limite conhecido
 A posição é guardada como fração da tela do editor, igual ao texto e ao desenho. Quando o corte escolhido tem proporção diferente da tela, o resultado pode sair levemente deslocado.
+
+## Foto cortada na tela: o corte acompanha o rosto
+Toda foto mostrada cortada (feed e, quando for o caso, miniaturas) usa `rememberQinblyFaceAlignment(url, proporcaoDaFoto, proporcaoDoQuadro)` (FaceFocus.kt) no parâmetro `alignment` do `AsyncImage` com `ContentScale.Crop`. O rosto maior é achado uma vez por foto (cache em memória) e o corte sobe até ele entrar no quadro; sem rosto, o corte fica um pouco acima do meio. Tocar na foto abre inteira. Feito no feed; miniaturas do perfil ainda não.
