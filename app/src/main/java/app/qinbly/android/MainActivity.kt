@@ -12438,6 +12438,12 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         blurBg = editorBlur, colorFilter = previewMatrix, adjusting = false,
                         onChange = { z, x, y -> editorZoom = z; editorPanX = x; editorPanY = y },
                         modifier = Modifier.fillMaxSize()
+                            // Igual à câmera: passar o dedo para o lado troca o filtro (só com a foto sem zoom; com zoom o dedo move a foto).
+                            .qinblySwipeFilters(enabled = editorTool == "Filtros" && selectedType == "foto" && editorZoom <= 1.01f) { dir ->
+                                val names = QinblyColorFilterNames
+                                val next = names[(names.indexOf(selectedFilter).coerceAtLeast(0) + dir + names.size) % names.size]
+                                selectedFilter = next; filterIntensity = 1f; swipeFilterLabel = next
+                            }
                     )
                  }
 }
@@ -12508,13 +12514,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 }
              }
 }
-            Box(Modifier.fillMaxSize().onSizeChanged { editorPreviewW = it.width; editorPreviewH = it.height }
-                .qinblySwipeFilters(enabled = editorTool == "Filtros" && selectedType == "foto") { dir ->
-                    // Igual à câmera: passar o dedo para o lado troca o filtro de cor.
-                    val names = QinblyColorFilterNames
-                    val next = names[(names.indexOf(selectedFilter).coerceAtLeast(0) + dir + names.size) % names.size]
-                    selectedFilter = next; filterIntensity = 1f; swipeFilterLabel = next
-                })
+            // Só mede o tamanho da tela. NÃO pode ter gesto aqui: uma camada por cima com gesto bloqueia o arrastar e o zoom da foto.
+            Box(Modifier.fillMaxSize().onSizeChanged { editorPreviewW = it.width; editorPreviewH = it.height })
             if (swipeFilterLabel.isNotBlank()) {
                 Text(swipeFilterLabel, modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(horizontal = 16.dp, vertical = 8.dp),
                     color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
