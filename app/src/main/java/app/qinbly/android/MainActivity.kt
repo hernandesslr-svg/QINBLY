@@ -12586,6 +12586,31 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     // Igual à câmera: a faixa de filtros só aparece quando a pessoa toca em Filtros.
                     storyFiltersOpen = !(editorTool == "Filtros" && storyFiltersOpen); editorTool = "Filtros"
                 }
+                // Só quer a câmera para tirar a foto? Salva na galeria (pasta Qinbly) com o que foi editado, sem publicar.
+                QinblyCameraSideItem(QinblyCameraIcons.download, "Salvar") {
+                    val src = selectedUri
+                    if (src == null) onNotice("Escolha uma foto ou vídeo primeiro.")
+                    else if (editorBusy) onNotice("Aguarde, aplicando as edições…")
+                    else if (selectedType != "foto") onNotice(if (qinblySaveMediaCopy(context, src, true)) "Vídeo salvo na galeria (pasta Qinbly)." else "Não foi possível salvar o vídeo.")
+                    else {
+                        editorBusy = true
+                        val ratioNow = editorRatio; val z = editorZoom; val px = editorPanX; val py = editorPanY
+                        val matrixNow = qinblyEditMatrix(selectedFilter, filterIntensity, editorBrightness, editorContrast)
+                        val blurNow = editorBlur; val dxNow = if (editorFrame.w > 0f) editorTextDx / editorFrame.w else 0f; val dyNow = if (editorFrame.h > 0f) editorTextDy / editorFrame.h else 0f
+                        val fontNow = editorTextFont; val colorNow = editorTextColor; val wordsNow = editorWordColors.toMap(); val textNow = editorText
+                        val stickerNow = editorStickers.map { QinblyStickerSpec(it.emoji, it.nx, it.ny, it.scale, it.rot) }; val strokesNow = editorStrokes.toList()
+                        Thread {
+                            val ok = try {
+                                val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow, blurNow)
+                                qinblySaveMediaCopy(context, done, false)
+                            } catch (_: Exception) { false }
+                            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                editorBusy = false
+                                onNotice(if (ok) "Foto salva na galeria (pasta Qinbly)." else "Não foi possível salvar a foto.")
+                            }
+                        }.start()
+                    }
+                }
                 if (editorSideExpanded) {
  QinblySplit {
                     QinblyCameraSideItem(QinblyCameraIcons.pen, "Desenho", on = editorTool == "Desenho") {
