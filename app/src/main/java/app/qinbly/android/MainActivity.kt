@@ -12903,7 +12903,6 @@ private fun LivePage(scrollToTopRequest: Int, onNotice: (String) -> Unit) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Default.Visibility, contentDescription = null, tint = Muted, modifier = Modifier.size(40.dp))
                 Text("Nenhuma transmissão disponível", fontWeight = FontWeight.SemiBold)
-                Text("Quando houver lives conectadas ao serviço, elas aparecerão aqui com público e criador reais.", color = Muted, style = MaterialTheme.typography.bodySmall)
             }
         }
     }
