@@ -8331,6 +8331,17 @@ private class QinblyEditorSticker(val emoji: String) {
     var scale by mutableFloatStateOf(1f)
     var rot by mutableFloatStateOf(0f)
 }
+private val qinblyEditorEmojis = listOf(
+    "✨", "❤️", "😂", "🔥", "😍", "⭐", "🎉", "🦋", "🌈", "💯",
+    "😎", "🥰", "😘", "🤩", "😜", "🤪", "😏", "😈", "🥵", "🥶",
+    "😭", "🥹", "😢", "😡", "🤯", "😱", "🤔", "🙄", "😴", "🤭",
+    "👍", "👏", "🙌", "🙏", "💪", "🤝", "✌️", "🤞", "🫶", "👀",
+    "💋", "💘", "💖", "💕", "💜", "🖤", "🤍", "💙", "💚", "💛",
+    "⚡", "💥", "💫", "🌟", "☀️", "🌙", "☁️", "❄️", "🌸", "🌹",
+    "🍕", "🍔", "🍟", "🍺", "🥂", "🍾", "🎂", "🍓", "🍉", "☕",
+    "🎶", "🎧", "🎤", "📸", "🎁", "🎈", "🏆", "👑", "💎", "💸",
+    "🐶", "🐱", "🦄", "🐼", "🦁", "🐢", "🦋", "🌴", "🏖️", "✈️"
+).distinct()
 private class QinblyStickerSpec(val emoji: String, val nx: Float, val ny: Float, val scale: Float, val rot: Float)
 
 private data class QinblyNavState(val tab: Int, val notifications: Boolean, val settings: Boolean, val editProfile: Boolean, val profile: String, val recipient: String)
@@ -8463,6 +8474,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
             hasPreviousPerson = personPos > 0,
             onNextPerson = { viewingIndex = 0; viewingStory = storyQueue[personPos + 1] },
             onPreviousPerson = { viewingIndex = Int.MAX_VALUE; viewingStory = storyQueue[personPos - 1] },
+            onAddStory = { viewingStory = null; storyRefresh++; onAddStory() },
             onOpenProfile = { username, idx ->
                 viewingStory = null
                 QinblyResume.push { QinblyStoryReturn.index = idx; QinblyStoryReturn.entry = entry }
@@ -10967,6 +10979,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var camTextEditing by remember { mutableStateOf(false) }
     val editorStickers = remember { mutableStateListOf<QinblyEditorSticker>() }
     var stickerHintShown by remember { mutableStateOf(false) }
+    var editorSelSticker by remember { mutableStateOf<QinblyEditorSticker?>(null) }
     var editorRatio by remember { mutableStateOf("Original") }
     var editorZoom by remember { mutableFloatStateOf(1f) }
     var editorPanX by remember { mutableFloatStateOf(0f) }
@@ -11154,7 +11167,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             showComposer = false
             editorTool = "Filtros"
             sourceUri = null; selectedUri = null; bakedUri = null
-            editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorStickers.clear(); editorWordColors.clear(); editorSelWord = -1
+            editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorStickers.clear(); editorSelSticker = null; editorWordColors.clear(); editorSelWord = -1
             editorStrokes.clear()
             showCollabGallery = true
         } else if (initialMode == "gallery") returnToGallery()
@@ -11163,7 +11176,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             showComposer = false
             editorTool = "Filtros"
             sourceUri = null; selectedUri = null; bakedUri = null
-            editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorStickers.clear(); editorWordColors.clear(); editorSelWord = -1
+            editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorStickers.clear(); editorSelSticker = null; editorWordColors.clear(); editorSelWord = -1
             editorStrokes.clear()
             camTextMode = false; camTextEditing = false
         }
@@ -12675,15 +12688,17 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     style = MaterialTheme.typography.headlineMedium.copy(shadow = androidx.compose.ui.graphics.Shadow(if (editorTextColor == android.graphics.Color.BLACK || editorTextColor == 0xFF111111.toInt()) Color(0xCCFFFFFF) else Color(0xCC000000), blurRadius = 8f)),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
-            // Adesivos/emotes: arraste para mover, dois dedos para ampliar e girar, toque duas vezes para apagar.
+            // Adesivos/emotes: toque seleciona (moldura + X para remover), arraste move, dois dedos ampliam e giram, toque duas vezes apaga.
             if (editorTool != "Ajustar") editorStickers.forEach { st ->
                 val half = with(androidx.compose.ui.platform.LocalDensity.current) { 60.dp.roundToPx() }
+                val selected = editorSelSticker === st
                 Box(
                     Modifier.size(120.dp)
                         .offset { androidx.compose.ui.unit.IntOffset((editorFrame.left + st.nx * editorFrame.w).toInt() - half, (editorFrame.top + st.ny * editorFrame.h).toInt() - half) }
-                        .pointerInput(st) { detectTapGestures(onDoubleTap = { editorStickers.remove(st) }) }
+                        .pointerInput(st) { detectTapGestures(onTap = { editorSelSticker = if (editorSelSticker === st) null else st }, onDoubleTap = { editorStickers.remove(st); if (editorSelSticker === st) editorSelSticker = null }) }
                         .pointerInput(st) {
                             detectTransformGestures { _, pan, zoom, rotation ->
+                                editorSelSticker = st
                                 if (editorFrame.w > 0f && editorFrame.h > 0f) {
                                     st.nx = (st.nx + pan.x / editorFrame.w).coerceIn(0f, 1f)
                                     st.ny = (st.ny + pan.y / editorFrame.h).coerceIn(0f, 1f)
@@ -12694,7 +12709,25 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         }
                         .graphicsLayer { scaleX = st.scale; scaleY = st.scale; rotationZ = st.rot },
                     contentAlignment = Alignment.Center
-                ) { Text(st.emoji, fontSize = 64.sp, color = Color.Black) }
+                ) {
+                    if (selected) Box(Modifier.size(88.dp).border((1.5f / st.scale).dp, Color.White, RoundedCornerShape(6.dp)))
+                    Text(st.emoji, fontSize = 64.sp, color = Color.Black)
+                }
+                if (selected) {
+                    // X no canto da moldura, sempre do mesmo tamanho, acompanha ampliação e giro do emote.
+                    val dens = androidx.compose.ui.platform.LocalDensity.current
+                    val corner = with(dens) { 44.dp.toPx() } * st.scale
+                    val rad = Math.toRadians(st.rot.toDouble())
+                    val cx = editorFrame.left + st.nx * editorFrame.w + (corner * Math.cos(rad) + corner * Math.sin(rad)).toFloat()
+                    val cy = editorFrame.top + st.ny * editorFrame.h + (corner * Math.sin(rad) - corner * Math.cos(rad)).toFloat()
+                    val xHalf = with(dens) { 13.dp.roundToPx() }
+                    Box(
+                        Modifier.offset { androidx.compose.ui.unit.IntOffset(cx.toInt() - xHalf, cy.toInt() - xHalf) }
+                            .size(26.dp).clip(CircleShape).background(Color(0xCC000000)).border(1.dp, Color.White, CircleShape)
+                            .clickable { editorStickers.remove(st); editorSelSticker = null },
+                        contentAlignment = Alignment.Center
+                    ) { Icon(Icons.Default.Close, contentDescription = "Remover emote", tint = Color.White, modifier = Modifier.size(15.dp)) }
+                }
             }
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0x99000000), Color.Transparent, Color.Transparent, Color(0xEE000000)))))
             if (newEditorChrome) {
@@ -13030,10 +13063,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         contentPadding = PaddingValues(horizontal = 18.dp)
                     ) {
-                        items(listOf("✨", "❤️", "😂", "🔥", "😍", "⭐", "🎉", "🦋", "🌈", "💯")) { sticker ->
+                        items(qinblyEditorEmojis) { sticker ->
                             Text(sticker, modifier = Modifier.clip(CircleShape).clickable {
-                                    editorStickers.add(QinblyEditorSticker(sticker).also { it.ny = 0.4f })
-                                    if (!stickerHintShown) { stickerHintShown = true; onNotice("Arraste para mover. Dois dedos ampliam e giram. Toque duas vezes para apagar.") }
+                                    editorStickers.add(QinblyEditorSticker(sticker).also { it.ny = 0.4f; editorSelSticker = it })
+                                    if (!stickerHintShown) { stickerHintShown = true; onNotice("Toque no emote para selecionar. Arraste move, dois dedos ampliam e giram, o X remove.") }
                                 }.padding(8.dp), style = MaterialTheme.typography.headlineSmall)
                         }
                     }

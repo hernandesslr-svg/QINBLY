@@ -4,7 +4,7 @@ Regra do dono do app: texto, emote, adesivo ou qualquer coisa que a pessoa coloq
 
 ## Como está
 - **Texto:** arrastar com um dedo (já era assim).
-- **Emotes/adesivos** (`QinblyEditorSticker` em MainActivity.kt): tocar no emote adiciona um novo (pode ter vários); arrastar move; dois dedos ampliam e giram; toque duas vezes apaga. Posição, tamanho e giro vão para a imagem final (`createEditorOverlayImage`).
+- **Emotes/adesivos** (`QinblyEditorSticker` em MainActivity.kt): tocar na lista adiciona um novo (pode ter vários; lista `qinblyEditorEmojis`, ~90 emotes); tocar no emote já colocado o SELECIONA (moldura branca + X no canto que remove só ele); arrastar move; dois dedos ampliam e giram (só aquele emote, de 0,3x a 8x); toque duas vezes também apaga. Posição, tamanho e giro vão para a imagem final (`createEditorOverlayImage`).
 - **Desenho:** livre na tela.
 
 ## Para qualquer coisa nova que entre na foto

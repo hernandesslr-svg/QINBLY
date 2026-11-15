@@ -314,7 +314,7 @@ internal fun qinblyDownloadToCache(context: Context, url: String, ext: String): 
 @Composable
 internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNotice: (String) -> Unit, onDismiss: () -> Unit, onCamera: (String) -> Unit = {}, startIndex: Int = 0,
                                onOpenProfile: (String, Int) -> Unit = { _, _ -> }, onOpenOriginal: (QinblyStoryOrigin, Int) -> Unit = { _, _ -> },
-                               hasNextPerson: Boolean = false, hasPreviousPerson: Boolean = false, onNextPerson: () -> Unit = {}, onPreviousPerson: () -> Unit = {}) {
+                               hasNextPerson: Boolean = false, hasPreviousPerson: Boolean = false, onNextPerson: () -> Unit = {}, onPreviousPerson: () -> Unit = {}, onAddStory: (() -> Unit)? = null) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     val token = remember { prefs.getString("token", null) }
@@ -527,6 +527,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                             }
                             if (isContribPage && !current.authorMine) QinblyStoryMenuRow("Ver perfil de @" + current.authorUsername) { menuOpen = false; onOpenProfile(current.authorUsername, index) }
                             if (!isContribPage && entry.mine) {
+                                if (onAddStory != null) QinblyStoryMenuRow("Adicionar story") { menuOpen = false; onAddStory() }
                                 if (current.mediaType != "text" && origin == null) QinblyStoryMenuRow("Salvar na galeria") { menuOpen = false; saveCurrent() }
                                 QinblyStoryMenuRow("Quem pode ver", soon = true) { menuOpen = false; onNotice("Quem pode ver: em breve.") }
                                 QinblyStoryMenuRow("Destacar no perfil", soon = true) { menuOpen = false; onNotice("Destacar no perfil: em breve.") }
