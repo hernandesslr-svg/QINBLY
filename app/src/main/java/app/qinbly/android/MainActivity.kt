@@ -1328,12 +1328,12 @@ private fun qinblyTransformCopy(context: android.content.Context, source: Uri, r
 internal fun qinblyPvFilterNames(): List<String> = QinblyColorFilterNames
 internal fun qinblyPvFilterMatrix(name: String): FloatArray = qinblyFilterMatrix(name, 1f).array
 internal fun qinblyPvBake(context: android.content.Context, source: Uri, filter: String): Uri =
-    qinblyRenderEditedPhoto(context, source, "9:16", 1f, 0f, 0f, qinblyEditMatrix(filter, 1f, 0f, 0f), "", "", emptyList())
+    qinblyRenderEditedPhoto(context, source, "9:16", 1f, 0f, 0f, qinblyEditMatrix(filter, 1f, 0f, 0f), "", emptyList(), emptyList())
 
 /** Gera a foto final: recorte (proporção, zoom e posição), filtro, brilho/contraste e depois texto, sticker e desenho. */
 private fun qinblyRenderEditedPhoto(
     context: android.content.Context, source: Uri, ratio: String, zoom: Float, panX: Float, panY: Float,
-    matrix: ColorMatrix, text: String, sticker: String, strokes: List<List<Offset>>, textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f
+    matrix: ColorMatrix, text: String, stickers: List<QinblyStickerSpec>, strokes: List<List<Offset>>, textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f
 ): Uri {
     val decoded = context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it) }
         ?: throw IllegalArgumentException("Não foi possível abrir a imagem para aplicar as edições.")
@@ -1356,11 +1356,11 @@ private fun qinblyRenderEditedPhoto(
     val file = File(context.cacheDir, "qinbly-final-${System.currentTimeMillis()}.jpg")
     FileOutputStream(file).use { output.compress(Bitmap.CompressFormat.JPEG, 93, it) }
     output.recycle()
-    return createEditorOverlayImage(context, Uri.fromFile(file), text, sticker, strokes, textFont, textColor, wordColors, textDx, textDy)
+    return createEditorOverlayImage(context, Uri.fromFile(file), text, stickers, strokes, textFont, textColor, wordColors, textDx, textDy)
 }
 
-private fun createEditorOverlayImage(context: android.content.Context, source: Uri, overlayText: String, sticker: String, strokes: List<List<Offset>> = emptyList(), textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f): Uri {
-    if (overlayText.isBlank() && sticker.isBlank() && strokes.isEmpty()) return source
+private fun createEditorOverlayImage(context: android.content.Context, source: Uri, overlayText: String, stickers: List<QinblyStickerSpec>, strokes: List<List<Offset>> = emptyList(), textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f): Uri {
+    if (overlayText.isBlank() && stickers.isEmpty() && strokes.isEmpty()) return source
     val bitmap = context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it) }
         ?.let { decoded -> decoded.copy(Bitmap.Config.ARGB_8888, true).also { if (it !== decoded) decoded.recycle() } }
         ?: throw IllegalArgumentException("Não foi possível abrir a imagem para aplicar as edições.")
@@ -1372,9 +1372,16 @@ private fun createEditorOverlayImage(context: android.content.Context, source: U
         textSize = (bitmap.width * 0.065f).coerceIn(28f, 96f)
         setShadowLayer(8f, 2f, 3f, android.graphics.Color.BLACK)
     }
-    if (sticker.isNotBlank()) {
-        textPaint.textSize = (bitmap.width * 0.12f).coerceIn(44f, 150f)
-        canvas.drawText(sticker, bitmap.width / 2f, bitmap.height * 0.40f, textPaint)
+    stickers.forEach { st ->
+        // Mesma posição, tamanho e giro que a pessoa deixou na tela (fração da imagem).
+        textPaint.textSize = bitmap.width * 0.178f * st.scale
+        textPaint.clearShadowLayer()
+        canvas.save()
+        canvas.translate(bitmap.width * st.nx, bitmap.height * st.ny)
+        canvas.rotate(st.rot)
+        val fm = textPaint.fontMetrics
+        canvas.drawText(st.emoji, 0f, -(fm.ascent + fm.descent) / 2f, textPaint)
+        canvas.restore()
     }
     if (strokes.isNotEmpty()) {
         val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -8209,6 +8216,15 @@ private object QinblyAvatarCache {
     fun clear() { entries.clear(); fetching.clear(); prefs?.edit()?.clear()?.apply() }
 }
 
+/** Adesivo/emote solto na foto do editor: a pessoa move, amplia, gira e apaga (padrão em toda edição). Posição em fração da tela (0..1). */
+private class QinblyEditorSticker(val emoji: String) {
+    var nx by mutableFloatStateOf(0.5f)
+    var ny by mutableFloatStateOf(0.45f)
+    var scale by mutableFloatStateOf(1f)
+    var rot by mutableFloatStateOf(0f)
+}
+private class QinblyStickerSpec(val emoji: String, val nx: Float, val ny: Float, val scale: Float, val rot: Float)
+
 private data class QinblyNavState(val tab: Int, val notifications: Boolean, val settings: Boolean, val editProfile: Boolean, val profile: String, val recipient: String)
 
 /**
@@ -10793,7 +10809,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var editorSelWord by remember { mutableIntStateOf(-1) }
     var camTextMode by remember { mutableStateOf(false) }
     var camTextEditing by remember { mutableStateOf(false) }
-    var editorSticker by remember { mutableStateOf("") }
+    val editorStickers = remember { mutableStateListOf<QinblyEditorSticker>() }
+    var stickerHintShown by remember { mutableStateOf(false) }
     var editorRatio by remember { mutableStateOf("Original") }
     var editorZoom by remember { mutableFloatStateOf(1f) }
     var editorPanX by remember { mutableFloatStateOf(0f) }
@@ -10976,7 +10993,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             showComposer = false
             editorTool = "Filtros"
             sourceUri = null; selectedUri = null; bakedUri = null
-            editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorSticker = ""; editorWordColors.clear(); editorSelWord = -1
+            editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorStickers.clear(); editorWordColors.clear(); editorSelWord = -1
             editorStrokes.clear()
             showCollabGallery = true
         } else if (initialMode == "gallery") returnToGallery()
@@ -10985,7 +11002,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             showComposer = false
             editorTool = "Filtros"
             sourceUri = null; selectedUri = null; bakedUri = null
-            editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorSticker = ""; editorWordColors.clear(); editorSelWord = -1
+            editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorStickers.clear(); editorWordColors.clear(); editorSelWord = -1
             editorStrokes.clear()
             camTextMode = false; camTextEditing = false
         }
@@ -12338,7 +12355,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                     val src = selectedUri!!
                                     val ratioNow = editorRatio; val z = editorZoom; val px = editorPanX; val py = editorPanY
                                     val matrixNow = qinblyEditMatrix(selectedFilter, filterIntensity, editorBrightness, editorContrast)
-                                    val dxNow = if (editorPreviewW > 0) editorTextDx / editorPreviewW else 0f; val dyNow = if (editorPreviewH > 0) editorTextDy / editorPreviewH else 0f; val fontNow = editorTextFont; val colorNow = editorTextColor; val wordsNow = editorWordColors.toMap(); val textNow = editorText; val stickerNow = editorSticker; val strokesNow = editorStrokes.toList()
+                                    val dxNow = if (editorPreviewW > 0) editorTextDx / editorPreviewW else 0f; val dyNow = if (editorPreviewH > 0) editorTextDy / editorPreviewH else 0f; val fontNow = editorTextFont; val colorNow = editorTextColor; val wordsNow = editorWordColors.toMap(); val textNow = editorText; val stickerNow = editorStickers.map { QinblyStickerSpec(it.emoji, it.nx, it.ny, it.scale, it.rot) }; val strokesNow = editorStrokes.toList()
                                     Thread {
                                         try {
                                             val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow)
@@ -12449,9 +12466,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 }
              }
 }
-            if (editorSticker.isNotBlank()) {
-                Text(editorSticker, modifier = Modifier.align(Alignment.Center), color = Color.Black, style = MaterialTheme.typography.displayLarge)
-            }
             Box(Modifier.fillMaxSize().onSizeChanged { editorPreviewW = it.width; editorPreviewH = it.height }
                 .qinblySwipeFilters(enabled = editorTool == "Filtros" && selectedType == "foto") { dir ->
                     // Igual à câmera: passar o dedo para o lado troca o filtro de cor.
@@ -12479,6 +12493,27 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     letterSpacing = qinblyTextSpacingEm(editorTextFont).em,
                     style = MaterialTheme.typography.headlineMedium.copy(shadow = androidx.compose.ui.graphics.Shadow(if (editorTextColor == android.graphics.Color.BLACK || editorTextColor == 0xFF111111.toInt()) Color(0xCCFFFFFF) else Color(0xCC000000), blurRadius = 8f)),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            }
+            // Adesivos/emotes: arraste para mover, dois dedos para ampliar e girar, toque duas vezes para apagar.
+            editorStickers.forEach { st ->
+                val half = with(androidx.compose.ui.platform.LocalDensity.current) { 60.dp.roundToPx() }
+                Box(
+                    Modifier.size(120.dp)
+                        .offset { androidx.compose.ui.unit.IntOffset((st.nx * editorPreviewW).toInt() - half, (st.ny * editorPreviewH).toInt() - half) }
+                        .pointerInput(st) { detectTapGestures(onDoubleTap = { editorStickers.remove(st) }) }
+                        .pointerInput(st) {
+                            detectTransformGestures { _, pan, zoom, rotation ->
+                                if (editorPreviewW > 0 && editorPreviewH > 0) {
+                                    st.nx = (st.nx + pan.x / editorPreviewW).coerceIn(0f, 1f)
+                                    st.ny = (st.ny + pan.y / editorPreviewH).coerceIn(0f, 1f)
+                                }
+                                st.scale = (st.scale * zoom).coerceIn(0.3f, 8f)
+                                st.rot += rotation
+                            }
+                        }
+                        .graphicsLayer { scaleX = st.scale; scaleY = st.scale; rotationZ = st.rot },
+                    contentAlignment = Alignment.Center
+                ) { Text(st.emoji, fontSize = 64.sp, color = Color.Black) }
             }
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0x99000000), Color.Transparent, Color.Transparent, Color(0xEE000000)))))
             if (newEditorChrome) {
@@ -12779,9 +12814,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         contentPadding = PaddingValues(horizontal = 18.dp)
                     ) {
                         items(listOf("✨", "❤️", "😂", "🔥", "😍", "⭐", "🎉", "🦋", "🌈", "💯")) { sticker ->
-                            Text(sticker, modifier = Modifier.clip(CircleShape).clickable { editorSticker = sticker }
-                                .background(if (editorSticker == sticker) Color(0x66444444) else Color.Transparent)
-                                .padding(8.dp), style = MaterialTheme.typography.headlineSmall)
+                            Text(sticker, modifier = Modifier.clip(CircleShape).clickable {
+                                    editorStickers.add(QinblyEditorSticker(sticker).also { it.ny = 0.4f })
+                                    if (!stickerHintShown) { stickerHintShown = true; onNotice("Arraste para mover. Dois dedos ampliam e giram. Toque duas vezes para apagar.") }
+                                }.padding(8.dp), style = MaterialTheme.typography.headlineSmall)
                         }
                     }
                 }
