@@ -119,15 +119,13 @@ internal fun QinblyStoryMenu(
             step = "compose"
         }
     }
-    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        val f = pendingPhoto
-        if (ok && f != null) { picked = Uri.fromFile(f); pickedIsVideo = false; step = "compose" } else f?.delete()
-    }
-    fun launchCamera() {
-        val f = File(context.cacheDir, "qinbly-story-" + System.currentTimeMillis() + ".jpg")
-        pendingPhoto = f
-        cameraLauncher.launch(androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".fileprovider", f))
-    }
+    // Câmera padrão do app (a mesma do Criar), em vez da câmera do celular.
+    var showAppCamera by remember { mutableStateOf(false) }
+    fun launchCamera() { showAppCamera = true }
+    if (showAppCamera) QinblyCameraCapture(
+        onResult = { u -> showAppCamera = false; picked = u; pickedIsVideo = false; step = "compose" },
+        onDismiss = { showAppCamera = false }
+    )
     val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) launchCamera() else onNotice("Permita a câmera para tirar a foto do story.")
     }

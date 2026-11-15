@@ -6733,18 +6733,16 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
         if (uri != null) sendCWith { token, cid -> QinblyApi.sendCommunityImage(context, token, cid, uri) }
     }
     var pendingCPhoto by remember { mutableStateOf<java.io.File?>(null) }
-    val cCameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        val f = pendingCPhoto
-        pendingCPhoto = null
-        if (ok && f != null) sendCWith { token, cid ->
-            try { QinblyApi.sendCommunityImage(context, token, cid, android.net.Uri.fromFile(f)) } finally { f.delete() }
-        } else f?.delete()
-    }
-    fun launchCCamera() {
-        val f = java.io.File(context.cacheDir, "qinbly-chat-" + System.currentTimeMillis() + ".jpg")
-        pendingCPhoto = f
-        cCameraLauncher.launch(androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".fileprovider", f))
-    }
+    // Câmera padrão do app (a mesma do Criar), em vez da câmera do celular.
+    var showCAppCamera by remember { mutableStateOf(false) }
+    fun launchCCamera() { showCAppCamera = true }
+    if (showCAppCamera) QinblyCameraCapture(
+        onResult = { u ->
+            showCAppCamera = false
+            sendCWith { token, cid -> try { QinblyApi.sendCommunityImage(context, token, cid, u) } finally { u.path?.let { java.io.File(it).delete() } } }
+        },
+        onDismiss = { showCAppCamera = false }
+    )
     val cCameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) launchCCamera() else onNotice("Permita a câmera para tirar a foto.")
     }
@@ -7303,18 +7301,16 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
         if (uri != null) sendWith { token -> QinblyApi.sendImageMessage(context, token, recipientUsername, uri) }
     }
     var pendingChatPhoto by remember { mutableStateOf<java.io.File?>(null) }
-    val chatCameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        val f = pendingChatPhoto
-        pendingChatPhoto = null
-        if (ok && f != null) sendWith { token ->
-            try { QinblyApi.sendImageMessage(context, token, recipientUsername, android.net.Uri.fromFile(f)) } finally { f.delete() }
-        } else f?.delete()
-    }
-    fun launchChatCamera() {
-        val f = java.io.File(context.cacheDir, "qinbly-chat-" + System.currentTimeMillis() + ".jpg")
-        pendingChatPhoto = f
-        chatCameraLauncher.launch(androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".fileprovider", f))
-    }
+    // Câmera padrão do app (a mesma do Criar), em vez da câmera do celular.
+    var showChatAppCamera by remember { mutableStateOf(false) }
+    fun launchChatCamera() { showChatAppCamera = true }
+    if (showChatAppCamera) QinblyCameraCapture(
+        onResult = { u ->
+            showChatAppCamera = false
+            sendWith { token -> try { QinblyApi.sendImageMessage(context, token, recipientUsername, u) } finally { u.path?.let { java.io.File(it).delete() } } }
+        },
+        onDismiss = { showChatAppCamera = false }
+    )
     val chatCameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) launchChatCamera() else onNotice("Permita a câmera para tirar a foto.")
     }
