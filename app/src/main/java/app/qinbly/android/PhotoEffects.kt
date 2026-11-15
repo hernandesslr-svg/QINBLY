@@ -222,9 +222,10 @@ private fun fxRetouch(bmp: Bitmap, notes: MutableList<String>) {
 
 private fun qinblyPhotoFxSync(context: Context, source: Uri, spec: QinblyFxSpec, notes: MutableList<String>): Uri {
     var bmp = fxLoadUpright(context, source)
-    if (spec.hdr > 0f) fxApplyHdr(bmp, spec.hdr.coerceIn(0.1f, 1f))
-    if (spec.retouch) fxRetouch(bmp, notes)
-    if (spec.bgMode.isNotBlank()) bmp = fxReplaceBackground(context, bmp, spec, notes)
+    // Cada efeito é isolado: se um falhar, os outros continuam aplicados e o aviso diz qual falhou.
+    if (spec.hdr > 0f) try { fxApplyHdr(bmp, spec.hdr.coerceIn(0.1f, 1f)) } catch (t: Throwable) { notes.add("HDR falhou: ${t.javaClass.simpleName}.") }
+    if (spec.retouch) try { fxRetouch(bmp, notes) } catch (t: Throwable) { notes.add("Retoque falhou: ${t.javaClass.simpleName}.") }
+    if (spec.bgMode.isNotBlank()) try { bmp = fxReplaceBackground(context, bmp, spec, notes) } catch (t: Throwable) { notes.add("Fundo falhou: ${t.javaClass.simpleName}${t.message?.let { ": " + it.take(60) } ?: ""}.") }
     val out = File(context.cacheDir, "qinbly-fx-${System.currentTimeMillis()}.jpg")
     FileOutputStream(out).use { bmp.compress(Bitmap.CompressFormat.JPEG, 94, it) }
     bmp.recycle()
@@ -252,7 +253,8 @@ private fun fxPersonMask(bmp: Bitmap): Bitmap? {
     if (person < px.size / 50) return null
     val maskSmall = Bitmap.createBitmap(px, mw, mh, Bitmap.Config.ARGB_8888)
     val maskFull = Bitmap.createScaledBitmap(maskSmall, bmp.width, bmp.height, true)
-    maskSmall.recycle()
+    // Se a máscara já tem o tamanho da foto, createScaledBitmap devolve a MESMA imagem: reciclar aqui matava a máscara ("recycled bitmap").
+    if (maskFull !== maskSmall) maskSmall.recycle()
     return maskFull
 }
 
@@ -383,7 +385,8 @@ internal fun fxPersonCutout(bmp: Bitmap): Bitmap? {
     if (person < px.size / 50) return null
     val maskSmall = Bitmap.createBitmap(px, mw, mh, Bitmap.Config.ARGB_8888)
     val maskFull = Bitmap.createScaledBitmap(maskSmall, bmp.width, bmp.height, true)
-    maskSmall.recycle()
+    // Se a máscara já tem o tamanho da foto, createScaledBitmap devolve a MESMA imagem: reciclar aqui matava a máscara ("recycled bitmap").
+    if (maskFull !== maskSmall) maskSmall.recycle()
     val out = Bitmap.createBitmap(bmp.width, bmp.height, Bitmap.Config.ARGB_8888)
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         shader = ComposeShader(
