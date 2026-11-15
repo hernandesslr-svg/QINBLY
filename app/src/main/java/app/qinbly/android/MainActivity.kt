@@ -1922,6 +1922,9 @@ private fun QinblyApp() {
     // Tela inicial: o 1º voltar só avisa; o 2º, em até 2 segundos, fecha o aplicativo.
     var lastExitBackAt by remember { mutableStateOf(0L) }
     val handleBack: () -> Unit = {
+        // Na tela inicial "limpa" o histórico não vale: voltar aqui é só o aviso/saída, nunca ir para outra aba.
+        val atHome = tab == 0 && !showNotifications && !showSettings && !showEditProfile && publicProfileUsername.isBlank() && messageRecipient.isBlank()
+        if (atHome && !showAccountSwitcher && !showSearchDialog && profileStat.isBlank() && !showEditProfilePhoto && !showAuth) navHistory.clear()
         when {
             showAccountSwitcher -> showAccountSwitcher = false
             showSearchDialog -> { showSearchDialog = false; QinblyKeep.clearPrefix("search.") }
