@@ -1911,6 +1911,9 @@ private fun QinblyApp() {
             previous = now
             if (before == null || before == now) return@collect
             if (navSuppress == now) { navSuppress = null; return@collect }
+            // Trocar de aba pela barra de baixo começa uma navegação nova: o voltar não passeia por abas, câmera, perfil e configurações.
+            val bare = !now.notifications && !now.settings && !now.editProfile && now.profile.isBlank() && now.recipient.isBlank()
+            if (now.tab != before.tab && bare) { navHistory.clear(); return@collect }
             if (navHistory.lastOrNull() != before) navHistory.add(before)
             while (navHistory.size > 40) navHistory.removeAt(0)
         }

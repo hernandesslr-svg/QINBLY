@@ -34,3 +34,8 @@ Todo fluxo novo com etapas TEM que seguir isso (BackHandler + seta do app fazend
 - 1º voltar na tela inicial: aviso "Toque de novo para sair" (2 segundos). 2º voltar dentro desses 2 segundos: fecha o app. Passou 2s: zera.
 - Está no fim do `handleBack` (MainActivity.kt). Nunca fechar o app direto em outro lugar.
 - Ao sair, vídeo/música/áudio já pausam (PADRAO-SEGUNDO-PLANO).
+
+## Histórico do voltar (regra)
+- Trocar de aba pela barra de baixo ZERA o histórico: voltar nunca passeia por abas, câmera, perfil e configurações visitadas antes.
+- O histórico só guarda aberturas por cima (notificações, perfil, configurações, conversa). Voltar desfaz uma abertura por vez.
+- Sem histórico: aba diferente do início volta para o início; no início, toque duplo para sair.
