@@ -12304,8 +12304,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     cropOpen = true
                 }
                 QinblyCameraSideItem(QinblyCameraIcons.retouch, "Retoque") { applyEditorEffect(true, false, false, "Pele suavizada.") }
-                QinblyCameraSideItem(QinblyCameraIcons.filters, "Filtros", on = editorTool == "Filtros" && (!storyDirect || storyFiltersOpen)) {
-                    if (storyDirect) { storyFiltersOpen = !(editorTool == "Filtros" && storyFiltersOpen); editorTool = "Filtros" } else editorTool = "Filtros"
+                QinblyCameraSideItem(QinblyCameraIcons.filters, "Filtros", on = editorTool == "Filtros" && storyFiltersOpen) {
+                    // Igual à câmera: a faixa de filtros só aparece quando a pessoa toca em Filtros.
+                    storyFiltersOpen = !(editorTool == "Filtros" && storyFiltersOpen); editorTool = "Filtros"
                 }
                 if (editorSideExpanded) {
  QinblySplit {
@@ -12473,7 +12474,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
 }
                  }
 }
-                if (newEditorChrome && editorTool == "Filtros" && (!storyDirect || storyFiltersOpen)) {
+                if (newEditorChrome && editorTool == "Filtros" && storyFiltersOpen) {
  QinblySplit {
                     if (selectedFilter != "Original") {
  QinblySplit {
