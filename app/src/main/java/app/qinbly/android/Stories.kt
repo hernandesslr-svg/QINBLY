@@ -463,17 +463,23 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
             Modifier.fillMaxSize().background(Color.Black).pointerInput(current.id, entry.mine) {
                 // Dona do story: arrastar pra cima na parte de baixo da tela abre a lista de visualizações.
                 if (entry.mine && current.page == "story") detectVerticalDragGestures { change, dy -> if (dy < -10f && change.position.y > size.height * 0.55f) showViewers = true }
-            }.pointerInput(current.id, replying) {
-                detectTapGestures { offset ->
-                    if (replying) focusManager.clearFocus()
-                    else if (!tooSoon()) { if (offset.x < size.width / 3f) previous() else next() }
-                }
             }
         ) {
             val textStory = if (current.mediaType == "text") qinblyParseTextStory(current.caption) else null
             if (textStory != null) QinblyTextStoryContent(textStory, Modifier.fillMaxSize())
             else if (current.mediaType == "video") StoryVideo(current.mediaUrl, paused = holding, onProgress = { progress.snapTo(it) }) { next() }
             else AsyncImage(model = current.mediaUrl, contentDescription = "Story", contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+
+            // Toque (não arrastar): terço da ESQUERDA volta o story, o resto da tela pula para o próximo. Duas áreas transparentes por cima da mídia
+            // e por baixo dos botões, então botões e campos continuam tendo prioridade.
+            Row(Modifier.fillMaxSize()) {
+                Box(Modifier.weight(1f).fillMaxHeight().clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) {
+                    if (replying) focusManager.clearFocus() else if (!tooSoon()) previous()
+                })
+                Box(Modifier.weight(2f).fillMaxHeight().clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) {
+                    if (replying) focusManager.clearFocus() else if (!tooSoon()) next()
+                })
+            }
 
             Column(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
