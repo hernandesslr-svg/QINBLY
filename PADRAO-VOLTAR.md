@@ -16,3 +16,6 @@ Exemplo: Buscar → digitou "ana" → abriu o perfil → voltar → cai na Busca
 1. Seta de voltar → `handleBack` (não setar estado direto).
 2. Se a janela fecha para abrir outra tela, chamar `QinblyResume.push` antes de fechar.
 3. Estado que a pessoa espera encontrar ao voltar (texto, filtro, rolagem) → `rememberKept`, com chave única (`"busca.xxx"`).
+
+## Criar/publicar (etapas)
+Câmera → Editor → Legenda/Publicar: o botão de voltar do celular volta UMA etapa (Legenda → Editor → Câmera). Nunca fecha tudo de uma vez.

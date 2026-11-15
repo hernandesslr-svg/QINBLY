@@ -11038,6 +11038,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     BackHandler(enabled = newEditorChrome && showComposer) {
         leaveEditor()
     }
+    // Botão de voltar do celular (padrão): na tela de legenda/publicar volta para a EDIÇÃO da foto, sem fechar tudo.
+    BackHandler(enabled = showComposer && publishSettings) {
+        publishSettings = false
+    }
     if (showCollabGallery) QinblyContributeFlow(
         storyId = QinblyComposeSeed.contribTo, newCollab = QinblyComposeSeed.collabNew, onNotice = onNotice,
         onCamera = { if (QinblyComposeSeed.pickedUri != null) applyPicked() else showCollabGallery = false },
