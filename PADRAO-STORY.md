@@ -25,3 +25,4 @@
 ## Barra de cima e toque
 - Uma barra por story. A barra enche sozinha e, quando termina, pula para o próximo story (e fecha no último). Foto/texto: 6 s. Vídeo: acompanha o vídeo de verdade (posição ÷ duração), e o vídeo pausa junto quando menu/lista/janela está aberto.
 - Tocar (não arrastar) no terço esquerdo da tela volta o story; no resto da tela, pula para o próximo. Vale na tela toda; botões e campos têm prioridade.
+- Toque na borda/cantinho da tela NUNCA fecha o story: a janela do visualizador tem `dismissOnClickOutside = false` (antes, um toque na margem fora da janela chamava "fechar"). Fechar = só o voltar do celular.

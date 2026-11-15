@@ -458,7 +458,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     }
 
     // securePolicy = SecureOn liga o FLAG_SECURE só enquanto o story está aberto: print e gravação de tela saem pretos.
-    QinblyDialog(onDismissRequest = { closeSafe() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, securePolicy = androidx.compose.ui.window.SecureFlagPolicy.SecureOn), lift = false) {
+    QinblyDialog(onDismissRequest = { closeSafe() }, properties = DialogProperties(dismissOnClickOutside = false, usePlatformDefaultWidth = false, decorFitsSystemWindows = false, securePolicy = androidx.compose.ui.window.SecureFlagPolicy.SecureOn), lift = false) {
         Box(
             Modifier.fillMaxSize().background(Color.Black).pointerInput(current.id, entry.mine) {
                 // Dona do story: arrastar pra cima na parte de baixo da tela abre a lista de visualizações.
