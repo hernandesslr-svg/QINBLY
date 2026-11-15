@@ -1043,7 +1043,7 @@ private fun QinblyTagHost(prefs: android.content.SharedPreferences, currentUsern
                                 prefs = prefs,
                                 nameFontStyle = "",
                                 onNotice = onNotice,
-                                onOpenProfile = { QinblyTagNav.tag = null; QinblyTagNav.profile = it },
+                                onOpenProfile = { val tagBefore = QinblyTagNav.tag; QinblyResume.push { QinblyTagNav.tag = tagBefore }; QinblyTagNav.tag = null; QinblyTagNav.profile = it },
                                 onOpenViewer = { viewerPostId = it.id },
                                 onComment = { commentTarget = it },
                                 onShare = { shareTarget = it },
@@ -1061,7 +1061,7 @@ private fun QinblyTagHost(prefs: android.content.SharedPreferences, currentUsern
                 QinblyPostViewer(
                     posts = viewable, startPostId = startId, prefs = prefs, currentUsername = currentUsername, onNotice = onNotice,
                     onDismiss = { viewerPostId = null }, onComment = { commentTarget = it }, onShare = { shareTarget = it },
-                    onOpenProfile = { viewerPostId = null; QinblyTagNav.tag = null; QinblyTagNav.profile = it }
+                    onOpenProfile = { val tagBefore = QinblyTagNav.tag; QinblyResume.push { QinblyTagNav.tag = tagBefore }; viewerPostId = null; QinblyTagNav.tag = null; QinblyTagNav.profile = it }
                 )
             }
         }
@@ -1099,6 +1099,7 @@ private fun QinblyDeepLinkHost(prefs: android.content.SharedPreferences, current
             } catch (e: Exception) {
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                     QinblyDeepLink.postId = null
+                    QinblyResume.backOnClose = null
                     onNotice(e.message ?: "Não foi possível abrir esta publicação.")
                 }
             }
@@ -1111,10 +1112,10 @@ private fun QinblyDeepLinkHost(prefs: android.content.SharedPreferences, current
             prefs = prefs,
             currentUsername = currentUsername,
             onNotice = onNotice,
-            onDismiss = { QinblyDeepLink.postId = null },
+            onDismiss = { QinblyDeepLink.postId = null; QinblyResume.backOnClose?.let { b -> QinblyResume.backOnClose = null; b() } },
             onComment = { commentTarget = it },
             onShare = { shareTarget = it },
-            onOpenProfile = { QinblyDeepLink.postId = null }
+            onOpenProfile = { QinblyDeepLink.postId = null; QinblyResume.backOnClose = null }
         )
         commentTarget?.let { target ->
             QinblyCommentsDialog(
@@ -1892,10 +1893,14 @@ private fun QinblyApp() {
             while (navHistory.size > 40) navHistory.removeAt(0)
         }
     }
-    BackHandler {
+    SideEffect {
+        QinblyResume.stateProvider = { QinblyNavState(tab, showNotifications, showSettings, showEditProfile, publicProfileUsername, messageRecipient) }
+    }
+    // Um só "voltar" para o app todo: o botão do celular e as setas das telas usam este mesmo caminho.
+    val handleBack: () -> Unit = {
         when {
             showAccountSwitcher -> showAccountSwitcher = false
-            showSearchDialog -> showSearchDialog = false
+            showSearchDialog -> { showSearchDialog = false; QinblyKeep.clearPrefix("search.") }
             profileStat.isNotBlank() -> profileStat = ""
             showEditProfilePhoto -> showEditProfilePhoto = false
             showAuth -> showAuth = false
@@ -1908,11 +1913,15 @@ private fun QinblyApp() {
                 showEditProfile = back.editProfile
                 publicProfileUsername = back.profile
                 messageRecipient = back.recipient
+                QinblyResume.arrive(back)?.invoke()
             }
             showEditProfile -> showEditProfile = false
             showSettings -> showSettings = false
             showNotifications -> showNotifications = false
-            publicProfileUsername.isNotBlank() -> publicProfileUsername = ""
+            publicProfileUsername.isNotBlank() -> {
+                publicProfileUsername = ""
+                QinblyResume.arrive(QinblyNavState(tab, showNotifications, showSettings, showEditProfile, "", messageRecipient))?.invoke()
+            }
             tab == 1 && messageRecipient.isNotBlank() -> messageRecipient = ""
             tab != 0 -> {
                 tab = 0
@@ -1921,6 +1930,7 @@ private fun QinblyApp() {
             else -> (appContext as? android.app.Activity)?.finish()
         }
     }
+    BackHandler { handleBack() }
     MaterialTheme(
         colorScheme = if (QiblyTheme.dark)
             darkColorScheme(primary = QinblyBrand.AccentLight, secondary = QinblyBrand.AccentLight, background = QiblyTheme.background, surface = QiblyTheme.card, onBackground = QiblyTheme.text, onSurface = QiblyTheme.text)
@@ -1968,9 +1978,9 @@ private fun QinblyApp() {
                         unselectedIconColor = if (QiblyTheme.dark) Color.White else navigationUnselectedColor,
                         unselectedTextColor = if (QiblyTheme.dark) Color.White else navigationUnselectedColor
                     )
-                    NavigationBarItem(selected = tab == 0 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; messageRecipient = ""; showAuth = false; if (tab == 0) navTopRequest++; tab = 0 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Home, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 0 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.SelectedIcon)) } }, label = { Text(RemoteAppearance.navigationLabels[0], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
-                    NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 3) navTopRequest++; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Groups, contentDescription = "Comunidades"); if (RemoteAppearance.navigationUnderlineVisible && tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.SelectedIcon)) } }, label = { Text("Comunidades", fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
-                    NavigationBarItem(selected = false, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; showCreateOptions = true }, icon = {
+                    NavigationBarItem(selected = tab == 0 && !showNotifications, onClick = { QinblyResume.clear(); showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; messageRecipient = ""; showAuth = false; if (tab == 0) navTopRequest++; tab = 0 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Home, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 0 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.SelectedIcon)) } }, label = { Text(RemoteAppearance.navigationLabels[0], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
+                    NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { QinblyResume.clear(); showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 3) navTopRequest++; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Groups, contentDescription = "Comunidades"); if (RemoteAppearance.navigationUnderlineVisible && tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.SelectedIcon)) } }, label = { Text("Comunidades", fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
+                    NavigationBarItem(selected = false, onClick = { QinblyResume.clear(); showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; showCreateOptions = true }, icon = {
                         Box(
                             Modifier.size(36.dp).clip(CircleShape).background(Color.White).border(1.dp, Color.Black, CircleShape),
                             contentAlignment = Alignment.Center
@@ -1987,7 +1997,7 @@ private fun QinblyApp() {
                     }, label = { Text(RemoteAppearance.navigationLabels[2], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                     NavigationBarItem(
                         selected = tab == 1 && !showNotifications,
-                        onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 1) navTopRequest++; tab = 1 },
+                        onClick = { QinblyResume.clear(); showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 1) navTopRequest++; tab = 1 },
                         icon = {
                             Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
                                 if (RemoteAppearance.navigationUnderlineVisible && tab == 1 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.Accent))
@@ -2016,7 +2026,7 @@ private fun QinblyApp() {
                         label = { Text(RemoteAppearance.navigationLabels[3], fontSize = RemoteAppearance.navigationLabelSize.sp) },
                         colors = navColors
                     )
-                    NavigationBarItem(selected = tab == 4 && !showNotifications, onClick = { showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 4) navTopRequest++; tab = 4 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Person, contentDescription = "Perfil"); if (RemoteAppearance.navigationUnderlineVisible && tab == 4 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.SelectedIcon)) } }, label = { Text(RemoteAppearance.navigationLabels[4], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
+                    NavigationBarItem(selected = tab == 4 && !showNotifications, onClick = { QinblyResume.clear(); showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 4) navTopRequest++; tab = 4 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Person, contentDescription = "Perfil"); if (RemoteAppearance.navigationUnderlineVisible && tab == 4 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.SelectedIcon)) } }, label = { Text(RemoteAppearance.navigationLabels[4], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                 }
             }
             }
@@ -2051,7 +2061,7 @@ private fun QinblyApp() {
                         appFontStyle = appFontStyle,
                         onAppFontChange = { selected -> appFontStyle = selected; appPrefs.edit().putString("app_font_style", selected).apply() },
                         onNameFontChange = { selected -> nameFontStyle = selected; appPrefs.edit().putString("name_font_style", selected).apply() },
-                        onBack = { showSettings = false },
+                        onBack = handleBack,
                         onNotice = { notice = it },
                         onEditProfile = { showSettings = false; showEditProfile = true },
                         onAuth = { showSettings = false; showAuth = true; tab = 4 },
@@ -2085,13 +2095,14 @@ private fun QinblyApp() {
                     NotificationsPage(
                         token = appPrefs.getString("token", null) ?: "",
                         onOpenProfile = { showNotifications = false; publicProfileUsername = it },
-                        onBack = { showNotifications = false },
+                        onBack = handleBack,
                         onOpen = { notification ->
                             showNotifications = false
                             if (notification.kind == "message" && notification.actorUsername.isNotBlank()) {
                                 messageRecipient = notification.actorUsername
                                 tab = 1
                             } else if ((notification.kind == "mention" || notification.kind == "mention_comment" || notification.kind == "tag") && notification.entityId.isNotBlank()) {
+                                QinblyResume.backOnClose = { handleBack() }
                                 QinblyDeepLink.postId = notification.entityId
                             } else if (notification.actorUsername.isNotBlank()) {
                                 publicProfileUsername = notification.actorUsername
@@ -2102,7 +2113,7 @@ private fun QinblyApp() {
                     }
                 } else if (showEditProfilePhoto) {
                     EditProfilePhotoPage(
-                        onBack = { showEditProfilePhoto = false },
+                        onBack = handleBack,
                         onSaved = {
                             showEditProfilePhoto = false
                             profilePhotoRefreshKey++
@@ -2118,7 +2129,7 @@ private fun QinblyApp() {
                         initialUsername = loggedInUser,
                         initialName = profileName,
                         initialBio = profileBio,
-                        onBack = { showEditProfile = false },
+                        onBack = handleBack,
                         onSaved = { username, name, bio ->
                             val previousUsername = loggedInUser
                             val currentToken = appPrefs.getString("token", "") ?: ""
@@ -2150,7 +2161,7 @@ private fun QinblyApp() {
                     QinblyPullRefresh {
                     PublicProfilePage(
                         username = publicProfileUsername,
-                        onBack = { publicProfileUsername = "" },
+                        onBack = handleBack,
                         onMessage = { recipient -> publicProfileUsername = ""; messageRecipient = recipient; tab = 1 },
                         onNotice = { notice = it }
                     )
@@ -2220,7 +2231,7 @@ private fun QinblyApp() {
                 showAccountSwitcher=false; showSettings=false; showAuth=false; showEditProfile=false
                 showEditProfilePhoto=false; showNotifications=false; showSearchDialog=false
                 publicProfileUsername=""; messageRecipient=""; profileStat=""; profileStatUsers=emptyList()
-                liked=emptySet(); unreadMessages=0; QinblyCache.clear(appContext); accountSessionVersion++
+                liked=emptySet(); unreadMessages=0; QinblyCache.clear(appContext); QinblyKeep.clear(); QinblyResume.clear(); accountSessionVersion++
                 tab=0
                 notice="Conta alterada para @"+account.username+"."
                 Thread {
@@ -2287,8 +2298,9 @@ private fun QinblyApp() {
         if (showSearchDialog) {
             SearchUsersDialog(
                 searchContext = when (tab) { 0 -> "home"; 1 -> "messages"; 3 -> "lives"; else -> "people" },
-                onDismiss = { showSearchDialog = false },
+                onDismiss = { showSearchDialog = false; QinblyKeep.clearPrefix("search.") },
                 onOpenProfile = { username ->
+                    QinblyResume.push { showSearchDialog = true }
                     showSearchDialog = false
                     if (tab == 1) {
                         messageRecipient = username
@@ -2344,7 +2356,7 @@ private fun QinblyApp() {
                                     verticalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     items(profileStatUsers, key = { it.id }) { user ->
-                                        QinblyUserRow(user, appPrefs, onOpenProfile = { publicProfileUsername = it; profileStat = "" }, onError = { notice = it })
+                                        QinblyUserRow(user, appPrefs, onOpenProfile = { val statBefore = profileStat; QinblyResume.push { profileStat = statBefore }; publicProfileUsername = it; profileStat = "" }, onError = { notice = it })
                                     }
                                 }
                             }
@@ -2655,10 +2667,10 @@ private fun QinblySplit(content: @Composable () -> Unit) { content() }
 private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOpenProfile: (String) -> Unit, onError: (String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
-    var query by remember { mutableStateOf("") }
-    var results by remember { mutableStateOf<List<QinblyApi.UserSummary>>(emptyList()) }
+    var query by rememberKept("search.query", "")
+    var results by rememberKept<List<QinblyApi.UserSummary>>("search.results", emptyList())
     var loading by remember { mutableStateOf(false) }
-    var searched by remember { mutableStateOf(false) }
+    var searched by rememberKept("search.searched", false)
     var searchError by remember { mutableStateOf("") }
     var trending by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
     var suggested by remember { mutableStateOf<List<QinblyApi.UserSummary>>(emptyList()) }
@@ -2691,11 +2703,13 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
             .groupingBy { it }.eachCount().entries.sortedByDescending { it.value }.take(8).map { it.key to it.value }
     }
     var myTags by remember { mutableStateOf(QinblyHashtagStore.top(context)) }
-    var filter by remember { mutableStateOf("Tudo") }
+    var filter by rememberKept("search.filter", "Tudo")
     // Busca de vídeos: carrega as publicações recentes e mostra só os vídeos que combinam com o texto.
     var videoPosts by remember { mutableStateOf<List<QinblyApi.PostSummary>>(emptyList()) }
     var videosLoading by remember { mutableStateOf(false) }
     var videoViewerId by remember { mutableStateOf<String?>(null) }
+    val resumeSearchVideo = remember { QinblyKeep.state<String?>("search.resumeVideo", null) }
+    LaunchedEffect(Unit) { resumeSearchVideo.value?.let { videoViewerId = it; resumeSearchVideo.value = null } }
     var videoCommentTarget by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
     var videoShareTarget by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
     LaunchedEffect(filter) {
@@ -2983,7 +2997,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                 QinblyPostViewer(
                     posts = viewable, startPostId = startId, prefs = prefs, currentUsername = prefs.getString("username", "") ?: "", onNotice = onError,
                     onDismiss = { videoViewerId = null }, onComment = { videoCommentTarget = it }, onShare = { videoShareTarget = it },
-                    onOpenProfile = { videoViewerId = null; onOpenProfile(it) }
+                    onOpenProfile = { val vid = videoViewerId; QinblyResume.push { resumeSearchVideo.value = vid }; videoViewerId = null; onOpenProfile(it) }
                 )
             }
         }
@@ -6071,6 +6085,8 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     var sharePost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
     val openFeedComments: (QinblyApi.PostSummary) -> Unit = { target -> commentPost = target }
     var fullscreenVideoId by remember { mutableStateOf<String?>(null) }
+    val resumeFeedFullscreen = remember { QinblyKeep.state<String?>("feed.resumeFullscreen", null) }
+    val resumeFeedReels = remember { QinblyKeep.state("feed.resumeReels", false) }
     var selectedStory by remember { mutableStateOf<Pair<String, String>?>(null) }
     var unreadNotifications by remember { mutableIntStateOf(0) }
     // Primeira abertura: pede de uma vez as permissões que o app usa (câmera, microfone, mídia, localização, notificações).
@@ -6096,9 +6112,10 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             if (missing.isNotEmpty()) startupPermissions.launch(missing.toTypedArray())
         }
     }
-    var selectedFeedTab by remember { mutableStateOf("Descobrir") }
-    var emAltaPeriod by remember { mutableStateOf("Hoje") }
-    var reelsOpen by remember { mutableStateOf(false) }
+    var selectedFeedTab by rememberKept("feed.tab", "Descobrir")
+    var emAltaPeriod by rememberKept("feed.period", "Hoje")
+    var reelsOpen by remember { mutableStateOf(resumeFeedReels.value.also { resumeFeedReels.value = false }) }
+    LaunchedEffect(Unit) { resumeFeedFullscreen.value?.let { fullscreenVideoId = it; resumeFeedFullscreen.value = null } }
     LaunchedEffect(prefs.getString("token", null)) {
         val token = prefs.getString("token", null)
         if (token.isNullOrBlank()) {
@@ -6255,8 +6272,10 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 }
             }
         } else {
-            val feedListState = androidx.compose.foundation.lazy.rememberLazyListState()
-            LaunchedEffect(refreshKey, selectedFeedTab) { feedListState.scrollToItem(0) }
+            val feedListState = rememberKeptListState("feed.list")
+            // Ao voltar de um perfil, a lista continua onde estava: só rola para o topo quando a aba/atualização muda de verdade.
+            var feedFirstRun by remember { mutableStateOf(true) }
+            LaunchedEffect(refreshKey, selectedFeedTab) { if (feedFirstRun) feedFirstRun = false else feedListState.scrollToItem(0) }
             LaunchedEffect(scrollToTopRequest) { if (scrollToTopRequest > 0) feedListState.animateScrollToItem(0) }
             androidx.compose.material3.pulltorefresh.PullToRefreshBox(isRefreshing = refreshingFeed, onRefresh = { RemoteUiRefreshSignal.value++; if (!refreshingFeed) { refreshingFeed = true; refreshKey++ } }, modifier = Modifier.fillMaxSize()) {
             LazyColumn(
@@ -6327,7 +6346,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             QinblyPostViewer(
                 posts = reels, startPostId = reels.first().id, prefs = prefs, currentUsername = currentUsername, onNotice = onNotice,
                 onDismiss = { reelsOpen = false }, onComment = { commentPost = it }, onShare = { sharePost = it },
-                onOpenProfile = { reelsOpen = false; onOpenProfile(it) }
+                onOpenProfile = { QinblyResume.push { resumeFeedReels.value = true }; reelsOpen = false; onOpenProfile(it) }
             )
         }
     }
@@ -6343,7 +6362,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             onDismiss = { fullscreenVideoId = null },
             onComment = { openFeedComments(it) },
             onShare = { sharePost = it },
-            onOpenProfile = { fullscreenVideoId = null; onOpenProfile(it) },
+            onOpenProfile = { val fv = fullscreenVideoId; QinblyResume.push { resumeFeedFullscreen.value = fv }; fullscreenVideoId = null; onOpenProfile(it) },
             onOpenAudio = { selectedAudioPost = it; fullscreenVideoId = null }
         )
     }
@@ -6464,11 +6483,11 @@ private fun CommunitiesPage(onNotice: (String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
-    var selected by remember { mutableStateOf("Minhas") }
+    var selected by rememberKept("comm.selected", "Minhas")
     var list by remember { mutableStateOf(QinblyCache.communities[selected] ?: emptyList<QinblyApi.CommunitySummary>()) }
     var loading by remember { mutableStateOf(list.isEmpty()) }
     var showCreate by remember { mutableStateOf(false) }
-    var openId by remember { mutableStateOf<String?>(null) }
+    var openId by rememberKept<String?>("comm.openId", null)
     var reload by remember { mutableIntStateOf(0) }
     val filterKey = when (selected) { "Minhas" -> "mine"; "Em alta" -> "trending"; else -> "discover" }
 
@@ -6928,8 +6947,8 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                             posts.map { it.username }.filter { it != c.ownerUsername }.distinct()
                         items(ownerFirst) { u ->
                             val p = posts.firstOrNull { it.username == u }
-                            Row(Modifier.fillMaxWidth().clickable { QinblyTagNav.profile = u; onDismiss() }.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                QiblyAccountAvatar(u, p?.avatarUrl ?: "", 40.dp) { QinblyTagNav.profile = u; onDismiss() }
+                            Row(Modifier.fillMaxWidth().clickable { QinblyTagNav.profile = u }.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                QiblyAccountAvatar(u, p?.avatarUrl ?: "", 40.dp) { QinblyTagNav.profile = u }
                                 Text(p?.displayName?.ifBlank { u } ?: "@$u", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp).weight(1f))
                                 if (u == c.ownerUsername) Text("Dono", color = QinblyBrand.Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.border(1.dp, QinblyBrand.Accent, RoundedCornerShape(8.dp)).padding(horizontal = 7.dp, vertical = 2.dp))
                             }
@@ -6995,7 +7014,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                                     }
                                     val mine = p.mine
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start, verticalAlignment = Alignment.Bottom) {
-                                        if (!mine) { QiblyAccountAvatar(p.username, p.avatarUrl, 28.dp) { QinblyTagNav.profile = p.username; onDismiss() }; Spacer(Modifier.width(6.dp)) }
+                                        if (!mine) { QiblyAccountAvatar(p.username, p.avatarUrl, 28.dp) { QinblyTagNav.profile = p.username }; Spacer(Modifier.width(6.dp)) }
                                         Column(
                                             Modifier.widthIn(max = 280.dp)
                                                 .clip(RoundedCornerShape(topStart = if (mine) 14.dp else 4.dp, topEnd = if (mine) 4.dp else 14.dp, bottomStart = 14.dp, bottomEnd = 14.dp))
@@ -7265,7 +7284,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var reportConvUser by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
-    val inboxListState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val inboxListState = rememberKeptListState("msg.list")
     LaunchedEffect(scrollToTopRequest) { if (scrollToTopRequest > 0) inboxListState.animateScrollToItem(0) }
     var draft by remember { mutableStateOf("") }
     var showEmojiPicker by remember { mutableStateOf(false) }
@@ -8182,6 +8201,53 @@ private object QinblyAvatarCache {
 }
 
 private data class QinblyNavState(val tab: Int, val notifications: Boolean, val settings: Boolean, val editProfile: Boolean, val profile: String, val recipient: String)
+
+/**
+ * Padrão do app: voltar SEMPRE volta para a tela anterior, do jeito que a pessoa deixou (busca com o texto e os resultados,
+ * lista rolada, comunidade aberta...), nunca fecha tudo e joga no início.
+ * QinblyKeep guarda "onde a pessoa estava" fora da tela, para sobreviver quando a tela sai da composição.
+ */
+private object QinblyKeep {
+    private val map = HashMap<String, Any>()
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> obtain(key: String, create: () -> T): T = synchronized(map) { map.getOrPut(key, create) } as T
+    fun <T> state(key: String, initial: T): androidx.compose.runtime.MutableState<T> =
+        obtain<androidx.compose.runtime.MutableState<T>>(key) { androidx.compose.runtime.mutableStateOf(initial) }
+    fun clearPrefix(prefix: String) { synchronized(map) { map.keys.removeAll { it.startsWith(prefix) } } }
+    fun clear() { synchronized(map) { map.clear() } }
+}
+
+@Composable
+private fun <T> rememberKept(key: String, initial: T): androidx.compose.runtime.MutableState<T> = remember(key) { QinblyKeep.state(key, initial) }
+
+@Composable
+private fun rememberKeptListState(key: String): androidx.compose.foundation.lazy.LazyListState =
+    remember(key) { QinblyKeep.obtain(key) { androidx.compose.foundation.lazy.LazyListState() } }
+
+/**
+ * Quando uma janela por cima (busca, lista de seguidores, hashtag, clipes, conversa da comunidade) abre um perfil,
+ * ela se fecha para o perfil aparecer. Antes de fechar, ela deixa aqui como se reabre: ao voltar do perfil pelo botão
+ * de voltar (do celular ou da tela), a janela volta como estava.
+ */
+private object QinblyResume {
+    private class Entry(val at: QinblyNavState, val action: () -> Unit)
+    private val stack = ArrayList<Entry>()
+    var stateProvider: () -> QinblyNavState = { QinblyNavState(0, false, false, false, "", "") }
+    /** Se preenchido, fechar a janela de publicação (aberta por um aviso) executa um "voltar" para o aviso. */
+    var backOnClose: (() -> Unit)? = null
+    fun push(action: () -> Unit) { stack.add(Entry(stateProvider(), action)) }
+    fun arrive(now: QinblyNavState): (() -> Unit)? {
+        val last = stack.indexOfLast { it.at == now }
+        if (last < 0) return null
+        // Tudo que foi guardado no mesmo toque (ex.: o vídeo da busca e a própria busca) volta junto, na ordem em que foi guardado.
+        var first = last
+        while (first > 0 && stack[first - 1].at == now) first--
+        val actions = stack.subList(first, last + 1).map { it.action }
+        while (stack.size > first) stack.removeAt(stack.lastIndex)
+        return { actions.forEach { it() } }
+    }
+    fun clear() { stack.clear(); backOnClose = null; QinblyKeep.clearPrefix("search."); QinblyKeep.clearPrefix("comm.") }
+}
 
 /** Faixa de stories e notas (cartões grandes) no topo do Descobrir, com menu Criar, visualizador e nota completa. */
 @Composable
@@ -9834,6 +9900,10 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
             }
         }.start()
     }
+    val resumeConnections = remember { QinblyKeep.state<Pair<String, String>?>("pub.resumeConnections", null) }
+    LaunchedEffect(username) {
+        resumeConnections.value?.let { (u, t) -> if (u == username) { resumeConnections.value = null; openConnections(t) } }
+    }
 
     var selectedTab by remember(username) { mutableStateOf("Publicações") }
     var expandedImage by remember { mutableStateOf<String?>(null) }
@@ -9940,7 +10010,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                     else if (connectionListUsers.isEmpty()) Text("Nenhuma pessoa encontrada.", color = Color.Gray)
                     else LazyColumn(Modifier.heightIn(max = 440.dp)) {
                         items(connectionListUsers, key = { it.id.ifBlank { it.username } }) { person ->
-                            QinblyUserRow(person, prefs, onOpenProfile = { connectionListType = ""; QinblyTagNav.profile = it }, onError = onNotice)
+                            QinblyUserRow(person, prefs, onOpenProfile = { val resumeUser = username; val resumeType = connectionListType; QinblyResume.push { resumeConnections.value = resumeUser to resumeType }; connectionListType = ""; QinblyTagNav.profile = it }, onError = onNotice)
                         }
                     }
                     TextButton(onClick = { connectionListType = "" }) { Text("Fechar") }
