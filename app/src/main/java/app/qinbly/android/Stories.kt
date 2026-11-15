@@ -252,8 +252,9 @@ private fun MenuRow(text: String, accent: Color, onClick: () -> Unit) {
 }
 
 @Composable
-internal fun StoryVideo(url: String, onEnded: () -> Unit) {
+internal fun StoryVideo(url: String, paused: Boolean = false, onProgress: suspend (Float) -> Unit = {}, onEnded: () -> Unit) {
     val context = LocalContext.current
+    val progressCallback by androidx.compose.runtime.rememberUpdatedState(onProgress)
     val player = remember(url) {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(url))
@@ -269,6 +270,16 @@ internal fun StoryVideo(url: String, onEnded: () -> Unit) {
         player.addListener(listener)
         val unreg = QinblyPlayback.add({ val w = player.playWhenReady; player.pause(); w }, { player.play() })
         onDispose { unreg(); player.removeListener(listener); player.release() }
+    }
+    // Menu/lista/janela aberta: o vídeo pausa junto com o story.
+    LaunchedEffect(player, paused) { player.playWhenReady = !paused }
+    // A barra de cima acompanha o vídeo de verdade (posição / duração).
+    LaunchedEffect(player) {
+        while (true) {
+            val d = player.duration
+            if (d > 0) progressCallback((player.currentPosition.toFloat() / d).coerceIn(0f, 1f))
+            kotlinx.coroutines.delay(80)
+        }
     }
     AndroidView(
         modifier = Modifier.fillMaxSize(),
@@ -410,7 +421,9 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     val holding = showViewers || showComments || replying || contribTarget.isNotBlank() || menuOpen || confirmDelete || confirmBlock || reportOpen
     LaunchedEffect(current.id, holding) {
         if (holding) { progress.stop(); return@LaunchedEffect }
-        val total = if (current.mediaType == "video") 20000 else 6000
+        // Vídeo: a própria reprodução dirige a barra (veja StoryVideo). Foto/texto: 6 s.
+        if (current.mediaType == "video") return@LaunchedEffect
+        val total = 6000
         val remaining = ((1f - progress.value) * total).toInt().coerceAtLeast(1)
         progress.animateTo(1f, tween(durationMillis = remaining, easing = LinearEasing))
         next()
@@ -453,13 +466,13 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
             }.pointerInput(current.id, replying) {
                 detectTapGestures { offset ->
                     if (replying) focusManager.clearFocus()
-                    else if (offset.y < size.height * 0.80f && !tooSoon()) { if (offset.x < size.width / 3f) previous() else next() }
+                    else if (!tooSoon()) { if (offset.x < size.width / 3f) previous() else next() }
                 }
             }
         ) {
             val textStory = if (current.mediaType == "text") qinblyParseTextStory(current.caption) else null
             if (textStory != null) QinblyTextStoryContent(textStory, Modifier.fillMaxSize())
-            else if (current.mediaType == "video") StoryVideo(current.mediaUrl) { next() }
+            else if (current.mediaType == "video") StoryVideo(current.mediaUrl, paused = holding, onProgress = { progress.snapTo(it) }) { next() }
             else AsyncImage(model = current.mediaUrl, contentDescription = "Story", contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
 
             Column(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp)) {
