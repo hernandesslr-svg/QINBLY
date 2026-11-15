@@ -105,31 +105,9 @@ internal fun QinblyStoryMenu(
 ) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
-    var step by remember { mutableStateOf("menu") } // menu, compose, note
-    var picked by remember { mutableStateOf<Uri?>(null) }
-    var pickedIsVideo by remember { mutableStateOf(false) }
-    var caption by remember { mutableStateOf("") }
+    var step by remember { mutableStateOf("menu") } // menu, text, collab, mood, capsule, note
     var noteText by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
-    var pendingPhoto by remember { mutableStateOf<File?>(null) }
-
-    val galleryPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) {
-            picked = uri
-            pickedIsVideo = (context.contentResolver.getType(uri) ?: "").startsWith("video/")
-            step = "compose"
-        }
-    }
-    // Câmera padrão do app (a mesma do Criar), em vez da câmera do celular.
-    var showAppCamera by remember { mutableStateOf(false) }
-    fun launchCamera() { showAppCamera = true }
-    if (showAppCamera) QinblyCameraCapture(
-        onResult = { u -> showAppCamera = false; picked = u; pickedIsVideo = false; step = "compose" },
-        onDismiss = { showAppCamera = false }
-    )
-    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) launchCamera() else onNotice("Permita a câmera para tirar a foto do story.")
-    }
 
     when (step) {
         "menu" -> QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
@@ -185,40 +163,6 @@ internal fun QinblyStoryMenu(
         "capsule" -> QinblyCapsuleHub(accent, { step = "menu" }, onNotice)
         "packs" -> QinblyStickerPacksDialog(accent, { step = "menu" }, onNotice)
         "text" -> QinblyTextStoryComposer(onDismiss = { step = "menu" }, onPublished = { onChanged(); onDismiss() }, onNotice = onNotice)
-        "compose" -> AlertDialog(
-            onDismissRequest = { if (!busy) step = "menu" },
-            title = { Text("Novo story") },
-            text = { QinblyClearFocusWhenKeyboardCloses();
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    val shown = picked
-                    if (shown != null) {
-                        if (pickedIsVideo) Text("Vídeo escolhido. Ele fica no ar por 24 horas.", fontSize = 14.sp)
-                        else AsyncImage(model = shown, contentDescription = "Prévia do story", contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxWidth().heightIn(max = 220.dp).clip(RoundedCornerShape(14.dp)))
-                    }
-                    OutlinedTextField(caption, { caption = it.take(200) }, label = { Text("Legenda (opcional)") }, enabled = !busy)
-                    if (busy) CircularProgressIndicator(color = accent, modifier = Modifier.size(26.dp))
-                }
-            },
-            confirmButton = {
-                TextButton(enabled = !busy && picked != null, onClick = {
-                    val uri = picked ?: return@TextButton
-                    val token = prefs.getString("token", null)
-                    if (token.isNullOrBlank()) { onNotice("Entre na sua conta para publicar."); return@TextButton }
-                    busy = true
-                    Thread {
-                        val main = Handler(Looper.getMainLooper())
-                        try {
-                            QinblyApi.createStory(context, token, uri, caption)
-                            main.post { busy = false; onNotice("Story publicado. Fica no ar por 24 horas."); onChanged(); onDismiss() }
-                        } catch (e: Exception) {
-                            main.post { busy = false; onNotice(e.message ?: "Não foi possível publicar o story.") }
-                        } finally { pendingPhoto?.delete() }
-                    }.start()
-                }) { Text("Publicar", color = accent, fontWeight = FontWeight.Bold) }
-            },
-            dismissButton = { TextButton(enabled = !busy, onClick = { step = "menu" }) { Text("Voltar") } }
-        )
         else -> AlertDialog(
             onDismissRequest = { step = "menu" },
             title = { Text("Sua nota") },
