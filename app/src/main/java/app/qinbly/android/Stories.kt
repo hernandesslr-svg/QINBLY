@@ -15,6 +15,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -448,7 +449,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
         Box(
             Modifier.fillMaxSize().background(Color.Black).pointerInput(current.id, entry.mine) {
                 // Dona do story: arrastar pra cima na parte de baixo da tela abre a lista de visualizações.
-                if (entry.mine && current.page == "story") androidx.compose.foundation.gestures.detectVerticalDragGestures { change, dy -> if (dy < -10f && change.position.y > size.height * 0.55f) showViewers = true }
+                if (entry.mine && current.page == "story") detectVerticalDragGestures { change, dy -> if (dy < -10f && change.position.y > size.height * 0.55f) showViewers = true }
             }.pointerInput(current.id, replying) {
                 detectTapGestures { offset ->
                     if (replying) focusManager.clearFocus()
@@ -487,7 +488,10 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                         QinblyMusicPlayer(music.url, muted, paused = holding)
                     }
                     if (current.page != "invite") Box {
-                        Icon(androidx.compose.material.icons.Icons.Default.MoreVert, contentDescription = "Mais opções", tint = Color.White, modifier = Modifier.size(32.dp).clip(CircleShape).clickable { menuOpen = true }.padding(2.dp))
+                        Column(
+                            Modifier.size(36.dp).clip(CircleShape).clickable { menuOpen = true },
+                            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically), horizontalAlignment = Alignment.CenterHorizontally
+                        ) { repeat(3) { Box(Modifier.size(4.dp).clip(CircleShape).background(Color.White)) } }
                         androidx.compose.material3.DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                             val origin = qinblyParseOrigin(current.caption)
                             if (origin != null) {
@@ -529,7 +533,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                     val recent = (viewers ?: emptyList()).take(3)
                     Column(
                         Modifier.align(Alignment.CenterHorizontally).clip(RoundedCornerShape(16.dp)).clickable { showViewers = true }.padding(horizontal = 18.dp, vertical = 6.dp)
-                            .pointerInput(Unit) { androidx.compose.foundation.gestures.detectVerticalDragGestures { _, dy -> if (dy < -8f) showViewers = true } },
+                            .pointerInput(Unit) { detectVerticalDragGestures { _, dy -> if (dy < -8f) showViewers = true } },
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         if (recent.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy((-10).dp)) {
