@@ -36,6 +36,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -12955,7 +12956,7 @@ private fun QinblyStoryPublishBar(
 /** Passar o dedo na tela para a esquerda/direita (um dedo só) troca de filtro: +1 = próximo, -1 = anterior. Não atrapalha zoom nem toque. */
 private fun Modifier.qinblySwipeFilters(enabled: Boolean = true, onSwipe: (Int) -> Unit): Modifier = this.pointerInput(enabled) {
     if (!enabled) return@pointerInput
-    androidx.compose.foundation.gestures.awaitEachGesture {
+    awaitEachGesture {
         val down = awaitFirstDown(requireUnconsumed = false, pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
         var multi = false
         var dx = 0f
