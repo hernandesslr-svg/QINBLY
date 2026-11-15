@@ -130,6 +130,16 @@ internal fun QinblyKeepChatAtBottom(state: androidx.compose.foundation.lazy.Lazy
     }
 }
 
+/**
+ * Padrão de todo campo de texto que filtra o que a pessoa digita (nome de usuário etc.): o cursor fica onde a pessoa
+ * colocou, mesmo quando um caractere não permitido é descartado. Só a pessoa move o cursor.
+ */
+internal fun qinblySanitized(new: androidx.compose.ui.text.input.TextFieldValue, sanitize: (String) -> String): androidx.compose.ui.text.input.TextFieldValue {
+    val clean = sanitize(new.text)
+    val pos = sanitize(new.text.take(new.selection.end)).length.coerceAtMost(clean.length)
+    return androidx.compose.ui.text.input.TextFieldValue(clean, androidx.compose.ui.text.TextRange(pos))
+}
+
 /** Espacinho padrão entre qualquer barra de escrever (comentário, mensagem, legenda) e o teclado aberto. */
 internal val QinblyKeyboardGap = 6.dp
 

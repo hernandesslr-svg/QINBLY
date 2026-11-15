@@ -8925,9 +8925,11 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
                 }
 
                 if (createAccount) {
+                    var usernameField by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(username, androidx.compose.ui.text.TextRange(username.length))) }
+                    if (usernameField.text != username) usernameField = androidx.compose.ui.text.input.TextFieldValue(username, androidx.compose.ui.text.TextRange(minOf(usernameField.selection.end, username.length)))
                     OutlinedTextField(
-                        value = username,
-                        onValueChange = { username = it.trim().replace(" ", "") },
+                        value = usernameField,
+                        onValueChange = { typed -> usernameField = qinblySanitized(typed) { it.trim().replace(" ", "") }; username = usernameField.text },
                         label = { Text("Nome de usuário") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
@@ -9172,7 +9174,9 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
             Text("SOBRE VOCÊ", color = Muted, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
 
             @Composable
-            fun editCard(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String, hint: String, onValue: (String) -> Unit, singleLine: Boolean = true, max: Int = 80, centered: Boolean = false) {
+            fun editCard(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String, hint: String, onValue: (String) -> Unit, singleLine: Boolean = true, max: Int = 80, centered: Boolean = false, sanitize: (String) -> String = { it }) {
+                var field by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(value, androidx.compose.ui.text.TextRange(value.length))) }
+                if (field.text != value) field = androidx.compose.ui.text.input.TextFieldValue(value, androidx.compose.ui.text.TextRange(minOf(field.selection.end, value.length)))
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
                         .border(BorderStroke(1.dp, QiblyTheme.border), RoundedCornerShape(14.dp))
@@ -9182,8 +9186,12 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(label, color = Muted, style = MaterialTheme.typography.labelMedium)
                         androidx.compose.foundation.text.BasicTextField(
-                            value = value,
-                            onValueChange = { onValue(it.take(max)) },
+                            value = field,
+                            onValueChange = { typed ->
+                                val clean = qinblySanitized(typed) { sanitize(it).take(max) }
+                                field = clean
+                                onValue(clean.text)
+                            },
                             enabled = !loading,
                             singleLine = singleLine,
                             textStyle = androidx.compose.ui.text.TextStyle(color = RemoteAppearance.screenTextColor, fontSize = 16.sp, textAlign = if (centered) androidx.compose.ui.text.style.TextAlign.Center else androidx.compose.ui.text.style.TextAlign.Start),
@@ -9202,7 +9210,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
             }
 
             editCard(Icons.Default.Person, "Nome", name, "Seu nome", { name = it }, max = 80)
-            editCard(Icons.Default.AlternateEmail, "Nome de usuário", username, "seuusuario", { username = it.lowercase().filter { ch -> ch.isLetterOrDigit() || ch == '_' || ch == '.' }.take(24) }, max = 24)
+            editCard(Icons.Default.AlternateEmail, "Nome de usuário", username, "seuusuario", { username = it }, max = 24, sanitize = { it.lowercase().filter { ch -> ch.isLetterOrDigit() || ch == '_' || ch == '.' } })
             when (usernameStatus) {
                 "checking" -> Text("Verificando…", color = Muted, style = MaterialTheme.typography.bodySmall)
                 "free" -> Text("✓ @$username está disponível", color = Color(0xFF1E8E3E), style = MaterialTheme.typography.bodySmall)

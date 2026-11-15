@@ -23,3 +23,6 @@ teclado (voltar, descer, tocar fora), a seleção sai do campo e a borda e o cur
 
 ## Conversas: última mensagem sempre visível
 Toda lista de mensagens (chat direto, chat de comunidade e qualquer conversa nova) chama `QinblyKeepChatAtBottom(listState, ultimoIndice)`. Quando o teclado abre ou fecha, a lista volta para o fim, para a última mensagem nunca ficar escondida embaixo. Se a pessoa está lendo mensagens muito antigas, a lista não é puxada.
+
+## Cursor dos campos de texto
+Campo que filtra o que a pessoa digita (nome de usuário, etc.) não pode mexer no cursor: só a pessoa move. Usar `TextFieldValue` + `qinblySanitized(novo) { filtro }` (Extras.kt), que mantém o cursor onde estava mesmo quando um caractere proibido é descartado. Nada de `onValueChange = { texto = it.filter... }` com texto simples, porque isso joga o cursor para o fim.
