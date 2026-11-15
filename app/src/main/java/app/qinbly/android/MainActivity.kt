@@ -10522,7 +10522,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var zoomRatio by remember { mutableFloatStateOf(1f) }
     var flashEnabled by remember { mutableStateOf(false) }
     var sideExpanded by remember { mutableStateOf(false) }
-    var filtersVisible by remember { mutableStateOf(true) }
+    var filtersVisible by remember { mutableStateOf(false) }
     var cameraSheet by remember { mutableStateOf("") }
     var filterIntensity by remember { mutableFloatStateOf(1f) }
     var gridOn by remember { mutableStateOf(false) }
