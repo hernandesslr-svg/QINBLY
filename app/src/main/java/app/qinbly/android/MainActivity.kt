@@ -2125,7 +2125,8 @@ private fun QinblyApp() {
                 } else if (showEditProfile) {
                     EditProfilePage(
                         photoRefreshKey = profilePhotoRefreshKey,
-                        onEditProfilePhoto = { showEditProfile = false; showEditProfilePhoto = true },
+                        // Mantém "Editar perfil" por baixo: voltar da foto cai de volta na edição.
+                        onEditProfilePhoto = { showEditProfilePhoto = true },
                         initialUsername = loggedInUser,
                         initialName = profileName,
                         initialBio = profileBio,
@@ -9257,6 +9258,9 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
             dragY = 0f
             profilePhotoScale = 1f
             error = ""
+        } else if (selectedProfilePhoto == null) {
+            // Fechou a galeria sem escolher nada: volta direto para a tela anterior (sem tela vazia no meio).
+            onBack()
         }
     }
 
