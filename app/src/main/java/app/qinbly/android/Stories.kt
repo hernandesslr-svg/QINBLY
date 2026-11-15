@@ -276,12 +276,32 @@ internal fun StoryVideo(url: String, onEnded: () -> Unit) {
     )
 }
 
+@Composable
+private fun QinblyStoryMenuRow(label: String, soon: Boolean = false, danger: Boolean = false, onClick: () -> Unit) {
+    androidx.compose.material3.DropdownMenuItem(
+        text = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(label, color = if (danger) Color(0xFFD33B3B) else Color.Unspecified)
+                if (soon) { Spacer(Modifier.width(8.dp)); Text("em breve", fontSize = 11.sp, color = Color(0xFF8E87A8)) }
+            }
+        },
+        onClick = onClick
+    )
+}
+
+internal fun qinblyDownloadToCache(context: Context, url: String, ext: String): java.io.File? = try {
+    val f = java.io.File(context.cacheDir, "story_dl_" + System.currentTimeMillis() + ext)
+    java.net.URL(url).openStream().use { i -> f.outputStream().use { o -> i.copyTo(o) } }
+    f
+} catch (_: Exception) { null }
+
 /**
  * Visualizador de stories em tela cheia: barras de progresso, toque na direita avança e na esquerda volta,
  * passa sozinho (6 s para foto; vídeo até o fim, no máximo 20 s). Se o story é seu: contagem de quem viu, lista e excluir.
  */
 @Composable
-internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNotice: (String) -> Unit, onDismiss: () -> Unit, onCamera: (String) -> Unit = {}) {
+internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNotice: (String) -> Unit, onDismiss: () -> Unit, onCamera: (String) -> Unit = {}, startIndex: Int = 0,
+                               onOpenProfile: (String, Int) -> Unit = { _, _ -> }, onOpenOriginal: (QinblyStoryOrigin, Int) -> Unit = { _, _ -> }) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     val token = remember { prefs.getString("token", null) }
@@ -294,8 +314,12 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
             }
         }
     }
-    var index by remember(entry.username) { mutableIntStateOf(0) }
+    var index by remember(entry.username) { mutableIntStateOf(startIndex.coerceAtLeast(0)) }
     var showViewers by remember { mutableStateOf(false) }
+    var menuOpen by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var confirmBlock by remember { mutableStateOf(false) }
+    var reportOpen by remember { mutableStateOf(false) }
     var muted by remember { mutableStateOf(false) }
     var showComments by remember { mutableStateOf(false) }
     var replying by remember { mutableStateOf(false) }
@@ -348,6 +372,11 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
             }.start()
         }
     }
+    // Avatares de quem viu (só a dona do story): os 3 mais recentes.
+    LaunchedEffect(current.id, showViewers) {
+        if (!entry.mine || current.page != "story" || token.isNullOrBlank()) { viewers = null; return@LaunchedEffect }
+        viewers = try { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getStoryViewers(token, current.id) } } catch (_: Exception) { emptyList() }
+    }
     // Curtidas do story: quem vê guarda a própria; a dona vê o total.
     var liked by remember(current.id) { mutableStateOf(false) }
     var likeCount by remember(current.id) { mutableIntStateOf(0) }
@@ -376,18 +405,51 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
             } catch (_: Exception) { Handler(Looper.getMainLooper()).post { liked = !now; onNotice("Não foi possível curtir agora.") } }
         }.start()
     }
-    LaunchedEffect(current.id, showViewers, showComments, replying, contribTarget) {
-        if (showViewers || showComments || replying || contribTarget.isNotBlank()) { progress.stop(); return@LaunchedEffect }
+    // O story pausa enquanto o menu, a lista de visualizações ou qualquer janela está aberta.
+    val holding = showViewers || showComments || replying || contribTarget.isNotBlank() || menuOpen || confirmDelete || confirmBlock || reportOpen
+    LaunchedEffect(current.id, holding) {
+        if (holding) { progress.stop(); return@LaunchedEffect }
         val total = if (current.mediaType == "video") 20000 else 6000
         val remaining = ((1f - progress.value) * total).toInt().coerceAtLeast(1)
         progress.animateTo(1f, tween(durationMillis = remaining, easing = LinearEasing))
         next()
     }
 
+    val isContribPage = current.page == "contrib"
+    val storyOwner = if (isContribPage) current.authorUsername else entry.username
+    val ownerIsMe = if (isContribPage) current.authorMine else entry.mine
+    val deletable = (entry.mine && current.page != "invite") || (isContribPage && current.authorMine)
+    fun deleteCurrent() {
+        val id = current.id
+        if (current.page == "contrib") {
+            val cid = current.contribId
+            if (!token.isNullOrBlank()) Thread { try { QinblyApi.deleteContribution(token, cid) } catch (_: Exception) { } }.start()
+            items.removeAll { it.id == id }
+        } else {
+            if (!token.isNullOrBlank()) Thread { try { QinblyApi.deleteStory(token, id) } catch (_: Exception) { } }.start()
+            items.removeAll { it.id == id || it.parentId == id }
+        }
+        if (items.isEmpty()) onDismiss() else if (index > items.lastIndex) index = items.lastIndex
+    }
+    fun saveCurrent() {
+        val url = current.mediaUrl
+        val video = current.mediaType == "video"
+        onNotice("Salvando...")
+        Thread {
+            val f = qinblyDownloadToCache(context, url, if (video) ".mp4" else ".jpg")
+            val ok = f != null && qinblySaveMediaCopy(context, Uri.fromFile(f), video)
+            f?.delete()
+            Handler(Looper.getMainLooper()).post { onNotice(if (ok) "Salvo na galeria." else "Não foi possível salvar agora.") }
+        }.start()
+    }
+
     // securePolicy = SecureOn liga o FLAG_SECURE só enquanto o story está aberto: print e gravação de tela saem pretos.
     QinblyDialog(onDismissRequest = { closeSafe() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, securePolicy = androidx.compose.ui.window.SecureFlagPolicy.SecureOn), lift = false) {
         Box(
-            Modifier.fillMaxSize().background(Color.Black).pointerInput(current.id, replying) {
+            Modifier.fillMaxSize().background(Color.Black).pointerInput(current.id, entry.mine) {
+                // Dona do story: arrastar pra cima na parte de baixo da tela abre a lista de visualizações.
+                if (entry.mine && current.page == "story") androidx.compose.foundation.gestures.detectVerticalDragGestures { change, dy -> if (dy < -10f && change.position.y > size.height * 0.55f) showViewers = true }
+            }.pointerInput(current.id, replying) {
                 detectTapGestures { offset ->
                     if (replying) focusManager.clearFocus()
                     else if (offset.y < size.height * 0.80f && !tooSoon()) { if (offset.x < size.width / 3f) previous() else next() }
@@ -422,9 +484,30 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                     }
                     if (music != null) {
                         QinblyIconOf(if (muted) QinblyIcon.VolumeOff else QinblyIcon.VolumeUp, Color.White, 28.dp, Modifier.clip(CircleShape).clickable { muted = !muted }.padding(horizontal = 6.dp, vertical = 4.dp))
-                        QinblyMusicPlayer(music.url, muted, paused = showViewers || showComments || replying || contribTarget.isNotBlank())
+                        QinblyMusicPlayer(music.url, muted, paused = holding)
                     }
-                    Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.White, modifier = Modifier.size(28.dp).clickable { onDismiss() })
+                    if (current.page != "invite") Box {
+                        Icon(androidx.compose.material.icons.Icons.Default.MoreVert, contentDescription = "Mais opções", tint = Color.White, modifier = Modifier.size(32.dp).clip(CircleShape).clickable { menuOpen = true }.padding(2.dp))
+                        androidx.compose.material3.DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            val origin = qinblyParseOrigin(current.caption)
+                            if (origin != null) {
+                                QinblyStoryMenuRow("Ver original") { menuOpen = false; onOpenOriginal(origin, index) }
+                                QinblyStoryMenuRow("Ver perfil de @" + origin.username) { menuOpen = false; onOpenProfile(origin.username, index) }
+                            }
+                            if (isContribPage && !current.authorMine) QinblyStoryMenuRow("Ver perfil de @" + current.authorUsername) { menuOpen = false; onOpenProfile(current.authorUsername, index) }
+                            if (!isContribPage && entry.mine) {
+                                if (current.mediaType != "text" && origin == null) QinblyStoryMenuRow("Salvar na galeria") { menuOpen = false; saveCurrent() }
+                                QinblyStoryMenuRow("Quem pode ver", soon = true) { menuOpen = false; onNotice("Quem pode ver: em breve.") }
+                                QinblyStoryMenuRow("Destacar no perfil", soon = true) { menuOpen = false; onNotice("Destacar no perfil: em breve.") }
+                            }
+                            if (!isContribPage && !entry.mine) QinblyStoryMenuRow("Silenciar @" + storyOwner, soon = true) { menuOpen = false; onNotice("Silenciar: em breve.") }
+                            if (deletable) QinblyStoryMenuRow(if (isContribPage) "Apagar resposta" else "Excluir story", danger = true) { menuOpen = false; confirmDelete = true }
+                            if (!ownerIsMe && storyOwner.isNotBlank()) {
+                                QinblyStoryMenuRow("Denunciar story") { menuOpen = false; reportOpen = true }
+                                QinblyStoryMenuRow("Bloquear @" + storyOwner, danger = true) { menuOpen = false; confirmBlock = true }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -441,41 +524,26 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                     if (!entry.mine) QinblyStoryMessageBar(entry.username, Color(0x66000000), Color(0xCCFFFFFF), onNotice,
                         onSent = { focusManager.clearFocus() }, onFocus = { replying = it }, liked = liked, onLike = { toggleLike() })
                 }
-                val showViews = entry.mine && current.page == "story"
-                val canDelete = (entry.mine && current.page != "invite") || (current.page == "contrib" && current.authorMine)
-                if (showViews || canDelete) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        if (showViews) Row(
-                            Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0x66000000)).clickable {
-                                showViewers = true
-                            }.padding(horizontal = 14.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Outlined.Visibility, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(current.views.toString(), color = Color.White, fontWeight = FontWeight.SemiBold)
-                        }
-                        if (showViews && likeCount > 0) Row(
-                            Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0x66000000)).clickable { showViewers = true }.padding(horizontal = 14.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            QinblyIconOf(QinblyIcon.Favorite, Color(0xFFE5484D), 18.dp)
-                            Spacer(Modifier.width(6.dp))
-                            Text(likeCount.toString(), color = Color.White, fontWeight = FontWeight.SemiBold)
-                        }
-                        if (canDelete) Icon(Icons.Outlined.Delete, contentDescription = if (current.page == "contrib") "Apagar resposta" else "Excluir story", tint = Color.White,
-                            modifier = Modifier.size(28.dp).clickable {
-                                val id = current.id
-                                if (current.page == "contrib") {
-                                    val cid = current.contribId
-                                    if (!token.isNullOrBlank()) Thread { try { QinblyApi.deleteContribution(token, cid) } catch (_: Exception) { } }.start()
-                                    items.removeAll { it.id == id }
-                                } else {
-                                    if (!token.isNullOrBlank()) Thread { try { QinblyApi.deleteStory(token, id) } catch (_: Exception) { } }.start()
-                                    items.removeAll { it.id == id || it.parentId == id }
+                // Visualizações: só a dona do story vê. Avatares de quem viu por último; tocar ou arrastar pra cima abre a lista completa.
+                if (entry.mine && current.page == "story") {
+                    val recent = (viewers ?: emptyList()).take(3)
+                    Column(
+                        Modifier.align(Alignment.CenterHorizontally).clip(RoundedCornerShape(16.dp)).clickable { showViewers = true }.padding(horizontal = 18.dp, vertical = 6.dp)
+                            .pointerInput(Unit) { androidx.compose.foundation.gestures.detectVerticalDragGestures { _, dy -> if (dy < -8f) showViewers = true } },
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        if (recent.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy((-10).dp)) {
+                            recent.forEach { v ->
+                                Box(
+                                    Modifier.size(34.dp).clip(CircleShape).border(1.5.dp, Color.White, CircleShape).background(Color(0xFF2B3544)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text((v.displayName.ifBlank { v.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    if (v.avatarUrl.isNotBlank()) AsyncImage(model = v.avatarUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                                 }
-                                if (items.isEmpty()) onDismiss() else if (index > items.lastIndex) index = items.lastIndex
-                            })
+                            }
+                        }
+                        Text("Visualizações", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = if (recent.isNotEmpty()) 4.dp else 0.dp))
                     }
                 }
             }
@@ -492,7 +560,45 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     }
 
 
-    if (showViewers) QinblyStorySummary(current.id, current.createdAt, accent, { showViewers = false }, onNotice)
+    if (showViewers) QinblyStorySummary(current.id, current.createdAt, accent, { showViewers = false }, onNotice, onOpenProfile = { u -> showViewers = false; onOpenProfile(u, index) })
+
+    if (confirmDelete) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { confirmDelete = false },
+        title = { Text(if (isContribPage) "Apagar esta resposta?" else "Excluir este story?") },
+        text = { Text(if (isContribPage) "A resposta some do story coletivo." else "O story some para todo mundo e não dá para desfazer.") },
+        confirmButton = { TextButton(onClick = { confirmDelete = false; deleteCurrent() }) { Text(if (isContribPage) "Apagar" else "Excluir", color = Color(0xFFD33B3B)) } },
+        dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar", color = accent) } },
+        containerColor = QiblyTheme.card, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
+    )
+    if (confirmBlock) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { confirmBlock = false },
+        title = { Text("Bloquear @$storyOwner?") },
+        text = { Text("Vocês não verão mais as publicações um do outro nem poderão se seguir ou trocar mensagens. Você pode desbloquear em Configurações > Contas bloqueadas.") },
+        confirmButton = {
+            TextButton(onClick = {
+                confirmBlock = false
+                if (token.isNullOrBlank()) onNotice("Entre na sua conta para bloquear.")
+                else Thread {
+                    try {
+                        QinblyApi.blockByUsername(token, storyOwner)
+                        Handler(Looper.getMainLooper()).post { onNotice("Usuário bloqueado."); onDismiss() }
+                    } catch (e: Exception) { Handler(Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível bloquear agora.") } }
+                }.start()
+            }) { Text("Bloquear", color = Color(0xFFD33B3B)) }
+        },
+        dismissButton = { TextButton(onClick = { confirmBlock = false }) { Text("Cancelar", color = accent) } },
+        containerColor = QiblyTheme.card, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
+    )
+    if (reportOpen) ReportReasonDialog(title = "Denunciar story: qual o motivo?", onDismiss = { reportOpen = false }) { reason ->
+        reportOpen = false
+        if (token.isNullOrBlank()) onNotice("Entre na sua conta para denunciar.")
+        else Thread {
+            try {
+                QinblyApi.reportUserByUsername(token, storyOwner, reason)
+                Handler(Looper.getMainLooper()).post { onNotice("Denúncia enviada. Obrigado por avisar.") }
+            } catch (e: Exception) { Handler(Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível enviar a denúncia agora.") } }
+        }.start()
+    }
 }
 
 
@@ -537,7 +643,7 @@ internal fun QinblyStoryMessageBar(username: String, fieldBg: Color, hintColor: 
 
 /** Resumo do story, só para quem postou: quantos viram/curtiram, quando viram e quem está perto. Tudo numa rolagem só. */
 @Composable
-internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Color, onDismiss: () -> Unit, onNotice: (String) -> Unit) {
+internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Color, onDismiss: () -> Unit, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     val token = remember { prefs.getString("token", null) }
@@ -578,7 +684,7 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
         val maxB = (buckets.maxOrNull() ?: 0).coerceAtLeast(1)
         val peak = buckets.indices.maxByOrNull { buckets[it] } ?: 0
         @Composable fun Person(v: QinblyApi.StoryViewer, sub: String) {
-            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().clickable { onOpenProfile(v.username) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(46.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
                     Text((v.displayName.ifBlank { v.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     if (v.avatarUrl.isNotBlank()) AsyncImage(model = v.avatarUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())

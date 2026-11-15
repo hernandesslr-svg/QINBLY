@@ -5351,6 +5351,47 @@ private fun QiblyShareDialog(
                         }
                         Text("Outros apps", color = QiblyTheme.text, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                     }
+                    Column(
+                        Modifier.clip(RoundedCornerShape(12.dp)).clickable {
+                            val token = prefs.getString("token", null)
+                            val url = (post.mediaUrls.firstOrNull()?.takeIf { it.isNotBlank() } ?: post.mediaUrl)
+                            if (token.isNullOrBlank()) onNotice("Entre na sua conta para compartilhar no story.")
+                            else if (!url.startsWith("http") || (post.mediaType != "video" && post.mediaType != "image")) onNotice("Esta publicação não tem foto ou vídeo para o story.")
+                            else {
+                                val isVideo = post.mediaType == "video"
+                                val path = url.substringBefore('?').lowercase()
+                                val mime = when {
+                                    isVideo && path.endsWith(".mov") -> "video/quicktime"
+                                    isVideo && path.endsWith(".webm") -> "video/webm"
+                                    isVideo -> "video/mp4"
+                                    path.endsWith(".png") -> "image/png"
+                                    path.endsWith(".webp") -> "image/webp"
+                                    else -> "image/jpeg"
+                                }
+                                onNotice("Adicionando ao seu story...")
+                                val appContext = context.applicationContext
+                                val marker = qinblyEncodeOrigin(post.id, post.username, isVideo)
+                                Thread {
+                                    val main = android.os.Handler(android.os.Looper.getMainLooper())
+                                    val file = qinblyDownloadToCache(appContext, url, if (isVideo) ".mp4" else ".jpg")
+                                    try {
+                                        if (file == null) throw IllegalStateException("Não foi possível baixar a mídia agora.")
+                                        QinblyApi.createStoryFromLocalFile(appContext, token, file, mime, marker)
+                                        main.post { onNotice("Adicionado ao seu story.") }
+                                    } catch (e: Exception) {
+                                        main.post { onNotice(e.message ?: "Não foi possível adicionar ao story.") }
+                                    } finally { file?.delete() }
+                                }.start()
+                                onDismiss()
+                            }
+                        }.padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(Modifier.size(52.dp).background(QinblyBrand.Accent.copy(alpha = 0.12f), CircleShape), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = QinblyBrand.Accent)
+                        }
+                        Text("Seu story", color = QiblyTheme.text, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                    }
                 }
             }
         }
@@ -6238,6 +6279,23 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             }
         }.start()
     }
+    // "Ver original" de um vídeo de story: vai para a aba Vídeos; se o vídeo não estiver na lista, abre a publicação sozinha.
+    LaunchedEffect(QinblyFeedJump.postId) { if (QinblyFeedJump.postId != null && selectedFeedTab != "Vídeos") selectedFeedTab = "Vídeos" }
+    LaunchedEffect(QinblyFeedJump.postId, loading, displayedPosts.size, selectedFeedTab) {
+        val id = QinblyFeedJump.postId ?: return@LaunchedEffect
+        if (!loading && selectedFeedTab == "Vídeos" && displayedPosts.none { it.id == id }) {
+            val back = QinblyFeedJump.returnEntry; val idx = QinblyFeedJump.returnIndex
+            QinblyFeedJump.postId = null; QinblyFeedJump.returnEntry = null
+            if (back != null) QinblyResume.backOnClose = { QinblyStoryReturn.index = idx; QinblyStoryReturn.entry = back }
+            QinblyDeepLink.postId = id
+        }
+    }
+    LaunchedEffect(selectedFeedTab) { if (selectedFeedTab != "Vídeos") QinblyFeedJump.returnEntry = null }
+    BackHandler(enabled = QinblyFeedJump.returnEntry != null) {
+        val back = QinblyFeedJump.returnEntry
+        QinblyFeedJump.returnEntry = null
+        if (back != null) { selectedFeedTab = "Descobrir"; QinblyStoryReturn.index = QinblyFeedJump.returnIndex; QinblyStoryReturn.entry = back }
+    }
     // Deslizar para os lados troca as abas de cima (Descobrir, Seguindo, Em alta, Vídeos, Lives, Perto de mim); a barra de baixo não muda por gesto.
     val feedTabOrder = listOf("Descobrir", "Seguindo", "Em alta", "Vídeos", "Lives", "Perto de mim")
     Column(
@@ -6332,6 +6390,13 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             var feedFirstRun by remember { mutableStateOf(true) }
             LaunchedEffect(refreshKey, selectedFeedTab) { if (feedFirstRun) feedFirstRun = false else feedListState.scrollToItem(0) }
             LaunchedEffect(scrollToTopRequest) { if (scrollToTopRequest > 0) feedListState.animateScrollToItem(0) }
+            LaunchedEffect(QinblyFeedJump.postId, selectedFeedTab, displayedPosts.size) {
+                val id = QinblyFeedJump.postId
+                if (id != null && selectedFeedTab == "Vídeos") {
+                    val i = displayedPosts.indexOfFirst { it.id == id }
+                    if (i >= 0) { feedListState.scrollToItem(i); QinblyFeedJump.postId = null }
+                }
+            }
             androidx.compose.material3.pulltorefresh.PullToRefreshBox(isRefreshing = refreshingFeed, onRefresh = { RemoteUiRefreshSignal.value++; if (!refreshingFeed) { refreshingFeed = true; refreshKey++ } }, modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 state = feedListState,
@@ -7261,7 +7326,7 @@ private val reportReasons = listOf(
 )
 
 @Composable
-private fun ReportReasonDialog(title: String, onDismiss: () -> Unit, onSelect: (String) -> Unit) {
+internal fun ReportReasonDialog(title: String, onDismiss: () -> Unit, onSelect: (String) -> Unit) {
     AlertDialog(
         shape = RoundedCornerShape(28.dp),
         onDismissRequest = onDismiss,
@@ -8297,6 +8362,19 @@ private fun rememberKeptListState(key: String): androidx.compose.foundation.lazy
  * ela se fecha para o perfil aparecer. Antes de fechar, ela deixa aqui como se reabre: ao voltar do perfil pelo botão
  * de voltar (do celular ou da tela), a janela volta como estava.
  */
+/** Voltar de "Ver original"/"Ver perfil" para o story de onde a pessoa saiu (no mesmo story). */
+private object QinblyStoryReturn {
+    var entry by mutableStateOf<QinblyApi.TrayEntry?>(null)
+    var index = 0
+}
+
+/** "Ver original" de um vídeo: abre a aba Vídeos do Início já no vídeo. `returnEntry` guarda o story para o voltar. */
+private object QinblyFeedJump {
+    var postId by mutableStateOf<String?>(null)
+    var returnEntry by mutableStateOf<QinblyApi.TrayEntry?>(null)
+    var returnIndex = 0
+}
+
 private object QinblyResume {
     private class Entry(val at: QinblyNavState, val action: () -> Unit)
     private val stack = ArrayList<Entry>()
@@ -8370,8 +8448,28 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
             onViewMine = { viewingStory = myStoryEntry }, onAddStory = onAddStory
         )
     }
+    var viewingIndex by remember { mutableIntStateOf(0) }
+    // Voltou de "Ver original" ou do perfil: reabre o story no mesmo ponto.
+    LaunchedEffect(QinblyStoryReturn.entry) {
+        QinblyStoryReturn.entry?.let { viewingIndex = QinblyStoryReturn.index; viewingStory = it; QinblyStoryReturn.entry = null }
+    }
     viewingStory?.let { entry ->
-        QinblyStoryViewer(entry, QinblyBrand.Accent, onNotice, onDismiss = { viewingStory = null; storyRefresh++ }, onCamera = { id -> qinblyStartContribution(id); onAddStory() })
+        QinblyStoryViewer(entry, QinblyBrand.Accent, onNotice, onDismiss = { viewingStory = null; storyRefresh++ }, onCamera = { id -> qinblyStartContribution(id); onAddStory() },
+            startIndex = viewingIndex,
+            onOpenProfile = { username, idx ->
+                viewingStory = null
+                QinblyResume.push { QinblyStoryReturn.index = idx; QinblyStoryReturn.entry = entry }
+                onOpenProfile(username)
+            },
+            onOpenOriginal = { origin, idx ->
+                viewingStory = null
+                if (origin.isVideo) {
+                    QinblyFeedJump.returnEntry = entry; QinblyFeedJump.returnIndex = idx; QinblyFeedJump.postId = origin.postId
+                } else {
+                    QinblyResume.backOnClose = { QinblyStoryReturn.index = idx; QinblyStoryReturn.entry = entry }
+                    QinblyDeepLink.postId = origin.postId
+                }
+            })
     }
 }
 
@@ -10598,7 +10696,7 @@ private fun QinblyPublishRow(icon: androidx.compose.ui.graphics.vector.ImageVect
 }
 
 /** Guarda uma cópia da foto/vídeo na galeria do celular (pasta Qinbly). Android 10 ou mais novo. */
-private fun qinblySaveMediaCopy(context: android.content.Context, source: Uri, isVideo: Boolean): Boolean {
+internal fun qinblySaveMediaCopy(context: android.content.Context, source: Uri, isVideo: Boolean): Boolean {
     if (android.os.Build.VERSION.SDK_INT < 29) return false
     return try {
         val resolver = context.contentResolver

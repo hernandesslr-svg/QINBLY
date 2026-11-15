@@ -906,6 +906,17 @@ object QinblyApi {
         request("POST", "/api/stories", JSONObject().put("mediaFileId", fileId).put("mediaType", if (isVideo) "video" else "image").put("caption", caption.trim()), token)
     }
 
+    /** Story feito a partir de um arquivo já baixado (publicação de outro perfil compartilhada no story). */
+    fun createStoryFromLocalFile(context: Context, token: String, file: java.io.File, mime: String, caption: String) {
+        val isVideo = mime.startsWith("video/")
+        val size = file.length()
+        require(size > 0) { "Não foi possível ler o arquivo." }
+        require(size <= (if (isVideo) 100L else 25L) * 1024 * 1024) { if (isVideo) "O vídeo passa de 100 MB." else "A foto passa de 25 MB." }
+        val ext = when (mime) { "image/png" -> "png"; "image/webp" -> "webp"; "video/quicktime" -> "mov"; "video/webm" -> "webm"; "video/mp4" -> "mp4"; else -> if (isVideo) "mp4" else "jpg" }
+        val fileId = uploadPostMedia(context, token, Uri.fromFile(file), "story.$ext", mime, size, "story_media")
+        request("POST", "/api/stories", JSONObject().put("mediaFileId", fileId).put("mediaType", if (isVideo) "video" else "image").put("caption", caption.trim()), token)
+    }
+
     fun deleteStory(token: String, id: String) { request("DELETE", "/api/stories/" + id, null, token) }
 
     fun markStoryViewed(token: String, id: String) { request("POST", "/api/stories/" + id + "/view", JSONObject(), token) }

@@ -75,7 +75,17 @@ internal fun qinblyEncodeTextStory(s: QinblyTextStory): String = "qinbly:${if (s
 /** Story coletivo que começa com foto/vídeo: a legenda leva a marca "coletivo" na frente. */
 internal fun qinblyCollabCaption(legend: String): String = "qinbly:collab:0:0:1\n" + legend.trim()
 /** Legenda para mostrar na tela, sem a marca interna do story coletivo. */
-internal fun qinblyDisplayCaption(caption: String): String = qinblySplitMusic(if (caption.startsWith("qinbly:collab:") || caption.startsWith("qinbly:text:")) caption.substringAfter('\n', "") else caption).first.trim()
+/** Story feito de uma publicação de outro perfil: a legenda começa com um marcador escondido (id da publicação, @autor e tipo). */
+internal data class QinblyStoryOrigin(val postId: String, val username: String, val isVideo: Boolean)
+internal fun qinblyEncodeOrigin(postId: String, username: String, isVideo: Boolean) = "⧉§" + postId + "§" + username + "§" + (if (isVideo) "video" else "image")
+internal fun qinblyParseOrigin(caption: String): QinblyStoryOrigin? {
+    if (!caption.startsWith("⧉§")) return null
+    val parts = caption.substringBefore('\n').split("§")
+    if (parts.size < 4 || parts[1].isBlank()) return null
+    return QinblyStoryOrigin(parts[1], parts[2], parts[3] == "video")
+}
+internal fun qinblyStripOrigin(caption: String): String = if (caption.startsWith("⧉§")) caption.substringAfter('\n', "") else caption
+internal fun qinblyDisplayCaption(caption: String): String { val c = qinblyStripOrigin(caption); return qinblySplitMusic(if (c.startsWith("qinbly:collab:") || c.startsWith("qinbly:text:")) c.substringAfter('\n', "") else c).first.trim() }
 
 internal fun qinblyParseTextStory(caption: String): QinblyTextStory? {
     val collab = caption.startsWith("qinbly:collab:")
