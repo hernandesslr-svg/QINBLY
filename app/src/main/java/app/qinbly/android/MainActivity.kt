@@ -9081,6 +9081,11 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
     var editPhotoUrl by remember { mutableStateOf("") }
+    // Ao ir escolher a foto, o que a pessoa já digitou fica guardado; ao sair da edição de verdade, limpa.
+    androidx.compose.runtime.LaunchedEffect(Unit) { QinblyKeep.state("editphoto.flag", false).value = false }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose { if (!QinblyKeep.state("editphoto.flag", false).value) QinblyKeep.clearPrefix("editprofile.") }
+    }
     LaunchedEffect(initialUsername, photoRefreshKey) {
         if (initialUsername.isNotBlank()) {
             Thread {
@@ -9116,10 +9121,10 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     val countryPrefix = "🌍 "
     val countryOptions = listOf("Brasil", "Portugal", "Estados Unidos", "Argentina", "Chile", "Colômbia", "México", "Espanha", "França", "Alemanha", "Itália", "Reino Unido", "Canadá", "Japão", "Angola", "Moçambique", "Outro")
     val initialCountry = initialBio.lineSequence().firstOrNull { it.startsWith(countryPrefix) }?.removePrefix(countryPrefix).orEmpty()
-    var selectedCountry by remember { mutableStateOf(initialCountry) }
+    var selectedCountry by rememberKept("editprofile.country", initialCountry)
     var countryMenuExpanded by remember { mutableStateOf(false) }
-    var username by remember { mutableStateOf(initialUsername) }
-    var name by remember { mutableStateOf(initialName) }
+    var username by rememberKept("editprofile.username", initialUsername)
+    var name by rememberKept("editprofile.name", initialName)
     // "" = não verificado, "checking", "free" (livre) ou "taken" (já existe outro perfil com esse @usuário).
     var usernameStatus by remember { mutableStateOf("") }
     LaunchedEffect(username) {
@@ -9134,8 +9139,8 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     val categoryPrefix = "✦ "
     val initialCategoryLine = initialBio.lineSequence().firstOrNull().orEmpty()
     val storedCategories = if (initialCategoryLine.startsWith(categoryPrefix)) initialCategoryLine.removePrefix(categoryPrefix).split(" • ").filter { it in availableCategories } else emptyList()
-    var selectedCategories by remember { mutableStateOf(storedCategories) }
-    var bio by remember { mutableStateOf((if (storedCategories.isNotEmpty()) initialBio.substringAfter('\n', "") else initialBio).lineSequence().filterNot { it.startsWith(countryPrefix) }.joinToString("\n").trim()) }
+    var selectedCategories by rememberKept("editprofile.categories", storedCategories)
+    var bio by rememberKept("editprofile.bio", (if (storedCategories.isNotEmpty()) initialBio.substringAfter('\n', "") else initialBio).lineSequence().filterNot { it.startsWith(countryPrefix) }.joinToString("\n").trim())
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var adjustingImage by remember { mutableStateOf("") }
@@ -9189,7 +9194,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
 
         Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp), contentAlignment = Alignment.Center) {
-                Box(Modifier.size(116.dp).clip(CircleShape).background(QiblyTheme.card).clickable { onEditProfilePhoto() }, contentAlignment = Alignment.Center) {
+                Box(Modifier.size(116.dp).clip(CircleShape).background(QiblyTheme.card).clickable { QinblyKeep.state("editphoto.flag", false).value = true; onEditProfilePhoto() }, contentAlignment = Alignment.Center) {
                     if (editPhotoUrl.isNotBlank()) {
                         AsyncImage(model = editPhotoUrl, contentDescription = "Alterar foto de perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     } else {
@@ -9201,7 +9206,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                 }
             }
             Text("Alterar foto", color = QinblyBrand.Accent, fontWeight = FontWeight.Medium, fontSize = 14.sp,
-                modifier = Modifier.fillMaxWidth().clickable { onEditProfilePhoto() }, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                modifier = Modifier.fillMaxWidth().clickable { QinblyKeep.state("editphoto.flag", false).value = true; onEditProfilePhoto() }, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
 
             Text("SOBRE VOCÊ", color = Muted, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
 
@@ -11599,8 +11604,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         letterSpacing = if (editorText.isBlank()) 0.em else qinblyTextSpacingEm(editorTextFont).em,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         style = MaterialTheme.typography.headlineMedium.copy(shadow = androidx.compose.ui.graphics.Shadow(if (editorTextColor == 0xFF111111.toInt() && editorText.isNotBlank()) Color(0xCCFFFFFF) else Color(0xCC000000), blurRadius = 10f)),
-                        modifier = Modifier.align(Alignment.Center).padding(horizontal = 28.dp)
-                            .clip(RoundedCornerShape(12.dp)).clickable { camTextEditing = true }.padding(8.dp)
+                        modifier = Modifier.align(Alignment.Center)
+                            .offset { androidx.compose.ui.unit.IntOffset(editorTextDx.toInt(), editorTextDy.toInt()) }
+                            .padding(horizontal = 28.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            // Texto móvel também na câmera (mesmo padrão do editor): arrasta para onde quiser, toca para editar.
+                            .pointerInput(Unit) { detectDragGestures { change, drag -> change.consume(); editorTextDx += drag.x; editorTextDy += drag.y } }
+                            .clickable { camTextEditing = true }.padding(8.dp)
                     )
                 }
                 if (camTextEditing) {

@@ -294,11 +294,16 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
     var pendingPhoto by remember { mutableStateOf<File?>(null) }
     val galleryPerms = if (Build.VERSION.SDK_INT >= 33) arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES, android.Manifest.permission.READ_MEDIA_VIDEO) else arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted = hasGalleryPermission(context) }
-    val systemPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) { picked = GalleryItem(uri, (context.contentResolver.getType(uri) ?: "").startsWith("video/")); textBody = null; step = "edit" }
-    }
     // Câmera padrão do app (a mesma do Criar), em vez da câmera do celular.
     var showAppCamera by remember { mutableStateOf(false) }
+    val systemPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            val video = (context.contentResolver.getType(uri) ?: "").startsWith("video/")
+            // Foto da galeria passa pelo MESMO editor da câmera (padrão do app); só o vídeo segue direto.
+            if (!video) { qinblySetPickedMedia(uri, false); showAppCamera = true }
+            else { picked = GalleryItem(uri, true); textBody = null; step = "edit" }
+        }
+    }
     fun launchCamera() { showAppCamera = true }
     if (showAppCamera) QinblyCameraCapture(
         onResult = { u -> showAppCamera = false; picked = GalleryItem(u, false); textBody = null; step = "edit" },
@@ -406,7 +411,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                     } else {
                         LazyVerticalGrid(GridCells.Fixed(3), modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             gridItems(items, key = { it.uri.toString() }) { g ->
-                                Box(Modifier.aspectRatio(1f).clickable { picked = g; textBody = null; step = "edit" }) {
+                                Box(Modifier.aspectRatio(1f).clickable { if (!g.video) { qinblySetPickedMedia(g.uri, false); showAppCamera = true } else { picked = g; textBody = null; step = "edit" } }) {
                                     MediaThumb(g.uri, g.video, Modifier.fillMaxSize())
                                     if (g.video) QinblyIconOf(QinblyIcon.PlayArrow, Color.White, 20.dp, Modifier.align(Alignment.BottomStart).padding(6.dp))
                                 }
