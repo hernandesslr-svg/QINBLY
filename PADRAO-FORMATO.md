@@ -21,7 +21,7 @@ Pendente: a câmera ainda corta a foto no instante do clique pelo formato escolh
 Texto, emotes/figurinhas e desenho: arrastar para mover (emote: dois dedos para ampliar/girar, toque duplo apaga). Vale no editor, na câmera (modo TEXTO) e no story de texto (a posição vai dentro da legenda: `qinbly:text:bg:fonte:alinh:dx:dy`, em milésimos da tela).
 
 ## Zoom
-Dois dedos direto na foto, ou a barra "Zoom" na ferramenta Formato (de menor que 1 = foto inteira, até 4x).
+**O zoom é SÓ com os dedos direto na tela, em cima da foto.** Nunca colocar barra/slider de zoom (o dono do app proibiu). Vale de "foto inteira" (menor que 1) até 6x.
 
 ## Foto da galeria
 Em qualquer lugar (Criar, cápsula, chat, comunidade, story coletivo) a foto escolhida da galeria passa pelo MESMO editor da câmera antes de seguir. Vídeo da cápsula ainda segue direto.

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -153,7 +152,7 @@ internal fun QinblyFormatFrame(
 @Composable
 internal fun QinblyFormatBar(
     ratio: String, imageRatio: Float, zoom: Float, blurBg: Boolean,
-    onRatio: (String) -> Unit, onFill: (String) -> Unit, modifier: Modifier = Modifier, onZoom: ((Float) -> Unit)? = null
+    onRatio: (String) -> Unit, onFill: (String) -> Unit, modifier: Modifier = Modifier
 ) {
     val factor = qinblyFitFactor(imageRatio, qinblyRatioValue(ratio, imageRatio))
     val whole = factor < 0.97f && zoom <= factor + 0.02f
@@ -168,17 +167,6 @@ internal fun QinblyFormatBar(
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.Center) {
             QINBLY_FORMATS.forEach { r -> Pill(r, ratio == r) { onRatio(r) } }
-        }
-        if (onZoom != null) {
-            // Zoom: também dá para abrir/fechar com dois dedos direto na foto.
-            Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Zoom", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                androidx.compose.material3.Slider(
-                    value = zoom.coerceIn(minOf(factor, 1f), 4f), onValueChange = { onZoom(it) }, valueRange = minOf(factor, 1f)..4f,
-                    colors = androidx.compose.material3.SliderDefaults.colors(thumbColor = Color.White, activeTrackColor = Color.White, inactiveTrackColor = Color(0x55FFFFFF)),
-                    modifier = Modifier.weight(1f).padding(start = 10.dp).height(28.dp)
-                )
-            }
         }
         if (factor < 0.97f) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {

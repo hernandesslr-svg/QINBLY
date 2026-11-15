@@ -12853,10 +12853,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 if (editorTool == "Ajustar") {
                     QinblyFormatBar(
                         ratio = editorRatio, imageRatio = editorImageRatio, zoom = editorZoom, blurBg = editorBlur,
-                        onZoom = { z ->
-                            val lim = qinblyMaxPan(editorImageRatio, qinblyRatioValue(editorRatio, editorImageRatio), z)
-                            editorZoom = z; editorPanX = editorPanX.coerceIn(-lim.first, lim.first); editorPanY = editorPanY.coerceIn(-lim.second, lim.second)
-                        },
                         onRatio = { r ->
                             editorRatio = r; editorZoom = 1f; editorPanX = 0f; editorPanY = 0f
                             val u = selectedUri
