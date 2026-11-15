@@ -5,3 +5,8 @@
 - A foto sai **igual ao que se vê na tela** (mesmo enquadramento); a selfie sai como aparece na tela.
 - Mudou algo na câmera? Vale para todas. Não fazer versão diferente por tela.
 - A tela nova do story (botão redondo "Story", horas, Quem vê, + Feed) é só do **editor do story comum**; câmera e editor são coisas separadas.
+
+## Editor de foto (também padrão)
+- Existe **um editor só**: o do `PostPage`. A câmera chamada por outras telas (`QinblyCameraCapture`, com `editBeforeReturn = true`) abre esse mesmo editor depois da foto e devolve a foto já editada para a tela que chamou (botão "Pronto").
+- O editor abre limpo: a faixa de filtros só aparece quando a pessoa toca em Filtros.
+- Só o editor do **story comum** do Criar tem a barra nova (botão "Story", horas, Quem vê, + Feed).

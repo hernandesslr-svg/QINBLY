@@ -10466,13 +10466,13 @@ internal fun QinblyCameraCapture(onResult: (Uri) -> Unit, onDismiss: () -> Unit)
     ) {
         // Mesma altura do botão de tirar foto da câmera do Criar: acima da barra de botões do celular.
         Column(Modifier.fillMaxSize().background(Color(0xFF080808)).padding(bottom = qinblyNavBarPadding())) {
-            PostPage(onNotice = { android.widget.Toast.makeText(ctx, it, android.widget.Toast.LENGTH_LONG).show() }, onCameraCancelled = onDismiss, initialMode = "camera", onCaptured = onResult)
+            PostPage(onNotice = { android.widget.Toast.makeText(ctx, it, android.widget.Toast.LENGTH_LONG).show() }, onCameraCancelled = onDismiss, initialMode = "camera", onCaptured = onResult, editBeforeReturn = true)
         }
     }
 }
 
 @Composable
-private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, initialMode: String = "camera", onSwitchMode: (String) -> Unit = {}, onCaptured: ((Uri) -> Unit)? = null) {
+private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, initialMode: String = "camera", onSwitchMode: (String) -> Unit = {}, onCaptured: ((Uri) -> Unit)? = null, editBeforeReturn: Boolean = false) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
@@ -10693,15 +10693,19 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             }
         }
     }
-    // Câmera chamada por outra tela (Mural, cápsula, chat…): devolve a foto direto, sem abrir editor nem tela de publicação.
+    // Câmera chamada por outra tela (Mural, cápsula, chat…): a foto passa pelo MESMO editor do Criar e, no fim, volta para a tela que chamou.
+    // (editBeforeReturn = false devolveria a foto crua, sem editor.)
+    val handOffMode = onCaptured != null && !editBeforeReturn
     fun handOff(u: Uri, video: Boolean = false): Boolean {
         val cb = onCaptured ?: return false
-        if (video) onNotice("Aqui só dá para enviar foto.") else cb(u)
+        if (video) { onNotice("Aqui só dá para enviar foto."); return true }
+        if (!handOffMode) return false
+        cb(u)
         return true
     }
     // Rede de segurança: no modo câmera-para-outra-tela o editor/publicação nunca aparece; a foto volta direto.
     LaunchedEffect(showComposer) {
-        if (onCaptured != null && showComposer) {
+        if (handOffMode && showComposer) {
             val u = selectedUri ?: sourceUri
             val vid = selectedType == "vídeo"
             showComposer = false; selectedUri = null; sourceUri = null
@@ -10765,7 +10769,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     // O editor é o mesmo para foto da galeria e foto/vídeo da câmera; só muda para onde ele volta.
     val newEditorChrome = initialMode == "gallery" || initialMode == "camera"
     // Tela nova só para o story comum: publica direto do editor (sem "Avançar"). Story coletivo e resposta continuam como eram.
-    val storyDirect = QinblyComposeSeed.story && QinblyComposeSeed.contribTo.isBlank() && !QinblyComposeSeed.collabNew
+    val storyDirect = onCaptured == null && QinblyComposeSeed.story && QinblyComposeSeed.contribTo.isBlank() && !QinblyComposeSeed.collabNew
     fun leaveEditor() {
         if (QinblyComposeSeed.fromGallery) {
             // Veio da galeria do story coletivo: voltar leva de novo a ela, não à câmera.
@@ -11292,7 +11296,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         return
     }
 
-    if (onCaptured != null && showComposer) { Box(Modifier.fillMaxSize().background(Color.Black)); return }
+    if (handOffMode && showComposer) { Box(Modifier.fillMaxSize().background(Color.Black)); return }
     if (initialMode == "camera" && !showComposer) {
  QinblySplit {
         val frameRatio = when (selectedCameraFormat) { "1:1" -> 1f; "4:3" -> 3f / 4f; else -> 9f / 16f }
@@ -11746,7 +11750,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
 }
 
     // Câmera chamada por outra tela: só a câmera. Nada de galeria interna/editor/publicação empilhado por cima.
-    if (onCaptured != null) return
+    if (handOffMode) return
 
     if (galleryOpen) {
  QinblySplit {
@@ -12100,7 +12104,15 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     }
     }
 
-    val afterEdit: () -> Unit = { if (storyDirect) doPublish() else publishSettings = true }
+    val afterEdit: () -> Unit = {
+        val back = onCaptured
+        if (back != null) {
+            // Câmera chamada por outra tela: entrega a foto já editada.
+            val done = bakedUri ?: selectedUri ?: sourceUri
+            showComposer = false; selectedUri = null; sourceUri = null; bakedUri = null
+            if (done != null) back(done)
+        } else if (storyDirect) doPublish() else publishSettings = true
+    }
     val advance: () -> Unit = advance@{
         if (publishing || editorBusy) return@advance
         if (storyDirect && storyAudience == "near" && QinblyApi.myCity(prefs).isBlank()) {
@@ -12578,7 +12590,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         colors = ButtonDefaults.buttonColors(containerColor = if (newEditorChrome) QinblyBrand.Accent else Color.White, contentColor = if (newEditorChrome) Color.White else Color.Black)
                     ) {
                         val advanceTint = if (newEditorChrome) Color.White else Color.Black
-                        Text(if (editorBusy) "Aplicando…" else "Avançar", fontWeight = FontWeight.Bold, color = advanceTint)
+                        Text(if (editorBusy) "Aplicando…" else if (onCaptured != null) "Pronto" else "Avançar", fontWeight = FontWeight.Bold, color = advanceTint)
                         Spacer(Modifier.width(8.dp))
                         Icon(Icons.Default.ChevronRight, contentDescription = null, tint = advanceTint)
                     }
