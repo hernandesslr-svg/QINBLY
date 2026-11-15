@@ -1919,6 +1919,8 @@ private fun QinblyApp() {
         QinblyResume.stateProvider = { QinblyNavState(tab, showNotifications, showSettings, showEditProfile, publicProfileUsername, messageRecipient) }
     }
     // Um só "voltar" para o app todo: o botão do celular e as setas das telas usam este mesmo caminho.
+    // Tela inicial: o 1º voltar só avisa; o 2º, em até 2 segundos, fecha o aplicativo.
+    var lastExitBackAt by remember { mutableStateOf(0L) }
     val handleBack: () -> Unit = {
         when {
             showAccountSwitcher -> showAccountSwitcher = false
@@ -1949,7 +1951,16 @@ private fun QinblyApp() {
                 tab = 0
                 messageRecipient = ""
             }
-            else -> (appContext as? android.app.Activity)?.finish()
+            else -> {
+                val now = android.os.SystemClock.elapsedRealtime()
+                if (now - lastExitBackAt <= 2000L) {
+                    lastExitBackAt = 0L
+                    (appContext as? android.app.Activity)?.finish()
+                } else {
+                    lastExitBackAt = now
+                    android.widget.Toast.makeText(appContext, "Toque de novo para sair", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
     BackHandler { handleBack() }

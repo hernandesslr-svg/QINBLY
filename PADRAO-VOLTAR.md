@@ -28,3 +28,9 @@ Câmera → Editor → Legenda/Publicar: o botão de voltar do celular volta UMA
 - Editor de foto: ferramenta aberta (Formato, Stickers, Desenho, Texto) fecha primeiro; depois sai do editor; legenda/publicar volta para o editor.
 - Configurações: já volta seção por seção.
 Todo fluxo novo com etapas TEM que seguir isso (BackHandler + seta do app fazendo a mesma coisa).
+
+## Sair do aplicativo (toque duplo)
+- Só vale na TELA INICIAL (feed). Em qualquer outra tela/aba, voltar = uma etapa para trás (outras abas voltam primeiro para o feed).
+- 1º voltar na tela inicial: aviso "Toque de novo para sair" (2 segundos). 2º voltar dentro desses 2 segundos: fecha o app. Passou 2s: zera.
+- Está no fim do `handleBack` (MainActivity.kt). Nunca fechar o app direto em outro lugar.
+- Ao sair, vídeo/música/áudio já pausam (PADRAO-SEGUNDO-PLANO).
