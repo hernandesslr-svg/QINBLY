@@ -1270,6 +1270,94 @@ private fun qinblyEraseAt(
     }
 }
 
+/** A pessoa (cabeça e ombros) desenhada por cima da miniatura do fundo: mostra que a pessoa fica e só o fundo muda. */
+@Composable
+private fun QinblyBgPerson() {
+    androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+        drawCircle(Color(0xFFE0B090), radius = size.width * 0.154f, center = Offset(size.width * 0.5f, size.height * 0.385f))
+        drawOval(Color(0xFFF2C9D4), topLeft = Offset(size.width * 0.19f, size.height * 0.69f), size = androidx.compose.ui.geometry.Size(size.width * 0.62f, size.height * 0.54f))
+    }
+}
+
+/** Fundo desenhado de uma miniatura: efeitos (none, blur, bokeh, motion, bw, dim, light), cenários (scene0..3) e o quadriculado do recorte. */
+@Composable
+private fun QinblyBgSwatch(kind: String) {
+    androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+        val w = size.width; val h = size.height
+        fun rect(c: Color) = drawRect(c)
+        when (kind) {
+            "none" -> {
+                rect(Color(0xFF2A2E36))
+                drawCircle(Color(0xFF9AA0AC), radius = w * 0.25f, center = Offset(w / 2, h / 2), style = androidx.compose.ui.graphics.drawscope.Stroke(2.dp.toPx()))
+                drawLine(Color(0xFF9AA0AC), Offset(w * 0.32f, h * 0.68f), Offset(w * 0.68f, h * 0.32f), strokeWidth = 2.dp.toPx())
+            }
+            "blur" -> {
+                rect(Color(0xFF6D7683))
+                drawOval(Color(0x998E97A6), topLeft = Offset(-w * 0.1f, h * 0.05f), size = androidx.compose.ui.geometry.Size(w * 0.55f, h * 0.38f))
+                drawOval(Color(0x998E97A6), topLeft = Offset(w * 0.6f, h * 0.2f), size = androidx.compose.ui.geometry.Size(w * 0.5f, h * 0.35f))
+            }
+            "bokeh" -> {
+                rect(Color(0xFF2B3140))
+                listOf(Triple(0.17f, 0.19f, 0.12f), Triple(0.85f, 0.23f, 0.15f), Triple(0.15f, 0.73f, 0.17f), Triple(0.87f, 0.77f, 0.1f)).forEach { (x, y, r) ->
+                    drawCircle(Color(0xA6F5D98A), radius = w * r, center = Offset(w * x, h * y))
+                }
+            }
+            "motion" -> {
+                rect(Color(0xFF5D6676))
+                listOf(0.19f, 0.42f, 0.65f).forEach { y -> drawLine(Color(0x99AAB3C2), Offset(0f, h * y), Offset(w, h * y), strokeWidth = 2.dp.toPx()) }
+            }
+            "bw" -> rect(Color(0xFF7A7A7A))
+            "dim" -> rect(Color(0xFF14161B))
+            "light" -> rect(Color(0xFFE8ECF3))
+            "scene0" -> {
+                drawRect(Brush.verticalGradient(listOf(Color(0xFF2B1055), Color(0xFFFF9966))))
+                drawCircle(Color(0xFFFFE08A), radius = w * 0.2f, center = Offset(w * 0.5f, h * 0.65f))
+            }
+            "scene1" -> {
+                rect(Color(0xFF0B1030))
+                listOf(Triple(0.15f, 0.17f, 0.03f), Triple(0.42f, 0.11f, 0.025f), Triple(0.77f, 0.19f, 0.032f), Triple(0.88f, 0.46f, 0.025f), Triple(0.19f, 0.54f, 0.027f), Triple(0.6f, 0.3f, 0.02f)).forEach { (x, y, r) ->
+                    drawCircle(Color.White, radius = w * r, center = Offset(w * x, h * y))
+                }
+            }
+            "scene2" -> {
+                rect(Color(0xFF1C2140))
+                drawRect(Color(0xFF343A5A), Offset(w * 0.08f, h * 0.38f), androidx.compose.ui.geometry.Size(w * 0.17f, h * 0.62f))
+                drawRect(Color(0xFF2C3250), Offset(w * 0.31f, h * 0.23f), androidx.compose.ui.geometry.Size(w * 0.19f, h * 0.77f))
+                drawRect(Color(0xFF343A5A), Offset(w * 0.77f, h * 0.46f), androidx.compose.ui.geometry.Size(w * 0.19f, h * 0.54f))
+                drawRect(Color(0xFFF5D98A), Offset(w * 0.13f, h * 0.48f), androidx.compose.ui.geometry.Size(w * 0.06f, h * 0.06f))
+                drawRect(Color(0xFFF5D98A), Offset(w * 0.37f, h * 0.35f), androidx.compose.ui.geometry.Size(w * 0.06f, h * 0.06f))
+            }
+            "scene3" -> {
+                rect(Color(0xFF120A24))
+                drawRect(Color(0xFFFF3DF0), Offset(w * 0.04f, h * 0.15f), androidx.compose.ui.geometry.Size(w * 0.92f, h * 0.06f))
+                drawRect(Color(0xFF2DE2FF), Offset(w * 0.04f, h * 0.77f), androidx.compose.ui.geometry.Size(w * 0.92f, h * 0.06f))
+                drawRect(Color(0xFFFF3DF0), Offset(w * 0.11f, h * 0.27f), androidx.compose.ui.geometry.Size(w * 0.06f, h * 0.46f))
+                drawRect(Color(0xFF2DE2FF), Offset(w * 0.83f, h * 0.27f), androidx.compose.ui.geometry.Size(w * 0.06f, h * 0.46f))
+            }
+            else -> {
+                rect(Color(0xFF3A3F4A))
+                val q = w / 4f
+                for (row in 0 until 4) for (col in 0 until 4) if ((row + col) % 2 == 0) drawRect(Color(0xFF4A505C), Offset(col * q, row * q), androidx.compose.ui.geometry.Size(q, q))
+            }
+        }
+    }
+}
+
+/** Miniatura quadrada (52dp) do Fundo: fundo desenhado + pessoa por cima; selecionada fica com moldura branca. */
+@Composable
+private fun QinblyBgTile(selected: Boolean, label: String = "", person: Boolean = true, onClick: () -> Unit, content: @Composable () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(
+            Modifier.size(52.dp).clip(RoundedCornerShape(10.dp)).clickable { onClick() }
+                .border(if (selected) 2.dp else 0.5.dp, if (selected) Color.White else Color(0x55FFFFFF), RoundedCornerShape(10.dp))
+        ) {
+            content()
+            if (person) QinblyBgPerson()
+        }
+        if (label.isNotBlank()) Text(label, color = if (selected) Color.White else Color(0xFF9AA0AC), fontSize = 8.sp, maxLines = 1, softWrap = false)
+    }
+}
+
 @Composable
 private fun QinblyEditorChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Text(
@@ -10992,6 +11080,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var edBgColor by remember(sourceUri) { mutableIntStateOf(0xFF222222.toInt()) }
     var edBgIndex by remember(sourceUri) { mutableIntStateOf(0) }
     var edBgImage by remember(sourceUri) { mutableStateOf<Uri?>(null) }
+    var edBgTab by remember { mutableStateOf("Efeitos") }
+    val edBgUsed = remember { mutableStateListOf<Uri>() }
     // Desenho: cor, espessura e estilo de cada traço (lista paralela a editorStrokes).
     var editorDrawColor by remember { mutableIntStateOf(0xFFFF2A9D.toInt()) }
     var editorDrawWidth by remember { mutableFloatStateOf(0.012f) }
@@ -12296,7 +12386,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         }
     }
     val bgPhotoPicker = rememberQinblyPhotoLauncher { picked ->
-        if (picked != null) { edBgImage = picked; edBgMode = "image"; runEditorFx("Fundo trocado.") }
+        if (picked != null) { if (picked !in edBgUsed) edBgUsed.add(0, picked); edBgImage = picked; edBgMode = "image"; edBgTab = "Galeria"; runEditorFx("Fundo trocado.") }
     }
     // Recorta a pessoa (sem fundo) e salva nas figurinhas do usuário.
     fun cutPersonToSticker() {
@@ -13181,59 +13271,101 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 }
                 if (newEditorChrome && editorTool == "Fundo") {
                     Column(Modifier.padding(horizontal = 14.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            val modes = listOf("Nenhum" to "", "Desfocar" to "blur", "Bokeh" to "bokeh", "Movimento" to "motion", "P&B" to "bw", "Escurecer" to "dim", "Clarear" to "light", "Cores" to "color", "Degradês" to "gradient", "Cenários" to "scene", "Galeria" to "image")
-                            items(modes) { (label, mode) ->
-                                QinblyEditorChip(label, if (mode.isBlank()) edBgMode.isBlank() else edBgMode == mode) {
-                                    if (!editorBusy) {
-                                        if (mode == "image") bgPhotoPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                                        else {
-                                            edBgMode = mode
-                                            if (mode == "gradient" || mode == "scene") edBgIndex = 0
-                                            runEditorFx(if (mode.isBlank()) "Fundo original." else "")
+                        // Abas: cada uma mostra só as miniaturas dela. Trocar de aba não muda a foto; só tocar numa miniatura.
+                        androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                            items(listOf("Efeitos", "Cores", "Degradês", "Cenários", "Galeria", "Recortar")) { tab ->
+                                val on = tab == edBgTab
+                                Column(Modifier.width(IntrinsicSize.Max).clickable { edBgTab = tab }) {
+                                    Text(tab, color = if (on) Color.White else Color(0xFF8A909C), fontSize = 10.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, softWrap = false)
+                                    Box(Modifier.padding(top = 4.dp).fillMaxWidth().height(2.dp).background(if (on) Color.White else Color.Transparent))
+                                }
+                            }
+                        }
+                        Box(Modifier.padding(horizontal = 14.dp).fillMaxWidth().height(0.5.dp).background(Color(0x33FFFFFF)))
+                        when (edBgTab) {
+                            "Efeitos" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items(listOf(Triple("Nenhum", "", "none"), Triple("Desfocar", "blur", "blur"), Triple("Bokeh", "bokeh", "bokeh"), Triple("Movimento", "motion", "motion"), Triple("P&B", "bw", "bw"), Triple("Escurecer", "dim", "dim"), Triple("Clarear", "light", "light"))) { (label, mode, kind) ->
+                                    QinblyBgTile(if (mode.isBlank()) edBgMode.isBlank() else edBgMode == mode, label, person = mode.isNotBlank(), onClick = {
+                                        if (!editorBusy) { edBgMode = mode; runEditorFx(if (mode.isBlank()) "Fundo original." else "") }
+                                    }) { QinblyBgSwatch(kind) }
+                                }
+                            }
+                            "Cores" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items(QinblyTextColors) { argb ->
+                                    QinblyBgTile(edBgMode == "color" && edBgColor == argb, onClick = {
+                                        if (!editorBusy) { edBgMode = "color"; edBgColor = argb; runEditorFx("") }
+                                    }) { Box(Modifier.fillMaxSize().background(Color(argb))) }
+                                }
+                            }
+                            "Degradês" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items(QinblyBgGradients.size) { i ->
+                                    QinblyBgTile(edBgMode == "gradient" && edBgIndex == i, onClick = {
+                                        if (!editorBusy) { edBgMode = "gradient"; edBgIndex = i; runEditorFx("") }
+                                    }) { Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(QinblyBgGradients[i].first), Color(QinblyBgGradients[i].second))))) }
+                                }
+                            }
+                            "Cenários" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                                items(QinblyBgSceneNames.size) { i ->
+                                    QinblyBgTile(edBgMode == "scene" && edBgIndex == i, QinblyBgSceneNames[i], onClick = {
+                                        if (!editorBusy) { edBgMode = "scene"; edBgIndex = i; runEditorFx("") }
+                                    }) { QinblyBgSwatch("scene$i") }
+                                }
+                            }
+                            "Galeria" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                item {
+                                    QinblyBgTile(false, "Escolher", person = false, onClick = {
+                                        if (!editorBusy) bgPhotoPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                    }) {
+                                        androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+                                            drawRoundRect(Color(0xFF8A909C), cornerRadius = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5.dp.toPx(), pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(14f, 10f))))
+                                            drawLine(Color.White, Offset(size.width * 0.5f, size.height * 0.28f), Offset(size.width * 0.5f, size.height * 0.72f), strokeWidth = 2.4.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                                            drawLine(Color.White, Offset(size.width * 0.28f, size.height * 0.5f), Offset(size.width * 0.72f, size.height * 0.5f), strokeWidth = 2.4.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
                                         }
                                     }
                                 }
+                                items(edBgUsed.toList()) { used ->
+                                    QinblyBgTile(edBgMode == "image" && edBgImage == used, person = false, onClick = {
+                                        if (!editorBusy) { edBgImage = used; edBgMode = "image"; runEditorFx("") }
+                                    }) { AsyncImage(model = used, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
+                                }
                             }
-                            item { QinblyEditorChip("Recortar pessoa", false) { cutPersonToSticker() } }
-                            item { QinblyEditorChip("Pronto", false) { editorTool = "Filtros" } }
+                            else -> Row(Modifier.padding(horizontal = 14.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Box(Modifier.size(52.dp).clip(RoundedCornerShape(10.dp))) {
+                                    QinblyBgSwatch("checker")
+                                    QinblyBgPerson()
+                                }
+                                Column(Modifier.weight(1f)) {
+                                    Text("Recortar pessoa", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                                    Text("Salva nas suas figurinhas", color = Color(0xFF9AA0AC), fontSize = 8.sp)
+                                }
+                                Text("Recortar", color = Color(0xFF0F1115), fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color.White).clickable { cutPersonToSticker() }.padding(horizontal = 22.dp, vertical = 10.dp))
+                            }
                         }
-                        when (edBgMode) {
-                            "blur", "bokeh", "motion", "dim", "light" -> Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Text("Intensidade", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(76.dp))
+                        Row(Modifier.padding(horizontal = 14.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            if (edBgTab == "Efeitos" && edBgMode in listOf("blur", "bokeh", "motion", "dim", "light")) {
+                                Text("Intensidade", color = Color(0xFF9AA0AC), fontSize = 9.sp, modifier = Modifier.width(76.dp))
                                 Slider(
                                     value = edBgIntensity, onValueChange = { edBgIntensity = it }, onValueChangeFinished = { runEditorFx("") },
                                     colors = SliderDefaults.colors(thumbColor = Color.White, activeTrackColor = Color.White, inactiveTrackColor = Color(0x55FFFFFF)),
                                     modifier = Modifier.weight(1f).height(30.dp)
                                 )
+                            } else {
+                                Text(
+                                    when (edBgTab) {
+                                        "Efeitos" -> "Só o fundo muda; a pessoa fica nítida"
+                                        "Cores" -> "Toque numa cor para pôr atrás da pessoa"
+                                        "Degradês" -> "Toque num degradê"
+                                        "Cenários" -> "Cenários desenhados no app"
+                                        "Galeria" -> "Toque no + para abrir suas fotos"
+                                        else -> "A foto do editor não muda"
+                                    },
+                                    color = Color(0xFF9AA0AC), fontSize = 8.sp, modifier = Modifier.weight(1f)
+                                )
                             }
-                            "color" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                items(QinblyTextColors) { argb ->
-                                    val chosen = argb == edBgColor
-                                    Box(
-                                        Modifier.size(28.dp).clip(CircleShape).background(Color(argb))
-                                            .border(if (chosen) 3.dp else 1.dp, if (chosen) Color.White else Color(0x99FFFFFF), CircleShape)
-                                            .clickable { if (!editorBusy) { edBgColor = argb; runEditorFx("") } }
-                                    )
-                                }
+                            Box(Modifier.size(36.dp).clip(CircleShape).background(Color.White).clickable { editorTool = "Filtros" }, contentAlignment = Alignment.Center) {
+                                Icon(QinblyCameraIcons.check, contentDescription = "Pronto", tint = Color(0xFF0F1115), modifier = Modifier.size(24.dp))
                             }
-                            "gradient" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                items(QinblyBgGradients.size) { i ->
-                                    val chosen = i == edBgIndex
-                                    Box(
-                                        Modifier.size(34.dp).clip(CircleShape)
-                                            .background(Brush.linearGradient(listOf(Color(QinblyBgGradients[i].first), Color(QinblyBgGradients[i].second))))
-                                            .border(if (chosen) 3.dp else 1.dp, if (chosen) Color.White else Color(0x99FFFFFF), CircleShape)
-                                            .clickable { if (!editorBusy) { edBgIndex = i; runEditorFx("") } }
-                                    )
-                                }
-                            }
-                            "scene" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(QinblyBgSceneNames.size) { i ->
-                                    QinblyEditorChip(QinblyBgSceneNames[i], i == edBgIndex) { if (!editorBusy) { edBgIndex = i; runEditorFx("") } }
-                                }
-                            }
-                            else -> {}
                         }
                     }
                 }
