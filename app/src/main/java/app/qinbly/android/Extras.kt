@@ -548,7 +548,7 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
         comments = try {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 val a = JSONArray(QinblyApi.rest(token, "GET", "neighborhood_comments?notice_id=eq.$noticeId&select=id,parent_id,user_id,body,created_at,profiles!neighborhood_comments_user_id_fkey(username,display_name)&order=created_at.asc&limit=300"))
-                (0 until a.length()).map { a.getJSONObject(it) }
+                (0 until a.length()).map { a.getJSONObject(it) }.filter { !QinblyHidden.matches(it.optString("body")) }
             }
         } catch (_: Exception) { comments ?: emptyList() }
     }

@@ -97,6 +97,15 @@ import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.SystemUpdate
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Password
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Devices
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.outlined.PhoneAndroid
+import androidx.compose.material.icons.outlined.Gavel
+import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -374,6 +383,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         QinblyEngagement.init(getSharedPreferences("qinbly_session", MODE_PRIVATE))
+        QinblyHidden.load(getSharedPreferences("qinbly_session", MODE_PRIVATE))
         QinblyAvatarCache.init(applicationContext)
         // Janela clara desde o primeiro quadro: qualquer vão entre telas mostra a cor do app, não preto.
         window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(QiblyTheme.background.toArgb()))
@@ -2432,10 +2442,10 @@ private fun NotificationsPage(
                     modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable { notifications.filter { it.readAt.isBlank() }.forEach { markRead(it) } }.padding(8.dp)
                 )
             }
-            IconButton(onClick = { showNotifSettings = true }) { Icon(Icons.Default.Menu, contentDescription = "Configurações das notificações", tint = QiblyTheme.text) }
+            IconButton(onClick = { showNotifSettings = true }) { Icon(Icons.Default.Settings, contentDescription = "Ajustes dos avisos", tint = QiblyTheme.text) }
         }
         if (showNotifSettings) {
-            QinblyFullScreen("Configurações das notificações", { showNotifSettings = false }, background = QiblyTheme.background, contentColor = QiblyTheme.text) {
+            QinblyFullScreen("Ajustes dos avisos", { showNotifSettings = false }, background = QiblyTheme.background, contentColor = QiblyTheme.text) {
                 // (rótulo, chave, descrição, invertido). "Silenciar tudo" é o contrário de setting_notifications.
                 listOf(
                     Triple("Silenciar tudo", "setting_notifications", "Pausar os avisos neste aparelho"),
@@ -5530,6 +5540,19 @@ private fun QinblyLiveSearch(lives: List<QinblyLive>, onBack: () -> Unit, onOpen
 @Composable
 private fun QinblyNearbyPage(onNotice: (String) -> Unit, onOpenConversation: (String) -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val locPrefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    var locEnabled by remember { mutableStateOf(locPrefs.getBoolean("setting_location_enabled", true)) }
+    if (!locEnabled) {
+        // Configurações > Localização desligada: estas telas não pedem a posição.
+        Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = QiblyTheme.secondary, modifier = Modifier.size(44.dp))
+            Spacer(Modifier.height(12.dp))
+            Text("A localização está desligada", color = QiblyTheme.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text("Perto de mim, Mural e Mercado precisam saber onde você está. Você pode religar quando quiser (também em Configurações > Localização).", color = QiblyTheme.secondary, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(top = 8.dp, bottom = 18.dp))
+            Button(onClick = { locPrefs.edit().putBoolean("setting_location_enabled", true).apply(); locEnabled = true }, colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White), shape = RoundedCornerShape(24.dp)) { Text("Ligar a localização", fontWeight = FontWeight.Bold) }
+        }
+        return
+    }
     fun hasLocation() = androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
         androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
     var allowed by remember { mutableStateOf(hasLocation()) }
@@ -9368,6 +9391,14 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
     var cacheTick by remember { mutableIntStateOf(0) }
     val cacheSizeLabel = remember(cacheTick) { val b = runCatching { context.cacheDir.walkTopDown().filter { it.isFile }.sumOf { it.length() } }.getOrDefault(0L); if (b < 1024 * 1024) "${b / 1024} KB" else String.format(java.util.Locale.US, "%.1f MB", b / 1048576.0) }
     var showBlockedAccounts by remember { mutableStateOf(false) }
+    var showCredential by remember { mutableStateOf("") }
+    var showLegal by remember { mutableStateOf("") }
+    var showClearLocation by remember { mutableStateOf(false) }
+    var showHiddenWords by remember { mutableStateOf(false) }
+    if (showCredential.isNotBlank()) QinblyCredentialScreen(showCredential, prefs, { showCredential = "" }, onNotice)
+    if (showLegal.isNotBlank()) QinblyLegalScreen(showLegal) { showLegal = "" }
+    if (showClearLocation) QinblyClearLocationScreen(prefs, { showClearLocation = false }, onNotice)
+    if (showHiddenWords) QinblyHiddenWordsScreen(prefs) { showHiddenWords = false }
     var showDeleteAccount by remember { mutableStateOf(false) }
     var deleteConfirmText by remember { mutableStateOf("") }
     var deletingAccount by remember { mutableStateOf(false) }
@@ -9449,12 +9480,12 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
 
     val title = when (section) {
         "account" -> "Conta"
-        "privacy" -> "Privacidade e segurança"
-        "notifications" -> "Notificações"
+        "privacy" -> "Privacidade"
+        "location" -> "Localização"
         "appearance" -> "Tela"
         "font_names" -> "Fonte dos nomes"
         "font_app" -> "Fonte do aplicativo"
-        "content" -> "Conteúdo e interações"
+        "content" -> "Conteúdo"
         "lives" -> "Lives e transmissão"
         "storage" -> "Dados e armazenamento"
         "help" -> "Ajuda e suporte"
@@ -9495,13 +9526,15 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
             if (section == "home") {
                 item { Text("CONFIGURAÇÕES", color = Color(0xFF8A9BAB), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold) }
                 val categories = listOf(
-                    Triple("account", "Conta", "Perfil, contas bloqueadas e exclusão"),
-                    Triple("notifications", "Notificações", "Escolha quais avisos receber"),
+                    Triple("account", "Conta", "Senha, e-mail, aparelhos e exclusão"),
+                    Triple("privacy", "Privacidade", "Quem vê, quem fala com você e bloqueios"),
+                    Triple("location", "Localização", "Usar a localização e apagar o que foi guardado"),
+                    Triple("content", "Conteúdo", "Palavras ocultas e salvar no celular"),
                     Triple("appearance", "Tela", "Tema escuro e fontes"),
                     Triple("accessibility", "Acessibilidade", "Texto maior e menos animações"),
                     Triple("storage", "Dados e armazenamento", "Cache e seus dados"),
                     Triple("invite", "Convidar amigos", "Compartilhe o ${QinblyBrand.Name}"),
-                    Triple("help", "Ajuda e suporte", "Central, sobre e atualizações")
+                    Triple("help", "Ajuda e suporte", "Termos, privacidade, sobre e atualizações")
                 ).filter { it.second.contains(search, true) || it.third.contains(search, true) }
                 val loggedIn = username.isNotBlank() && !prefs.getString("token", null).isNullOrBlank()
                 val accountActionMatches = search.isBlank() ||
@@ -9512,7 +9545,9 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                     item {
                         val icon = when (category.first) {
                             "account" -> Icons.Outlined.PersonOutline
-                            "notifications" -> Icons.Outlined.NotificationsNone
+                            "privacy" -> Icons.Outlined.Lock
+                            "location" -> Icons.Outlined.LocationOn
+                            "content" -> Icons.Outlined.Tune
                             "feed" -> Icons.Outlined.PlayCircleOutline
                             "appearance" -> Icons.Outlined.DarkMode
                             "accessibility" -> Icons.Outlined.Accessibility
@@ -9554,24 +9589,57 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
             } else when (section) {
                 "account" -> {
                     item { Text(if (username.isBlank()) "Nenhuma conta conectada" else "Conta atual: @$username", color = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.padding(vertical = 6.dp)) }
-                    item { VideoPrefSwitch("Mostrar que estou online", "Conta você na lista de pessoas online", "setting_activity_status", true, prefs, Icons.Outlined.Sensors) }
+                    item { Text("SEGURANÇA", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)) }
+                    item { SettingsLink("Trocar senha", "Escolher uma senha nova", Icons.Outlined.Password) { showCredential = "password" } }
+                    item { SettingsLink("Trocar e-mail", "Mudar o e-mail da conta", Icons.Outlined.Email) { showCredential = "email" } }
+                    item { SettingsLink("Sair de outros aparelhos", "Encerra a sessão em todos os outros aparelhos", Icons.Outlined.Devices) {
+                        val tk = prefs.getString("token", null)
+                        if (tk.isNullOrBlank()) onNotice("Entre na sua conta primeiro.")
+                        else Thread {
+                            val msg = try { QinblyApi.signOutOtherDevices(tk); "Pronto: os outros aparelhos foram desconectados." } catch (e: Exception) { e.message ?: "Não foi possível desconectar agora." }
+                            android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(msg) }
+                        }.start()
+                    } }
+                    item { Text("CONTA", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)) }
                     item { SettingsLink("Compartilhar perfil", "Convide amigos para conhecer seu perfil", Icons.Outlined.Share) {
                         try {
                             val share = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Conheça meu perfil no ${QinblyBrand.Name}: @${username}") }
                             context.startActivity(Intent.createChooser(share, "Compartilhar perfil"))
                         } catch (_: Exception) { onNotice("Não foi possível abrir o compartilhamento neste aparelho.") }
                     } }
-                    item { SettingsLink("Contas bloqueadas", "Gerenciar quem você bloqueou", Icons.Outlined.Block) { showBlockedAccounts = true } }
                     item { SettingsLink("Excluir conta", "Apagar sua conta e seus dados definitivamente", Icons.Outlined.DeleteOutline) { deleteConfirmText = ""; showDeleteAccount = true } }
                 }
-                "notifications" -> {
-                    item { SettingSwitch("Silenciar tudo", "Desliga todos os avisos do ${QinblyBrand.Name}", !notifications, Icons.Outlined.NotificationsOff) { notifications = !it; prefs.edit().putBoolean("setting_notifications", !it).apply() } }
-                    item { Text("AVISOS", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 10.dp, bottom = 2.dp)) }
-                    item { SettingSwitch("Curtidas", "Quando alguém curtir sua publicação", likesNotice, Icons.Outlined.FavoriteBorder) { likesNotice = it; prefs.edit().putBoolean("setting_notice_likes", it).apply() } }
-                    item { SettingSwitch("Comentários e respostas", "Quando alguém comentar ou responder você", commentsNotice, Icons.Outlined.ChatBubbleOutline) { commentsNotice = it; prefs.edit().putBoolean("setting_notice_comments", it).apply() } }
-                    item { SettingSwitch("Menções", "Quando alguém marcar você com @", mentionsNotice, Icons.Outlined.AlternateEmail) { mentionsNotice = it; prefs.edit().putBoolean("setting_notice_mentions", it).apply() } }
-                    item { SettingSwitch("Novos seguidores", "Quando alguém começar a seguir você", followersNotice, Icons.Outlined.GroupAdd) { followersNotice = it; prefs.edit().putBoolean("setting_notice_followers", it).apply() } }
-                    item { SettingSwitch("Avisos do ${QinblyBrand.Name}", "Novidades e segurança da sua conta", systemNotice, Icons.Outlined.Campaign) { systemNotice = it; prefs.edit().putBoolean("setting_notice_system", it).apply() } }
+                "privacy" -> {
+                    item { Text("QUEM VÊ SEUS STORIES (PADRÃO)", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)) }
+                    item {
+                        var chosen by remember { mutableStateOf(prefs.getString("story_default_audience", "all") ?: "all") }
+                        Column {
+                            listOf("all" to "Todos", "friends" to "Amigos (quem você segue e te segue)", "followers" to "Seguidores", "near" to "Perto de você (sua cidade)").forEach { (key, label) ->
+                                val on = chosen == key
+                                Row(Modifier.fillMaxWidth().clickable { chosen = key; prefs.edit().putString("story_default_audience", key).apply() }.padding(horizontal = 8.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(if (on) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked, contentDescription = null, tint = if (on) QinblyBrand.Accent else Muted, modifier = Modifier.size(22.dp))
+                                    Spacer(Modifier.width(14.dp))
+                                    Text(label, color = QiblyTheme.text, fontSize = 15.sp)
+                                }
+                            }
+                            Text("Em cada story você ainda pode mudar isso antes de publicar.", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                        }
+                    }
+                    item { Text("ATIVIDADE", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 14.dp, bottom = 2.dp)) }
+                    item { VideoPrefSwitch("Mostrar que estou online", "Você aparece na lista de pessoas online", "setting_activity_status", true, prefs, Icons.Outlined.Sensors) }
+                    item { SettingsLink("Contas bloqueadas", "Gerenciar quem você bloqueou", Icons.Outlined.Block) { showBlockedAccounts = true } }
+                }
+                "location" -> {
+                    item { VideoPrefSwitch("Usar minha localização", "Perto de mim, Mural e Mercado. Desligado, essas telas não pedem sua posição", "setting_location_enabled", true, prefs, Icons.Outlined.LocationOn) }
+                    item { Text("O QUE FICA GUARDADO", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 14.dp, bottom = 2.dp)) }
+                    item { Text("A cidade do seu perfil e a posição de cada aviso que você publicou no Mural.", color = Muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) }
+                    item { SettingsLink("Apagar dados de localização", "Remove seus avisos do Mural e a cidade guardada", Icons.Outlined.DeleteOutline) { showClearLocation = true } }
+                }
+                "content" -> {
+                    item { Text("FILTROS", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)) }
+                    item { SettingsLink("Palavras ocultas", "Esconde comentários que tenham estas palavras", Icons.Outlined.VisibilityOff) { showHiddenWords = true } }
+                    item { Text("AO PUBLICAR", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 14.dp, bottom = 2.dp)) }
+                    item { VideoPrefSwitch("Salvar no celular", "Guardar uma cópia no celular em cada publicação nova", "setting_save_default", false, prefs, Icons.Outlined.PhoneAndroid) }
                 }
                 "appearance" -> {
                     item { Text("TEMA", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(bottom = 2.dp)) }
@@ -9624,7 +9692,9 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                 }
                 else -> {
                     item { SettingsLink("Reportar um problema", "Enviar um relato por e-mail ou aplicativo", Icons.Outlined.Flag) { try { val report = Intent(Intent.ACTION_SENDTO).apply { data = android.net.Uri.parse("mailto:"); putExtra(Intent.EXTRA_SUBJECT, "Relato de problema — ${QinblyBrand.Name}"); putExtra(Intent.EXTRA_TEXT, "Descreva o problema encontrado:\n\nVersão: 0.3.0\nDispositivo: " + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL) }; context.startActivity(Intent.createChooser(report, "Reportar problema")) } catch (_: Exception) { onNotice("Não há aplicativo de e-mail disponível neste aparelho.") } } }
-                    item { SettingsLink("Sobre o ${QinblyBrand.Name}", "Versão 0.3.0 · Termos e privacidade", Icons.Outlined.Info) { onNotice("${QinblyBrand.Name} 0.3.0. Os links de termos e privacidade precisam ser publicados antes do lançamento.") } }
+                    item { SettingsLink("Termos de uso", "Regras para usar o ${QinblyBrand.Name}", Icons.Outlined.Gavel) { showLegal = "terms" } }
+                    item { SettingsLink("Política de privacidade", "Quais dados guardamos e por quê", Icons.Outlined.PrivacyTip) { showLegal = "privacy" } }
+                    item { SettingsLink("Sobre o ${QinblyBrand.Name}", "Versão ${BuildConfig.VERSION_NAME}", Icons.Outlined.Info) { onNotice("${QinblyBrand.Name} versão ${BuildConfig.VERSION_NAME}.") } }
                     item { SettingsLink("Atualizações do aplicativo", "Verificar e baixar o APK mais recente", Icons.Outlined.SystemUpdate) { context.startActivity(Intent(context, RemoteUiActivity::class.java)) } }
                 }
             }
@@ -10578,12 +10648,12 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var swipeFilterLabel by remember { mutableStateOf("") }
     LaunchedEffect(swipeFilterLabel) { if (swipeFilterLabel.isNotBlank()) { kotlinx.coroutines.delay(900); swipeFilterLabel = "" } }
     var storyHours by remember { mutableIntStateOf(24) }
-    var storyAudience by remember { mutableStateOf("all") }
+    var storyAudience by remember { mutableStateOf(prefs.getString("story_default_audience", "all") ?: "all") }
     var storyAlsoFeed by remember { mutableStateOf(false) }
     var storyFiltersOpen by remember { mutableStateOf(false) }
     var allowComments by remember { mutableStateOf(true) }
     var allowSharing by remember { mutableStateOf(true) }
-    var saveToDevice by remember { mutableStateOf(false) }
+    var saveToDevice by remember { mutableStateOf(prefs.getBoolean("setting_save_default", false)) }
     var allowSaveOthers by remember { mutableStateOf(true) }
     var postVisibility by remember { mutableStateOf("Todos") }
     val taggedPeople = remember { mutableStateListOf<String>() }
@@ -12962,5 +13032,115 @@ private fun Modifier.qinblySwipeFilters(enabled: Boolean = true, onSwipe: (Int) 
             if (!c.pressed) break
         }
         if (!multi && kotlin.math.abs(dx) > 90.dp.toPx() && kotlin.math.abs(dx) > kotlin.math.abs(dy) * 1.5f) onSwipe(if (dx < 0) 1 else -1)
+    }
+}
+
+
+/** Trocar senha ou e-mail (login do Supabase). */
+@Composable
+private fun QinblyCredentialScreen(kind: String, prefs: android.content.SharedPreferences, onDismiss: () -> Unit, onNotice: (String) -> Unit) {
+    val password = kind == "password"
+    var first by remember { mutableStateOf("") }
+    var second by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf("") }
+    QinblyFullScreen(if (password) "Trocar senha" else "Trocar e-mail", { if (!busy) onDismiss() }, background = QiblyTheme.background, contentColor = QiblyTheme.text) {
+        Text(if (password) "Escolha uma senha nova, com pelo menos 8 caracteres." else "Vamos mandar um link de confirmação para o e-mail novo. O e-mail só muda depois que você confirmar.", color = QiblyTheme.secondary, fontSize = 14.sp, modifier = Modifier.padding(bottom = 14.dp))
+        OutlinedTextField(
+            value = first, onValueChange = { first = it; error = "" }, singleLine = true, enabled = !busy,
+            label = { Text(if (password) "Senha nova" else "E-mail novo") },
+            visualTransformation = if (password) androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = if (password) androidx.compose.ui.text.input.KeyboardType.Password else androidx.compose.ui.text.input.KeyboardType.Email),
+            modifier = Modifier.fillMaxWidth()
+        )
+        if (password) {
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                value = second, onValueChange = { second = it; error = "" }, singleLine = true, enabled = !busy,
+                label = { Text("Repita a senha nova") },
+                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        if (error.isNotBlank()) Text(error, color = Color(0xFFFF8A80), fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
+        Spacer(Modifier.height(18.dp))
+        Button(
+            enabled = !busy && first.isNotBlank(),
+            onClick = {
+                val token = prefs.getString("token", null)
+                when {
+                    token.isNullOrBlank() -> error = "Entre na sua conta primeiro."
+                    password && first.length < 8 -> error = "A senha precisa ter pelo menos 8 caracteres."
+                    password && first != second -> error = "As duas senhas não são iguais."
+                    !password && !android.util.Patterns.EMAIL_ADDRESS.matcher(first.trim()).matches() -> error = "Esse e-mail não parece certo."
+                    else -> {
+                        busy = true
+                        Thread {
+                            val result = try {
+                                if (password) QinblyApi.changePassword(token, first) else QinblyApi.changeEmail(token, first.trim())
+                                null
+                            } catch (e: Exception) { e.message ?: "Não foi possível salvar agora." }
+                            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                busy = false
+                                if (result == null) { onNotice(if (password) "Senha trocada." else "Pedido enviado: confirme no e-mail novo."); onDismiss() } else error = result
+                            }
+                        }.start()
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(26.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
+        ) { if (busy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White) else Text("Salvar", fontWeight = FontWeight.Bold) }
+    }
+}
+
+/** Apagar os dados de localização guardados (avisos do Mural e cidade do perfil). */
+@Composable
+private fun QinblyClearLocationScreen(prefs: android.content.SharedPreferences, onDismiss: () -> Unit, onNotice: (String) -> Unit) {
+    var busy by remember { mutableStateOf(false) }
+    QinblyFullScreen("Apagar dados de localização", { if (!busy) onDismiss() }, background = QiblyTheme.background, contentColor = QiblyTheme.text) {
+        Text("Isto apaga:", color = QiblyTheme.text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        Text("• todos os avisos que você publicou no Mural, porque cada um guarda a posição onde foi feito;\n• a cidade guardada no seu perfil e a cidade escolhida neste aparelho.", color = QiblyTheme.secondary, fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 6.dp, bottom = 10.dp))
+        Text("Não dá para desfazer. Suas publicações, stories e mensagens não são apagados.", color = QiblyTheme.secondary, fontSize = 14.sp, modifier = Modifier.padding(bottom = 20.dp))
+        Button(
+            enabled = !busy,
+            onClick = {
+                val token = prefs.getString("token", null)
+                val uid = QinblyApi.currentUserId(prefs)
+                if (token.isNullOrBlank() || uid.isNullOrBlank()) { onNotice("Entre na sua conta primeiro."); return@Button }
+                busy = true
+                Thread {
+                    val ok = try { QinblyApi.clearLocationData(token, uid); true } catch (_: Exception) { false }
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        busy = false
+                        if (ok) {
+                            prefs.edit().remove("market_city").remove("device_place").remove("city_synced").apply()
+                            onNotice("Dados de localização apagados.")
+                            onDismiss()
+                        } else onNotice("Não foi possível apagar agora. Tente de novo.")
+                    }
+                }.start()
+            },
+            modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(26.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD93025), contentColor = Color.White)
+        ) { if (busy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White) else Text("Apagar tudo", fontWeight = FontWeight.Bold) }
+    }
+}
+
+/** Palavras ocultas: comentários com estas palavras não aparecem para você. */
+@Composable
+private fun QinblyHiddenWordsScreen(prefs: android.content.SharedPreferences, onDismiss: () -> Unit) {
+    var text by remember { mutableStateOf(prefs.getString("hidden_words", "").orEmpty()) }
+    QinblyFullScreen("Palavras ocultas", {
+        prefs.edit().putString("hidden_words", text.split(",").map { it.trim() }.filter { it.isNotEmpty() }.joinToString(", ")).apply()
+        QinblyHidden.load(prefs)
+        onDismiss()
+    }, background = QiblyTheme.background, contentColor = QiblyTheme.text) {
+        Text("Escreva as palavras separadas por vírgula. Comentários que tenham alguma delas somem para você (só para você). Salva ao voltar.", color = QiblyTheme.secondary, fontSize = 14.sp, modifier = Modifier.padding(bottom = 14.dp))
+        OutlinedTextField(
+            value = text, onValueChange = { text = it }, label = { Text("Ex.: palavra1, palavra2") },
+            minLines = 3, modifier = Modifier.fillMaxWidth()
+        )
     }
 }

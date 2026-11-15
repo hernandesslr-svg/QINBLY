@@ -7,6 +7,20 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /** Cliente HTTP mínimo para a API QINBLY. Nunca usa senha local como autenticação. */
+/** Palavras ocultas (Configurações > Conteúdo): comentários que tiverem alguma delas não aparecem. */
+object QinblyHidden {
+    @Volatile var words: List<String> = emptyList()
+    fun load(prefs: android.content.SharedPreferences) {
+        words = prefs.getString("hidden_words", "").orEmpty().split(",").map { it.trim().lowercase() }.filter { it.isNotEmpty() }
+    }
+    fun matches(text: String): Boolean {
+        val w = words
+        if (w.isEmpty()) return false
+        val t = text.lowercase()
+        return w.any { t.contains(it) }
+    }
+}
+
 object QinblyApi {
     @Volatile private var applicationContext: Context? = null
     private val refreshLock = Any()
@@ -844,6 +858,37 @@ object QinblyApi {
         prefs.edit().putString("city_synced", "$uid|$city").apply()
     }
 
+    /** Chamada ao login do Supabase (trocar senha/e-mail, sair de outros aparelhos). */
+    private fun authCall(method: String, path: String, token: String, body: JSONObject? = null): String {
+        val c = (URL("https://jqomgrdlocdqaarfqkay.supabase.co/auth/v1/" + path).openConnection() as HttpURLConnection).apply {
+            requestMethod = method; connectTimeout = 20000; readTimeout = 30000
+            setRequestProperty("apikey", BuildConfig.SUPABASE_PUBLISHABLE_KEY)
+            setRequestProperty("Authorization", "Bearer $token")
+            if (body != null) { doOutput = true; setRequestProperty("Content-Type", "application/json") }
+        }
+        try {
+            if (body != null) c.outputStream.use { it.write(body.toString().toByteArray()) }
+            val status = c.responseCode
+            val text = (if (status >= 400) c.errorStream else c.inputStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
+            if (status >= 400) {
+                val msg = try { JSONObject(text).let { it.optString("msg").ifBlank { it.optString("message").ifBlank { it.optString("error_description") } } } } catch (_: Exception) { "" }
+                throw IllegalStateException(msg.ifBlank { "Não foi possível concluir (erro $status)." })
+            }
+            return text
+        } finally { c.disconnect() }
+    }
+
+    fun changePassword(token: String, newPassword: String) { authCall("PUT", "user", token, JSONObject().put("password", newPassword)) }
+    fun changeEmail(token: String, newEmail: String) { authCall("PUT", "user", token, JSONObject().put("email", newEmail)) }
+    /** Encerra a sessão em todos os outros aparelhos (este continua conectado). */
+    fun signOutOtherDevices(token: String) { authCall("POST", "logout?scope=others", token) }
+
+    /** Apaga o que o app guarda sobre onde a pessoa está: avisos do Mural dela e a cidade do perfil. */
+    fun clearLocationData(token: String, userId: String) {
+        rest(token, "DELETE", "neighborhood_notices?user_id=eq.$userId", null, "return=minimal")
+        rest(token, "PATCH", "profiles?id=eq.$userId", JSONObject().put("city", "").toString(), "return=minimal")
+    }
+
     fun createStory(context: Context, token: String, uri: Uri, caption: String) {
         val resolver = context.contentResolver
         val type = (resolver.getType(uri) ?: "image/jpeg").lowercase()
@@ -942,6 +987,7 @@ object QinblyApi {
         val comments = response.optJSONArray("comments") ?: org.json.JSONArray()
         return (0 until comments.length()).mapNotNull { index ->
             val comment = comments.optJSONObject(index) ?: return@mapNotNull null
+            if (QinblyHidden.matches(comment.optString("body"))) return@mapNotNull null
             val author = comment.optJSONObject("author") ?: org.json.JSONObject()
             CommentSummary(
                 comment.optString("id"), comment.optString("body"), author.optString("username"), author.optString("displayName"),
