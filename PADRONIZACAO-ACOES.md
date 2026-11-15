@@ -561,3 +561,7 @@ Precisa de um projeto Firebase seu: `google-services.json`, dependência `fireba
 - **App** (`Stories.kt`): na faixa do topo das mensagens, "Criar" abre o menu (story da galeria, story com foto tirada agora, escrever/mudar/apagar nota, ver meu story). Quem tem story ganha um aro (colorido = novo, cinza = já visto) e a nota aparece num balãozinho acima da foto (cada item reserva 20 dp de altura para alinhar). Visualizador em tela cheia: barras de progresso, toque à direita avança e à esquerda volta, passa sozinho (6 s foto; vídeo até o fim, máx. 20 s); nos seus stories mostra quantos viram, lista de quem viu e excluir.
 - Visual novo na faixa (aro e balão de nota) feito sem esboço prévio: ajustar se não agradar.
 - Ainda sem função: Presentes e transmissão de verdade da live (dinheiro/serviço externo).
+
+## Limpeza do editor e da câmera
+- **Fundo:** o botão saiu da lateral do editor e da câmera (por enquanto). O código do Fundo continua guardado no projeto, sem botão: como voltar está em `PADRAO-EDITOR.md` (editor) e `PADRAO-CAMERA.md` (câmera).
+- **Menu Criar da faixa de conversas:** removido o caminho antigo "galeria/câmera → Novo story" (`Stories.kt`), que nenhum botão chamava mais; o botão Story abre o Criar normal.
