@@ -10763,6 +10763,7 @@ private object QinblyCameraIcons {
     val editor by lazy { build("cam_editar", "M4 8h9M17 8h3M4 16h3M11 16h9", "M15 6v4M9 14v4") }
     val pen by lazy { build("cam_desenho", "M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z", "M14 7l3 3") }
     val undo by lazy { build("cam_desfazer", "M9 14L4 9l5-5", "M4 9h10.5a5.5 5.5 0 0 1 0 11H11") }
+    val redo by lazy { build("cam_refazer", "M15 14l5-5-5-5", "M20 9H9.5a5.5 5.5 0 0 0 0 11H13") }
     val eraser by lazy { build("cam_borracha", "M16.2 3.8l4 4a1.5 1.5 0 0 1 0 2.1L11 19.2H6.5L3.8 16.5a1.5 1.5 0 0 1 0-2.1L14.1 3.8a1.5 1.5 0 0 1 2.1 0z", "M8.5 9.5l6 6M11 19.2h9") }
     val trash by lazy { build("cam_lixeira", "M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13", "M10 11v5M14 11v5") }
     val check by lazy { build("cam_visto", "M5 12.5l4.5 4.5L19 7") }
@@ -11087,6 +11088,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var editorDrawWidth by remember { mutableFloatStateOf(0.012f) }
     var editorEraser by remember { mutableStateOf(false) }
     val editorStrokeMeta = remember { mutableStateListOf<Pair<Int, Float>>() }
+    // Pilha do "Refazer": traços desfeitos (traço + cor/espessura), que a pessoa pode trazer de volta.
+    val editorRedo = remember { mutableStateListOf<Pair<List<Offset>, Pair<Int, Float>>>() }
     var editorRatio by remember { mutableStateOf("Original") }
     var editorZoom by remember { mutableFloatStateOf(1f) }
     var editorPanX by remember { mutableFloatStateOf(0f) }
@@ -11278,7 +11281,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             editorTool = "Filtros"
             sourceUri = null; selectedUri = null; bakedUri = null
             editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorStickers.clear(); editorSelSticker = null; editorTextScale = 1f; editorTextSelected = false; editorWordColors.clear(); editorSelWord = -1
-            editorStrokes.clear(); editorStrokeMeta.clear()
+            editorStrokes.clear(); editorStrokeMeta.clear(); editorRedo.clear()
             showCollabGallery = true
         } else if (initialMode == "gallery") returnToGallery()
         else {
@@ -11287,7 +11290,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             editorTool = "Filtros"
             sourceUri = null; selectedUri = null; bakedUri = null
             editorText = ""; editorTextEditing = false; editorTextDx = 0f; editorTextDy = 0f; editorStickers.clear(); editorSelSticker = null; editorTextScale = 1f; editorTextSelected = false; editorWordColors.clear(); editorSelWord = -1
-            editorStrokes.clear(); editorStrokeMeta.clear()
+            editorStrokes.clear(); editorStrokeMeta.clear(); editorRedo.clear()
             camTextMode = false; camTextEditing = false
         }
     }
@@ -12737,7 +12740,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         detectDragGestures(
                             onDragStart = { start ->
                                 if (editorEraser) eraseAt(start)
-                                else { editorStrokes.add(listOf(Offset(start.x / size.width, start.y / size.height))); editorStrokeMeta.add(editorDrawColor to editorDrawWidth) }
+                                else { editorRedo.clear(); editorStrokes.add(listOf(Offset(start.x / size.width, start.y / size.height))); editorStrokeMeta.add(editorDrawColor to editorDrawWidth) }
                             },
                             onDrag = { change, _ ->
                                 change.consume()
@@ -13194,29 +13197,31 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 if (newEditorChrome && editorTool == "Desenho") {
                     // Cor do traço de amostra: a cor escolhida (branco quando a borracha está ligada).
                     val drawInk = if (editorEraser) Color.White else Color(editorDrawColor)
-                    Column(Modifier.padding(horizontal = 14.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Tudo cresce junto, mas encolhe um pouco em telas estreitas para a linha de baixo não cortar.
+                    val k = ((androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp - 56f) / 450f).coerceIn(0.7f, 1f)
+                    Column(Modifier.padding(horizontal = 14.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0x99000000)).padding(vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                             items(QinblyTextColors) { argb ->
                                 val chosen = argb == editorDrawColor && !editorEraser
                                 Box(
-                                    Modifier.size(34.dp).clip(CircleShape).background(Color(argb))
+                                    Modifier.size(44.dp).clip(CircleShape).background(Color(argb))
                                         .border(if (chosen) 3.dp else 1.dp, if (chosen) Color.White else Color(0x99FFFFFF), CircleShape)
                                         .clickable { editorDrawColor = argb; editorEraser = false }
                                 )
                             }
                         }
-                        Box(Modifier.padding(horizontal = 12.dp).fillMaxWidth().height(0.5.dp).background(Color(0x33FFFFFF)))
-                        Row(Modifier.padding(horizontal = 12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Box(Modifier.padding(horizontal = 14.dp).fillMaxWidth().height(0.5.dp).background(Color(0x33FFFFFF)))
+                        Row(Modifier.padding(horizontal = 14.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             // Espessura da ponta: um pedacinho de traço desenhado de cada grossura, na cor escolhida.
-                            listOf(0.006f to 2f, 0.012f to 4f, 0.020f to 7f, 0.032f to 11f).forEach { (wf, px) ->
+                            listOf(0.006f to 3f, 0.012f to 5f, 0.020f to 9f, 0.032f to 14f).forEach { (wf, px) ->
                                 val chosen = editorDrawWidth == wf && !editorEraser
                                 Box(
-                                    Modifier.size(width = 28.dp, height = 44.dp).clip(RoundedCornerShape(10.dp))
-                                        .border(if (chosen) 2.dp else 1.dp, if (chosen) Color.White else Color(0x99FFFFFF), RoundedCornerShape(10.dp))
+                                    Modifier.size(width = (36 * k).dp, height = (58 * k).dp).clip(RoundedCornerShape(12.dp))
+                                        .border(if (chosen) 2.dp else 1.dp, if (chosen) Color.White else Color(0x99FFFFFF), RoundedCornerShape(12.dp))
                                         .clickable { editorDrawWidth = wf; editorEraser = false },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    androidx.compose.foundation.Canvas(Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 9.dp)) {
+                                    androidx.compose.foundation.Canvas(Modifier.fillMaxSize().padding(horizontal = 7.dp, vertical = 12.dp)) {
                                         val sample = androidx.compose.ui.graphics.Path()
                                         sample.moveTo(size.width * 0.5f, size.height)
                                         sample.cubicTo(size.width * 0.1f, size.height * 0.65f, size.width * 0.9f, size.height * 0.35f, size.width * 0.5f, 0f)
@@ -13225,37 +13230,46 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 }
                             }
                             Spacer(Modifier.weight(1f))
-                            // Botões redondos grandes: Desfazer, Borracha e Limpar tudo.
-                            listOf("Desfazer", "Borracha", "Limpar").forEach { name ->
+                            // Botões redondos grandes: Desfazer, Refazer, Borracha e Limpar tudo.
+                            listOf("Desfazer", "Refazer", "Borracha", "Limpar").forEach { name ->
                                 val active = name == "Borracha" && editorEraser
-                                Column(Modifier.width(46.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                val enabled = when (name) { "Desfazer" -> editorStrokes.isNotEmpty(); "Refazer" -> editorRedo.isNotEmpty(); else -> true }
+                                Column(Modifier.width((60 * k).dp).alpha(if (enabled) 1f else 0.4f), horizontalAlignment = Alignment.CenterHorizontally) {
                                     Box(
-                                        Modifier.size(42.dp).clip(CircleShape).background(if (active) Color.White else Color.Transparent)
+                                        Modifier.size((54 * k).dp).clip(CircleShape).background(if (active) Color.White else Color.Transparent)
                                             .border(1.2.dp, if (active) Color.White else Color(0xFF8A909C), CircleShape)
                                             .clickable {
                                                 when (name) {
-                                                    "Desfazer" -> if (editorStrokes.isNotEmpty()) { editorStrokes.removeAt(editorStrokes.lastIndex); if (editorStrokeMeta.isNotEmpty()) editorStrokeMeta.removeAt(editorStrokeMeta.lastIndex) }
+                                                    "Desfazer" -> if (editorStrokes.isNotEmpty()) {
+                                                        val i = editorStrokes.lastIndex
+                                                        editorRedo.add(editorStrokes[i] to (editorStrokeMeta.getOrNull(i) ?: (editorDrawColor to editorDrawWidth)))
+                                                        editorStrokes.removeAt(i); if (editorStrokeMeta.size > i) editorStrokeMeta.removeAt(i)
+                                                    }
+                                                    "Refazer" -> if (editorRedo.isNotEmpty()) {
+                                                        val back = editorRedo.removeAt(editorRedo.lastIndex)
+                                                        editorStrokes.add(back.first); editorStrokeMeta.add(back.second)
+                                                    }
                                                     "Borracha" -> editorEraser = !editorEraser
-                                                    else -> { editorStrokes.clear(); editorStrokeMeta.clear() }
+                                                    else -> { editorStrokes.clear(); editorStrokeMeta.clear(); editorRedo.clear() }
                                                 }
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
-                                            when (name) { "Desfazer" -> QinblyCameraIcons.undo; "Borracha" -> QinblyCameraIcons.eraser; else -> QinblyCameraIcons.trash },
-                                            contentDescription = name, tint = if (active) Color(0xFF0F1115) else Color.White, modifier = Modifier.size(26.dp)
+                                            when (name) { "Desfazer" -> QinblyCameraIcons.undo; "Refazer" -> QinblyCameraIcons.redo; "Borracha" -> QinblyCameraIcons.eraser; else -> QinblyCameraIcons.trash },
+                                            contentDescription = name, tint = if (active) Color(0xFF0F1115) else Color.White, modifier = Modifier.size((32 * k).dp)
                                         )
                                     }
-                                    Text(name, color = Color(0xFF9AA0AC), fontSize = 8.sp, maxLines = 1, softWrap = false, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                    Text(name, color = Color(0xFF9AA0AC), fontSize = 9.sp, maxLines = 1, softWrap = false, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                                 }
                             }
                             // Pronto: círculo branco com o visto.
-                            Column(Modifier.width(44.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Column(Modifier.width((56 * k).dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Box(
-                                    Modifier.size(38.dp).clip(CircleShape).background(Color.White).clickable { editorEraser = false; editorTool = "Filtros" },
+                                    Modifier.size((50 * k).dp).clip(CircleShape).background(Color.White).clickable { editorEraser = false; editorTool = "Filtros" },
                                     contentAlignment = Alignment.Center
-                                ) { Icon(QinblyCameraIcons.check, contentDescription = "Pronto", tint = Color(0xFF0F1115), modifier = Modifier.size(26.dp)) }
-                                Text("Pronto", color = Color(0xFF9AA0AC), fontSize = 8.sp, maxLines = 1, softWrap = false, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                ) { Icon(QinblyCameraIcons.check, contentDescription = "Pronto", tint = Color(0xFF0F1115), modifier = Modifier.size((32 * k).dp)) }
+                                Text("Pronto", color = Color(0xFF9AA0AC), fontSize = 9.sp, maxLines = 1, softWrap = false, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                             }
                         }
                     }
