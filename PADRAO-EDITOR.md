@@ -32,3 +32,6 @@ Os avisos dos efeitos (Retoque, HDR, Fundo) aparecem numa pílula DENTRO do edit
 
 ## Recorte da pessoa (vale para todo o Fundo e para Recortar pessoa)
 `fxPersonMask` não usa a máscara crua do modelo (baixa resolução, feita para selfie): trabalha num tamanho de até 960px com a confiança SUAVE (bilinear, nunca preto-e-branco, senão a borda vira degrau): (1) tapa buracos pequenos dentro da pessoa (buraco que não encosta na borda e tem menos de 2% da foto); (2) tira manchas soltas no fundo; (3) filtro guiado pela foto (guia levemente suavizada, eps 0,01, raio ~1,2%) faz a borda seguir o contorno real sem copiar o granulado; (4) curva suave 0,30→0,80 tira o halo. NÃO fazer "fechamento" morfológico (engordava a borda e puxava fundo escuro pra dentro da pessoa) nem usar eps muito pequeno (serrilha). Nunca reciclar a máscara pequena se `createScaledBitmap` devolveu a mesma imagem.
+
+## Fundo (desativado por enquanto)
+O botão "Fundo" saiu da lateral do editor (recorte da pessoa ainda não ficou bom). O código do Fundo (abas, `fxPersonMask`, `fxReplaceBackground`) continua no projeto, só sem botão para abrir. Para voltar: recolocar `QinblyCameraSideItem(QinblyCameraIcons.background, "Fundo", …)` na lista lateral do editor, depois do HDR.

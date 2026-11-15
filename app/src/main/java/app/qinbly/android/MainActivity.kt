@@ -12981,7 +12981,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 else { edHdr = 0.65f; editorTool = "HDR"; runEditorFx("HDR aplicado.") }
                             }
                         }
-                        QinblyCameraSideItem(QinblyCameraIcons.background, "Fundo", on = editorTool == "Fundo") { editorTool = if (editorTool == "Fundo") "Filtros" else "Fundo" }
                      }
 }
                  }
