@@ -10651,9 +10651,12 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             val keyboard = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
             LaunchedEffect(Unit) { focus.requestFocus(); keyboard?.show() }
             val noRipple = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+            // Teclado fechado: as barras de estilo ficam acima dos botões do celular; teclado aberto: logo acima do teclado.
+            val imeUp = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
+            val navPad = qinblyNavBarPadding()
             Box(Modifier.fillMaxSize().background(Color(0x99000000))) {
                 Column(
-                    Modifier.fillMaxSize().clickable(indication = null, interactionSource = noRipple) { keyboard?.hide(); onDone() }.imePadding().padding(bottom = 10.dp),
+                    Modifier.fillMaxSize().clickable(indication = null, interactionSource = noRipple) { keyboard?.hide(); onDone() }.imePadding().padding(bottom = if (imeUp) 10.dp else navPad),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
