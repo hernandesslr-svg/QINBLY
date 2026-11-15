@@ -13,3 +13,6 @@
 
 ## Trocar filtro passando o dedo
 - Na câmera e no editor de foto: um dedo arrastando para a esquerda/direita troca o filtro de cor (Original, Aurora, Pôr do sol…), sem abrir a faixa de filtros. Não troca filtro de rosto nem efeitos animados.
+
+## Miniaturas dos filtros
+- As bolinhas dos filtros de cor mostram um rosto de exemplo (`res/drawable-nodpi/filter_sample.jpg`) já com o filtro aplicado, na câmera e no editor. Para trocar a foto de exemplo, basta trocar esse arquivo.

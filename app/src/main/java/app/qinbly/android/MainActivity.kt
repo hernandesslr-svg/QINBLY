@@ -10266,6 +10266,20 @@ private fun QinblyCameraSideItem(icon: androidx.compose.ui.graphics.vector.Image
     }
 }
 
+/** Miniatura do filtro: o mesmo rosto de exemplo com a cor do filtro aplicada (igual ao resultado real). */
+@Composable
+private fun QinblyFilterSample(name: String) {
+    val cf = remember(name) {
+        if (name == "Original") null
+        else androidx.compose.ui.graphics.ColorFilter.colorMatrix(androidx.compose.ui.graphics.ColorMatrix(qinblyFilterMatrix(name, 1f).array))
+    }
+    androidx.compose.foundation.Image(
+        painter = androidx.compose.ui.res.painterResource(R.drawable.filter_sample),
+        contentDescription = name, contentScale = ContentScale.Crop, colorFilter = cf,
+        modifier = Modifier.fillMaxSize()
+    )
+}
+
 /** Bolinha do carrossel de filtros (cores e efeitos animados). */
 @Composable
 private fun QinblyFilterBubble(label: String, selected: Boolean, onClick: () -> Unit, content: @Composable BoxScope.() -> Unit) {
@@ -11598,8 +11612,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                             filterIntensity = 1f
                                             flashLabel = name
                                         }) {
-                                            val swatch = qinblyFilterSwatch(name)
-                                            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(swatch[0], swatch[0], swatch[1], swatch[2]))))
+                                            QinblyFilterSample(name)
                                         }
                                     } else {
                                         QinblyFilterBubble(name, selectedEffect == name, {
@@ -12531,8 +12544,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         items(editorBubbles) { (name, animated) ->
                             if (!animated) {
                                 QinblyFilterBubble(name, selectedFilter == name, { selectedFilter = name; filterIntensity = 1f }) {
-                                    val swatch = qinblyFilterSwatch(name)
-                                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(swatch[0], swatch[0], swatch[1], swatch[2]))))
+                                    QinblyFilterSample(name)
                                 }
                             } else {
                                 QinblyFilterBubble(name, selectedEffect == name, { selectedEffect = if (selectedEffect == name) "Original" else name }) {
