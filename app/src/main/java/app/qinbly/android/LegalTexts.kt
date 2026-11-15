@@ -14,7 +14,7 @@ private val TermsBlocks = listOf(
     "O que você publica" to "Fotos, vídeos, textos, stories, comentários e mensagens continuam sendo seus. Ao publicar, você permite que o QINBLY mostre esse conteúdo para as pessoas que você escolher (por exemplo, no feed ou nos seus stories).",
     "O que não é permitido" to "Assédio, ameaças, discurso de ódio, conteúdo sexual envolvendo menores, golpes, spam, se passar por outra pessoa e qualquer coisa ilegal. Conteúdos assim podem ser removidos e contas podem ser suspensas.",
     "Denúncias e bloqueios" to "Qualquer pessoa pode bloquear outra conta e denunciar publicações, comentários, mensagens e perfis. As denúncias são analisadas pela equipe do QINBLY.",
-    "Stories" to "Stories somem sozinhos depois de 6, 12 ou 24 horas, conforme a escolha de quem publicou. Mesmo assim, outra pessoa pode ter feito uma captura de tela.",
+    "Stories" to "Stories somem sozinhos depois de 6, 12 ou 24 horas, conforme a escolha de quem publicou. Enquanto um story está aberto, o app bloqueia captura e gravação de tela. Mesmo assim, nada impede que alguém fotografe a tela com outro aparelho.",
     "Sua conta" to "Você pode excluir sua conta a qualquer momento em Configurações. Isso apaga seu perfil, publicações, comentários, curtidas, mensagens e arquivos, e não dá para desfazer.",
     "Mudanças" to "Estes termos podem mudar. Quando mudarem de forma importante, o app avisa."
 )

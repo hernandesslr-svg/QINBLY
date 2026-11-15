@@ -383,7 +383,8 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
         next()
     }
 
-    QinblyDialog(onDismissRequest = { closeSafe() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
+    // securePolicy = SecureOn liga o FLAG_SECURE só enquanto o story está aberto: print e gravação de tela saem pretos.
+    QinblyDialog(onDismissRequest = { closeSafe() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, securePolicy = androidx.compose.ui.window.SecureFlagPolicy.SecureOn), lift = false) {
         Box(
             Modifier.fillMaxSize().background(Color.Black).pointerInput(current.id, replying) {
                 detectTapGestures { offset ->
