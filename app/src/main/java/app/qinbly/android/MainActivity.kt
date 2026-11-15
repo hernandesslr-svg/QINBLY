@@ -5778,7 +5778,7 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
     var liveFace by remember { mutableStateOf("Nenhum") }
     var liveColor by remember { mutableStateOf("Original") }
     var fxOpen by remember { mutableStateOf(false) }
-    BackHandler { if (stage == "live") confirmEnd = true else onClose() }
+    BackHandler { if (stage == "live") confirmEnd = true else if (stage == "count") stage = "setup" else onClose() }
     LaunchedEffect(stage) {
         if (stage == "count") {
             count = 3
@@ -8803,6 +8803,8 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
     var createAccount by remember { mutableStateOf(false) }
     var showForgot by remember { mutableStateOf(false) }
+    // Voltar do celular: da tela de criar conta volta para o login (não fecha tudo).
+    BackHandler(enabled = createAccount && !showForgot) { createAccount = false }
     var forgotEmail by remember { mutableStateOf("") }
     var forgotBusy by remember { mutableStateOf(false) }
     var forgotMessage by remember { mutableStateOf("") }
@@ -11041,6 +11043,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     // Botão de voltar do celular (padrão): na tela de legenda/publicar volta para a EDIÇÃO da foto, sem fechar tudo.
     BackHandler(enabled = showComposer && publishSettings) {
         publishSettings = false
+    }
+    // Ferramenta aberta no editor (Formato, Stickers, Desenho, Texto): voltar fecha a ferramenta primeiro, depois sai do editor.
+    BackHandler(enabled = showComposer && !publishSettings && (editorTool == "Ajustar" || editorTool == "Stickers" || editorTool == "Desenho" || editorTool == "Texto")) {
+        if (editorTextEditing) editorTextEditing = false else editorTool = "Filtros"
     }
     if (showCollabGallery) QinblyContributeFlow(
         storyId = QinblyComposeSeed.contribTo, newCollab = QinblyComposeSeed.collabNew, onNotice = onNotice,

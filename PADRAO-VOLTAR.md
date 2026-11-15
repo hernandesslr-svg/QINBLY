@@ -19,3 +19,12 @@ Exemplo: Buscar → digitou "ana" → abriu o perfil → voltar → cai na Busca
 
 ## Criar/publicar (etapas)
 Câmera → Editor → Legenda/Publicar: o botão de voltar do celular volta UMA etapa (Legenda → Editor → Câmera). Nunca fecha tudo de uma vez.
+
+## Regra geral (celular E seta do app): voltar = UMA etapa para trás
+- Menu de criar (Stories.kt): mood, cápsula, pacotes, texto, novo story, nota e story coletivo voltam para o MENU.
+- Cápsula e story coletivo: já voltam etapa por etapa (pick → edit → date → who).
+- Live: contagem volta para a configuração.
+- Criar conta volta para o login.
+- Editor de foto: ferramenta aberta (Formato, Stickers, Desenho, Texto) fecha primeiro; depois sai do editor; legenda/publicar volta para o editor.
+- Configurações: já volta seção por seção.
+Todo fluxo novo com etapas TEM que seguir isso (BackHandler + seta do app fazendo a mesma coisa).

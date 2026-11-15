@@ -178,14 +178,14 @@ internal fun QinblyStoryMenu(
         "collab" -> QinblyContributeFlow(
             storyId = "", newCollab = true, onNotice = onNotice,
             onCamera = { qinblyStartCollabStory(); onDismiss(); onAddStory() },
-            onDone = { onChanged(); onDismiss() }, onDismiss = onDismiss
+            onDone = { onChanged(); onDismiss() }, onDismiss = { step = "menu" }
         )
-        "mood" -> QinblyMoodDialog(onDismiss = onDismiss, onNotice = onNotice, onChanged = onChanged)
-        "capsule" -> QinblyCapsuleHub(accent, onDismiss, onNotice)
-        "packs" -> QinblyStickerPacksDialog(accent, onDismiss, onNotice)
-        "text" -> QinblyTextStoryComposer(onDismiss = onDismiss, onPublished = { onChanged(); onDismiss() }, onNotice = onNotice)
+        "mood" -> QinblyMoodDialog(onDismiss = { step = "menu" }, onNotice = onNotice, onChanged = onChanged)
+        "capsule" -> QinblyCapsuleHub(accent, { step = "menu" }, onNotice)
+        "packs" -> QinblyStickerPacksDialog(accent, { step = "menu" }, onNotice)
+        "text" -> QinblyTextStoryComposer(onDismiss = { step = "menu" }, onPublished = { onChanged(); onDismiss() }, onNotice = onNotice)
         "compose" -> AlertDialog(
-            onDismissRequest = { if (!busy) onDismiss() },
+            onDismissRequest = { if (!busy) step = "menu" },
             title = { Text("Novo story") },
             text = { QinblyClearFocusWhenKeyboardCloses();
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -216,10 +216,10 @@ internal fun QinblyStoryMenu(
                     }.start()
                 }) { Text("Publicar", color = accent, fontWeight = FontWeight.Bold) }
             },
-            dismissButton = { TextButton(enabled = !busy, onClick = onDismiss) { Text("Cancelar") } }
+            dismissButton = { TextButton(enabled = !busy, onClick = { step = "menu" }) { Text("Voltar") } }
         )
         else -> AlertDialog(
-            onDismissRequest = onDismiss,
+            onDismissRequest = { step = "menu" },
             title = { Text("Sua nota") },
             text = { QinblyClearFocusWhenKeyboardCloses();
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -239,7 +239,7 @@ internal fun QinblyStoryMenu(
                     }.start()
                 }) { Text("Compartilhar", color = accent, fontWeight = FontWeight.Bold) }
             },
-            dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+            dismissButton = { TextButton(onClick = { step = "menu" }) { Text("Voltar") } }
         )
     }
 }
