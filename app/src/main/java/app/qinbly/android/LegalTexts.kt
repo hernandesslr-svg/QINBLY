@@ -35,7 +35,6 @@ internal fun QinblyLegalScreen(kind: String, onDismiss: () -> Unit) {
     val terms = kind == "terms"
     val blocks = if (terms) TermsBlocks else PrivacyBlocks
     QinblyFullScreen(if (terms) "Termos de uso" else "Política de privacidade", onDismiss, background = QiblyTheme.background, contentColor = QiblyTheme.text) {
-        Text("Texto-base do app. Antes de publicar na loja, ele deve ser revisado por um advogado e publicado também em um endereço na internet.", color = QiblyTheme.secondary, fontSize = 12.sp, modifier = Modifier.padding(bottom = 14.dp))
         blocks.forEach { (title, body) ->
             Column(Modifier.padding(bottom = 14.dp)) {
                 Text(title, color = QiblyTheme.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
