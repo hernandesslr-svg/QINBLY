@@ -9249,7 +9249,6 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
     var dragX by remember { mutableFloatStateOf(0f) }
     var dragY by remember { mutableFloatStateOf(0f) }
     var profilePhotoScale by remember { mutableFloatStateOf(1f) }
-    var maxZoom by remember { mutableFloatStateOf(4f) }
     val density = androidx.compose.ui.platform.LocalDensity.current
     val screenWidthDp = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp
     val previewWidthPx = with(density) { (screenWidthDp - 16).coerceAtLeast(1).dp.toPx() }
@@ -9282,7 +9281,6 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
         val scale = if (info.hasFace && info.faceW > 0.01f) (0.45f * w / (info.faceW * iw * fit)).coerceIn(cover, sharpMax) else cover
         val fgW = iw * fit * scale; val fgH = ih * fit * scale
         val maxX = maxOf(0f, (fgW - w) / 2f); val maxY = maxOf(0f, (fgH - w) / 2f)
-        maxZoom = sharpMax
         profilePhotoScale = scale
         dragX = (-(info.faceCx - 0.5f) * fgW).coerceIn(-maxX, maxX)
         dragY = (-(info.faceCy - 0.5f) * fgH).coerceIn(-maxY, maxY)
@@ -9327,7 +9325,8 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
                         .pointerInput(selectedProfilePhoto) {
                             detectTransformGestures { centroid, pan, zoom, _ ->
                                 // Permite arrastar e ampliar/reduzir a foto para ajustar o enquadramento 16:9.
-                                profilePhotoScale = (profilePhotoScale * zoom).coerceIn(0.5f, maxOf(maxZoom, 1f))
+                                // Sem limite de zoom: a pessoa amplia até onde quiser (só o enquadramento automático inicial respeita a nitidez).
+                                profilePhotoScale = (profilePhotoScale * zoom).coerceIn(0.5f, 100f)
                                 dragX += pan.x
                                 dragY += pan.y
                             }
