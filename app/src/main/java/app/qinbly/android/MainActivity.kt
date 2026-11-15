@@ -1343,18 +1343,18 @@ private fun QinblyBgSwatch(kind: String) {
     }
 }
 
-/** Miniatura quadrada (52dp) do Fundo: fundo desenhado + pessoa por cima; selecionada fica com moldura branca. */
+/** Miniatura quadrada (76dp) do Fundo: fundo desenhado + pessoa por cima; selecionada fica com moldura branca. */
 @Composable
 private fun QinblyBgTile(selected: Boolean, label: String = "", person: Boolean = true, onClick: () -> Unit, content: @Composable () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Box(
-            Modifier.size(52.dp).clip(RoundedCornerShape(10.dp)).clickable { onClick() }
-                .border(if (selected) 2.dp else 0.5.dp, if (selected) Color.White else Color(0x55FFFFFF), RoundedCornerShape(10.dp))
+            Modifier.size(76.dp).clip(RoundedCornerShape(14.dp)).clickable { onClick() }
+                .border(if (selected) 3.dp else 0.5.dp, if (selected) Color.White else Color(0x55FFFFFF), RoundedCornerShape(14.dp))
         ) {
             content()
             if (person) QinblyBgPerson()
         }
-        if (label.isNotBlank()) Text(label, color = if (selected) Color.White else Color(0xFF9AA0AC), fontSize = 8.sp, maxLines = 1, softWrap = false)
+        if (label.isNotBlank()) Text(label, color = if (selected) Color.White else Color(0xFF9AA0AC), fontSize = 10.sp, maxLines = 1, softWrap = false)
     }
 }
 
@@ -13270,48 +13270,48 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     }
                 }
                 if (newEditorChrome && editorTool == "Fundo") {
-                    Column(Modifier.padding(horizontal = 14.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(Modifier.padding(horizontal = 14.dp).fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0x99000000)).padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         // Abas: cada uma mostra só as miniaturas dela. Trocar de aba não muda a foto; só tocar numa miniatura.
-                        androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                        androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
                             items(listOf("Efeitos", "Cores", "Degradês", "Cenários", "Galeria", "Recortar")) { tab ->
                                 val on = tab == edBgTab
                                 Column(Modifier.width(IntrinsicSize.Max).clickable { edBgTab = tab }) {
-                                    Text(tab, color = if (on) Color.White else Color(0xFF8A909C), fontSize = 10.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, softWrap = false)
-                                    Box(Modifier.padding(top = 4.dp).fillMaxWidth().height(2.dp).background(if (on) Color.White else Color.Transparent))
+                                    Text(tab, color = if (on) Color.White else Color(0xFF8A909C), fontSize = 12.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, softWrap = false)
+                                    Box(Modifier.padding(top = 6.dp).fillMaxWidth().height(3.dp).background(if (on) Color.White else Color.Transparent))
                                 }
                             }
                         }
                         Box(Modifier.padding(horizontal = 14.dp).fillMaxWidth().height(0.5.dp).background(Color(0x33FFFFFF)))
                         when (edBgTab) {
-                            "Efeitos" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            "Efeitos" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 items(listOf(Triple("Nenhum", "", "none"), Triple("Desfocar", "blur", "blur"), Triple("Bokeh", "bokeh", "bokeh"), Triple("Movimento", "motion", "motion"), Triple("P&B", "bw", "bw"), Triple("Escurecer", "dim", "dim"), Triple("Clarear", "light", "light"))) { (label, mode, kind) ->
                                     QinblyBgTile(if (mode.isBlank()) edBgMode.isBlank() else edBgMode == mode, label, person = mode.isNotBlank(), onClick = {
                                         if (!editorBusy) { edBgMode = mode; runEditorFx(if (mode.isBlank()) "Fundo original." else "") }
                                     }) { QinblyBgSwatch(kind) }
                                 }
                             }
-                            "Cores" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            "Cores" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 items(QinblyTextColors) { argb ->
                                     QinblyBgTile(edBgMode == "color" && edBgColor == argb, onClick = {
                                         if (!editorBusy) { edBgMode = "color"; edBgColor = argb; runEditorFx("") }
                                     }) { Box(Modifier.fillMaxSize().background(Color(argb))) }
                                 }
                             }
-                            "Degradês" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            "Degradês" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 items(QinblyBgGradients.size) { i ->
                                     QinblyBgTile(edBgMode == "gradient" && edBgIndex == i, onClick = {
                                         if (!editorBusy) { edBgMode = "gradient"; edBgIndex = i; runEditorFx("") }
                                     }) { Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(QinblyBgGradients[i].first), Color(QinblyBgGradients[i].second))))) }
                                 }
                             }
-                            "Cenários" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            "Cenários" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                                 items(QinblyBgSceneNames.size) { i ->
                                     QinblyBgTile(edBgMode == "scene" && edBgIndex == i, QinblyBgSceneNames[i], onClick = {
                                         if (!editorBusy) { edBgMode = "scene"; edBgIndex = i; runEditorFx("") }
                                     }) { QinblyBgSwatch("scene$i") }
                                 }
                             }
-                            "Galeria" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            "Galeria" -> androidx.compose.foundation.lazy.LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 item {
                                     QinblyBgTile(false, "Escolher", person = false, onClick = {
                                         if (!editorBusy) bgPhotoPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -13330,25 +13330,25 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 }
                             }
                             else -> Row(Modifier.padding(horizontal = 14.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Box(Modifier.size(52.dp).clip(RoundedCornerShape(10.dp))) {
+                                Box(Modifier.size(76.dp).clip(RoundedCornerShape(14.dp))) {
                                     QinblyBgSwatch("checker")
                                     QinblyBgPerson()
                                 }
                                 Column(Modifier.weight(1f)) {
-                                    Text("Recortar pessoa", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-                                    Text("Salva nas suas figurinhas", color = Color(0xFF9AA0AC), fontSize = 8.sp)
+                                    Text("Recortar pessoa", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                    Text("Salva nas suas figurinhas", color = Color(0xFF9AA0AC), fontSize = 10.sp)
                                 }
-                                Text("Recortar", color = Color(0xFF0F1115), fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color.White).clickable { cutPersonToSticker() }.padding(horizontal = 22.dp, vertical = 10.dp))
+                                Text("Recortar", color = Color(0xFF0F1115), fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.clip(RoundedCornerShape(24.dp)).background(Color.White).clickable { cutPersonToSticker() }.padding(horizontal = 26.dp, vertical = 14.dp))
                             }
                         }
                         Row(Modifier.padding(horizontal = 14.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             if (edBgTab == "Efeitos" && edBgMode in listOf("blur", "bokeh", "motion", "dim", "light")) {
-                                Text("Intensidade", color = Color(0xFF9AA0AC), fontSize = 9.sp, modifier = Modifier.width(76.dp))
+                                Text("Intensidade", color = Color(0xFF9AA0AC), fontSize = 11.sp, modifier = Modifier.width(92.dp))
                                 Slider(
                                     value = edBgIntensity, onValueChange = { edBgIntensity = it }, onValueChangeFinished = { runEditorFx("") },
                                     colors = SliderDefaults.colors(thumbColor = Color.White, activeTrackColor = Color.White, inactiveTrackColor = Color(0x55FFFFFF)),
-                                    modifier = Modifier.weight(1f).height(30.dp)
+                                    modifier = Modifier.weight(1f).height(40.dp)
                                 )
                             } else {
                                 Text(
@@ -13360,11 +13360,11 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                         "Galeria" -> "Toque no + para abrir suas fotos"
                                         else -> "A foto do editor não muda"
                                     },
-                                    color = Color(0xFF9AA0AC), fontSize = 8.sp, modifier = Modifier.weight(1f)
+                                    color = Color(0xFF9AA0AC), fontSize = 10.sp, modifier = Modifier.weight(1f)
                                 )
                             }
-                            Box(Modifier.size(36.dp).clip(CircleShape).background(Color.White).clickable { editorTool = "Filtros" }, contentAlignment = Alignment.Center) {
-                                Icon(QinblyCameraIcons.check, contentDescription = "Pronto", tint = Color(0xFF0F1115), modifier = Modifier.size(24.dp))
+                            Box(Modifier.size(46.dp).clip(CircleShape).background(Color.White).clickable { editorTool = "Filtros" }, contentAlignment = Alignment.Center) {
+                                Icon(QinblyCameraIcons.check, contentDescription = "Pronto", tint = Color(0xFF0F1115), modifier = Modifier.size(30.dp))
                             }
                         }
                     }
