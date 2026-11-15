@@ -5772,7 +5772,6 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
             count = 3
             while (count > 0) { kotlinx.coroutines.delay(1000); count-- }
             seconds = 0; paused = false; stage = "live"
-            onNotice("Prévia: a transmissão de verdade ainda não está disponível.")
         }
     }
     LaunchedEffect(stage, paused) {
@@ -6028,9 +6027,6 @@ private fun QinblyLiveRoom(live: QinblyLive, onClose: () -> Unit, onNotice: (Str
                     if (text.isNotEmpty()) qinblySendLiveComment(shareContext, live.host, text, { commentRefresh++ }, onNotice)
                 })
             )
-            Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x24FFFFFF)).clickable { onNotice("Presentes: em breve.") }, contentAlignment = Alignment.Center) {
-                Icon(QinblyIcon.CardGiftcard, "Presente", tint = Color.White, modifier = Modifier.size(20.dp))
-            }
             Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x24FFFFFF)).clickable {
                 try {
                     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
@@ -11942,7 +11938,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     if (cameraSheet == "Som") {
                         Text("Escolher som", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         QinblyCameraSheetRow(QinblyCameraIcons.headphones, "Do seu celular", "Escolha uma música ou áudio seu") { soundPicker.launch("audio/*") }
-                        QinblyCameraSheetRow(QinblyCameraIcons.mic, "Gravar narração", "Fale sobre o vídeo", soon = true) { }
                         if (onCaptured == null) QinblyCameraSheetRow(QinblyCameraIcons.music, "Sons do Qinbly", "Músicas livres para usar no post") { cameraSheet = ""; showMusicPicker = true }
                         if (soundName.isNotBlank() || storyMusic != null) {
                             TextButton(onClick = { soundName = ""; soundUri = null; storyMusic = null; cameraSheet = "" }) { Text("Remover som escolhido", color = QinblyBrand.Accent) }
