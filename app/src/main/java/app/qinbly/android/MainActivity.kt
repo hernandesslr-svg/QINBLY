@@ -1294,16 +1294,18 @@ private fun qinblyEditMatrix(filter: String, intensity: Float, brightness: Float
     return m
 }
 
-private fun qinblyRatioValue(ratio: String, imageRatio: Float): Float = when (ratio) {
+internal fun qinblyRatioValue(ratio: String, imageRatio: Float): Float = when (ratio) {
     "1:1" -> 1f
     "4:5" -> 4f / 5f
+    "3:4" -> 3f / 4f
+    "4:3" -> 4f / 3f
     "16:9" -> 16f / 9f
     "9:16" -> 9f / 16f
     else -> imageRatio
 }
 
 /** Quanto a foto pode andar (fração do quadro) em cada eixo sem mostrar borda vazia. */
-private fun qinblyMaxPan(imageRatio: Float, frameRatio: Float, zoom: Float): Pair<Float, Float> {
+internal fun qinblyMaxPan(imageRatio: Float, frameRatio: Float, zoom: Float): Pair<Float, Float> {
     val drawW = (if (imageRatio > frameRatio) imageRatio / frameRatio else 1f) * zoom
     val drawH = (if (imageRatio > frameRatio) 1f else frameRatio / imageRatio) * zoom
     return maxOf(0f, (drawW - 1f) / 2f) to maxOf(0f, (drawH - 1f) / 2f)
@@ -1333,7 +1335,7 @@ internal fun qinblyPvBake(context: android.content.Context, source: Uri, filter:
 /** Gera a foto final: recorte (proporção, zoom e posição), filtro, brilho/contraste e depois texto, sticker e desenho. */
 private fun qinblyRenderEditedPhoto(
     context: android.content.Context, source: Uri, ratio: String, zoom: Float, panX: Float, panY: Float,
-    matrix: ColorMatrix, text: String, stickers: List<QinblyStickerSpec>, strokes: List<List<Offset>>, textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f
+    matrix: ColorMatrix, text: String, stickers: List<QinblyStickerSpec>, strokes: List<List<Offset>>, textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f, blurFill: Boolean = true
 ): Uri {
     val decoded = context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it) }
         ?: throw IllegalArgumentException("Não foi possível abrir a imagem para aplicar as edições.")
@@ -1351,6 +1353,16 @@ private fun qinblyRenderEditedPhoto(
     val left = (outW - drawW) / 2f + panX.coerceIn(-maxX, maxX) * outW
     val top = (outH - drawH) / 2f + panY.coerceIn(-maxY, maxY) * outH
     val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply { colorFilter = ColorMatrixColorFilter(matrix) }
+    if (blurFill && (drawW < outW - 1f || drawH < outH - 1f)) {
+        // Foto inteira (menor que o quadro): as sobras ficam com a própria foto desfocada, igual à prévia.
+        val sw = 32; val sh = (32f / imageRatio).toInt().coerceAtLeast(1)
+        val small = Bitmap.createScaledBitmap(decoded, sw, sh, true)
+        val cover = maxOf(outW.toFloat() / sw, outH.toFloat() / sh)
+        val bw = sw * cover; val bh = sh * cover
+        canvas.drawBitmap(small, null, android.graphics.RectF((outW - bw) / 2f, (outH - bh) / 2f, (outW + bw) / 2f, (outH + bh) / 2f), paint)
+        canvas.drawColor(android.graphics.Color.argb(70, 0, 0, 0))
+        small.recycle()
+    }
     canvas.drawBitmap(decoded, null, android.graphics.RectF(left, top, left + drawW, top + drawH), paint)
     decoded.recycle()
     val file = File(context.cacheDir, "qinbly-final-${System.currentTimeMillis()}.jpg")
@@ -10819,6 +10831,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var editorZoom by remember { mutableFloatStateOf(1f) }
     var editorPanX by remember { mutableFloatStateOf(0f) }
     var editorPanY by remember { mutableFloatStateOf(0f) }
+    var editorBlur by remember { mutableStateOf(true) }
     var editorBrightness by remember { mutableFloatStateOf(0f) }
     var editorContrast by remember { mutableFloatStateOf(0f) }
     var editorImageRatio by remember { mutableFloatStateOf(1f) }
@@ -10831,6 +10844,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var cropPanX by remember { mutableFloatStateOf(0f) }
     var cropPanY by remember { mutableFloatStateOf(0f) }
     val editorStrokes = remember { mutableStateListOf<List<Offset>>() }
+    // Texto, emotes e desenho ficam presos ao quadro da foto (e não à tela): o que a pessoa vê é o que sai.
+    val editorFrame = if (selectedType == "foto") qinblyFrameRect(editorPreviewW, editorPreviewH, qinblyRatioValue(editorRatio, editorImageRatio))
+        else QinblyFrameRect(0f, 0f, editorPreviewW.toFloat(), editorPreviewH.toFloat())
+    val formatScope = androidx.compose.runtime.rememberCoroutineScope()
     var publishSuccess by remember { mutableStateOf(false) }
     var publishError by remember { mutableStateOf("") }
     var selectedMediaReady by remember { mutableStateOf(false) }
@@ -12175,8 +12192,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 }
              }
 }
-            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.Center) {
-                listOf("Original", "1:1", "4:5", "9:16", "16:9").forEach { ratio ->
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 6.dp), horizontalArrangement = Arrangement.Center) {
+                QINBLY_FORMATS.forEach { ratio ->
                     Text(ratio, color = if (cropRatio == ratio) Color(0xFF0B0D12) else Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(horizontal = 3.dp).clip(RoundedCornerShape(14.dp))
                             .background(if (cropRatio == ratio) Color.White else Color.Transparent)
@@ -12359,10 +12376,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                     val src = selectedUri!!
                                     val ratioNow = editorRatio; val z = editorZoom; val px = editorPanX; val py = editorPanY
                                     val matrixNow = qinblyEditMatrix(selectedFilter, filterIntensity, editorBrightness, editorContrast)
-                                    val dxNow = if (editorPreviewW > 0) editorTextDx / editorPreviewW else 0f; val dyNow = if (editorPreviewH > 0) editorTextDy / editorPreviewH else 0f; val fontNow = editorTextFont; val colorNow = editorTextColor; val wordsNow = editorWordColors.toMap(); val textNow = editorText; val stickerNow = editorStickers.map { QinblyStickerSpec(it.emoji, it.nx, it.ny, it.scale, it.rot) }; val strokesNow = editorStrokes.toList()
+                                    val blurNow = editorBlur; val dxNow = if (editorFrame.w > 0f) editorTextDx / editorFrame.w else 0f; val dyNow = if (editorFrame.h > 0f) editorTextDy / editorFrame.h else 0f; val fontNow = editorTextFont; val colorNow = editorTextColor; val wordsNow = editorWordColors.toMap(); val textNow = editorText; val stickerNow = editorStickers.map { QinblyStickerSpec(it.emoji, it.nx, it.ny, it.scale, it.rot) }; val strokesNow = editorStrokes.toList()
                                     Thread {
                                         try {
-                                            val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow)
+                                            val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow, blurNow)
                                             android.os.Handler(android.os.Looper.getMainLooper()).post { bakedUri = done; editorBusy = false; afterEdit() }
                                         } catch (e: Exception) {
                                             // Se não der para aplicar as edições, publica a foto original em vez de travar.
@@ -12389,20 +12406,12 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 }
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
  QinblySplit {
-                    Box(
-                        Modifier.then(if (editorRatio == "Original") Modifier.fillMaxSize() else Modifier.fillMaxWidth().aspectRatio(previewFrame)).clipToBounds()
-                    ) {
-                        AsyncImage(
-                            model = uri,
-                            contentDescription = "Prévia da publicação",
-                            contentScale = ContentScale.Crop,
-                            colorFilter = previewMatrix,
-                            modifier = Modifier.fillMaxSize().graphicsLayer {
-                                scaleX = editorZoom; scaleY = editorZoom
-                                translationX = editorPanX * size.width; translationY = editorPanY * size.height
-                            }
-                        )
-                    }
+                    QinblyFormatFrame(
+                        uri = uri, ratio = editorRatio, imageRatio = editorImageRatio, zoom = editorZoom, panX = editorPanX, panY = editorPanY,
+                        blurBg = editorBlur, colorFilter = previewMatrix, adjusting = editorTool == "Ajustar",
+                        onChange = { z, x, y -> editorZoom = z; editorPanX = x; editorPanY = y },
+                        modifier = Modifier.fillMaxSize()
+                    )
                  }
 }
              }
@@ -12441,7 +12450,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             if (editorTool == "Desenho") {
  QinblySplit {
                 androidx.compose.foundation.Canvas(
-                    modifier = Modifier.fillMaxSize().pointerInput(editorTool) {
+                    modifier = Modifier.offset { androidx.compose.ui.unit.IntOffset(editorFrame.left.toInt(), editorFrame.top.toInt()) }
+                        .size(with(androidx.compose.ui.platform.LocalDensity.current) { editorFrame.w.toDp() }, with(androidx.compose.ui.platform.LocalDensity.current) { editorFrame.h.toDp() })
+                        .pointerInput(editorTool) {
                         detectDragGestures(
                             onDragStart = { start ->
                                 editorStrokes.add(listOf(Offset(start.x / size.width, start.y / size.height)))
@@ -12503,13 +12514,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 val half = with(androidx.compose.ui.platform.LocalDensity.current) { 60.dp.roundToPx() }
                 Box(
                     Modifier.size(120.dp)
-                        .offset { androidx.compose.ui.unit.IntOffset((st.nx * editorPreviewW).toInt() - half, (st.ny * editorPreviewH).toInt() - half) }
+                        .offset { androidx.compose.ui.unit.IntOffset((editorFrame.left + st.nx * editorFrame.w).toInt() - half, (editorFrame.top + st.ny * editorFrame.h).toInt() - half) }
                         .pointerInput(st) { detectTapGestures(onDoubleTap = { editorStickers.remove(st) }) }
                         .pointerInput(st) {
                             detectTransformGestures { _, pan, zoom, rotation ->
-                                if (editorPreviewW > 0 && editorPreviewH > 0) {
-                                    st.nx = (st.nx + pan.x / editorPreviewW).coerceIn(0f, 1f)
-                                    st.ny = (st.ny + pan.y / editorPreviewH).coerceIn(0f, 1f)
+                                if (editorFrame.w > 0f && editorFrame.h > 0f) {
+                                    st.nx = (st.nx + pan.x / editorFrame.w).coerceIn(0f, 1f)
+                                    st.ny = (st.ny + pan.y / editorFrame.h).coerceIn(0f, 1f)
                                 }
                                 st.scale = (st.scale * zoom).coerceIn(0.3f, 8f)
                                 st.rot += rotation
@@ -12803,13 +12814,24 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                  }
 }
                 if (editorTool == "Ajustar") {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                        listOf("Original", "1:1", "4:5", "9:16", "16:9").forEach { ratio ->
-                            TextButton(onClick = { editorRatio = ratio; editorZoom = 1f; editorPanX = 0f; editorPanY = 0f }) {
-                                Text(ratio, color = if (editorRatio == ratio) Color.White else Color.LightGray)
-                            }
-                        }
-                    }
+                    QinblyFormatBar(
+                        ratio = editorRatio, imageRatio = editorImageRatio, zoom = editorZoom, blurBg = editorBlur,
+                        onRatio = { r ->
+                            editorRatio = r; editorZoom = 1f; editorPanX = 0f; editorPanY = 0f
+                            val u = selectedUri
+                            if (u != null) formatScope.launch { editorPanY = qinblyFacePanY(context, u, editorImageRatio, qinblyRatioValue(r, editorImageRatio)) }
+                        },
+                        onFill = { m ->
+                            val fr = qinblyRatioValue(editorRatio, editorImageRatio)
+                            editorPanX = 0f; editorPanY = 0f
+                            if (m == "fill") {
+                                editorZoom = 1f
+                                val u = selectedUri
+                                if (u != null) formatScope.launch { editorPanY = qinblyFacePanY(context, u, editorImageRatio, fr) }
+                            } else { editorZoom = qinblyFitFactor(editorImageRatio, fr); editorBlur = m == "blur" }
+                        },
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
                 }
                 if (editorTool == "Stickers") {
                     androidx.compose.foundation.lazy.LazyRow(

@@ -1,0 +1,18 @@
+# Padrão: formato da foto (vale para o aplicativo inteiro)
+
+Em qualquer lugar onde a pessoa escolhe o formato de uma foto (editor de post/story, e onde mais surgir):
+
+1. **Quadro com guias**: borda, linhas de terços e cantos grossos. O que fica fora do quadro aparece escurecido (não vai sair).
+2. **Mover a foto dentro do quadro**: arrastar e dar zoom com dois dedos. A pessoa escolhe a posição que quer publicar.
+3. **Cortada ou inteira, quem decide é a pessoa**:
+   - **Preencher**: foto cobre o quadro (corta), já começando com o rosto em foco (rosto perto de 1/3 do quadro).
+   - **Inteira**: foto toda dentro do quadro, sobras pretas.
+   - **Desfocar**: foto toda dentro do quadro, sobras com a própria foto desfocada.
+4. **Formatos**: Original, 1:1, 4:5, 3:4, 4:3, 9:16, 16:9 (lista única `QINBLY_FORMATS`).
+5. **O que se vê é o que sai (WYSIWYG)**: texto, emotes e desenho ficam presos ao quadro da foto, não à tela (`editorFrame`). Ao trocar de formato eles acompanham a foto.
+6. **Feed**: o quadro segue a proporção da foto entre 4:5 e 1.8:1; só fora disso o corte segue o rosto; ao tocar abre inteira.
+7. **Miniatura do perfil**: corte segue o rosto (`QinblyFaceThumb`).
+
+Código: `FormatFrame.kt` (`QinblyFormatFrame`, `QinblyFormatBar`, `qinblyFrameRect`, `qinblyFitFactor`, `qinblyFacePanY`) e `qinblyRenderEditedPhoto` (gera a foto final, com fundo desfocado quando a foto fica menor que o quadro).
+
+Pendente: a câmera ainda corta a foto no instante do clique pelo formato escolhido (ViewPort do CameraX); o editor depois só enxerga a parte já capturada.
