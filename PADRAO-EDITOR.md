@@ -35,4 +35,3 @@ Os avisos dos efeitos (Retoque, HDR, Fundo) aparecem numa pílula DENTRO do edit
 
 ## Fundo (desativado por enquanto)
 O botão "Fundo" saiu da lateral do editor (recorte da pessoa ainda não ficou bom). O código do Fundo (abas, `fxPersonMask`, `fxReplaceBackground`) continua no projeto, só sem botão para abrir. Para voltar: recolocar `QinblyCameraSideItem(QinblyCameraIcons.background, "Fundo", …)` na lista lateral do editor, depois do HDR.
-O botão "Fundo" (fundo desfocado) também saiu da lateral da câmera. O estado `bgBlurOn` continua no código, sempre desligado; para voltar, recolocar `QinblyCameraSideItem(QinblyCameraIcons.background, "Fundo", on = bgBlurOn)` depois de "Qualidade".

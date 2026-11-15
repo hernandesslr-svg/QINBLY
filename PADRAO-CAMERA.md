@@ -6,6 +6,8 @@
 - Mudou algo na câmera? Vale para todas. Não fazer versão diferente por tela.
 - A tela nova do story (botão redondo "Story", horas, Quem vê, + Feed) é só do **editor do story comum**; câmera e editor são coisas separadas.
 
+- **Lateral da câmera sem "Fundo"** (por enquanto): o botão de fundo desfocado saiu da lateral da câmera, em qualquer tela que abra a câmera. O estado `bgBlurOn` continua no código, sempre desligado; para voltar, recolocar `QinblyCameraSideItem(QinblyCameraIcons.background, "Fundo", on = bgBlurOn)` depois de "Qualidade". O "Fundo" do **editor** é outra coisa e tem nota no `PADRAO-EDITOR.md`.
+
 ## Editor de foto (também padrão)
 - Existe **um editor só**: o do `PostPage`. A câmera chamada por outras telas (`QinblyCameraCapture`, com `editBeforeReturn = true`) abre esse mesmo editor depois da foto e devolve a foto já editada para a tela que chamou (botão "Pronto").
 - O editor abre limpo: a faixa de filtros só aparece quando a pessoa toca em Filtros.
