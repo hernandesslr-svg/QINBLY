@@ -27,3 +27,4 @@
 - Tocar (não arrastar) no terço esquerdo da tela volta o story; no resto da tela, pula para o próximo. Vale na tela toda; botões e campos têm prioridade.
 - Toque na borda/cantinho da tela NUNCA fecha o story: a janela do visualizador tem `dismissOnClickOutside = false` (antes, um toque na margem fora da janela chamava "fechar"). Fechar = só o voltar do celular.
 - Toque pra pular/voltar é feito por DUAS ÁREAS TRANSPARENTES clicáveis (1/3 esquerda = voltar, 2/3 direita = próximo) por cima da mídia e por baixo dos botões — não por gesto no container (o container perdia o toque com vídeo/imagem por baixo).
+- A barra de cima usa RELÓGIO PRÓPRIO (tempo real + `withFrameMillis`), nunca `animateTo`: com as animações do celular desligadas (escala 0 nas opções de desenvolvedor / "remover animações"), `animateTo` termina na hora, a barra enche de uma vez e o story pula até o último e fica parado. Qualquer contagem de tempo do app deve seguir isso.

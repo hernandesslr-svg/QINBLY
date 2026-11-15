@@ -420,12 +420,18 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     // O story pausa enquanto o menu, a lista de visualizações ou qualquer janela está aberta.
     val holding = showViewers || showComments || replying || contribTarget.isNotBlank() || menuOpen || confirmDelete || confirmBlock || reportOpen
     LaunchedEffect(current.id, holding) {
-        if (holding) { progress.stop(); return@LaunchedEffect }
+        if (holding) return@LaunchedEffect
         // Vídeo: a própria reprodução dirige a barra (veja StoryVideo). Foto/texto: 6 s.
         if (current.mediaType == "video") return@LaunchedEffect
-        val total = 6000
-        val remaining = ((1f - progress.value) * total).toInt().coerceAtLeast(1)
-        progress.animateTo(1f, tween(durationMillis = remaining, easing = LinearEasing))
+        // Relógio feito à mão (tempo real + quadro a quadro) e NÃO animateTo: com "animações desligadas" no celular (escala 0), animateTo termina na hora,
+        // a barra enche de uma vez e o story pula sozinho até o último, ficando parado.
+        val total = 6000f
+        val startValue = progress.value
+        val startTime = android.os.SystemClock.elapsedRealtime()
+        while (progress.value < 1f) {
+            androidx.compose.runtime.withFrameMillis { }
+            progress.snapTo((startValue + (android.os.SystemClock.elapsedRealtime() - startTime) / total).coerceIn(0f, 1f))
+        }
         next()
     }
 
