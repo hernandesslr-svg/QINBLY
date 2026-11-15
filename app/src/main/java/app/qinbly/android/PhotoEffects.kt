@@ -232,8 +232,118 @@ private fun qinblyPhotoFxSync(context: Context, source: Uri, spec: QinblyFxSpec,
     return Uri.fromFile(out)
 }
 
-/** Máscara da pessoa (alfa) do tamanho da foto, ou null se não achar uma pessoa. */
-private fun fxPersonMask(bmp: Bitmap): Bitmap? {
+/** Soma de caixa (média numa janela de raio r), em tempo linear. Bordas: média só do que existe na janela. */
+private fun fxBoxBlur(src: FloatArray, w: Int, h: Int, r: Int): FloatArray {
+    val tmp = FloatArray(w * h)
+    val out = FloatArray(w * h)
+    val pre = DoubleArray(max(w, h) + 1)
+    for (y in 0 until h) {
+        val row = y * w
+        pre[0] = 0.0
+        for (x in 0 until w) pre[x + 1] = pre[x] + src[row + x]
+        for (x in 0 until w) {
+            val lo = max(0, x - r); val hi = minOf(w - 1, x + r)
+            tmp[row + x] = ((pre[hi + 1] - pre[lo]) / (hi - lo + 1)).toFloat()
+        }
+    }
+    for (x in 0 until w) {
+        pre[0] = 0.0
+        for (y in 0 until h) pre[y + 1] = pre[y] + tmp[y * w + x]
+        for (y in 0 until h) {
+            val lo = max(0, y - r); val hi = minOf(h - 1, y + r)
+            out[y * w + x] = ((pre[hi + 1] - pre[lo]) / (hi - lo + 1)).toFloat()
+        }
+    }
+    return out
+}
+
+/** Filtro guiado: faz a borda da máscara [p] seguir os contornos reais da foto [guide] (cabelo, braço, cintura). */
+private fun fxGuidedFilter(guide: FloatArray, p: FloatArray, w: Int, h: Int, r: Int, eps: Float): FloatArray {
+    val n = w * h
+    val meanI = fxBoxBlur(guide, w, h, r)
+    val meanP = fxBoxBlur(p, w, h, r)
+    val corrIp = fxBoxBlur(FloatArray(n) { guide[it] * p[it] }, w, h, r)
+    val corrI = fxBoxBlur(FloatArray(n) { guide[it] * guide[it] }, w, h, r)
+    val a = FloatArray(n)
+    val b = FloatArray(n)
+    for (i in 0 until n) {
+        val varI = corrI[i] - meanI[i] * meanI[i]
+        val cov = corrIp[i] - meanI[i] * meanP[i]
+        a[i] = cov / (varI + eps)
+        b[i] = meanP[i] - a[i] * meanI[i]
+    }
+    val ma = fxBoxBlur(a, w, h, r)
+    val mb = fxBoxBlur(b, w, h, r)
+    return FloatArray(n) { (ma[it] * guide[it] + mb[it]).coerceIn(0f, 1f) }
+}
+
+/** Preenche com o vizinho de 4 lados todos os pixels ligados a [start] com o valor [target]; devolve quantos achou (os índices ficam em [queue]). */
+private fun fxFlood(start: Int, w: Int, h: Int, cond: BooleanArray, target: Boolean, labels: IntArray, label: Int, queue: IntArray): Int {
+    var head = 0
+    var tail = 0
+    queue[tail++] = start
+    labels[start] = label
+    while (head < tail) {
+        val idx = queue[head++]
+        val x = idx % w
+        val y = idx / w
+        if (x > 0) { val j = idx - 1; if (labels[j] == 0 && cond[j] == target) { labels[j] = label; queue[tail++] = j } }
+        if (x < w - 1) { val j = idx + 1; if (labels[j] == 0 && cond[j] == target) { labels[j] = label; queue[tail++] = j } }
+        if (y > 0) { val j = idx - w; if (labels[j] == 0 && cond[j] == target) { labels[j] = label; queue[tail++] = j } }
+        if (y < h - 1) { val j = idx + w; if (labels[j] == 0 && cond[j] == target) { labels[j] = label; queue[tail++] = j } }
+    }
+    return tail
+}
+
+/** Limpa a máscara binária: fecha falhas, tapa buracos pequenos dentro da pessoa e tira manchas soltas no fundo. */
+private fun fxCleanBinary(bin: BooleanArray, w: Int, h: Int): BooleanArray {
+    val n = w * h
+    val rr = max(2, (max(w, h) * 0.012f).toInt())
+    val dil = fxBoxBlur(FloatArray(n) { if (bin[it]) 1f else 0f }, w, h, rr)
+    val ero = fxBoxBlur(FloatArray(n) { if (dil[it] > 0.0005f) 1f else 0f }, w, h, rr)
+    val m = BooleanArray(n) { bin[it] || ero[it] > 0.9995f }
+    val queue = IntArray(n)
+    // Buracos: fundo que NÃO encosta na borda da foto e é pequeno vira pessoa (ex.: pedaço do corpo que o modelo errou).
+    val bg = IntArray(n)
+    for (x in 0 until w) {
+        if (!m[x] && bg[x] == 0) fxFlood(x, w, h, m, false, bg, 1, queue)
+        val l = (h - 1) * w + x
+        if (!m[l] && bg[l] == 0) fxFlood(l, w, h, m, false, bg, 1, queue)
+    }
+    for (y in 0 until h) {
+        val l = y * w
+        if (!m[l] && bg[l] == 0) fxFlood(l, w, h, m, false, bg, 1, queue)
+        val rgt = y * w + w - 1
+        if (!m[rgt] && bg[rgt] == 0) fxFlood(rgt, w, h, m, false, bg, 1, queue)
+    }
+    var label = 2
+    for (i in 0 until n) {
+        if (!m[i] && bg[i] == 0) {
+            val count = fxFlood(i, w, h, m, false, bg, label++, queue)
+            if (count < n * 0.06f) for (k in 0 until count) m[queue[k]] = true
+        }
+    }
+    // Manchas soltas: pedaço de "pessoa" pequeno e longe do corpo principal vira fundo.
+    val fg = IntArray(n)
+    val sizes = ArrayList<Int>()
+    sizes.add(0)
+    var biggest = 0
+    for (i in 0 until n) {
+        if (m[i] && fg[i] == 0) {
+            val count = fxFlood(i, w, h, m, true, fg, sizes.size, queue)
+            sizes.add(count)
+            if (count > biggest) biggest = count
+        }
+    }
+    for (i in 0 until n) {
+        val l = fg[i]
+        if (l > 0 && sizes[l] < n * 0.02f && sizes[l] < biggest * 0.3f) m[i] = false
+    }
+    return m
+}
+
+/** Máscara da pessoa (alfa) do tamanho da foto, ou null se não achar uma pessoa. Refinada: sem buracos, sem halo, borda no contorno real. */
+internal fun fxPersonMask(bmp: Bitmap): Bitmap? {
     val segmenter = Segmentation.getClient(
         SelfieSegmenterOptions.Builder().setDetectorMode(SelfieSegmenterOptions.SINGLE_IMAGE_MODE).build()
     )
@@ -242,16 +352,45 @@ private fun fxPersonMask(bmp: Bitmap): Bitmap? {
     val mh = mask.height
     val buf = mask.buffer
     buf.rewind()
-    val px = IntArray(mw * mh)
+    val conf = FloatArray(mw * mh)
     var person = 0
-    for (i in px.indices) {
+    for (i in conf.indices) {
         val c = buf.getFloat().coerceIn(0f, 1f)
-        val a = (c * c * (3f - 2f * c) * 255f).roundToInt().coerceIn(0, 255)
-        if (a > 128) person++
-        px[i] = (a shl 24) or 0x00FFFFFF
+        conf[i] = c
+        if (c > 0.5f) person++
     }
-    if (person < px.size / 50) return null
-    val maskSmall = Bitmap.createBitmap(px, mw, mh, Bitmap.Config.ARGB_8888)
+    if (person < conf.size / 50) return null
+    // Trabalha numa versão menor (rápido) e depois amplia o resultado para o tamanho da foto.
+    val big = max(bmp.width, bmp.height)
+    val scale = if (big > 960) 960f / big else 1f
+    val w = max(8, (bmp.width * scale).roundToInt())
+    val h = max(8, (bmp.height * scale).roundToInt())
+    val bin = BooleanArray(w * h)
+    for (y in 0 until h) {
+        val sy = minOf(mh - 1, (y.toFloat() / h * mh).toInt())
+        for (x in 0 until w) {
+            val sx = minOf(mw - 1, (x.toFloat() / w * mw).toInt())
+            bin[y * w + x] = conf[sy * mw + sx] > 0.5f
+        }
+    }
+    val clean = fxCleanBinary(bin, w, h)
+    val small = Bitmap.createScaledBitmap(bmp, w, h, true)
+    val px = IntArray(w * h)
+    small.getPixels(px, 0, w, 0, 0, w, h)
+    if (small !== bmp) small.recycle()
+    val guide = FloatArray(w * h) {
+        val p = px[it]
+        (0.299f * ((p shr 16) and 0xFF) + 0.587f * ((p shr 8) and 0xFF) + 0.114f * (p and 0xFF)) / 255f
+    }
+    val radius = max(3, (max(w, h) * 0.008f).toInt())
+    val q = fxGuidedFilter(guide, FloatArray(w * h) { if (clean[it]) 1f else 0f }, w, h, radius, 0.0008f)
+    // Curva firme (0,38 → 0,80): tira o halo do fundo antigo e deixa a borda definida, sem serrilhado.
+    val out = IntArray(w * h) {
+        val t = ((q[it] - 0.38f) / 0.42f).coerceIn(0f, 1f)
+        val a = (t * t * (3f - 2f * t) * 255f).roundToInt().coerceIn(0, 255)
+        (a shl 24) or 0x00FFFFFF
+    }
+    val maskSmall = Bitmap.createBitmap(out, w, h, Bitmap.Config.ARGB_8888)
     val maskFull = Bitmap.createScaledBitmap(maskSmall, bmp.width, bmp.height, true)
     // Se a máscara já tem o tamanho da foto, createScaledBitmap devolve a MESMA imagem: reciclar aqui matava a máscara ("recycled bitmap").
     if (maskFull !== maskSmall) maskSmall.recycle()
@@ -366,27 +505,7 @@ private fun fxReplaceBackground(context: Context, bmp: Bitmap, spec: QinblyFxSpe
 
 /** Recorta a pessoa da foto: devolve uma imagem com fundo transparente, ou null se não achar uma pessoa. */
 internal fun fxPersonCutout(bmp: Bitmap): Bitmap? {
-    val segmenter = Segmentation.getClient(
-        SelfieSegmenterOptions.Builder().setDetectorMode(SelfieSegmenterOptions.SINGLE_IMAGE_MODE).build()
-    )
-    val mask = try { Tasks.await(segmenter.process(InputImage.fromBitmap(bmp, 0))) } finally { segmenter.close() }
-    val mw = mask.width
-    val mh = mask.height
-    val buf = mask.buffer
-    buf.rewind()
-    val px = IntArray(mw * mh)
-    var person = 0
-    for (i in px.indices) {
-        val c = buf.getFloat().coerceIn(0f, 1f)
-        val a = (c * c * (3f - 2f * c) * 255f).roundToInt().coerceIn(0, 255)
-        if (a > 128) person++
-        px[i] = (a shl 24) or 0x00FFFFFF
-    }
-    if (person < px.size / 50) return null
-    val maskSmall = Bitmap.createBitmap(px, mw, mh, Bitmap.Config.ARGB_8888)
-    val maskFull = Bitmap.createScaledBitmap(maskSmall, bmp.width, bmp.height, true)
-    // Se a máscara já tem o tamanho da foto, createScaledBitmap devolve a MESMA imagem: reciclar aqui matava a máscara ("recycled bitmap").
-    if (maskFull !== maskSmall) maskSmall.recycle()
+    val maskFull = fxPersonMask(bmp) ?: return null
     val out = Bitmap.createBitmap(bmp.width, bmp.height, Bitmap.Config.ARGB_8888)
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         shader = ComposeShader(

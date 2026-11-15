@@ -28,3 +28,7 @@ Os três partem sempre da foto ORIGINAL (`fxBase`) e recalculam tudo de uma vez 
 
 ## Aviso dentro do editor
 Os avisos dos efeitos (Retoque, HDR, Fundo) aparecem numa pílula DENTRO do editor (`fxStatus`, `zIndex(30f)`), com "Aplicando…" e o resultado ou o erro. O aviso geral do app (`notice`) fica por trás da tela cheia do editor e não é visto; por isso nada importante do editor deve depender só dele.
+
+
+## Recorte da pessoa (vale para todo o Fundo e para Recortar pessoa)
+`fxPersonMask` não usa mais a máscara crua do modelo (baixa resolução, feita para selfie): ela é limpa e refinada num tamanho de trabalho de até 960px: (1) fecha falhas e tapa buracos pequenos dentro da pessoa (buraco que não encosta na borda e tem menos de 6% da foto); (2) tira manchas soltas no fundo; (3) filtro guiado pela foto faz a borda seguir o contorno real (cabelo, braço, cintura); (4) curva firme 0,38→0,80 tira o halo do fundo antigo. Nunca reciclar a máscara pequena se `createScaledBitmap` devolveu a mesma imagem.
