@@ -93,7 +93,7 @@ internal fun QinblyPollCreateDialog(accent: Color, onDismiss: () -> Unit, onCrea
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Nova enquete") },
-        text = {
+        text = { QinblyClearFocusWhenKeyboardCloses();
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(question, { question = it.take(200) }, label = { Text("Pergunta") })
                 options.forEachIndexed { i, _ ->
@@ -130,7 +130,7 @@ internal fun QinblyTagPeopleDialog(token: String?, initial: List<String>, accent
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Marcar pessoas") },
-        text = {
+        text = { QinblyClearFocusWhenKeyboardCloses();
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(query, { query = it.take(30) }, label = { Text("Buscar pessoa") }, singleLine = true)
                 if (chosen.isNotEmpty()) Text("Marcadas: " + chosen.joinToString(", ") { "@$it" }, color = accent, fontSize = 13.sp)

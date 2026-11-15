@@ -239,7 +239,7 @@ internal fun QinblyMessageSheet(
         AlertDialog(
             onDismissRequest = { showForward = false },
             title = { Text("Encaminhar para") },
-            text = {
+            text = { QinblyClearFocusWhenKeyboardCloses();
                 OutlinedTextField(value = forwardTo, onValueChange = { forwardTo = it.take(40) }, singleLine = true, placeholder = { Text("@usuário") })
             },
             confirmButton = {

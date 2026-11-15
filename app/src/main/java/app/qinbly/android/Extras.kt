@@ -91,6 +91,22 @@ internal fun qinblyNavBarPadding(floor: androidx.compose.ui.unit.Dp = 98.dp): an
     return maxOf(fromCompose, measured.dp, floor)
 }
 
+/**
+ * Padrão do app: campo de texto só fica "aceso" (borda azul e cursor piscando) com o teclado aberto.
+ * Quando o teclado fecha (voltar, descer, tocar fora), a seleção sai do campo. Chamar uma vez dentro de cada janela
+ * (tela principal, QinblyDialog e AlertDialog com campo de texto); cada janela tem o próprio teclado e o próprio foco.
+ */
+@Composable
+internal fun QinblyClearFocusWhenKeyboardCloses() {
+    val focus = androidx.compose.ui.platform.LocalFocusManager.current
+    val open = WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
+    val wasOpen = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(open) {
+        if (wasOpen.value && !open) focus.clearFocus()
+        wasOpen.value = open
+    }
+}
+
 /** Espacinho padrão entre qualquer barra de escrever (comentário, mensagem, legenda) e o teclado aberto. */
 internal val QinblyKeyboardGap = 6.dp
 
@@ -125,6 +141,7 @@ internal fun QinblyDialog(
 ) {
     val pad = if (lift && !properties.decorFitsSystemWindows) qinblyNavBarPadding() else 0.dp
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismissRequest, properties = properties) {
+        QinblyClearFocusWhenKeyboardCloses()
         if (lift) androidx.compose.runtime.CompositionLocalProvider(LocalQinblyNavHandled provides true) {
             Box(Modifier.padding(bottom = pad)) { content() }
         } else if (smallText) QinblySmallText { content() } else content()

@@ -187,7 +187,7 @@ internal fun QinblyStoryMenu(
         "compose" -> AlertDialog(
             onDismissRequest = { if (!busy) onDismiss() },
             title = { Text("Novo story") },
-            text = {
+            text = { QinblyClearFocusWhenKeyboardCloses();
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     val shown = picked
                     if (shown != null) {
@@ -221,7 +221,7 @@ internal fun QinblyStoryMenu(
         else -> AlertDialog(
             onDismissRequest = onDismiss,
             title = { Text("Sua nota") },
-            text = {
+            text = { QinblyClearFocusWhenKeyboardCloses();
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Um texto curto que aparece sobre a sua foto, para quem te segue. Some em 24 horas.", fontSize = 14.sp)
                     OutlinedTextField(noteText, { noteText = it.take(60) }, label = { Text("Nota (até 60 letras)") }, singleLine = true)

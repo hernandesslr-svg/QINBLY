@@ -406,6 +406,7 @@ class MainActivity : ComponentActivity() {
                 controller.isAppearanceLightStatusBars = lightBackground
                 controller.isAppearanceLightNavigationBars = lightBackground
             }
+            QinblyClearFocusWhenKeyboardCloses()
             QinblyApp()
         }
     }
@@ -486,7 +487,7 @@ private fun QinblyVerificationCard(token: String, onNotice: (String) -> Unit) {
         AlertDialog(
             onDismissRequest = { if (!sending) dialog = false },
             title = { Text("Pedir verificação") },
-            text = {
+            text = { QinblyClearFocusWhenKeyboardCloses();
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Conte quem você é e por que sua conta deve ser verificada. Você precisa ter foto, bio e ao menos uma publicação.", style = MaterialTheme.typography.bodySmall)
                     OutlinedTextField(value = reason, onValueChange = { reason = it.take(1000) }, modifier = Modifier.fillMaxWidth(), minLines = 3, maxLines = 6, label = { Text("Motivo") })
@@ -4320,7 +4321,7 @@ private fun QinblyCommentsDialog(
         containerColor = QiblyTheme.card,
                                 onDismissRequest = { editingComment = null },
                                 title = { Text("Editar comentário") },
-                                text = { OutlinedTextField(value = editDraft, onValueChange = { editDraft = it.take(2000) }, minLines = 2, maxLines = 6, visualTransformation = QinblyTagTransformation, modifier = Modifier.fillMaxWidth()) },
+                                text = { QinblyClearFocusWhenKeyboardCloses(); OutlinedTextField(value = editDraft, onValueChange = { editDraft = it.take(2000) }, minLines = 2, maxLines = 6, visualTransformation = QinblyTagTransformation, modifier = Modifier.fillMaxWidth()) },
                                 confirmButton = {
                                     TextButton(enabled = editDraft.isNotBlank() && editDraft.trim() != target.body.trim(), onClick = {
                                         val token = prefs.getString("token", null)
@@ -8702,7 +8703,7 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
         containerColor = QiblyTheme.card,
             onDismissRequest = { if (!forgotBusy) showForgot = false },
             title = { Text("Recuperar senha") },
-            text = {
+            text = { QinblyClearFocusWhenKeyboardCloses();
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Digite o e-mail da sua conta. Vamos enviar um link para criar uma nova senha.")
                     OutlinedTextField(value = forgotEmail, onValueChange = { forgotEmail = it.take(120) }, singleLine = true, label = { Text("E-mail") }, modifier = Modifier.fillMaxWidth())
@@ -9414,7 +9415,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
         shape = RoundedCornerShape(28.dp),
             onDismissRequest = { if (!deletingAccount) showDeleteAccount = false },
             title = { Text("Excluir conta definitivamente?") },
-            text = {
+            text = { QinblyClearFocusWhenKeyboardCloses();
                 Column {
                     Text("Seu perfil, publicações, comentários, curtidas, mensagens e arquivos serão apagados e não poderão ser recuperados. Para confirmar, digite o seu nome de usuário: " + username.removePrefix("@"))
                     OutlinedTextField(

@@ -10,3 +10,13 @@ story coletivo, story de texto, legendas, comentários) fica **colada no teclado
   fechado (era o vão enorme do story). Nunca ler `WindowInsets.ime` fora do Dialog e repassar para dentro.
 - Em janelas que já usam `.imePadding()`, não somar o `qinblyNavBarPadding()` fixo com o teclado aberto.
 - Tela nova com barra de escrever: usar estas duas peças, sem número solto.
+
+## Campo aceso só com o teclado aberto
+
+Regra do dono do app: o campo de texto só fica "aceso" (borda azul e cursor piscando) com o teclado aberto. Fechou o
+teclado (voltar, descer, tocar fora), a seleção sai do campo e a borda e o cursor somem.
+
+- Peça única: `QinblyClearFocusWhenKeyboardCloses()` (Extras.kt). Observa o teclado e limpa o foco quando ele fecha.
+- Já está em: tela principal (setContent), `QinblyDialog` (vale para `QinblyFullScreen`) e nos `AlertDialog` que têm campo
+  de texto. Cada janela tem o próprio teclado e o próprio foco, então precisa estar dentro de cada uma.
+- `AlertDialog` ou janela nova com campo de texto: chamar `QinblyClearFocusWhenKeyboardCloses()` dentro do conteúdo.
