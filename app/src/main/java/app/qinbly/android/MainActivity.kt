@@ -436,7 +436,7 @@ private fun QinblyPullRefresh(enabled: Boolean = true, content: @androidx.compos
     }
 }
 
-/** Cartão "Selo de verificado" na edição de perfil: mostra o estado do pedido e deixa pedir a verificação (aprovação manual). */
+/** Cartão "Selo de verificado" (Configurações → Conta): mostra o estado do pedido e deixa pedir a verificação (aprovação manual). */
 @androidx.compose.runtime.Composable
 private fun QinblyVerificationCard(token: String, onNotice: (String) -> Unit) {
     var verified by remember { mutableStateOf(false) }
@@ -9210,7 +9210,6 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                 }
                 if (countryMenuExpanded) QinblyCountrySheet(countryOptions, selectedCountry, { selectedCountry = it; countryMenuExpanded = false }, { countryMenuExpanded = false })
             }
-            QinblyVerificationCard(prefs.getString("token", "").orEmpty(), onNotice)
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("CATEGORIAS", color = Muted, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
                 Text("${selectedCategories.size} de 5", color = QinblyBrand.Accent, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.labelMedium)
@@ -9662,6 +9661,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
             } else when (section) {
                 "account" -> {
                     item { Text(if (username.isBlank()) "Nenhuma conta conectada" else "Conta atual: @$username", color = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.padding(vertical = 6.dp)) }
+                    item { Box(Modifier.padding(vertical = 6.dp)) { QinblyVerificationCard(prefs.getString("token", "").orEmpty(), onNotice) } }
                     item { Text("SEGURANÇA", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)) }
                     item { SettingsLink("Trocar senha", "Escolher uma senha nova", Icons.Outlined.Password) { showCredential = "password" } }
                     item { SettingsLink("Trocar e-mail", "Mudar o e-mail da conta", Icons.Outlined.Email) { showCredential = "email" } }
