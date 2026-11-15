@@ -295,13 +295,10 @@ private fun fxFlood(start: Int, w: Int, h: Int, cond: BooleanArray, target: Bool
     return tail
 }
 
-/** Limpa a máscara binária: fecha falhas, tapa buracos pequenos dentro da pessoa e tira manchas soltas no fundo. */
+/** Limpa a máscara binária: tapa buracos pequenos dentro da pessoa e tira manchas soltas no fundo (não mexe na borda). */
 private fun fxCleanBinary(bin: BooleanArray, w: Int, h: Int): BooleanArray {
     val n = w * h
-    val rr = max(2, (max(w, h) * 0.012f).toInt())
-    val dil = fxBoxBlur(FloatArray(n) { if (bin[it]) 1f else 0f }, w, h, rr)
-    val ero = fxBoxBlur(FloatArray(n) { if (dil[it] > 0.0005f) 1f else 0f }, w, h, rr)
-    val m = BooleanArray(n) { bin[it] || ero[it] > 0.9995f }
+    val m = bin.copyOf()
     val queue = IntArray(n)
     // Buracos: fundo que NÃO encosta na borda da foto e é pequeno vira pessoa (ex.: pedaço do corpo que o modelo errou).
     val bg = IntArray(n)
@@ -320,7 +317,7 @@ private fun fxCleanBinary(bin: BooleanArray, w: Int, h: Int): BooleanArray {
     for (i in 0 until n) {
         if (!m[i] && bg[i] == 0) {
             val count = fxFlood(i, w, h, m, false, bg, label++, queue)
-            if (count < n * 0.06f) for (k in 0 until count) m[queue[k]] = true
+            if (count < n * 0.02f) for (k in 0 until count) m[queue[k]] = true
         }
     }
     // Manchas soltas: pedaço de "pessoa" pequeno e longe do corpo principal vira fundo.
@@ -365,28 +362,41 @@ internal fun fxPersonMask(bmp: Bitmap): Bitmap? {
     val scale = if (big > 960) 960f / big else 1f
     val w = max(8, (bmp.width * scale).roundToInt())
     val h = max(8, (bmp.height * scale).roundToInt())
-    val bin = BooleanArray(w * h)
+    // Confiança SUAVE (bilinear) em vez de preto-e-branco: a borda nasce lisa, sem degraus.
+    val soft = FloatArray(w * h)
     for (y in 0 until h) {
-        val sy = minOf(mh - 1, (y.toFloat() / h * mh).toInt())
+        val fy = ((y + 0.5f) / h * mh - 0.5f).coerceIn(0f, (mh - 1).toFloat())
+        val y0 = fy.toInt(); val y1 = minOf(mh - 1, y0 + 1); val ty = fy - y0
         for (x in 0 until w) {
-            val sx = minOf(mw - 1, (x.toFloat() / w * mw).toInt())
-            bin[y * w + x] = conf[sy * mw + sx] > 0.5f
+            val fx = ((x + 0.5f) / w * mw - 0.5f).coerceIn(0f, (mw - 1).toFloat())
+            val x0 = fx.toInt(); val x1 = minOf(mw - 1, x0 + 1); val tx = fx - x0
+            val top = conf[y0 * mw + x0] * (1f - tx) + conf[y0 * mw + x1] * tx
+            val bot = conf[y1 * mw + x0] * (1f - tx) + conf[y1 * mw + x1] * tx
+            soft[y * w + x] = top * (1f - ty) + bot * ty
         }
     }
+    val bin = BooleanArray(w * h) { soft[it] > 0.5f }
     val clean = fxCleanBinary(bin, w, h)
+    // Só corrige o que a limpeza mudou (buraco vira pessoa, mancha vira fundo); o resto mantém a confiança suave.
+    for (i in soft.indices) {
+        if (clean[i] && !bin[i]) soft[i] = 1f
+        else if (!clean[i] && bin[i]) soft[i] = 0f
+    }
     val small = Bitmap.createScaledBitmap(bmp, w, h, true)
     val px = IntArray(w * h)
     small.getPixels(px, 0, w, 0, 0, w, h)
     if (small !== bmp) small.recycle()
-    val guide = FloatArray(w * h) {
+    val grayRaw = FloatArray(w * h) {
         val p = px[it]
         (0.299f * ((p shr 16) and 0xFF) + 0.587f * ((p shr 8) and 0xFF) + 0.114f * (p and 0xFF)) / 255f
     }
-    val radius = max(3, (max(w, h) * 0.008f).toInt())
-    val q = fxGuidedFilter(guide, FloatArray(w * h) { if (clean[it]) 1f else 0f }, w, h, radius, 0.0008f)
-    // Curva firme (0,38 → 0,80): tira o halo do fundo antigo e deixa a borda definida, sem serrilhado.
+    // Guia levemente suavizada + eps maior: a borda segue o contorno real sem copiar o ruído/granulado da foto (isso serrilhava).
+    val guide = fxBoxBlur(grayRaw, w, h, 1)
+    val radius = max(4, (max(w, h) * 0.012f).toInt())
+    val q = fxGuidedFilter(guide, soft, w, h, radius, 0.01f)
+    // Curva suave (0,30 → 0,80): borda levemente para dentro (tira o halo) mas com transição macia.
     val out = IntArray(w * h) {
-        val t = ((q[it] - 0.38f) / 0.42f).coerceIn(0f, 1f)
+        val t = ((q[it] - 0.30f) / 0.50f).coerceIn(0f, 1f)
         val a = (t * t * (3f - 2f * t) * 255f).roundToInt().coerceIn(0, 255)
         (a shl 24) or 0x00FFFFFF
     }
