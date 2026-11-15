@@ -107,6 +107,29 @@ internal fun QinblyClearFocusWhenKeyboardCloses() {
     }
 }
 
+/**
+ * Padrão de toda conversa: quando o teclado abre ou fecha, a lista de mensagens volta para o fim (última mensagem
+ * sempre visível, nunca escondida embaixo). Se a pessoa estiver lendo mensagens bem antigas, não puxa a lista.
+ */
+@Composable
+internal fun QinblyKeepChatAtBottom(state: androidx.compose.foundation.lazy.LazyListState, lastIndex: Int) {
+    val open = WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
+    val last = androidx.compose.runtime.rememberUpdatedState(lastIndex)
+    val first = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
+    androidx.compose.runtime.LaunchedEffect(open) {
+        if (first.value) { first.value = false; return@LaunchedEffect }
+        // O teclado leva uns instantes para terminar de abrir/fechar: confirma a posição algumas vezes.
+        repeat(4) {
+            val l = last.value
+            if (l >= 0) {
+                val seen = state.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+                if (seen >= l - 12) state.scrollToItem(l)
+            }
+            kotlinx.coroutines.delay(120)
+        }
+    }
+}
+
 /** Espacinho padrão entre qualquer barra de escrever (comentário, mensagem, legenda) e o teclado aberto. */
 internal val QinblyKeyboardGap = 6.dp
 

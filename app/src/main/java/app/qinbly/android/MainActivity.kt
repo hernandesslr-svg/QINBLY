@@ -6763,6 +6763,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
     }
     val chat = remember(posts, clearedAt) { posts.sortedBy { it.createdAt }.filter { clearedAt.isBlank() || it.createdAt > clearedAt } }
     LaunchedEffect(chat.size) { if (chat.isNotEmpty()) listState.scrollToItem(chat.lastIndex + 0) }
+    QinblyKeepChatAtBottom(listState, chat.lastIndex)
 
     var recordingVoiceC by remember { mutableStateOf(false) }
     fun sendCWith(action: (String, String) -> Unit) {
@@ -7826,6 +7827,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             }
             val chatListState = androidx.compose.foundation.lazy.rememberLazyListState()
             LaunchedEffect(visibleMessages.size) { if (visibleMessages.isNotEmpty()) chatListState.scrollToItem(visibleMessages.lastIndex) }
+            QinblyKeepChatAtBottom(chatListState, visibleMessages.lastIndex)
             LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = chatListState, verticalArrangement = Arrangement.spacedBy(6.dp), contentPadding = PaddingValues(horizontal = 4.dp, vertical = 14.dp)) {
                 items(visibleMessages.size, key = { visibleMessages[it].id }) { index ->
                     val message = visibleMessages[index]

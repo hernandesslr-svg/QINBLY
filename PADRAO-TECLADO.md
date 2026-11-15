@@ -20,3 +20,6 @@ teclado (voltar, descer, tocar fora), a seleção sai do campo e a borda e o cur
 - Já está em: tela principal (setContent), `QinblyDialog` (vale para `QinblyFullScreen`) e nos `AlertDialog` que têm campo
   de texto. Cada janela tem o próprio teclado e o próprio foco, então precisa estar dentro de cada uma.
 - `AlertDialog` ou janela nova com campo de texto: chamar `QinblyClearFocusWhenKeyboardCloses()` dentro do conteúdo.
+
+## Conversas: última mensagem sempre visível
+Toda lista de mensagens (chat direto, chat de comunidade e qualquer conversa nova) chama `QinblyKeepChatAtBottom(listState, ultimoIndice)`. Quando o teclado abre ou fecha, a lista volta para o fim, para a última mensagem nunca ficar escondida embaixo. Se a pessoa está lendo mensagens muito antigas, a lista não é puxada.
