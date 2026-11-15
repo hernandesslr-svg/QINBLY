@@ -12007,10 +12007,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 qualityChoice = when (qualityChoice) { "HD" -> "FHD"; "FHD" -> "UHD"; else -> "HD" }
                                 flashLabel = "Qualidade " + qualityChoice
                             }
-                            QinblyCameraSideItem(QinblyCameraIcons.background, "Fundo", on = bgBlurOn) {
-                                bgBlurOn = !bgBlurOn
-                                flashLabel = if (bgBlurOn) "Fundo desfocado (aplicado nas fotos)" else "Fundo normal"
-                            }
                          }
 }
                         QinblyCameraSideItem(if (sideExpanded) QinblyCameraIcons.chevronUp else QinblyCameraIcons.chevronDown, "") { sideExpanded = !sideExpanded }
