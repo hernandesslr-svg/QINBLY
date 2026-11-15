@@ -4168,11 +4168,6 @@ private fun QinblyCommentsDialog(
                             modifier = Modifier.clickable(enabled = showCommentEmojis) { showCommentEmojis = false }
                         )
                         Text("  ${comments.size}", color = RemoteAppearance.commentSecondaryTextColor, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                        var sortComments by remember { mutableStateOf("Principais") }
-                        TextButton(onClick = { sortComments = if (sortComments == "Principais") "Recentes" else "Principais" }) {
-                            Text(sortComments, color = RemoteAppearance.commentTextColor, fontSize = 14.sp)
-                            Icon(Icons.Default.ChevronRight, contentDescription = "Ordenar comentários", tint = RemoteAppearance.commentTextColor, modifier = Modifier.padding(start = 3.dp).size(18.dp))
-                        }
                     }
                     HorizontalDivider(color = RemoteAppearance.commentDividerColor)
 
