@@ -6668,7 +6668,7 @@ private fun QinblyCreateCommunityDialog(onDismiss: () -> Unit, onCreate: (String
     var sending by remember { mutableStateOf(false) }
     val photoContext = androidx.compose.ui.platform.LocalContext.current
     var photoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
-    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    val photoPicker = rememberQinblyPhotoLauncher { uri ->
         if (uri != null) photoBitmap = runCatching { photoContext.contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it) } }.getOrNull()
     }
     BackHandler(enabled = !sending) { onDismiss() }
@@ -6821,7 +6821,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
     // Câmera padrão do app (a mesma do Criar), em vez da câmera do celular.
     var showCAppCamera by remember { mutableStateOf(false) }
     // Foto da galeria passa pelo MESMO editor da câmera (padrão do app) antes de enviar.
-    val cGalleryPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+    val cGalleryPicker = rememberQinblyPhotoLauncher(onCamera = { showCAppCamera = true }) { uri ->
         if (uri != null) { qinblySetPickedMedia(uri, false); showCAppCamera = true }
     }
     var pendingCPhoto by remember { mutableStateOf<java.io.File?>(null) }
@@ -7390,7 +7390,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     // Câmera padrão do app (a mesma do Criar), em vez da câmera do celular.
     var showChatAppCamera by remember { mutableStateOf(false) }
     // Foto da galeria passa pelo MESMO editor da câmera (padrão do app) antes de enviar.
-    val chatGalleryPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+    val chatGalleryPicker = rememberQinblyPhotoLauncher(onCamera = { showChatAppCamera = true }) { uri ->
         if (uri != null) { qinblySetPickedMedia(uri, false); showChatAppCamera = true }
     }
     var pendingChatPhoto by remember { mutableStateOf<java.io.File?>(null) }
@@ -9313,7 +9313,7 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
     val screenWidthDp = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp
     val previewWidthPx = with(density) { (screenWidthDp - 16).coerceAtLeast(1).dp.toPx() }
     val previewHeightPx = previewWidthPx
-    val profilePhotoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+    val profilePhotoPicker = rememberQinblyPhotoLauncher { uri ->
         if (uri != null) {
             selectedProfilePhoto = uri
             dragX = 0f
@@ -10879,7 +10879,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var photoVideoBusy by remember { mutableStateOf(false) }
     var photoVideoPending by remember { mutableStateOf<List<Uri>>(emptyList()) }
     val photoVideoClips = remember { mutableStateListOf<PvClip>() }
-    val addVideoPhotos = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(20)) { uris ->
+    val addVideoPhotos = rememberQinblyMultiPhotoLauncher(20) { uris ->
         if (uris.isNotEmpty()) photoVideoPending = uris
     }
     val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -10975,8 +10975,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         if (uri != null) { sourceUri = uri; selectedUri = uri; showComposer = true; selectedType = "vídeo" }
     }
     // Seletor do Android: não depende de permissão de acesso a toda a biblioteca.
-    val multiPhotoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(10)) { uris ->
-        if (uris.isNotEmpty() && handOff(uris.first())) return@rememberLauncherForActivityResult
+    val multiPhotoPicker = rememberQinblyMultiPhotoLauncher(10, onCamera = { onSwitchMode("camera") }) { uris ->
+        if (uris.isNotEmpty() && handOff(uris.first())) return@rememberQinblyMultiPhotoLauncher
         if (uris.isNotEmpty()) {
             gallerySelection.clear()
             gallerySelection.addAll(uris.take(10))

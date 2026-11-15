@@ -561,7 +561,7 @@ private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPos
     var extra by remember { mutableStateOf(if (kind == "venda" || kind == "doacao") "Bom" else "") }
     val photos: SnapshotStateList<Uri> = remember { mutableStateListOf() }
     var posting by remember { mutableStateOf(false) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(6)) { uris ->
+    val picker = rememberQinblyMultiPhotoLauncher(6) { uris ->
         for (u in uris) if (photos.size < 6) photos.add(u)
     }
     val heading = when (kind) { "venda" -> "Novo anúncio"; "doacao" -> "Nova doação"; "achado" -> "Achado ou perdido"; "evento" -> "Novo evento"; else -> "Novo serviço" }

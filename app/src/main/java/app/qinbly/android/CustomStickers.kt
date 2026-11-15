@@ -117,10 +117,10 @@ internal fun QinblyStickerCreateDialog(accent: Color, onNotice: (String) -> Unit
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
     var busy by remember { mutableStateOf(false) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { source ->
-        if (source == null) { onDismiss(); return@rememberLauncherForActivityResult }
+    val picker = rememberQinblyPhotoLauncher { source ->
+        if (source == null) { onDismiss(); return@rememberQinblyPhotoLauncher }
         val token = prefs.getString("token", null)
-        if (token.isNullOrBlank()) { onNotice("Entre na sua conta para criar figurinhas."); onDismiss(); return@rememberLauncherForActivityResult }
+        if (token.isNullOrBlank()) { onNotice("Entre na sua conta para criar figurinhas."); onDismiss(); return@rememberQinblyPhotoLauncher }
         busy = true
         qinblyMakeSticker(context, source, false) { file, info ->
             if (file == null) { busy = false; onNotice(info.ifBlank { "Não foi possível criar a figurinha." }); onDismiss(); return@qinblyMakeSticker }
