@@ -239,7 +239,10 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
         comments = try { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getStoryComments(token, storyId) } } catch (_: Exception) { comments ?: emptyList() }
     }
     val player = remember { arrayOfNulls<android.media.MediaPlayer>(1) }
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { try { player[0]?.release() } catch (_: Exception) { } } }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        val unreg = QinblyPlayback.add({ try { player[0]?.release() } catch (_: Exception) { }; player[0] = null; false })
+        onDispose { unreg(); try { player[0]?.release() } catch (_: Exception) { } }
+    }
     fun playVoice(commentId: String) {
         if (token.isNullOrBlank()) return
         Thread {

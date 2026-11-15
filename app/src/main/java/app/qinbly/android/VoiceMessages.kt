@@ -199,7 +199,9 @@ internal fun QinblyAudioBubble(url: String, seconds: Int, accent: Color, own: Bo
         }
     }
     DisposableEffect(url) {
+        val unreg = QinblyPlayback.add({ if (playing) stop(); false })
         onDispose {
+            unreg()
             try { player[0]?.release() } catch (_: Exception) { }
             player[0] = null
             if (QinblyVoicePlayback.stopCurrent != null && playing) QinblyVoicePlayback.stopCurrent = null

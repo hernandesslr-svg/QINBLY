@@ -125,7 +125,11 @@ internal fun QinblyMusicPlayer(url: String, muted: Boolean, paused: Boolean = fa
             mp.setOnPreparedListener { ready[0] = true; if (!paused) it.start() }
             mp.prepareAsync()
         } catch (_: Exception) { }
-        onDispose { holder[0] = null; ready[0] = false; try { mp.release() } catch (_: Exception) { } }
+        val unreg = QinblyPlayback.add(
+            { val w = try { ready[0] && mp.isPlaying } catch (_: Exception) { false }; try { if (w) mp.pause() } catch (_: Exception) { }; w },
+            { try { if (ready[0]) mp.start() } catch (_: Exception) { } }
+        )
+        onDispose { unreg(); holder[0] = null; ready[0] = false; try { mp.release() } catch (_: Exception) { } }
     }
     LaunchedEffect(muted, paused, url) {
         val mp = holder[0] ?: return@LaunchedEffect

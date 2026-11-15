@@ -375,6 +375,9 @@ private fun RoundedPaperPlaneIcon(tint: Color = Color.White) {
 }
 
 class MainActivity : ComponentActivity() {
+    // Segundo plano: tudo que toca (vídeo, música, áudio) pausa quando o app sai da tela e retoma ao voltar.
+    override fun onStop() { QinblyPlayback.pauseAll(); super.onStop() }
+    override fun onStart() { super.onStart(); QinblyPlayback.resumeAll() }
     // Teclas de volume (aumentar ou diminuir): avisam os vídeos mudos para ligarem o som (o sistema continua tratando a tecla normalmente).
     override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
         if ((event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN) && event.action == android.view.KeyEvent.ACTION_DOWN) QinblyVolumeKey.upTicks++
@@ -3108,7 +3111,10 @@ private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, sh
     val doubleTapAction by rememberUpdatedState(onDoubleTap)
     var position by remember(url) { mutableStateOf(0f) }
     var duration by remember(url) { mutableStateOf(0L) }
-    DisposableEffect(player) { onDispose { player.release() } }
+    DisposableEffect(player) {
+        val unreg = QinblyPlayback.add({ val w = player.playWhenReady; player.pause(); playing = false; w }, { player.play(); playing = true })
+        onDispose { unreg(); player.release() }
+    }
     androidx.compose.runtime.LaunchedEffect(player) {
         while (true) {
             val d = player.duration
@@ -3228,7 +3234,10 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
             })
         }
     }
-    DisposableEffect(player) { onDispose { player.release() } }
+    DisposableEffect(player) {
+        val unreg = QinblyPlayback.add({ val w = player.playWhenReady; player.pause(); isPlaying = false; w }, { player.play(); isPlaying = true })
+        onDispose { unreg(); player.release() }
+    }
     val volumeTicksAtStart = remember(url) { QinblyVolumeKey.upTicks }
     val isFocused by remember(instanceKey) { derivedStateOf { QinblyVideoFocus.focusedKey() == instanceKey } }
     DisposableEffect(instanceKey) { onDispose { QinblyVideoFocus.visible.remove(instanceKey) } }

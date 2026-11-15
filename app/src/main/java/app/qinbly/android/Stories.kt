@@ -266,7 +266,8 @@ internal fun StoryVideo(url: String, onEnded: () -> Unit) {
             override fun onPlaybackStateChanged(state: Int) { if (state == Player.STATE_ENDED) onEnded() }
         }
         player.addListener(listener)
-        onDispose { player.removeListener(listener); player.release() }
+        val unreg = QinblyPlayback.add({ val w = player.playWhenReady; player.pause(); w }, { player.play() })
+        onDispose { unreg(); player.removeListener(listener); player.release() }
     }
     AndroidView(
         modifier = Modifier.fillMaxSize(),
