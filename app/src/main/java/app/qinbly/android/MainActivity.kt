@@ -8168,7 +8168,10 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
     LaunchedEffect(storyRefresh) {
         val token = prefs.getString("token", null)
         if (!token.isNullOrBlank()) {
-            storyTray = try { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getStoryTray(token) } } catch (_: Exception) { storyTray }
+            storyTray = try { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                try { QinblyApi.syncMyCity(prefs, token) } catch (_: Exception) { }
+                QinblyApi.getStoryTray(token)
+            } } catch (_: Exception) { storyTray }
         }
     }
     var moods by remember { mutableStateOf<Map<String, QinblyMood>>(emptyMap()) }
@@ -10565,6 +10568,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var showComposer by remember { mutableStateOf(false) }
     var publishSettings by remember { mutableStateOf(false) }
     var editorTool by remember { mutableStateOf("Filtros") }
+    var storyHours by remember { mutableIntStateOf(24) }
+    var storyAudience by remember { mutableStateOf("all") }
+    var storyAlsoFeed by remember { mutableStateOf(false) }
+    var storyFiltersOpen by remember { mutableStateOf(false) }
     var allowComments by remember { mutableStateOf(true) }
     var allowSharing by remember { mutableStateOf(true) }
     var saveToDevice by remember { mutableStateOf(false) }
@@ -10755,6 +10762,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     }
     // O editor é o mesmo para foto da galeria e foto/vídeo da câmera; só muda para onde ele volta.
     val newEditorChrome = initialMode == "gallery" || initialMode == "camera"
+    // Tela nova só para o story comum: publica direto do editor (sem "Avançar"). Story coletivo e resposta continuam como eram.
+    val storyDirect = QinblyComposeSeed.story && QinblyComposeSeed.contribTo.isBlank() && !QinblyComposeSeed.collabNew
     fun leaveEditor() {
         if (QinblyComposeSeed.fromGallery) {
             // Veio da galeria do story coletivo: voltar leva de novo a ela, não à câmera.
@@ -11979,6 +11988,151 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
      }
 }
 
+    val doPublish: () -> Unit = {
+                    val token = prefs.getString("token", null)
+                    when {
+                        token.isNullOrBlank() -> onNotice("Entre na sua conta antes de publicar.")
+                        selectedUri == null && sourceUri == null -> { publishError = "Selecione uma foto ou vídeo antes de publicar."; onNotice(publishError); publishSettings = false; openQinblyGallery() }
+                        !selectedMediaReady -> { publishError = "O vídeo da galeria não está acessível. Escolha-o novamente."; onNotice(publishError); publishSettings = false }
+                        else -> {
+                            publishError = ""
+                            publishing = true
+                            val musicToSend = if (QinblyComposeSeed.story) storyMusic else null
+                            val directNow = storyDirect; val hoursNow = storyHours; val audienceNow = storyAudience; val feedNow = storyAlsoFeed
+                            val cityNow = QinblyApi.myCity(prefs)
+                            QinblyHashtagStore.record(context, caption)
+                            Thread {
+                                try {
+                                    if (selectedUri == null && sourceUri == null) throw IllegalStateException("Selecione uma foto ou vídeo antes de publicar.")
+                                    else {
+                                        val selectedMediaUri = bakedUri ?: selectedUri ?: sourceUri ?: throw IllegalStateException("Mídia não selecionada.")
+                                        val mime = context.contentResolver.getType(selectedMediaUri)?.takeIf { it.startsWith("image/") || it.startsWith("video/") } ?: if (selectedType == "vídeo") "video/mp4" else "image/jpeg"
+                                        // Copia a mídia para cache para garantir tamanho exato no upload,
+                                        // inclusive para URIs de câmera, galeria e provedores de nuvem.
+                                        val tempUploadFile = java.io.File.createTempFile("qinbly-upload-", if (selectedType == "vídeo") ".mp4" else ".jpg", context.cacheDir)
+                                        val uploadUri = Uri.fromFile(tempUploadFile)
+                                        val size = try {
+                                            context.contentResolver.openInputStream(selectedMediaUri)?.use { input ->
+                                                tempUploadFile.outputStream().use { output -> input.copyTo(output, 64 * 1024) }
+                                            } ?: throw IllegalStateException("Não foi possível ler a foto ou vídeo selecionado.")
+                                            tempUploadFile.length()
+                                        } catch (e: Exception) {
+                                            tempUploadFile.delete()
+                                            throw e
+                                        }
+                                        if (saveToDevice) {
+                                            val saved = qinblySaveMediaCopy(context, selectedMediaUri, selectedType == "vídeo")
+                                            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                                onNotice(if (saved) "Cópia salva no celular." else "Não foi possível salvar a cópia no celular.")
+                                            }
+                                        }
+                                        try {
+                                            if (size <= 0L) throw IllegalStateException("O arquivo selecionado está vazio ou não pôde ser lido.")
+                                            val extension = android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: if (mime.startsWith("video/")) "mp4" else "jpg"
+                                            val fileName = "qinbly-${System.currentTimeMillis()}.$extension"
+                                            val storyMode = QinblyComposeSeed.story
+                                            val fileId = QinblyApi.uploadPostMedia(context, token, uploadUri, fileName, mime, size, if (storyMode) "story_media" else "post_media")
+                                            if (storyMode) {
+                                                val contribTo = QinblyComposeSeed.contribTo
+                                                if (contribTo.isNotBlank()) QinblyApi.addContribution(token, contribTo, fileId, if (mime.startsWith("video/")) "video" else "image", qinblyAttachMusic(caption, musicToSend))
+                                                else if (directNow) {
+                                                    QinblyApi.createStoryCustom(token, fileId, mime.startsWith("video/"), qinblyAttachMusic(caption, musicToSend), hoursNow, audienceNow, cityNow)
+                                                    if (feedNow) {
+                                                        // "+ Feed": publica também como publicação (precisa de uma cópia no lugar das publicações).
+                                                        val feedFileId = QinblyApi.uploadPostMedia(context, token, uploadUri, fileName, mime, size, "post_media")
+                                                        QinblyApi.createMediaPost(token, caption, feedFileId, if (mime.startsWith("video/")) "video" else "image", "public", emptyList())
+                                                    }
+                                                }
+                                                else QinblyApi.createStoryFromFile(token, fileId, mime.startsWith("video/"), qinblyAttachMusic(if (QinblyComposeSeed.collabNew) qinblyCollabCaption(caption) else caption, musicToSend))
+                                            } else if (selectedType == "foto" && gallerySelection.size > 1) {
+                                                val uploadedIds = mutableListOf(fileId)
+                                                for ((index, extraUri) in gallerySelection.drop(1).withIndex()) {
+                                                    val extraMime = context.contentResolver.getType(extraUri)?.takeIf { it.startsWith("image/") } ?: "image/jpeg"
+                                                    val extraFile = java.io.File.createTempFile("qinbly-album-", ".jpg", context.cacheDir)
+                                                    try {
+                                                        val extraSize = context.contentResolver.openInputStream(extraUri)?.use { input ->
+                                                            extraFile.outputStream().use { output -> input.copyTo(output, 64 * 1024) }
+                                                            extraFile.length()
+                                                        } ?: throw IllegalStateException("Não foi possível ler uma das fotos.")
+                                                        val extraExt = android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(extraMime) ?: "jpg"
+                                                        uploadedIds.add(QinblyApi.uploadPostMedia(context, token, Uri.fromFile(extraFile),
+                                                            "qinbly-album-${System.currentTimeMillis()}-${index}.${extraExt}", extraMime, extraSize))
+                                                    } finally { extraFile.delete() }
+                                                }
+                                                QinblyApi.createPhotoAlbum(token, caption, uploadedIds, if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList())
+                                            } else {
+                                                QinblyApi.createMediaPost(token, caption, fileId, if (mime.startsWith("video/")) "video" else "image", if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList())
+                                            }
+                                        } finally {
+                                            tempUploadFile?.delete()
+                                        }
+                                    }
+                                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                        publishing = false
+                                        caption = ""
+                                        storyMusic = null
+                                        selectedUri = null
+                                        gallerySelection.clear()
+                                        selectedType = ""
+                                        publishSettings = false
+                                        showComposer = false
+                                        sourceUri = null
+                                        coverBitmap = null
+                                        onNotice(if (QinblyComposeSeed.collabNew) "Story coletivo publicado. Fica no ar por 24 horas." else if (QinblyComposeSeed.contribTo.isNotBlank()) "Resposta enviada." else if (QinblyComposeSeed.story) (if (directNow) "Story publicado. Fica no ar por $hoursNow horas." + (if (feedNow) " Também foi para o feed." else "") else "Story publicado. Fica no ar por 24 horas.") else "Publicado")
+                                        QinblyComposeSeed.story = false
+                                        QinblyComposeSeed.contribTo = ""
+                                        QinblyComposeSeed.collabNew = false
+                                        QinblyComposeSeed.fromGallery = false
+                                        onCameraCancelled()
+                                    }
+                                } catch (e: Exception) {
+                                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                        publishing = false
+                                        publishError = e.message?.takeIf { it.isNotBlank() } ?: "Não foi possível publicar. Verifique a conexão e tente novamente."
+                                        onNotice(publishError)
+                                    }
+                                }
+                            }.start()
+                        }
+                    }
+    }
+
+    val afterEdit: () -> Unit = { if (storyDirect) doPublish() else publishSettings = true }
+    val advance: () -> Unit = advance@{
+        if (publishing || editorBusy) return@advance
+        if (storyDirect && storyAudience == "near" && QinblyApi.myCity(prefs).isBlank()) {
+            onNotice("Pra publicar \"Perto de você\", abra o Perto de mim ou escolha sua cidade no Mercado antes.")
+            return@advance
+        }
+                            if (selectedUri == null && sourceUri == null) {
+                                publishError = "Escolha um vídeo ou uma foto antes de continuar."
+                                onNotice(publishError)
+                            } else if (!selectedMediaReady) {
+                                publishError = "Não foi possível ler a mídia da galeria. Selecione o arquivo novamente."
+                                onNotice(publishError)
+                            } else if (selectedType == "foto" && gallerySelection.size <= 1 && selectedUri != null) {
+                                publishError = ""
+                                if (!editorBusy) {
+                                    editorBusy = true
+                                    val src = selectedUri!!
+                                    val ratioNow = editorRatio; val z = editorZoom; val px = editorPanX; val py = editorPanY
+                                    val matrixNow = qinblyEditMatrix(selectedFilter, filterIntensity, editorBrightness, editorContrast)
+                                    val dxNow = if (editorPreviewW > 0) editorTextDx / editorPreviewW else 0f; val dyNow = if (editorPreviewH > 0) editorTextDy / editorPreviewH else 0f; val fontNow = editorTextFont; val colorNow = editorTextColor; val wordsNow = editorWordColors.toMap(); val textNow = editorText; val stickerNow = editorSticker; val strokesNow = editorStrokes.toList()
+                                    Thread {
+                                        try {
+                                            val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow)
+                                            android.os.Handler(android.os.Looper.getMainLooper()).post { bakedUri = done; editorBusy = false; afterEdit() }
+                                        } catch (e: Exception) {
+                                            // Se não der para aplicar as edições, publica a foto original em vez de travar.
+                                            android.os.Handler(android.os.Looper.getMainLooper()).post { bakedUri = null; editorBusy = false; afterEdit(); onNotice("Não foi possível aplicar as edições; a foto original será usada.") }
+                                        }
+                                    }.start()
+                                }
+                            } else {
+                                publishError = ""
+                                afterEdit()
+                            }
+    }
     // Etapa 1: editor visual. Etapa 2: opções e publicação.
     if (!publishSettings) {
  QinblySplit {
@@ -12147,7 +12301,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     cropOpen = true
                 }
                 QinblyCameraSideItem(QinblyCameraIcons.retouch, "Retoque") { applyEditorEffect(true, false, false, "Pele suavizada.") }
-                QinblyCameraSideItem(QinblyCameraIcons.filters, "Filtros", on = editorTool == "Filtros") { editorTool = "Filtros" }
+                QinblyCameraSideItem(QinblyCameraIcons.filters, "Filtros", on = editorTool == "Filtros" && (!storyDirect || storyFiltersOpen)) {
+                    if (storyDirect) { storyFiltersOpen = !(editorTool == "Filtros" && storyFiltersOpen); editorTool = "Filtros" } else editorTool = "Filtros"
+                }
                 if (editorSideExpanded) {
  QinblySplit {
                     QinblyCameraSideItem(QinblyCameraIcons.pen, "Desenho", on = editorTool == "Desenho") {
@@ -12314,7 +12470,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
 }
                  }
 }
-                if (newEditorChrome && editorTool == "Filtros") {
+                if (newEditorChrome && editorTool == "Filtros" && (!storyDirect || storyFiltersOpen)) {
  QinblySplit {
                     if (selectedFilter != "Original") {
  QinblySplit {
@@ -12398,43 +12554,21 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         }
                     }
                 }
-                Row(
+                if (storyDirect) {
+                    QinblyStoryPublishBar(
+                        hours = storyHours, onHours = { storyHours = it },
+                        audience = storyAudience, onAudience = { storyAudience = it },
+                        alsoFeed = storyAlsoFeed, onAlsoFeed = { storyAlsoFeed = it },
+                        busy = editorBusy || publishing, onPublish = { advance() }
+                    )
+                } else Row(
                     Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
  QinblySplit {
                     Button(
-                        onClick = {
-                            if (selectedUri == null && sourceUri == null) {
-                                publishError = "Escolha um vídeo ou uma foto antes de continuar."
-                                onNotice(publishError)
-                            } else if (!selectedMediaReady) {
-                                publishError = "Não foi possível ler a mídia da galeria. Selecione o arquivo novamente."
-                                onNotice(publishError)
-                            } else if (selectedType == "foto" && gallerySelection.size <= 1 && selectedUri != null) {
-                                publishError = ""
-                                if (!editorBusy) {
-                                    editorBusy = true
-                                    val src = selectedUri!!
-                                    val ratioNow = editorRatio; val z = editorZoom; val px = editorPanX; val py = editorPanY
-                                    val matrixNow = qinblyEditMatrix(selectedFilter, filterIntensity, editorBrightness, editorContrast)
-                                    val dxNow = if (editorPreviewW > 0) editorTextDx / editorPreviewW else 0f; val dyNow = if (editorPreviewH > 0) editorTextDy / editorPreviewH else 0f; val fontNow = editorTextFont; val colorNow = editorTextColor; val wordsNow = editorWordColors.toMap(); val textNow = editorText; val stickerNow = editorSticker; val strokesNow = editorStrokes.toList()
-                                    Thread {
-                                        try {
-                                            val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow)
-                                            android.os.Handler(android.os.Looper.getMainLooper()).post { bakedUri = done; editorBusy = false; publishSettings = true }
-                                        } catch (e: Exception) {
-                                            // Se não der para aplicar as edições, publica a foto original em vez de travar.
-                                            android.os.Handler(android.os.Looper.getMainLooper()).post { bakedUri = null; editorBusy = false; publishSettings = true; onNotice("Não foi possível aplicar as edições; a foto original será usada.") }
-                                        }
-                                    }.start()
-                                }
-                            } else {
-                                publishError = ""
-                                publishSettings = true
-                            }
-                        },
+                        onClick = { advance() },
                         modifier = Modifier.weight(1f).height(54.dp),
                         shape = RoundedCornerShape(28.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = if (newEditorChrome) QinblyBrand.Accent else Color.White, contentColor = if (newEditorChrome) Color.White else Color.Black)
@@ -12586,104 +12720,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
           }
           Column(Modifier.fillMaxWidth().background(QiblyTheme.background).padding(horizontal = 18.dp, vertical = 10.dp)) {
             Button(
-                onClick = {
-                    val token = prefs.getString("token", null)
-                    when {
-                        token.isNullOrBlank() -> onNotice("Entre na sua conta antes de publicar.")
-                        selectedUri == null && sourceUri == null -> { publishError = "Selecione uma foto ou vídeo antes de publicar."; onNotice(publishError); publishSettings = false; openQinblyGallery() }
-                        !selectedMediaReady -> { publishError = "O vídeo da galeria não está acessível. Escolha-o novamente."; onNotice(publishError); publishSettings = false }
-                        else -> {
-                            publishError = ""
-                            publishing = true
-                            val musicToSend = if (QinblyComposeSeed.story) storyMusic else null
-                            QinblyHashtagStore.record(context, caption)
-                            Thread {
-                                try {
-                                    if (selectedUri == null && sourceUri == null) throw IllegalStateException("Selecione uma foto ou vídeo antes de publicar.")
-                                    else {
-                                        val selectedMediaUri = bakedUri ?: selectedUri ?: sourceUri ?: throw IllegalStateException("Mídia não selecionada.")
-                                        val mime = context.contentResolver.getType(selectedMediaUri)?.takeIf { it.startsWith("image/") || it.startsWith("video/") } ?: if (selectedType == "vídeo") "video/mp4" else "image/jpeg"
-                                        // Copia a mídia para cache para garantir tamanho exato no upload,
-                                        // inclusive para URIs de câmera, galeria e provedores de nuvem.
-                                        val tempUploadFile = java.io.File.createTempFile("qinbly-upload-", if (selectedType == "vídeo") ".mp4" else ".jpg", context.cacheDir)
-                                        val uploadUri = Uri.fromFile(tempUploadFile)
-                                        val size = try {
-                                            context.contentResolver.openInputStream(selectedMediaUri)?.use { input ->
-                                                tempUploadFile.outputStream().use { output -> input.copyTo(output, 64 * 1024) }
-                                            } ?: throw IllegalStateException("Não foi possível ler a foto ou vídeo selecionado.")
-                                            tempUploadFile.length()
-                                        } catch (e: Exception) {
-                                            tempUploadFile.delete()
-                                            throw e
-                                        }
-                                        if (saveToDevice) {
-                                            val saved = qinblySaveMediaCopy(context, selectedMediaUri, selectedType == "vídeo")
-                                            android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                                onNotice(if (saved) "Cópia salva no celular." else "Não foi possível salvar a cópia no celular.")
-                                            }
-                                        }
-                                        try {
-                                            if (size <= 0L) throw IllegalStateException("O arquivo selecionado está vazio ou não pôde ser lido.")
-                                            val extension = android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: if (mime.startsWith("video/")) "mp4" else "jpg"
-                                            val fileName = "qinbly-${System.currentTimeMillis()}.$extension"
-                                            val storyMode = QinblyComposeSeed.story
-                                            val fileId = QinblyApi.uploadPostMedia(context, token, uploadUri, fileName, mime, size, if (storyMode) "story_media" else "post_media")
-                                            if (storyMode) {
-                                                val contribTo = QinblyComposeSeed.contribTo
-                                                if (contribTo.isNotBlank()) QinblyApi.addContribution(token, contribTo, fileId, if (mime.startsWith("video/")) "video" else "image", qinblyAttachMusic(caption, musicToSend))
-                                                else QinblyApi.createStoryFromFile(token, fileId, mime.startsWith("video/"), qinblyAttachMusic(if (QinblyComposeSeed.collabNew) qinblyCollabCaption(caption) else caption, musicToSend))
-                                            } else if (selectedType == "foto" && gallerySelection.size > 1) {
-                                                val uploadedIds = mutableListOf(fileId)
-                                                for ((index, extraUri) in gallerySelection.drop(1).withIndex()) {
-                                                    val extraMime = context.contentResolver.getType(extraUri)?.takeIf { it.startsWith("image/") } ?: "image/jpeg"
-                                                    val extraFile = java.io.File.createTempFile("qinbly-album-", ".jpg", context.cacheDir)
-                                                    try {
-                                                        val extraSize = context.contentResolver.openInputStream(extraUri)?.use { input ->
-                                                            extraFile.outputStream().use { output -> input.copyTo(output, 64 * 1024) }
-                                                            extraFile.length()
-                                                        } ?: throw IllegalStateException("Não foi possível ler uma das fotos.")
-                                                        val extraExt = android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(extraMime) ?: "jpg"
-                                                        uploadedIds.add(QinblyApi.uploadPostMedia(context, token, Uri.fromFile(extraFile),
-                                                            "qinbly-album-${System.currentTimeMillis()}-${index}.${extraExt}", extraMime, extraSize))
-                                                    } finally { extraFile.delete() }
-                                                }
-                                                QinblyApi.createPhotoAlbum(token, caption, uploadedIds, if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList())
-                                            } else {
-                                                QinblyApi.createMediaPost(token, caption, fileId, if (mime.startsWith("video/")) "video" else "image", if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList())
-                                            }
-                                        } finally {
-                                            tempUploadFile?.delete()
-                                        }
-                                    }
-                                    android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                        publishing = false
-                                        caption = ""
-                                        storyMusic = null
-                                        selectedUri = null
-                                        gallerySelection.clear()
-                                        selectedType = ""
-                                        publishSettings = false
-                                        showComposer = false
-                                        sourceUri = null
-                                        coverBitmap = null
-                                        onNotice(if (QinblyComposeSeed.collabNew) "Story coletivo publicado. Fica no ar por 24 horas." else if (QinblyComposeSeed.contribTo.isNotBlank()) "Resposta enviada." else if (QinblyComposeSeed.story) "Story publicado. Fica no ar por 24 horas." else "Publicado")
-                                        QinblyComposeSeed.story = false
-                                        QinblyComposeSeed.contribTo = ""
-                                        QinblyComposeSeed.collabNew = false
-                                        QinblyComposeSeed.fromGallery = false
-                                        onCameraCancelled()
-                                    }
-                                } catch (e: Exception) {
-                                    android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                        publishing = false
-                                        publishError = e.message?.takeIf { it.isNotBlank() } ?: "Não foi possível publicar. Verifique a conexão e tente novamente."
-                                        onNotice(publishError)
-                                    }
-                                }
-                            }.start()
-                        }
-                    }
-                },
+                onClick = { doPublish() },
                 modifier = Modifier.fillMaxWidth().height(54.dp),
                 enabled = !publishing,
                 shape = RoundedCornerShape(28.dp),
@@ -12762,5 +12799,109 @@ private fun SimplePage(title: String, description: String, action: String, onAct
             }
         }
         Text("${QinblyBrand.Name} • Protótipo Android", color = Muted, style = MaterialTheme.typography.labelSmall)
+    }
+}
+/** Barra de baixo da tela do story: horas em linha, botão redondo "Story", "Quem vê" à esquerda e "+ Feed" à direita. */
+@Composable
+private fun QinblyStoryPublishBar(
+    hours: Int, onHours: (Int) -> Unit,
+    audience: String, onAudience: (String) -> Unit,
+    alsoFeed: Boolean, onAlsoFeed: (Boolean) -> Unit,
+    busy: Boolean, onPublish: () -> Unit
+) {
+    var sheetOpen by remember { mutableStateOf(false) }
+    val accent = QinblyBrand.Accent
+    val chipBg = Color(0xFF1C1C20)
+    val chipLine = Color(0xFF3A3A3E)
+    val sweep by androidx.compose.animation.core.animateFloatAsState(hours / 24f * 360f, label = "storyRing")
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val options = listOf(
+        Triple("all", "Todos", "Qualquer pessoa"),
+        Triple("friends", "Amigos", "Quem você segue e te segue"),
+        Triple("followers", "Seguidores", "Só quem te segue"),
+        Triple("near", "Perto de você", "Quem está na sua cidade")
+    )
+    val audienceLabel = when (audience) { "friends" -> "Amigos"; "followers" -> "Seguidores"; "near" -> "Perto"; else -> "Todos" }
+    Box(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                listOf(6, 12, 24).forEach { h ->
+                    val on = h == hours
+                    Box(
+                        Modifier.size(40.dp).clip(CircleShape)
+                            .background(if (on) accent else chipBg)
+                            .border(1.5.dp, if (on) Color(0xFF6AA6F8) else chipLine, CircleShape)
+                            .clickable { onHours(h) },
+                        contentAlignment = Alignment.Center
+                    ) { Text("${h}h", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            Box(Modifier.fillMaxWidth().height(86.dp).padding(horizontal = 14.dp)) {
+                Row(
+                    Modifier.align(Alignment.CenterStart).height(42.dp).clip(RoundedCornerShape(21.dp))
+                        .background(chipBg).border(1.5.dp, Color(0xFF6AA6F8), RoundedCornerShape(21.dp))
+                        .clickable { sheetOpen = true }.padding(start = 14.dp, end = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(audienceLabel, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Icon(Icons.Default.ExpandMore, contentDescription = "Quem vê", tint = Color.White, modifier = Modifier.size(18.dp))
+                }
+                Box(Modifier.align(Alignment.Center).size(84.dp).clickable(enabled = !busy, onClick = onPublish), contentAlignment = Alignment.Center) {
+                    androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+                        val stroke = 5.dp.toPx()
+                        drawArc(
+                            color = accent.copy(alpha = 0.55f), startAngle = -90f, sweepAngle = sweep, useCenter = false,
+                            topLeft = Offset(stroke / 2, stroke / 2), size = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                        )
+                    }
+                    Box(Modifier.size(68.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
+                        if (busy) CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.5.dp, color = Color.White)
+                        else Text("Story", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Box(
+                    Modifier.align(Alignment.CenterEnd).height(42.dp).widthIn(min = 78.dp).clip(RoundedCornerShape(21.dp))
+                        .background(if (alsoFeed) accent else chipBg).border(1.5.dp, if (alsoFeed) Color(0xFF6AA6F8) else chipLine, RoundedCornerShape(21.dp))
+                        .clickable { onAlsoFeed(!alsoFeed) }.padding(horizontal = 14.dp),
+                    contentAlignment = Alignment.Center
+                ) { Text(if (alsoFeed) "✓ Feed" else "+ Feed", color = if (alsoFeed) Color.White else Color(0xFFB4B4BC), fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
+            }
+        }
+        if (sheetOpen) {
+            // A caixinha abre por cima das horas, colada no botão "Quem vê".
+            androidx.compose.ui.window.Popup(
+                alignment = Alignment.BottomStart,
+                offset = androidx.compose.ui.unit.IntOffset(with(density) { 14.dp.roundToPx() }, -with(density) { 90.dp.roundToPx() }),
+                onDismissRequest = { sheetOpen = false },
+                properties = androidx.compose.ui.window.PopupProperties(focusable = true)
+            ) {
+                Column(
+                    Modifier.width(250.dp).clip(RoundedCornerShape(22.dp)).background(chipBg)
+                        .border(1.5.dp, Color(0xFF6AA6F8), RoundedCornerShape(22.dp)).padding(vertical = 12.dp, horizontal = 8.dp)
+                ) {
+                    Text("QUEM PODE VER", color = Color(0xFF8E87A8), fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp, bottom = 6.dp))
+                    options.forEach { (key, title, sub) ->
+                        val on = key == audience
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                                .background(if (on) accent.copy(alpha = 0.2f) else Color.Transparent)
+                                .clickable { onAudience(key); sheetOpen = false }.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(Modifier.size(18.dp).border(2.dp, if (on) Color(0xFF6AA6F8) else Color(0xFF55555C), CircleShape), contentAlignment = Alignment.Center) {
+                                if (on) Box(Modifier.size(9.dp).clip(CircleShape).background(Color(0xFF6AA6F8)))
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                                Text(sub, color = Color(0xFF8E87A8), fontSize = 11.sp)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

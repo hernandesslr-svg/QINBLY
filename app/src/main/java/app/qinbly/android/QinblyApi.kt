@@ -816,6 +816,34 @@ object QinblyApi {
         request("POST", "/api/stories", JSONObject().put("mediaFileId", fileId).put("mediaType", if (isVideo) "video" else "image").put("caption", caption.trim()), token)
     }
 
+    /** Story da tela nova: duração (6/12/24 h), quem vê (all/friends/followers/near) e cidade de quem publicou. */
+    fun createStoryCustom(token: String, fileId: String, isVideo: Boolean, caption: String, hours: Int, audience: String, city: String) {
+        val fmt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+        val expires = fmt.format(java.util.Date(System.currentTimeMillis() + hours.coerceIn(1, 24) * 3600_000L))
+        val body = JSONObject().put("media_path", fileId).put("media_type", if (isVideo) "video" else "image")
+            .put("caption", caption.trim()).put("audience", audience).put("city", city).put("expires_at", expires)
+        rest(token, "POST", "stories", body.toString(), "return=minimal")
+    }
+
+    /** Guarda a cidade da pessoa no perfil: é com ela que o servidor decide quem enxerga story "Perto de você". */
+    fun syncProfileCity(token: String, userId: String, city: String) {
+        if (city.isBlank() || userId.isBlank()) return
+        rest(token, "PATCH", "profiles?id=eq.$userId", JSONObject().put("city", city).toString(), "return=minimal")
+    }
+
+    /** Cidade escolhida no app (Mercado) ou, se não houver, a do Perto de mim. */
+    fun myCity(prefs: android.content.SharedPreferences): String =
+        (prefs.getString("market_city", null)?.takeIf { it.isNotBlank() } ?: prefs.getString("device_place", null)).orEmpty()
+
+    /** Só envia ao servidor quando a cidade mudou desde a última vez. */
+    fun syncMyCity(prefs: android.content.SharedPreferences, token: String) {
+        val city = myCity(prefs)
+        val uid = currentUserId(prefs) ?: return
+        if (city.isBlank() || prefs.getString("city_synced", "") == "$uid|$city") return
+        syncProfileCity(token, uid, city)
+        prefs.edit().putString("city_synced", "$uid|$city").apply()
+    }
+
     fun createStory(context: Context, token: String, uri: Uri, caption: String) {
         val resolver = context.contentResolver
         val type = (resolver.getType(uri) ?: "image/jpeg").lowercase()
