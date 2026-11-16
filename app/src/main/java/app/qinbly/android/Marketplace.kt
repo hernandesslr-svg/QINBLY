@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -47,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -509,6 +511,19 @@ private fun ListingTile(l: QinblyListing, showTag: Boolean, textColor: Color, se
     }
 }
 
+/** Ícone pequeno de traço (caminhos SVG 24x24), usado nas etiquetas do anúncio. */
+@Composable
+private fun MarketGlyph(color: Color, size: androidx.compose.ui.unit.Dp, vararg paths: String) {
+    androidx.compose.foundation.Canvas(Modifier.size(size)) {
+        val k = this.size.minDimension / 24f
+        val stroke = androidx.compose.ui.graphics.drawscope.Stroke(1.8f, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
+        withTransform({ scale(k, k, pivot = androidx.compose.ui.geometry.Offset.Zero) }) {
+            for (d in paths) drawPath(androidx.compose.ui.graphics.vector.PathParser().parsePathString(d).toPath(), color, style = stroke)
+        }
+    }
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun ListingDetail(
     l: QinblyListing, mine: Boolean, saved: Boolean, textColor: Color, secondary: Color,
@@ -524,27 +539,65 @@ private fun ListingDetail(
                         modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(QiblyTheme.soft).clickable { onSave() }.padding(horizontal = 16.dp, vertical = 9.dp))
                 }
                 if (l.photos.isNotEmpty()) {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), contentPadding = PaddingValues(horizontal = 12.dp)) {
-                        items(l.photos) { p ->
-                            AsyncImage(model = photoUrl(p), contentDescription = null, contentScale = ContentScale.Crop,
-                                modifier = Modifier.width(300.dp).height(300.dp).clip(RoundedCornerShape(16.dp)).background(QiblyTheme.soft))
+                    // Foto de ponta a ponta; desliza de lado, com contador e bolinhas quando há mais de uma.
+                    val pager = androidx.compose.foundation.pager.rememberPagerState { l.photos.size }
+                    Box(Modifier.fillMaxWidth().aspectRatio(1.15f).background(QiblyTheme.soft)) {
+                        androidx.compose.foundation.pager.HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { i ->
+                            AsyncImage(model = photoUrl(l.photos[i]), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                        }
+                        if (l.photos.size > 1) {
+                            Text("${pager.currentPage + 1}/${l.photos.size}", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                                modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).clip(RoundedCornerShape(12.dp)).background(Color(0x99000000)).padding(horizontal = 9.dp, vertical = 3.dp))
+                            Row(Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+                                for (i in l.photos.indices) {
+                                    val on = i == pager.currentPage
+                                    Box(Modifier.height(5.dp).width(if (on) 16.dp else 5.dp).clip(CircleShape).background(if (on) Color.White else Color(0x80FFFFFF)))
+                                }
+                            }
                         }
                     }
                 }
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 110.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (priceText(l).isNotBlank()) Text(priceText(l), color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp)
                     Text(l.title, color = textColor, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    Text(kindLabel(l.kind) + (if (l.city.isNotBlank()) " • " + l.city else "") + " • " + qinblyAgo(l.createdAt), color = secondary, fontSize = 13.sp)
-                    if (l.extra.isNotBlank() && l.kind != "evento") Text("Estado: " + l.extra, color = secondary, fontSize = 13.sp)
-                    if (l.description.isNotBlank()) Text(l.description, color = textColor, fontSize = 15.sp, modifier = Modifier.padding(top = 8.dp))
-                    Text("Anunciado por " + l.displayName.ifBlank { l.username }.ifBlank { "um vizinho" }, color = secondary, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
-                    Spacer(Modifier.height(10.dp))
-                    if (mine) Text("Apagar anúncio", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0xFFE0457B)).clickable { onDelete() }.padding(vertical = 14.dp))
-                    else Text("Chamar no chat", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(MarketBlue).clickable { onChat() }.padding(vertical = 14.dp))
-                    if (!mine) Text("Combine em local público e movimentado.", color = secondary, fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 6.dp))
+                    androidx.compose.foundation.layout.FlowRow(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(kindLabel(l.kind), color = Color(0xFFB5D4F4), fontSize = 12.sp, modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xFF0C447C)).padding(horizontal = 10.dp, vertical = 5.dp))
+                        if (l.extra.isNotBlank() && l.kind != "evento") Text("Estado: " + l.extra, color = Color(0xFFC0DD97), fontSize = 12.sp, modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xFF27500A)).padding(horizontal = 10.dp, vertical = 5.dp))
+                        if (l.city.isNotBlank()) Row(Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xFF2E2E30)).padding(horizontal = 10.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                            MarketGlyph(Color(0xFFB4B2A9), 14.dp, "M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0", "M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z")
+                            Text(l.city, color = Color(0xFFB4B2A9), fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
+                        }
+                        Row(Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xFF2E2E30)).padding(horizontal = 10.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                            MarketGlyph(Color(0xFFB4B2A9), 14.dp, "M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0", "M12 7v5l3 3")
+                            Text(qinblyAgo(l.createdAt), color = Color(0xFFB4B2A9), fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
+                        }
+                    }
+                    if (l.description.isNotBlank()) {
+                        Text("Descrição", color = secondary, fontSize = 12.sp, modifier = Modifier.padding(top = 10.dp))
+                        Text(l.description, color = textColor, fontSize = 15.sp)
+                    }
+                    Row(Modifier.padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        val who = l.displayName.ifBlank { l.username }.ifBlank { "um vizinho" }
+                        Box(Modifier.size(38.dp).clip(CircleShape).background(Color(0xFF3A3A3E)), contentAlignment = Alignment.Center) {
+                            Text(who.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        }
+                        Column(Modifier.padding(start = 10.dp)) {
+                            Text(who, color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Text("Anunciante", color = secondary, fontSize = 12.sp)
+                        }
+                    }
+                    if (!mine) Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.Top) {
+                        MarketGlyph(Color(0xFF97C459), 18.dp, "M11.46 20.846a12 12 0 0 1 -7.96 -14.846a12 12 0 0 0 8.5 -3a12 12 0 0 0 8.5 3a12 12 0 0 1 -.09 7.06", "M15 19l2 2l4 -4")
+                        Text("Combine em local público e movimentado.", color = secondary, fontSize = 12.sp, modifier = Modifier.padding(start = 8.dp))
+                    }
                 }
+            }
+            // Botão fixo embaixo, acima dos botões do celular.
+            Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(QiblyTheme.background).navigationBarsPadding().padding(horizontal = 14.dp, vertical = 10.dp)) {
+                if (mine) Text("Apagar anúncio", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0xFFE0457B)).clickable { onDelete() }.padding(vertical = 14.dp))
+                else Text("Enviar mensagem", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(MarketBlue).clickable { onChat() }.padding(vertical = 14.dp))
             }
         }
     }

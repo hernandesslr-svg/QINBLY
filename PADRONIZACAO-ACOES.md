@@ -572,3 +572,11 @@ Precisa de um projeto Firebase seu: `google-services.json`, dependência `fireba
 - Limite de **500 letras** no aviso e no comentário (era 280): no app (`Extras.kt`, com contador n/500) e no servidor (`SUPABASE/20_mural_limite_500.sql`, já aplicado). Não aumentar muito: texto gigante trava a lista.
 - Continuam: avisos somem em 48 h, só para quem está perto, comentários e respostas.
 - Funções de tipo/foto (`NOTICE_TAGS`, `noticeKindLabel`, `noticeTagColor`, `CameraGlyph`) ficaram no arquivo sem uso, caso voltem.
+
+## Perto de mim: tela do anúncio (vale para todos os tipos)
+Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado/perdido, evento e serviço:
+- Foto de ponta a ponta, desliza de lado; com mais de uma foto mostra contador "1/3" e bolinhas.
+- Preço, título e etiquetas (tipo, "Estado: …" quando houver, cidade, tempo). Ícones das etiquetas: `MarketGlyph`.
+- "Descrição" com rótulo; anunciante (inicial + nome) e dica de segurança **sem caixa de fundo**.
+- Botão fixo embaixo, acima dos botões do celular (`navigationBarsPadding`): **"Enviar mensagem"** (no anúncio da própria pessoa: "Apagar anúncio").
+- Fora do esboço, não feito: compartilhar, denunciar, ver perfil do vendedor, mensagem rápida.
