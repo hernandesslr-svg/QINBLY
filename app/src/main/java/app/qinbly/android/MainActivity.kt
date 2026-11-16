@@ -11199,7 +11199,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(16.dp).clickable { keyboard?.hide(); onDone() })
         }
     }
-    // Câmera chamada por outra tela (Mural, cápsula, chat…): a foto passa pelo MESMO editor do Criar e, no fim, volta para a tela que chamou.
+    // Câmera chamada por outra tela (cápsula, chat…): a foto passa pelo MESMO editor do Criar e, no fim, volta para a tela que chamou.
     // (editBeforeReturn = false devolveria a foto crua, sem editor.)
     val handOffMode = onCaptured != null && !editBeforeReturn
     fun handOff(u: Uri, video: Boolean = false): Boolean {

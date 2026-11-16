@@ -565,3 +565,10 @@ Precisa de um projeto Firebase seu: `google-services.json`, dependência `fireba
 ## Limpeza do editor e da câmera
 - **Fundo:** o botão saiu da lateral do editor e da câmera (por enquanto). O código do Fundo continua guardado no projeto, sem botão: como voltar está em `PADRAO-EDITOR.md` (editor) e `PADRAO-CAMERA.md` (câmera).
 - **Menu Criar da faixa de conversas:** removido o caminho antigo "galeria/câmera → Novo story" (`Stories.kt`), que nenhum botão chamava mais; o botão Story abre o Criar normal.
+
+## Mural de avisos (antes "Mural do bairro")
+- Na aba do Mercado, "Mural" agora se chama **Avisos**; a tela se chama "Mural de avisos"; no menu de criar, "Aviso".
+- Só texto: saíram a câmera, a foto e os tipos (Achado, Perdido, Pergunta, Evento). Aviso novo é gravado com tipo "aviso". Avisos antigos aparecem só como texto.
+- Limite de **500 letras** no aviso e no comentário (era 280): no app (`Extras.kt`, com contador n/500) e no servidor (`SUPABASE/20_mural_limite_500.sql`, já aplicado). Não aumentar muito: texto gigante trava a lista.
+- Continuam: avisos somem em 48 h, só para quem está perto, comentários e respostas.
+- Funções de tipo/foto (`NOTICE_TAGS`, `noticeKindLabel`, `noticeTagColor`, `CameraGlyph`) ficaram no arquivo sem uso, caso voltem.

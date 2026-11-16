@@ -72,7 +72,7 @@ private data class QinblyListing(
     val photos: List<String>, val city: String, val createdAt: String
 )
 
-private val marketCategories = listOf("Tudo", "Vendas", "Doações", "Achados", "Eventos", "Serviços", "Mural")
+private val marketCategories = listOf("Tudo", "Vendas", "Doações", "Achados", "Eventos", "Serviços", "Avisos")
 
 private fun kindLabel(kind: String) = when (kind) {
     "venda" -> "Venda"; "doacao" -> "Doação"; "achado" -> "Achado"; "perdido" -> "Perdido"; "evento" -> "Evento"; "servico" -> "Serviço"; else -> "Aviso"
@@ -172,7 +172,7 @@ internal fun QinblyNearbyHub(
         } catch (_: Exception) { }
     }
     LaunchedEffect(cat, sub, refresh, city, mine) {
-        if (cat == "Mural" && mine == null) return@LaunchedEffect
+        if (cat == "Avisos" && mine == null) return@LaunchedEffect
         val token = prefs.getString("token", null)
         if (token.isNullOrBlank()) { listings = emptyList(); return@LaunchedEffect }
         listings = null; failed = false
@@ -214,7 +214,7 @@ internal fun QinblyNearbyHub(
                     }
                 }
             }
-            if (mine == null && cat != "Mural") Box(
+            if (mine == null && cat != "Avisos") Box(
                 Modifier.size(44.dp).clip(CircleShape).clickable { searching = !searching; if (!searching) query = "" },
                 contentAlignment = Alignment.Center
             ) {
@@ -227,7 +227,7 @@ internal fun QinblyNearbyHub(
             }
             }
         }
-        if (searching && mine == null && cat != "Mural") Box(
+        if (searching && mine == null && cat != "Avisos") Box(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).clip(RoundedCornerShape(22.dp)).background(QiblyTheme.soft).padding(horizontal = 16.dp, vertical = 11.dp)
         ) {
             if (query.isEmpty()) Text("Buscar em " + city.substringBefore(",").ifBlank { "sua cidade" } + "…", color = secondary, fontSize = 14.sp)
@@ -263,7 +263,7 @@ internal fun QinblyNearbyHub(
             }
         }
         Box(Modifier.fillMaxWidth().weight(1f)) {
-            if (cat == "Mural" && mine == null) {
+            if (cat == "Avisos" && mine == null) {
                 QinblyNeighborhoodBoard(lat, lng, place, textColor, secondary, onRefreshLocation = onRefreshLocation, onNotice = onNotice, onOpenConversation = onOpenConversation)
             } else {
                 val q = query.trim()
@@ -462,13 +462,13 @@ internal fun QinblyNearbyHub(
             val options = listOf(
                 Triple("venda", "Vender", "Usados e desapegos"), Triple("doacao", "Doar", "Dê de graça para quem precisa"),
                 Triple("achado", "Achado ou perdido", "Chaves, pets, documentos"), Triple("evento", "Evento", "Feiras, encontros"),
-                Triple("servico", "Serviço", "Ofereça ou peça um serviço"), Triple("aviso", "Aviso ao bairro", "Recado que some em 48 h")
+                Triple("servico", "Serviço", "Ofereça ou peça um serviço"), Triple("aviso", "Aviso", "Recado que some em 48 h")
             )
             for ((key, title, sub2) in options) {
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFF262628)).clickable {
                         showMenu = false
-                        if (key == "aviso") cat = "Mural" else createKind = key
+                        if (key == "aviso") cat = "Avisos" else createKind = key
                     }.padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
