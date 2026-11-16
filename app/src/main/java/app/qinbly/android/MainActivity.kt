@@ -777,7 +777,10 @@ private class QinblyCaptionState(initial: String) {
 @Composable
 private fun QinblyLegendField(
     state: QinblyCaptionState, max: Int, placeholder: String, textColor: Color, fontSize: androidx.compose.ui.unit.TextUnit,
-    modifier: Modifier = Modifier, onChange: (String) -> Unit
+    modifier: Modifier = Modifier,
+    placeholderColor: Color = Color.Gray,
+    textAlign: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Start,
+    onChange: (String) -> Unit
 ) {
     androidx.compose.foundation.text.BasicTextField(
         value = state.legend,
@@ -792,12 +795,12 @@ private fun QinblyLegendField(
             state.legend = text.take(max)
             onChange(state.full())
         },
-        textStyle = androidx.compose.ui.text.TextStyle(color = textColor, fontSize = fontSize, lineHeight = fontSize * 1.4f),
-        cursorBrush = androidx.compose.ui.graphics.SolidColor(QinblyBrand.Accent),
+        textStyle = androidx.compose.ui.text.TextStyle(color = textColor, fontSize = fontSize, lineHeight = fontSize * 1.4f, textAlign = textAlign),
+        cursorBrush = androidx.compose.ui.graphics.SolidColor(if (placeholderColor == Color.Gray) QinblyBrand.Accent else Color.White),
         visualTransformation = QinblyTagTransformation,
         modifier = modifier,
         decorationBox = { inner ->
-            if (state.legend.isEmpty()) Text(placeholder, color = Color.Gray, fontSize = fontSize)
+            if (state.legend.isEmpty()) Text(placeholder, color = placeholderColor, fontSize = fontSize, textAlign = textAlign, modifier = Modifier.fillMaxWidth())
             inner()
         }
     )
@@ -939,6 +942,21 @@ private fun QinblyViewerCaption(caption: String) {
     }
 }
 
+/** Fundos coloridos da publicação de texto: 1..6 (0 = sem fundo). Mesma paleta no editor e no feed. */
+private val QinblyTextBgPairs = listOf(
+    Color(0xFF2563EB) to Color(0xFF7C3AED),
+    Color(0xFFEA580C) to Color(0xFFDB2777),
+    Color(0xFF059669) to Color(0xFF0E7490),
+    Color(0xFFE11D48) to Color(0xFF9F1239),
+    Color(0xFF1F2937) to Color(0xFF0F172A),
+    Color(0xFF7C3AED) to Color(0xFFDB2777)
+)
+
+private fun qinblyTextBgBrush(index: Int): Brush? {
+    val pair = QinblyTextBgPairs.getOrNull(index - 1) ?: return null
+    return Brush.linearGradient(listOf(pair.first, pair.second))
+}
+
 /** Texto com #hashtags e @menções clicáveis. */
 @Composable
 private fun QinblyRichText(
@@ -948,9 +966,11 @@ private fun QinblyRichText(
     fontSize: androidx.compose.ui.unit.TextUnit = 15.sp,
     fontWeight: FontWeight? = null,
     maxLines: Int = Int.MAX_VALUE,
-    onLongClick: (() -> Unit)? = null
+    onLongClick: (() -> Unit)? = null,
+    textAlign: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Unspecified,
+    linkColor: Color = QinblyBrand.Mention
 ) {
-    val link = QinblyBrand.Mention
+    val link = linkColor
     val annotated = remember(text, color, link) {
         androidx.compose.ui.text.buildAnnotatedString {
             val rx = Regex("([#@])([\\p{L}\\p{N}_.]{2,30})")
@@ -986,7 +1006,7 @@ private fun QinblyRichText(
             },
             maxLines = maxLines,
             onTextLayout = { layout = it },
-            style = androidx.compose.ui.text.TextStyle(color = color, fontSize = fontSize, fontWeight = fontWeight, lineHeight = fontSize * 1.35f)
+            style = androidx.compose.ui.text.TextStyle(color = color, fontSize = fontSize, fontWeight = fontWeight, lineHeight = fontSize * 1.35f, textAlign = textAlign)
         )
         return
     }
@@ -994,7 +1014,7 @@ private fun QinblyRichText(
         text = annotated,
         modifier = modifier,
         maxLines = maxLines,
-        style = androidx.compose.ui.text.TextStyle(color = color, fontSize = fontSize, fontWeight = fontWeight, lineHeight = fontSize * 1.35f),
+        style = androidx.compose.ui.text.TextStyle(color = color, fontSize = fontSize, fontWeight = fontWeight, lineHeight = fontSize * 1.35f, textAlign = textAlign),
         onClick = { offset ->
             annotated.getStringAnnotations("#", offset, offset).firstOrNull()?.let { QinblyTagNav.tag = it.item }
                 ?: annotated.getStringAnnotations("@", offset, offset).firstOrNull()?.let { QinblyTagNav.profile = it.item }
@@ -4997,9 +5017,23 @@ private fun QinblyPostCard(
                     Text("$totalVotes votos", color = RemoteAppearance.feedTextColor.copy(alpha = 0.65f), fontSize = 12.sp)
                 }
             } else if (post.mediaType != "image" && post.mediaType != "video" && post.caption.isNotBlank()) {
-                QinblyRichText(post.caption, RemoteAppearance.feedTextColor, fontSize = 15.sp,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
-                    maxLines = 4)
+                val textBgBrush = if (post.mediaType == "text") qinblyTextBgBrush(post.textBg) else null
+                if (textBgBrush != null) {
+                    Box(
+                        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp)
+                            .clip(RoundedCornerShape(20.dp)).background(textBgBrush)
+                            .heightIn(min = 200.dp).padding(horizontal = 22.dp, vertical = 26.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        QinblyRichText(post.caption, Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.fillMaxWidth(), maxLines = 8,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center, linkColor = Color.White)
+                    }
+                } else {
+                    QinblyRichText(post.caption, RemoteAppearance.feedTextColor, fontSize = 15.sp,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
+                        maxLines = 4)
+                }
             }
             if (post.taggedUsers.isNotEmpty()) {
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -11655,6 +11689,112 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
  QinblySplit {
         val maxChars = if (initialMode == "poll") 200 else 5000
         val ownUsername = prefs.getString("username", "").orEmpty().removePrefix("@")
+        if (initialMode == "text") {
+            var textBg by remember { mutableStateOf(1) }
+            val capState = remember { QinblyCaptionState(caption) }
+            val bgBrush = qinblyTextBgBrush(textBg)
+            Column(Modifier.fillMaxSize().background(QiblyTheme.background).imePadding()) {
+                Box(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp)) {
+                    IconButton(onClick = onCameraCancelled, modifier = Modifier.align(Alignment.CenterStart)) {
+                        Icon(Icons.Default.Close, contentDescription = "Fechar", tint = QiblyTheme.text)
+                    }
+                    Text("Nova publicação", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.align(Alignment.Center))
+                }
+                Column(
+                    Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        if (ownUsername.isNotBlank()) QiblyAccountAvatar(ownUsername, "", 44.dp) { }
+                        else Icon(Icons.Default.Person, contentDescription = null, tint = Color.DarkGray, modifier = Modifier.size(44.dp))
+                        Column {
+                            Text(if (ownUsername.isBlank()) "Meu perfil" else "@$ownUsername", fontWeight = FontWeight.Bold, color = QiblyTheme.text)
+                            Text(if (postVisibility == "Só eu") "Só eu" else "Todos podem ver", color = Muted, style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                    Box(
+                        Modifier.fillMaxWidth().heightIn(min = 260.dp).clip(RoundedCornerShape(24.dp))
+                            .then(if (bgBrush != null) Modifier.background(bgBrush) else Modifier.background(QinblyBrand.Accent.copy(alpha = 0.06f)))
+                            .padding(horizontal = 22.dp, vertical = 26.dp),
+                        contentAlignment = if (bgBrush != null) Alignment.Center else Alignment.TopStart
+                    ) {
+                        QinblyLegendField(
+                            capState, maxChars, "No que você está pensando?",
+                            if (bgBrush != null) Color.White else QiblyTheme.text,
+                            if (bgBrush != null) 24.sp else 18.sp,
+                            Modifier.fillMaxWidth(),
+                            placeholderColor = if (bgBrush != null) Color.White.copy(alpha = 0.65f) else Color.Gray,
+                            textAlign = if (bgBrush != null) androidx.compose.ui.text.style.TextAlign.Center else androidx.compose.ui.text.style.TextAlign.Start
+                        ) { caption = it }
+                    }
+                    Text("${caption.length} / $maxChars", modifier = Modifier.align(Alignment.End), color = Color.Gray, style = MaterialTheme.typography.labelSmall)
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            Modifier.size(40.dp).clip(CircleShape).background(QiblyTheme.background)
+                                .border(if (textBg == 0) 3.dp else 1.dp, if (textBg == 0) QinblyBrand.Accent else QiblyTheme.border, CircleShape)
+                                .clickable { textBg = 0 },
+                            contentAlignment = Alignment.Center
+                        ) { Text("Aa", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                        for (i in 1..QinblyTextBgPairs.size) {
+                            Box(
+                                Modifier.size(40.dp).clip(CircleShape).background(qinblyTextBgBrush(i)!!)
+                                    .border(if (textBg == i) 3.dp else 0.dp, if (textBg == i) QiblyTheme.text else Color.Transparent, CircleShape)
+                                    .clickable { textBg = i }
+                            )
+                        }
+                    }
+                    Text(if (textBg == 0) "Sem fundo" else "Fundo colorido", color = Muted, style = MaterialTheme.typography.labelSmall)
+                    QinblyHashtagField(capState) { caption = it }
+                    Column(Modifier.fillMaxWidth()) {
+                        Box(Modifier.fillMaxWidth().height(0.5.dp).background(QiblyTheme.border))
+                        QinblyPublishRow(QinblyCameraIcons.people, "Marcar pessoas", value = if (taggedPeople.isEmpty()) "" else taggedPeople.size.toString(), onClick = { showTagDialog = true })
+                        if (showTagDialog) {
+                            QinblyTagPeopleDialog(prefs.getString("token", null), taggedPeople.toList(), QinblyBrand.Accent, onDismiss = { showTagDialog = false }) { chosen ->
+                                taggedPeople.clear(); taggedPeople.addAll(chosen); showTagDialog = false
+                            }
+                        }
+                        QinblyPublishRow(QinblyCameraIcons.globe, "Quem pode ver", value = postVisibility, onClick = {
+                            postVisibility = if (postVisibility == "Todos") "Só eu" else "Todos"
+                            onNotice(if (postVisibility == "Só eu") "Só você verá esta publicação, no seu perfil." else "Todos poderão ver esta publicação.")
+                        })
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+                Box(Modifier.fillMaxWidth().background(QiblyTheme.background).navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp)) {
+                    Button(
+                        onClick = {
+                            val token = prefs.getString("token", null)
+                            if (token.isNullOrBlank()) {
+                                onNotice("Entre na sua conta antes de publicar.")
+                            } else if (!publishing) {
+                                publishing = true
+                                QinblyHashtagStore.record(context, caption)
+                                Thread {
+                                    try {
+                                        QinblyApi.createTextPost(token, caption.trim(), if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList(), textBg)
+                                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                            publishing = false
+                                            onNotice("Texto publicado com sucesso!")
+                                            onCameraCancelled()
+                                        }
+                                    } catch (e: Exception) {
+                                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                            publishing = false
+                                            onNotice(e.message ?: "Falha ao publicar.")
+                                        }
+                                    }
+                                }.start()
+                            }
+                        },
+                        enabled = !publishing && caption.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape = RoundedCornerShape(28.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
+                    ) { Text(if (publishing) "Publicando…" else "Publicar", fontWeight = FontWeight.Bold) }
+                }
+            }
+            return@QinblySplit
+        }
         Column(
             Modifier.fillMaxSize().background(QiblyTheme.background).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)

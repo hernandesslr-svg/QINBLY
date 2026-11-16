@@ -580,3 +580,10 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - "Descrição" com rótulo; anunciante (inicial + nome) e dica de segurança **sem caixa de fundo**.
 - Botão fixo embaixo, acima dos botões do celular (`navigationBarsPadding`): **"Enviar mensagem"** (no anúncio da própria pessoa: "Apagar anúncio").
 - Fora do esboço, não feito: compartilhar, denunciar, ver perfil do vendedor, mensagem rápida.
+
+## Nova publicação de texto (visual novo + fundo colorido)
+- Tela só de texto refeita (a enquete mantém o layout antigo): X no topo com título "Nova publicação" centralizado, autor, cartão grande com o texto e a fileira de fundos (primeiro "Aa" = **sem fundo**, depois 6 cores em degradê). Hashtags, "Marcar pessoas" e "Quem pode ver" continuam; botão **Publicar** fixo embaixo, acima dos botões do celular. A "Dica" foi removida.
+- Com fundo colorido o texto fica branco, centralizado e maior (24 sp no editor, 22 sp no feed); sem fundo é o cartão claro de antes. Padrão: já abre com a primeira cor.
+- Servidor: coluna `posts.text_bg` (`SUPABASE/21_texto_fundo.sql`, já aplicada) e função `qinbly-api` aceita `textBg` (1..6) só em publicação de texto e devolve `textBg` em toda publicação. Paleta única `QinblyTextBgPairs` em `MainActivity.kt` (mesma no editor e no feed).
+- Feed: publicação de texto com fundo vira cartão colorido arredondado (até 8 linhas). Ainda não aplicado: tela de comentários/detalhe e grade do perfil mostram o texto sem a cor.
+- Pessoas com a versão antiga do app veem a publicação como texto comum.

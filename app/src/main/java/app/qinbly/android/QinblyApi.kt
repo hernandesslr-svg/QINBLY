@@ -222,7 +222,9 @@ object QinblyApi {
         val taggedUsers: List<String> = emptyList(),
         val verified: Boolean = false,
         /** Música escolhida no post (vem escondida no fim da legenda e é separada aqui). */
-        val musicTitle: String = "", val musicArtist: String = "", val musicUrl: String = ""
+        val musicTitle: String = "", val musicArtist: String = "", val musicUrl: String = "",
+        /** Fundo colorido da publicação de texto (0 = sem fundo, 1..6 = cor da paleta). */
+        val textBg: Int = 0
     )
 
     /** Converte uma publicação do JSON da API. `fallback` (dono do perfil) preenche o autor quando a lista não o traz. */
@@ -231,6 +233,7 @@ object QinblyApi {
         val (cleanCaption, music) = qinblySplitMusic(post.optString("caption"))
         return PostSummary(
         musicTitle = music?.title.orEmpty(), musicArtist = music?.artist.orEmpty(), musicUrl = music?.url.orEmpty(),
+        textBg = post.optInt("textBg", 0),
         verified = author.optBoolean("verified", fallback?.optBoolean("verified") ?: false),
         authorId = author.optString("id").ifBlank { fallback?.optString("id").orEmpty() },
         id = post.optString("id"),
@@ -294,8 +297,8 @@ object QinblyApi {
         } catch (_: Exception) { /* Cache failure must never block the feed. */ }
     }
 
-    fun createTextPost(token: String, caption: String, visibility: String = "public", tagged: List<String> = emptyList()): JSONObject =
-        request("POST", "/api/posts", JSONObject().put("caption", caption.trim()).put("mediaType", "text").put("visibility", visibility).put("taggedUsernames", org.json.JSONArray(tagged)), token)
+    fun createTextPost(token: String, caption: String, visibility: String = "public", tagged: List<String> = emptyList(), textBg: Int = 0): JSONObject =
+        request("POST", "/api/posts", JSONObject().put("caption", caption.trim()).put("mediaType", "text").put("visibility", visibility).put("taggedUsernames", org.json.JSONArray(tagged)).put("textBg", textBg), token)
 
     fun createPollPost(token: String, question: String, options: List<String>, durationHours: Int = 24, multipleAnswers: Boolean = false, showResultsAfterVote: Boolean = true): JSONObject =
         request("POST", "/api/posts", JSONObject().put("caption", question.trim())

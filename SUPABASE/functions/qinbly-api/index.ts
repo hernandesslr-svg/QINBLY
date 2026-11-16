@@ -194,7 +194,7 @@ Deno.serve(async (req: Request) => {
         const myVote = viewerId ? (pv.find((v: any) => v.user_id === viewerId)?.option_index ?? -1) : -1;
         return {
           id: p.id, createdAt: p.created_at, caption: p.caption || "", mediaUrl: pub(p.media_path), mediaType: p.media_type,
-          mediaUrls: (p.media_paths || []).map(pub), visibility: p.visibility,
+          mediaUrls: (p.media_paths || []).map(pub), visibility: p.visibility, textBg: Number(p.text_bg) || 0,
           author: authorDto(p.profiles), authorId: p.user_id,
           likes: cnt(likes, "post_id", p.id), comments: cnt(comms, "post_id", p.id),
           likedByMe: mine(likes, "post_id"), savedByMe: !!viewerId && (saved || []).some((x: any) => x.post_id === p.id),
@@ -493,6 +493,8 @@ Deno.serve(async (req: Request) => {
       } else if (mediaType === "text") {
         if (!caption) return reply({ error: "Escreva algo para publicar." }, 400);
         if (body.mediaFileId) return reply({ error: "Publicação de texto não deve conter arquivo." }, 400);
+        const bgPick = Number(body.textBg);
+        if (Number.isInteger(bgPick) && bgPick >= 1 && bgPick <= 6) row.text_bg = bgPick;
       } else {
         const ids: string[] = Array.isArray(body.mediaFileIds) && body.mediaFileIds.length ? body.mediaFileIds.map(String).slice(0, 10) : [String(body.mediaFileId || "")];
         for (const fid of ids) {
