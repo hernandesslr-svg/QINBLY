@@ -275,6 +275,8 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     var showViewers by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var highlightAsk by remember { mutableStateOf(false) }
+    var highlightTitle by remember { mutableStateOf("Destaques") }
     var confirmBlock by remember { mutableStateOf(false) }
     var reportOpen by remember { mutableStateOf(false) }
     var muted by remember { mutableStateOf(false) }
@@ -364,7 +366,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
         }.start()
     }
     // O story pausa enquanto o menu, a lista de visualizações ou qualquer janela está aberta.
-    val holding = showViewers || showComments || replying || contribTarget.isNotBlank() || menuOpen || confirmDelete || confirmBlock || reportOpen
+    val holding = showViewers || showComments || replying || contribTarget.isNotBlank() || menuOpen || confirmDelete || highlightAsk || confirmBlock || reportOpen
     LaunchedEffect(current.id, holding) {
         if (holding) return@LaunchedEffect
         // Vídeo: a própria reprodução dirige a barra (veja StoryVideo). Foto/texto: 6 s.
@@ -474,7 +476,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                                 if (onAddStory != null) QinblyStoryMenuRow("Adicionar story") { menuOpen = false; onAddStory() }
                                 if (current.mediaType != "text" && origin == null) QinblyStoryMenuRow("Salvar na galeria") { menuOpen = false; saveCurrent() }
                                 QinblyStoryMenuRow("Quem pode ver", soon = true) { menuOpen = false; onNotice("Quem pode ver: em breve.") }
-                                QinblyStoryMenuRow("Destacar no perfil", soon = true) { menuOpen = false; onNotice("Destacar no perfil: em breve.") }
+                                if (current.page != "invite") QinblyStoryMenuRow("Destacar no perfil") { menuOpen = false; highlightTitle = "Destaques"; highlightAsk = true }
                             }
                             if (!isContribPage && !entry.mine) QinblyStoryMenuRow("Silenciar @" + storyOwner, soon = true) { menuOpen = false; onNotice("Silenciar: em breve.") }
                             if (deletable) QinblyStoryMenuRow(if (isContribPage) "Apagar resposta" else "Excluir story", danger = true) { menuOpen = false; confirmDelete = true }
@@ -538,6 +540,34 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
 
     if (showViewers) QinblyStorySummary(current.id, current.createdAt, accent, { showViewers = false }, onNotice, onOpenProfile = { u -> showViewers = false; onOpenProfile(u, index) })
 
+    if (highlightAsk) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { highlightAsk = false },
+        title = { Text("Destacar no perfil") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Este story fica no seu perfil, na linha de Destaques, mesmo depois das 24 horas.")
+                androidx.compose.material3.OutlinedTextField(highlightTitle, { highlightTitle = it.take(24) }, label = { Text("Nome do destaque") }, singleLine = true)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                highlightAsk = false
+                val sid = current.id.substringBefore("#")
+                val title = highlightTitle.trim().ifBlank { "Destaques" }
+                if (token.isNullOrBlank()) onNotice("Entre na sua conta.")
+                else Thread {
+                    try {
+                        QinblyApi.createHighlight(token, sid, title)
+                        android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice("Story destacado no seu perfil.") }
+                    } catch (e: Exception) {
+                        android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível destacar agora.") }
+                    }
+                }.start()
+            }) { Text("Destacar", color = accent) }
+        },
+        dismissButton = { TextButton(onClick = { highlightAsk = false }) { Text("Cancelar", color = accent) } },
+        containerColor = QiblyTheme.card, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
+    )
     if (confirmDelete) androidx.compose.material3.AlertDialog(
         onDismissRequest = { confirmDelete = false },
         title = { Text(if (isContribPage) "Apagar esta resposta?" else "Excluir este story?") },
@@ -723,5 +753,85 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
             }
             item { Spacer(Modifier.height(40.dp)) }
         }
+    }
+}
+
+/** Linha de "Destaques" do perfil: stories guardados que não somem em 24 horas. Some se não houver nenhum. */
+@Composable
+internal fun QinblyHighlightsRow(username: String, prefs: android.content.SharedPreferences, mine: Boolean, onNotice: (String) -> Unit, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    var list by remember(username) { mutableStateOf<List<QinblyApi.Highlight>>(emptyList()) }
+    var openIndex by remember(username) { mutableIntStateOf(-1) }
+    var reload by remember(username) { mutableIntStateOf(0) }
+    LaunchedEffect(username, reload) {
+        if (username.isBlank()) return@LaunchedEffect
+        try { list = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getHighlights(username, prefs.getString("token", null)) } } catch (_: Exception) { }
+    }
+    if (list.isEmpty()) return
+    androidx.compose.foundation.lazy.LazyRow(modifier.fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        items(list.size, key = { list[it].id }) { i ->
+            val h = list[i]
+            Column(Modifier.width(68.dp).clickable { openIndex = i }, horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(Modifier.size(64.dp).clip(CircleShape).background(Color(0xFF2A2438)).border(2.dp, QiblyTheme.border, CircleShape), contentAlignment = Alignment.Center) {
+                    if (h.mediaType == "text" || h.mediaUrl.isBlank()) {
+                        Text("Aa", color = Color.White, fontWeight = FontWeight.Bold)
+                    } else {
+                        val request = remember(h.mediaUrl) {
+                            coil.request.ImageRequest.Builder(context).data(h.mediaUrl).apply {
+                                if (h.mediaType == "video") { decoderFactory(coil.decode.VideoFrameDecoder.Factory()); videoFrameMillis(500) }
+                            }.crossfade(true).build()
+                        }
+                        AsyncImage(model = request, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                    }
+                }
+                Text(h.title, color = QiblyTheme.text, fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
+            }
+        }
+    }
+    val current = list.getOrNull(openIndex)
+    if (current != null) {
+        var confirmRemove by remember(current.id) { mutableStateOf(false) }
+        Dialog(onDismissRequest = { openIndex = -1 }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+            Box(Modifier.fillMaxSize().background(Color.Black)) {
+                when {
+                    current.mediaType == "video" && current.mediaUrl.isNotBlank() -> StoryVideo(current.mediaUrl, paused = confirmRemove, onEnded = { })
+                    current.mediaType == "text" || current.mediaUrl.isBlank() -> Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                        Text(qinblyDisplayCaption(current.caption).ifBlank { current.title }, color = Color.White, fontSize = 24.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold)
+                    }
+                    else -> AsyncImage(model = current.mediaUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
+                }
+                Row(Modifier.fillMaxWidth().statusBarsPadding().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(current.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f).padding(start = 8.dp))
+                    if (mine) androidx.compose.material3.IconButton(onClick = { confirmRemove = true }) { Icon(Icons.Outlined.Delete, contentDescription = "Remover destaque", tint = Color.White) }
+                    androidx.compose.material3.IconButton(onClick = { openIndex = -1 }) { Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.White) }
+                }
+                if (current.caption.isNotBlank() && current.mediaType != "text" && qinblyDisplayCaption(current.caption).isNotBlank()) {
+                    Text(qinblyDisplayCaption(current.caption), color = Color.White, modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(20.dp))
+                }
+            }
+        }
+        if (confirmRemove) androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirmRemove = false },
+            title = { Text("Remover dos destaques?") },
+            text = { Text("O story deixa de aparecer no seu perfil. Não dá para desfazer.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmRemove = false
+                    val token = prefs.getString("token", null)
+                    val id = current.id
+                    if (token.isNullOrBlank()) onNotice("Entre na sua conta.")
+                    else Thread {
+                        try {
+                            QinblyApi.deleteHighlight(token, id)
+                            android.os.Handler(android.os.Looper.getMainLooper()).post { openIndex = -1; list = list.filterNot { it.id == id }; reload++; onNotice("Destaque removido.") }
+                        } catch (e: Exception) {
+                            android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível remover agora.") }
+                        }
+                    }.start()
+                }) { Text("Remover", color = Color(0xFFD33B3B)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text("Cancelar") } },
+            containerColor = QiblyTheme.card, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
+        )
     }
 }

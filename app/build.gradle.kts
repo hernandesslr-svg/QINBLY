@@ -80,5 +80,6 @@ dependencies {
     implementation("com.google.mediapipe:tasks-vision:0.10.18")
     implementation("com.google.android.filament:filament-android:1.70.0")
     implementation("com.google.android.filament:gltfio-android:1.70.0")
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

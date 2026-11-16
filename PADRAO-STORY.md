@@ -5,7 +5,7 @@
 - Canto direito: três pontinhos (⋮) abrem o menu. O story pausa enquanto o menu ou qualquer janela está aberto.
 
 ## Menu dos três pontinhos
-- Seu story: Salvar na galeria (não aparece em story de publicação alheia nem em story de texto), Quem pode ver (em breve), Destacar no perfil (em breve), Excluir story (confirmação).
+- Seu story: Salvar na galeria (não aparece em story de publicação alheia nem em story de texto), Quem pode ver (em breve), Destacar no perfil (pede o nome e guarda o story na linha de Destaques do perfil; funcional), Excluir story (confirmação).
 - Story de outra pessoa: Silenciar @pessoa (em breve), Denunciar story (motivo, vai como denúncia da pessoa), Bloquear @pessoa (confirmação).
 - Resposta de story coletivo: Apagar resposta (quem respondeu ou o dono do story), Ver perfil, Denunciar, Bloquear.
 - Story de publicação de outro perfil: entram também "Ver original" e "Ver perfil de @autor" no topo do menu.

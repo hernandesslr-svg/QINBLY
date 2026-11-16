@@ -388,6 +388,7 @@ class MainActivity : ComponentActivity() {
         QinblyEngagement.init(getSharedPreferences("qinbly_session", MODE_PRIVATE))
         QinblyHidden.load(getSharedPreferences("qinbly_session", MODE_PRIVATE))
         QinblyAvatarCache.init(applicationContext)
+        QinblyNotifyWorker.schedule(applicationContext)
         // Janela clara desde o primeiro quadro: qualquer vão entre telas mostra a cor do app, não preto.
         window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(QiblyTheme.background.toArgb()))
         // Imagens: cache em memória (25% da RAM disponível) e em disco (256 MB); reabrir telas não baixa de novo.
@@ -542,7 +543,7 @@ private fun QinblyVerifiedBadge(size: Dp = 16.dp) {
 }
 
 /** Texto curto de cada tipo de notificação (usado na lista e na notificação do sistema). */
-private fun qinblyNotificationText(kind: String): String = when (kind) {
+internal fun qinblyNotificationText(kind: String): String = when (kind) {
     "verification_approved" -> "Sua conta foi verificada! Parabéns."
     "verification_rejected" -> "Seu pedido de verificação não foi aprovado."
     "follow" -> "começou a seguir você"
@@ -558,7 +559,7 @@ private fun qinblyNotificationText(kind: String): String = when (kind) {
 }
 
 /** Notificação do sistema para novidades (aparece enquanto o app está aberto ou ainda em memória). */
-private fun qinblyNotify(context: android.content.Context, title: String, text: String, id: Int) {
+internal fun qinblyNotify(context: android.content.Context, title: String, text: String, id: Int) {
     try {
         val manager = context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
         if (android.os.Build.VERSION.SDK_INT >= 26) {
@@ -2870,6 +2871,8 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
     var query by rememberKept("search.query", "")
     var results by rememberKept<List<QinblyApi.UserSummary>>("search.results", emptyList())
+    var postResults by remember { mutableStateOf<List<QinblyApi.PostSummary>>(emptyList()) }
+    var postOpen by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
     var loading by remember { mutableStateOf(false) }
     var searched by rememberKept("search.searched", false)
     var searchError by remember { mutableStateOf("") }
@@ -2962,25 +2965,28 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
         kotlinx.coroutines.delay(250)
         val normalized = query.trim().removePrefix("@").trim()
         searchError = ""
-        if (normalized.length < 2 || query.trim().startsWith("#") || filter != "Tudo" && filter != "Pessoas") {
+        if (normalized.length < 2 || query.trim().startsWith("#") || filter != "Tudo" && filter != "Pessoas" && filter != "Publicações") {
             results = emptyList()
+            postResults = emptyList()
             loading = false
             searched = false
         } else {
             loading = true
             try {
-                val found = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    QinblyApi.searchUsers(normalized, prefs.getString("token", null))
+                val all = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    QinblyApi.searchAll(normalized, prefs.getString("token", null))
                 }
                 if (requestId == searchRequest) {
-                    QinblyEngagement.learnFromUsers(prefs, found)
-                    results = found
+                    QinblyEngagement.learnFromUsers(prefs, all.users)
+                    results = all.users
+                    postResults = all.posts
                     searched = true
                 }
             } catch (e: Exception) {
                 if (requestId == searchRequest) {
-                    searchError = e.message ?: "Não foi possível pesquisar usuários."
+                    searchError = e.message ?: "Não foi possível pesquisar."
                     results = emptyList()
+                    postResults = emptyList()
                     searched = true
                 }
             } finally {
@@ -3030,7 +3036,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                     keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { saveHistory(query) })
                 )
                 LazyRow(Modifier.padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(listOf("Tudo", "Pessoas", "Hashtags", "Vídeos")) { name ->
+                    items(listOf("Tudo", "Pessoas", "Publicações", "Hashtags", "Vídeos")) { name ->
                         val chosen = name == filter
                         Text(name, fontSize = 13.sp, color = if (chosen) QiblyTheme.background else QiblyTheme.text,
                             modifier = Modifier.clip(RoundedCornerShape(18.dp))
@@ -3094,7 +3100,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = 20.dp)
                     ) {
-                        if (history.isNotEmpty() && (filter == "Tudo" || filter == "Pessoas")) {
+                        if (history.isNotEmpty() && (filter == "Tudo" || filter == "Pessoas" || filter == "Publicações")) {
                             item {
                                 Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Text("Recentes", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.weight(1f))
@@ -3174,19 +3180,25 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                             } }
                         }
                         if (history.isEmpty() && hotTags.isEmpty() && hotTerms.isEmpty() && filter != "Tudo") {
-                            item { Text("Digite pelo menos 2 letras para encontrar pessoas, ou use # para buscar hashtags.", color = Muted, modifier = Modifier.padding(vertical = 24.dp)) }
+                            item { Text("Digite pelo menos 2 letras para encontrar pessoas e publicações, ou use # para buscar hashtags.", color = Muted, modifier = Modifier.padding(vertical = 24.dp)) }
                         }
                     }
-                    searched && results.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Nenhum usuário encontrado para essa pesquisa.", color = Muted)
+                    searched && (if (filter == "Publicações") postResults.isEmpty() else if (filter == "Pessoas") results.isEmpty() else results.isEmpty() && postResults.isEmpty()) -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(if (filter == "Publicações") "Nenhuma publicação encontrada para essa pesquisa." else if (filter == "Pessoas") "Nenhum usuário encontrado para essa pesquisa." else "Nada encontrado para essa pesquisa.", color = Muted, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     }
                     else -> LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                         contentPadding = PaddingValues(bottom = 20.dp)
                     ) {
-                        items(results, key = { it.id }) { user ->
+                        if (filter != "Publicações") items(results, key = { "u-" + it.id }) { user ->
                             QinblyUserRow(user, prefs, openUser, onError)
+                        }
+                        if (filter != "Pessoas" && postResults.isNotEmpty()) {
+                            if (filter == "Tudo") item { Text("Publicações", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.padding(top = 14.dp, bottom = 6.dp)) }
+                            items(postResults, key = { "p-" + it.id }) { post ->
+                                QinblySearchPostRow(post) { saveHistory(query); postOpen = post }
+                            }
                         }
                     }
                 }
@@ -3210,6 +3222,40 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
             )
         }
         videoShareTarget?.let { target -> QiblyShareDialog(post = target, prefs = prefs, onDismiss = { videoShareTarget = null }, onNotice = onError) }
+        postOpen?.let { target ->
+            QinblyCommentsDialog(
+                post = target, prefs = prefs, currentUsername = prefs.getString("username", "") ?: "", onNotice = onError,
+                onDismiss = { postOpen = null },
+                onCountChanged = { postId, count -> postResults = postResults.map { if (it.id == postId) it.copy(comments = count) else it } }
+            )
+        }
+    }
+}
+
+/** Linha de uma publicação nos resultados da busca (texto colorido, foto ou vídeo). */
+@Composable
+private fun QinblySearchPostRow(post: QinblyApi.PostSummary, onClick: () -> Unit) {
+    val bg = if (post.mediaType == "text") qinblyTextBgBrush(post.textBg) else null
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            Modifier.size(64.dp).clip(RoundedCornerShape(12.dp)).background(bg ?: androidx.compose.ui.graphics.SolidColor(Color(0xFF1A1A1A))),
+            contentAlignment = Alignment.Center
+        ) {
+            when {
+                bg != null -> Text(post.caption, color = Color.White, fontSize = 10.sp, maxLines = 4, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(5.dp))
+                post.mediaType == "video" && post.mediaUrl.isNotBlank() -> QinblyVideoPoster(post.mediaUrl, Modifier.fillMaxSize(), ContentScale.Crop)
+                post.mediaUrl.isNotBlank() -> AsyncImage(model = post.mediaUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                else -> Text("Aa", color = Muted, fontWeight = FontWeight.Bold)
+            }
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("@" + post.username, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Text(post.caption.ifBlank { if (post.mediaType == "video") "Vídeo" else "Foto" }, color = Muted, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Text(post.likes.toString() + " curtidas · " + post.comments + " comentários", color = Muted, fontSize = 12.sp)
+        }
     }
 }
 
@@ -4757,7 +4803,7 @@ private fun QinblyPostCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
-
+            QinblyPostViewAndSchedule(post, prefs)
                         if (post.mediaUrl.isBlank() || (post.mediaType != "image" && post.mediaType != "video")) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().background(Color.Transparent).padding(horizontal = 14.dp, vertical = 7.dp)) {
                     val avatarUrl = post.avatarUrl
@@ -5144,8 +5190,10 @@ private fun QinblyPostMenu(
     val context = androidx.compose.ui.platform.LocalContext.current
     var expanded by remember(post.id) { mutableStateOf(false) }
     var confirmDelete by remember(post.id) { mutableStateOf(false) }
+    var showStats by remember(post.id) { mutableStateOf(false) }
     val mine = post.username.isNotBlank() &&
         post.username.equals(prefs.getString("username", "").orEmpty().removePrefix("@"), ignoreCase = true)
+    if (showStats) QinblyPostStatsDialog(post, prefs, onNotice) { showStats = false }
     if (confirmDelete) {
         AlertDialog(
         shape = RoundedCornerShape(28.dp),
@@ -5183,6 +5231,7 @@ private fun QinblyPostMenu(
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             if (mine) {
                 DropdownMenuItem(text = { Text("Editar") }, leadingIcon = { QinblyMenuIcon("Editar") }, onClick = { expanded = false; onEdit() })
+                DropdownMenuItem(text = { Text("Ver estatísticas") }, leadingIcon = { Icon(QinblyCreateIcons.poll, contentDescription = null, tint = QiblyTheme.text) }, onClick = { expanded = false; showStats = true })
                 DropdownMenuItem(text = { Text(if (post.pinned) "Desafixar do perfil" else "Fixar no perfil") }, leadingIcon = { QinblyMenuIcon(if (post.pinned) "Desafixar do perfil" else "Fixar no perfil") }, onClick = {
                     expanded = false
                     val token = prefs.getString("token", null)
@@ -5223,6 +5272,78 @@ private fun QinblyPostMenu(
             }
         }
     }
+}
+
+/** Posts cuja visualização já foi enviada nesta sessão (evita repetir a chamada a cada rolagem). */
+private val QinblyViewedPosts = java.util.Collections.synchronizedSet(HashSet<String>())
+
+/** Conta a visualização de publicações de outras pessoas e avisa quando uma publicação própria ainda está agendada. */
+@Composable
+private fun QinblyPostViewAndSchedule(post: QinblyApi.PostSummary, prefs: android.content.SharedPreferences) {
+    val mine = post.username.equals(prefs.getString("username", "").orEmpty().removePrefix("@"), ignoreCase = true)
+    LaunchedEffect(post.id) {
+        val token = prefs.getString("token", null)
+        if (!mine && !token.isNullOrBlank() && post.id.length == 36 && QinblyViewedPosts.add(post.id)) {
+            kotlinx.coroutines.delay(1200)
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.recordPostView(token, post.id) }
+        }
+    }
+    if (post.scheduledAt.isNotBlank()) {
+        val label = remember(post.scheduledAt) {
+            try { java.text.SimpleDateFormat("dd/MM 'às' HH:mm", java.util.Locale.getDefault()).format(java.util.Date.from(java.time.Instant.parse(post.scheduledAt))) } catch (_: Exception) { "" }
+        }
+        Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(QinblyCameraIcons.clock, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(16.dp))
+            Text(if (label.isBlank()) "Agendada" else "Agendada para $label · só você vê por enquanto", color = QinblyBrand.Accent, fontSize = 12.sp)
+        }
+    }
+}
+
+/** Estatísticas da própria publicação: visualizações, pessoas, curtidas, comentários, compartilhamentos e os últimos 7 dias. */
+@Composable
+private fun QinblyPostStatsDialog(post: QinblyApi.PostSummary, prefs: android.content.SharedPreferences, onNotice: (String) -> Unit, onDismiss: () -> Unit) {
+    var stats by remember(post.id) { mutableStateOf<QinblyApi.PostStats?>(null) }
+    var failed by remember(post.id) { mutableStateOf("") }
+    LaunchedEffect(post.id) {
+        val token = prefs.getString("token", null)
+        if (token.isNullOrBlank()) { failed = "Entre na sua conta."; return@LaunchedEffect }
+        try { stats = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getPostStats(token, post.id) } }
+        catch (e: Exception) { failed = e.message ?: "Não foi possível carregar as estatísticas." }
+    }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
+        containerColor = QiblyTheme.card, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text,
+        title = { Text("Estatísticas da publicação") },
+        text = {
+            val st = stats
+            when {
+                failed.isNotBlank() -> Text(failed, color = Muted)
+                st == null -> Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = QinblyBrand.Accent) }
+                else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    listOf("Visualizações" to st.views, "Pessoas alcançadas" to st.viewers, "Curtidas" to st.likes, "Comentários" to st.comments, "Compartilhamentos" to st.reposts).forEach { (name, value) ->
+                        Row(Modifier.fillMaxWidth()) {
+                            Text(name, modifier = Modifier.weight(1f), color = QiblyTheme.text)
+                            Text(value.toString(), fontWeight = FontWeight.Bold, color = QiblyTheme.text)
+                        }
+                    }
+                    Text("Últimos 7 dias", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                    val top = (st.days.maxOfOrNull { it.second } ?: 0).coerceAtLeast(1)
+                    Row(Modifier.fillMaxWidth().height(84.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
+                        st.days.forEach { (day, v) ->
+                            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
+                                Text(v.toString(), fontSize = 10.sp, color = Muted)
+                                Box(Modifier.fillMaxWidth().height((52f * v / top).coerceAtLeast(3f).dp).clip(RoundedCornerShape(4.dp)).background(QinblyBrand.Accent))
+                                Text(day.takeLast(2), fontSize = 10.sp, color = Muted)
+                            }
+                        }
+                    }
+                    Text("Conta uma visualização por pessoa por dia, sem contar as suas.", color = Muted, fontSize = 11.sp)
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar", color = QinblyBrand.Accent) } }
+    )
 }
 
 /** Tela cheia para editar uma publicação própria (só legenda e opções; a mídia não muda). */
@@ -8962,6 +9083,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             }
         }
         } // cartão de identidade temático
+        QinblyHighlightsRow(username.removePrefix("@"), profilePrefs, mine = true, onNotice = onNotice)
         Spacer(Modifier.height(18.dp))
         // Abas em superfície limpa, separadas por um divisor sutil.
         Row(
@@ -10440,6 +10562,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                 Text("Mensagem", color = QinblyBrand.Accent)
             }
         }
+        QinblyHighlightsRow(publicUsername, prefs, mine = publicUsername.equals(prefs.getString("username", "").orEmpty().removePrefix("@"), ignoreCase = true), onNotice = onNotice)
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
             listOf("Publicações", "Vídeos", "Fotos").forEach { section ->
                 Column(Modifier.weight(1f).clickable { selectedTab = section }.padding(vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -11693,6 +11816,40 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             var textBg by remember { mutableStateOf(1) }
             val capState = remember { QinblyCaptionState(caption) }
             val bgBrush = qinblyTextBgBrush(textBg)
+            // Rascunho: o texto e o fundo são salvos sozinhos e voltam na próxima vez que você abrir "Nova publicação".
+            var draftRestored by remember { mutableStateOf(false) }
+            var scheduledAtMs by remember { mutableStateOf(0L) }
+            LaunchedEffect(Unit) {
+                val saved = prefs.getString("draft_text", "").orEmpty()
+                if (caption.isBlank() && saved.isNotBlank()) {
+                    val (l, t) = qinblySplitCaption(saved)
+                    capState.legend = l
+                    capState.tags.clear(); capState.tags.addAll(t)
+                    caption = saved
+                    textBg = prefs.getInt("draft_text_bg", 1).coerceIn(0, QinblyTextBgPairs.size)
+                    draftRestored = true
+                }
+            }
+            LaunchedEffect(caption, textBg) {
+                kotlinx.coroutines.delay(600)
+                if (caption.isBlank()) prefs.edit().remove("draft_text").remove("draft_text_bg").apply()
+                else prefs.edit().putString("draft_text", caption).putInt("draft_text_bg", textBg).apply()
+            }
+            val pickSchedule: () -> Unit = {
+                val now = java.util.Calendar.getInstance()
+                android.app.DatePickerDialog(context, { _, y, m, d ->
+                    android.app.TimePickerDialog(context, { _, hh, mm ->
+                        val picked = java.util.Calendar.getInstance().apply { set(y, m, d, hh, mm, 0); set(java.util.Calendar.MILLISECOND, 0) }.timeInMillis
+                        if (picked < System.currentTimeMillis() + 60_000L) onNotice("Escolha um horário no futuro.")
+                        else if (picked > System.currentTimeMillis() + 90L * 86_400_000L) onNotice("Agende para no máximo 90 dias.")
+                        else scheduledAtMs = picked
+                        Unit
+                    }, now.get(java.util.Calendar.HOUR_OF_DAY), now.get(java.util.Calendar.MINUTE), true).show()
+                }, now.get(java.util.Calendar.YEAR), now.get(java.util.Calendar.MONTH), now.get(java.util.Calendar.DAY_OF_MONTH)).apply {
+                    datePicker.minDate = System.currentTimeMillis() - 1000
+                    datePicker.maxDate = System.currentTimeMillis() + 90L * 86_400_000L
+                }.show()
+            }
             Column(Modifier.fillMaxSize().background(QiblyTheme.background).imePadding()) {
                 Box(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp)) {
                     IconButton(onClick = onCameraCancelled, modifier = Modifier.align(Alignment.CenterStart)) {
@@ -11704,6 +11861,17 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
+                    if (draftRestored) Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(QinblyBrand.AccentSoft).padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Rascunho recuperado", color = QiblyTheme.text, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                        Text("Descartar", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 13.sp,
+                            modifier = Modifier.clickable {
+                                capState.legend = ""; capState.tags.clear(); caption = ""; draftRestored = false
+                                prefs.edit().remove("draft_text").remove("draft_text_bg").apply()
+                            }.padding(4.dp))
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         if (ownUsername.isNotBlank()) QiblyAccountAvatar(ownUsername, "", 44.dp) { }
                         else Icon(Icons.Default.Person, contentDescription = null, tint = Color.DarkGray, modifier = Modifier.size(44.dp))
@@ -11757,6 +11925,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                             postVisibility = if (postVisibility == "Todos") "Só eu" else "Todos"
                             onNotice(if (postVisibility == "Só eu") "Só você verá esta publicação, no seu perfil." else "Todos poderão ver esta publicação.")
                         })
+                        QinblyPublishRow(QinblyCameraIcons.clock, "Agendar publicação",
+                            value = if (scheduledAtMs > 0L) java.text.SimpleDateFormat("dd/MM HH:mm", java.util.Locale.getDefault()).format(java.util.Date(scheduledAtMs)) else "", onClick = pickSchedule)
+                        if (scheduledAtMs > 0L) Text("Remover agendamento", color = QinblyBrand.Accent, fontSize = 13.sp,
+                            modifier = Modifier.clickable { scheduledAtMs = 0L }.padding(start = 34.dp, bottom = 8.dp))
                     }
                     Spacer(Modifier.height(8.dp))
                 }
@@ -11769,12 +11941,14 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                             } else if (!publishing) {
                                 publishing = true
                                 QinblyHashtagStore.record(context, caption)
+                                val scheduledIso = if (scheduledAtMs > 0L) java.time.Instant.ofEpochMilli(scheduledAtMs).toString() else ""
                                 Thread {
                                     try {
-                                        QinblyApi.createTextPost(token, caption.trim(), if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList(), textBg)
+                                        QinblyApi.createTextPost(token, caption.trim(), if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList(), textBg, scheduledIso)
                                         android.os.Handler(android.os.Looper.getMainLooper()).post {
                                             publishing = false
-                                            onNotice("Texto publicado com sucesso!")
+                                            prefs.edit().remove("draft_text").remove("draft_text_bg").apply()
+                                            onNotice(if (scheduledIso.isNotBlank()) "Publicação agendada!" else "Texto publicado com sucesso!")
                                             onCameraCancelled()
                                         }
                                     } catch (e: Exception) {
@@ -11790,7 +11964,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(28.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
-                    ) { Text(if (publishing) "Publicando…" else "Publicar", fontWeight = FontWeight.Bold) }
+                    ) { Text(if (publishing) "Publicando…" else if (scheduledAtMs > 0L) "Agendar" else "Publicar", fontWeight = FontWeight.Bold) }
                 }
             }
             return@QinblySplit

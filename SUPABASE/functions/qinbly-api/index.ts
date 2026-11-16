@@ -195,6 +195,7 @@ Deno.serve(async (req: Request) => {
         return {
           id: p.id, createdAt: p.created_at, caption: p.caption || "", mediaUrl: pub(p.media_path), mediaType: p.media_type,
           mediaUrls: (p.media_paths || []).map(pub), visibility: p.visibility, textBg: Number(p.text_bg) || 0,
+          scheduledAt: p.publish_at && Date.parse(p.publish_at) > Date.now() ? p.publish_at : "",
           author: authorDto(p.profiles), authorId: p.user_id,
           likes: cnt(likes, "post_id", p.id), comments: cnt(comms, "post_id", p.id),
           likedByMe: mine(likes, "post_id"), savedByMe: !!viewerId && (saved || []).some((x: any) => x.post_id === p.id),
@@ -208,7 +209,7 @@ Deno.serve(async (req: Request) => {
     };
     const feedFilter = async () => {
       const blocks = await myBlocks();
-      return "archived_at=is.null" + (blocks.length ? `&user_id=not.in.(${blocks.join(",")})` : "");
+      return "archived_at=is.null&or=(publish_at.is.null,publish_at.lte." + encodeURIComponent(new Date().toISOString()) + ")" + (blocks.length ? `&user_id=not.in.(${blocks.join(",")})` : "");
     };
     const visiblePolls = (rows: any[]) => rows.filter((p) => p.media_type !== "poll" || (p.poll_expires_at && Date.parse(p.poll_expires_at) > Date.now()) || p.user_id === viewerId);
     const fileOwned = async (fileId: string, category: string) => {
@@ -306,7 +307,13 @@ Deno.serve(async (req: Request) => {
       if (!q) return reply({ users: [] });
       const rows = await rest(`profiles?or=(username.ilike.*${encodeURIComponent(q)}*,display_name.ilike.*${encodeURIComponent(q)}*)&select=id,username,display_name,bio,avatar_path,is_verified&limit=30`);
       const following = await myFollowing();
-      return reply({ users: (rows || []).map((p: any) => ({ ...profileDto(p), isFollowing: following.has(p.id) })) });
+      const usersOut = (rows || []).map((p: any) => ({ ...profileDto(p), isFollowing: following.has(p.id) }));
+      if (path !== "/api/search") return reply({ users: usersOut });
+      const postRows = await rest(`posts?select=${POST_SELECT}&visibility=eq.public&caption=ilike.*${encodeURIComponent(q)}*&${await feedFilter()}&order=created_at.desc&limit=20`);
+      const tagRows = await rest("rpc/trending_tags", { method: "POST", body: "{}" }).catch(() => []);
+      const needle = q.toLowerCase().replace(/^#/, "");
+      const tags = (tagRows || []).filter((t: any) => String(t.tag).toLowerCase().includes(needle)).slice(0, 10).map((t: any) => ({ tag: t.tag, posts: Number(t.posts) }));
+      return reply({ users: usersOut, posts: await buildPosts(visiblePolls(postRows || [])), tags });
     }
     if (method === "GET" && path === "/api/posts") {
       const limit = Math.min(Math.max(Number(url.searchParams.get("limit") || 30), 1), 60);
@@ -495,6 +502,13 @@ Deno.serve(async (req: Request) => {
         if (body.mediaFileId) return reply({ error: "Publicação de texto não deve conter arquivo." }, 400);
         const bgPick = Number(body.textBg);
         if (Number.isInteger(bgPick) && bgPick >= 1 && bgPick <= 6) row.text_bg = bgPick;
+        const sched = Date.parse(String(body.scheduledAt || ""));
+        if (Number.isFinite(sched)) {
+          if (sched < Date.now() + 30_000) return reply({ error: "Escolha um horário no futuro." }, 400);
+          if (sched > Date.now() + 90 * 86400_000) return reply({ error: "Agende para no máximo 90 dias." }, 400);
+          row.publish_at = new Date(sched).toISOString();
+          row.created_at = row.publish_at;
+        }
       } else {
         const ids: string[] = Array.isArray(body.mediaFileIds) && body.mediaFileIds.length ? body.mediaFileIds.map(String).slice(0, 10) : [String(body.mediaFileId || "")];
         for (const fid of ids) {
@@ -513,7 +527,7 @@ Deno.serve(async (req: Request) => {
       }
       return reply({ post: (await buildPosts([created]))[0] }, 201);
     }
-    const postM = path.match(/^\/api\/posts\/([0-9a-f-]{36})(?:\/(like|save|repost|pin|archive|vote|comments))?$/i);
+    const postM = path.match(/^\/api\/posts\/([0-9a-f-]{36})(?:\/(like|save|repost|pin|archive|vote|comments|view|stats))?$/i);
     if (postM) {
       const pid = postM[1], action = postM[2];
       const id = need();
@@ -526,6 +540,28 @@ Deno.serve(async (req: Request) => {
         return reply({ post: (await buildPosts(rows))[0] });
       }
       if (method === "DELETE" && !action) { await rest(`posts?id=eq.${pid}&user_id=eq.${id}`, { method: "DELETE" }); return reply({ ok: true }); }
+      if (method === "POST" && action === "view") {
+        const vp = (await rest(`posts?id=eq.${pid}&select=id,user_id`))?.[0];
+        if (!vp || vp.user_id === id) return reply({ ok: true });
+        await ins("post_views?on_conflict=post_id,viewer_id,day", { post_id: pid, viewer_id: id }, "resolution=ignore-duplicates,return=minimal", "");
+        return reply({ ok: true });
+      }
+      if (method === "GET" && action === "stats") {
+        const own = (await rest(`posts?id=eq.${pid}&user_id=eq.${id}&select=id`))?.[0];
+        if (!own) return reply({ error: "Só quem publicou pode ver as estatísticas." }, 403);
+        const [views, likes, comms, reps] = await Promise.all([
+          rest(`post_views?post_id=eq.${pid}&select=viewer_id,day&limit=10000`),
+          rest(`post_likes?post_id=eq.${pid}&select=user_id`),
+          rest(`comments?post_id=eq.${pid}&select=id`),
+          rest(`post_reposts?original_post_id=eq.${pid}&select=user_id`),
+        ]);
+        const days: { day: string; views: number }[] = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(Date.now() - i * 86400_000).toISOString().slice(0, 10);
+          days.push({ day: d, views: (views || []).filter((v: any) => v.day === d).length });
+        }
+        return reply({ views: (views || []).length, viewers: new Set((views || []).map((v: any) => v.viewer_id)).size, likes: (likes || []).length, comments: (comms || []).length, reposts: (reps || []).length, days });
+      }
       if (method === "POST" && action === "like") {
         const post = (await rest(`posts?id=eq.${pid}&select=id,visibility`))?.[0];
         if (!post || post.visibility !== "public") return reply({ error: "Publicação não encontrada." }, 404);
@@ -829,6 +865,27 @@ Deno.serve(async (req: Request) => {
     }
 
     // ---------- Perfil público (por último: casa qualquer /api/users/<nome>) ----------
+    const hlList = route("GET", /^\/api\/users\/([^/]+)\/highlights$/);
+    if (hlList) {
+      const name = decodeURIComponent(hlList[1]).replace(/^@/, "").toLowerCase();
+      const target = (await rest(`profiles?username=eq.${encodeURIComponent(name)}&select=id`))?.[0];
+      if (!target) return reply({ highlights: [] });
+      const rows = await rest(`story_highlights?user_id=eq.${target.id}&select=*&order=created_at.desc&limit=100`);
+      return reply({ highlights: (rows || []).map((h: any) => ({ id: h.id, title: h.title, mediaUrl: pub(h.media_path), mediaType: h.media_type, caption: h.caption || "", createdAt: h.created_at })) });
+    }
+    if (method === "POST" && path === "/api/highlights") {
+      const id = need();
+      const sid = String(body.storyId || "");
+      if (!isUuid(sid)) return reply({ error: "Story inválido." }, 400);
+      const story = (await rest(`stories?id=eq.${sid}&user_id=eq.${id}&select=media_path,media_type,caption`))?.[0];
+      if (!story) return reply({ error: "Story não encontrado." }, 404);
+      const title = String(body.title || "").trim().slice(0, 24) || "Destaques";
+      const row = (await ins("story_highlights", { user_id: id, title, media_path: story.media_path || "", media_type: story.media_type, caption: story.caption || "" }))?.[0];
+      return reply({ highlight: { id: row.id, title: row.title, mediaUrl: pub(row.media_path), mediaType: row.media_type, caption: row.caption || "", createdAt: row.created_at } }, 201);
+    }
+    const hlDel = route("DELETE", /^\/api\/highlights\/([0-9a-f-]{36})$/i);
+    if (hlDel) { await rest(`story_highlights?id=eq.${hlDel[1]}&user_id=eq.${need()}`, { method: "DELETE" }); return reply({ ok: true }); }
+
     const profM = route("GET", /^\/api\/users\/([^/]+)$/);
     if (profM) {
       const name = decodeURIComponent(profM[1]).replace(/^@/, "").toLowerCase();

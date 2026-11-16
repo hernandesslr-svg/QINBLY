@@ -224,7 +224,9 @@ object QinblyApi {
         /** Música escolhida no post (vem escondida no fim da legenda e é separada aqui). */
         val musicTitle: String = "", val musicArtist: String = "", val musicUrl: String = "",
         /** Fundo colorido da publicação de texto (0 = sem fundo, 1..6 = cor da paleta). */
-        val textBg: Int = 0
+        val textBg: Int = 0,
+        /** Só preenchido na sua própria publicação agendada ainda não publicada (data ISO). */
+        val scheduledAt: String = ""
     )
 
     /** Converte uma publicação do JSON da API. `fallback` (dono do perfil) preenche o autor quando a lista não o traz. */
@@ -234,6 +236,7 @@ object QinblyApi {
         return PostSummary(
         musicTitle = music?.title.orEmpty(), musicArtist = music?.artist.orEmpty(), musicUrl = music?.url.orEmpty(),
         textBg = post.optInt("textBg", 0),
+        scheduledAt = post.optString("scheduledAt"),
         verified = author.optBoolean("verified", fallback?.optBoolean("verified") ?: false),
         authorId = author.optString("id").ifBlank { fallback?.optString("id").orEmpty() },
         id = post.optString("id"),
@@ -297,8 +300,9 @@ object QinblyApi {
         } catch (_: Exception) { /* Cache failure must never block the feed. */ }
     }
 
-    fun createTextPost(token: String, caption: String, visibility: String = "public", tagged: List<String> = emptyList(), textBg: Int = 0): JSONObject =
-        request("POST", "/api/posts", JSONObject().put("caption", caption.trim()).put("mediaType", "text").put("visibility", visibility).put("taggedUsernames", org.json.JSONArray(tagged)).put("textBg", textBg), token)
+    fun createTextPost(token: String, caption: String, visibility: String = "public", tagged: List<String> = emptyList(), textBg: Int = 0, scheduledAt: String = ""): JSONObject =
+        request("POST", "/api/posts", JSONObject().put("caption", caption.trim()).put("mediaType", "text").put("visibility", visibility).put("taggedUsernames", org.json.JSONArray(tagged)).put("textBg", textBg)
+            .also { if (scheduledAt.isNotBlank()) it.put("scheduledAt", scheduledAt) }, token)
 
     fun createPollPost(token: String, question: String, options: List<String>, durationHours: Int = 24, multipleAnswers: Boolean = false, showResultsAfterVote: Boolean = true): JSONObject =
         request("POST", "/api/posts", JSONObject().put("caption", question.trim())
@@ -1244,6 +1248,62 @@ object QinblyApi {
             )
         }.distinctBy { it.username.lowercase() }
     }
+
+    /** Resultado da busca completa: pessoas, publicações e hashtags que combinam com o texto. */
+    data class SearchAll(val users: List<UserSummary>, val posts: List<PostSummary>, val tags: List<Pair<String, Int>>)
+
+    fun searchAll(query: String, token: String? = null): SearchAll {
+        val normalized = query.trim().removePrefix("@").trim()
+        if (normalized.length < 2) return SearchAll(emptyList(), emptyList(), emptyList())
+        val q = java.net.URLEncoder.encode(normalized, "UTF-8")
+        val response = request("GET", "/api/search?q=" + q + "&limit=30", token = token ?: storedAccessToken())
+        val usersArr = response.optJSONArray("users") ?: org.json.JSONArray()
+        val users = (0 until usersArr.length()).mapNotNull { i ->
+            val u = usersArr.optJSONObject(i) ?: return@mapNotNull null
+            val username = u.optString("username").trim()
+            if (username.isBlank()) return@mapNotNull null
+            UserSummary(
+                id = u.optString("id").ifBlank { username }, username = username,
+                displayName = u.optString("displayName", u.optString("display_name")).ifBlank { username },
+                bio = u.optString("bio"), avatarUrl = u.optString("avatarUrl", u.optString("avatar_url")),
+                verified = u.optBoolean("verified", u.optBoolean("is_verified")), isFollowing = u.optBoolean("isFollowing")
+            )
+        }.distinctBy { it.username.lowercase() }
+        val tagsArr = response.optJSONArray("tags") ?: org.json.JSONArray()
+        val tags = (0 until tagsArr.length()).mapNotNull { i -> tagsArr.optJSONObject(i)?.let { it.optString("tag") to it.optInt("posts") } }.filter { it.first.isNotBlank() }
+        return SearchAll(users, parsePosts(response.optJSONArray("posts")), tags)
+    }
+
+    /** Conta uma visualização (uma por pessoa, por publicação e por dia). Falha em silêncio. */
+    fun recordPostView(token: String, postId: String) {
+        try { request("POST", "/api/posts/$postId/view", JSONObject(), token) } catch (_: Exception) { }
+    }
+
+    data class PostStats(val views: Int, val viewers: Int, val likes: Int, val comments: Int, val reposts: Int, val days: List<Pair<String, Int>>)
+
+    fun getPostStats(token: String, postId: String): PostStats {
+        val r = request("GET", "/api/posts/$postId/stats", null, token)
+        val d = r.optJSONArray("days") ?: org.json.JSONArray()
+        return PostStats(
+            r.optInt("views"), r.optInt("viewers"), r.optInt("likes"), r.optInt("comments"), r.optInt("reposts"),
+            (0 until d.length()).mapNotNull { i -> d.optJSONObject(i)?.let { it.optString("day") to it.optInt("views") } }
+        )
+    }
+
+    data class Highlight(val id: String, val title: String, val mediaUrl: String, val mediaType: String, val caption: String)
+
+    private fun parseHighlight(h: JSONObject) = Highlight(h.optString("id"), h.optString("title"), h.optString("mediaUrl"), h.optString("mediaType"), h.optString("caption"))
+
+    fun getHighlights(username: String, token: String? = null): List<Highlight> {
+        val u = java.net.URLEncoder.encode(username.removePrefix("@"), "UTF-8")
+        val arr = request("GET", "/api/users/$u/highlights", null, token ?: storedAccessToken()).optJSONArray("highlights") ?: org.json.JSONArray()
+        return (0 until arr.length()).mapNotNull { arr.optJSONObject(it)?.let(::parseHighlight) }
+    }
+
+    fun createHighlight(token: String, storyId: String, title: String): Highlight =
+        parseHighlight(request("POST", "/api/highlights", JSONObject().put("storyId", storyId).put("title", title), token).optJSONObject("highlight") ?: JSONObject())
+
+    fun deleteHighlight(token: String, id: String) { request("DELETE", "/api/highlights/$id", JSONObject(), token) }
 
     private fun request(method: String, path: String, body: JSONObject? = null, token: String? = null, allowRefresh: Boolean = true): JSONObject {
         val configuredBase = BuildConfig.API_BASE_URL.trim().trimEnd('/')

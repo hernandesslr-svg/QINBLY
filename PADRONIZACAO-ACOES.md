@@ -587,3 +587,12 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - Servidor: coluna `posts.text_bg` (`SUPABASE/21_texto_fundo.sql`, já aplicada) e função `qinbly-api` aceita `textBg` (1..6) só em publicação de texto e devolve `textBg` em toda publicação. Paleta única `QinblyTextBgPairs` em `MainActivity.kt` (mesma no editor e no feed).
 - Feed: publicação de texto com fundo vira cartão colorido arredondado (até 8 linhas). Ainda não aplicado: tela de comentários/detalhe e grade do perfil mostram o texto sem a cor.
 - Pessoas com a versão antiga do app veem a publicação como texto comum.
+
+## Novidades: busca de publicações, rascunho, agendamento, destaques, estatísticas, avisos
+
+- **Busca completa**: o chip "Publicações" (e o "Tudo") mostram publicações públicas cuja legenda combina com o texto (`GET /api/search` devolve `users`, `posts`, `tags`). Tocar abre a publicação nos comentários. Post de texto aparece com o fundo colorido.
+- **Rascunho (só texto)**: o texto e o fundo da "Nova publicação" de texto são salvos sozinhos no aparelho (`draft_text`, `draft_text_bg`) e voltam ao reabrir, com a linha "Rascunho recuperado · Descartar". Apaga ao publicar. Não existe rascunho de foto/vídeo.
+- **Agendar (só texto)**: linha "Agendar publicação" escolhe data e hora (até 90 dias); o botão vira "Agendar". O servidor grava `posts.publish_at`; antes da hora só o dono vê (RLS `posts_read` + filtro do feed) e o card mostra "Agendada para dd/MM às HH:mm".
+- **Destaques**: no story próprio, menu → "Destacar no perfil" (pede nome até 24 letras) copia o story para `story_highlights`; a linha de círculos aparece nos dois perfis (`QinblyHighlightsRow`); o dono remove pela lixeira dentro do visualizador.
+- **Estatísticas**: menu "⋮" da publicação própria → "Ver estatísticas" (visualizações, pessoas, curtidas, comentários, compartilhamentos, barras de 7 dias). A visualização é contada 1,2 s depois do card aparecer, uma por pessoa por dia, sem contar o dono (`post_views`).
+- **Avisos com o app fechado**: `NotifyWorker.kt` (WorkManager, a cada ~15 min, só com internet) consulta notificações e mensagens novas e mostra a notificação do sistema, respeitando as chaves `setting_notice_*`. **Não é push de verdade**: o atraso pode ser de 15 min ou mais e o Android pode adiar com economia de bateria. Push real exige um projeto Firebase (google-services.json).
