@@ -677,3 +677,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - Perfil com "conta privada" (`profiles.is_private`) esconde as publicações de quem não o segue (regra `qinbly_can_see_author`). Em 17/11, `ana_rose` é privada: as 6 publicações mais novas do banco são dela e só aparecem para quem a segue.
 - Corrigido: Comunidades dava 500 por recursão infinita nas regras (migração 27, `SUPABASE/27_corrige_recursao_comunidades.sql`).
 - Ainda aberto: com a sessão vencida (401 no heartbeat/caixa de entrada), contar visualização (`/view`) dá 500 por falta de permissão. O feed continua carregando como visitante.
+
+## Feed com sessão vencida
+
+- `GET /api/posts` aceita visitante: com o token vencido ele responde 200 só com publicações públicas (o app não via 401 e nunca renovava a sessão). Resultado: feed mostrando só perfis públicos e nenhuma publicação de conta privada que a pessoa segue.
+- `QinblyApi.getPosts` agora chama `/api/auth/me` antes (se der 401, o app renova o token sozinho) e só então busca o feed com o token novo.
