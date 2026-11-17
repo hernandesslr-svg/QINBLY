@@ -4378,7 +4378,7 @@ private fun QinblyCommentsDialog(
                                     .heightIn(min = 110.dp).padding(horizontal = 18.dp, vertical = 18.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(post.caption, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 6,
+                                Text(qinblySplitCaption(post.caption).first.ifBlank { post.caption }, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 6,
                                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                             }
                         }
@@ -4989,16 +4989,20 @@ private fun QinblyPostCard(
             } else if (post.mediaType != "image" && post.mediaType != "video" && post.caption.isNotBlank()) {
                 val textBgBrush = if (post.mediaType == "text") qinblyTextBgBrush(post.textBg) else null
                 if (textBgBrush != null) {
+                    // As #hashtags do final ficam fora do cartão colorido, logo abaixo dele.
+                    val (cardText, cardTags) = qinblySplitCaption(post.caption).let { if (it.first.isBlank()) post.caption to emptyList() else it }
                     Box(
                         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp)
                             .clip(RoundedCornerShape(20.dp)).background(textBgBrush)
                             .heightIn(min = 200.dp).padding(horizontal = 22.dp, vertical = 26.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        QinblyRichText(post.caption, Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold,
+                        QinblyRichText(cardText, Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold,
                             modifier = Modifier.fillMaxWidth(), maxLines = 8,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center, linkColor = Color.White)
                     }
+                    if (cardTags.isNotEmpty()) QinblyRichText(cardTags.joinToString(" "), RemoteAppearance.feedTextColor, fontSize = 15.sp,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 2.dp), maxLines = 2)
                 } else {
                     QinblyRichText(post.caption, RemoteAppearance.feedTextColor, fontSize = 15.sp,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
@@ -9119,7 +9123,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             else {
                                 val tileBg = if (post.mediaType == "text") qinblyTextBgBrush(post.textBg) else null
                                 if (tileBg != null) Box(Modifier.fillMaxSize().background(tileBg), contentAlignment = Alignment.Center) {
-                                    Text(post.caption, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(8.dp), maxLines = 5, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                    Text(qinblySplitCaption(post.caption).first.ifBlank { post.caption }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(8.dp), maxLines = 5, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                                 }
                                 else Text(post.caption.ifBlank { QinblyBrand.Name }, color = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.Center).padding(8.dp), maxLines = 4)
                             }
