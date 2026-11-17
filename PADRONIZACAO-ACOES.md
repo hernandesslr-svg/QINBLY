@@ -713,3 +713,7 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - Sintoma: não dá para comentar/ver comentários ("permission denied for table comments" nos logs). Causa: o token de acesso vencia e o servidor tratava a pessoa como visitante, sem devolver 401, então o app não renovava.
 - Correção (`QinblyApi.request`): antes de enviar qualquer chamada com sessão, o app lê a validade (`exp`) do token e, se já venceu (ou vence em menos de 30 s), renova com o refresh token e só então envia. Vale para todas as telas; a renovação por 401 continua como segunda rede.
 - Se a renovação não for possível (sem refresh token), a chamada segue como antes e a pessoa precisa entrar de novo.
+
+## Barra de cima do Início some ao rolar (teste)
+- No Início, a barra com QINBLY, busca e sino sobe junto com a rolagem do feed e volta assim que a pessoa rola um pouco para cima. As abas (Descobrir, Seguindo, Em alta…) ficam fixas embaixo dela.
+- Implementação: `NestedScrollConnection` na coluna do `FeedPage` (`headerOffset`/`headerPx`); trocar de aba ou tocar em "Início" para ir ao topo mostra a barra de novo.
