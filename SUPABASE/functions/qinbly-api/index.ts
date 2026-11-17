@@ -502,13 +502,6 @@ Deno.serve(async (req: Request) => {
         if (body.mediaFileId) return reply({ error: "Publicação de texto não deve conter arquivo." }, 400);
         const bgPick = Number(body.textBg);
         if (Number.isInteger(bgPick) && bgPick >= 1 && bgPick <= 6) row.text_bg = bgPick;
-        const sched = Date.parse(String(body.scheduledAt || ""));
-        if (Number.isFinite(sched)) {
-          if (sched < Date.now() + 30_000) return reply({ error: "Escolha um horário no futuro." }, 400);
-          if (sched > Date.now() + 90 * 86400_000) return reply({ error: "Agende para no máximo 90 dias." }, 400);
-          row.publish_at = new Date(sched).toISOString();
-          row.created_at = row.publish_at;
-        }
       } else {
         const ids: string[] = Array.isArray(body.mediaFileIds) && body.mediaFileIds.length ? body.mediaFileIds.map(String).slice(0, 10) : [String(body.mediaFileId || "")];
         for (const fid of ids) {
@@ -517,6 +510,16 @@ Deno.serve(async (req: Request) => {
         }
         row.media_path = ids[0];
         if (ids.length > 1) row.media_paths = ids;
+      }
+      // Agendamento vale para texto, foto e vídeo (enquete já tem prazo próprio).
+      if (mediaType !== "poll") {
+        const sched = Date.parse(String(body.scheduledAt || ""));
+        if (Number.isFinite(sched)) {
+          if (sched < Date.now() + 30_000) return reply({ error: "Escolha um horário no futuro." }, 400);
+          if (sched > Date.now() + 90 * 86400_000) return reply({ error: "Agende para no máximo 90 dias." }, 400);
+          row.publish_at = new Date(sched).toISOString();
+          row.created_at = row.publish_at;
+        }
       }
       const created = (await ins("posts", row, "return=representation", `select=${POST_SELECT}`))?.[0];
       const tagged: string[] = (Array.isArray(body.taggedUsernames) ? body.taggedUsernames : []).map((u: any) => String(u).replace(/^@/, "").toLowerCase()).slice(0, 20);

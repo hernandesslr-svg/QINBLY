@@ -313,15 +313,17 @@ object QinblyApi {
     fun votePoll(token: String, postId: String, optionIndex: Int): JSONObject =
         request("POST", "/api/posts/${postId}/vote", JSONObject().put("optionIndex", optionIndex), token)
 
-    fun createMediaPost(token: String, caption: String, fileId: String, mediaType: String, visibility: String = "public", tagged: List<String> = emptyList()): JSONObject =
+    fun createMediaPost(token: String, caption: String, fileId: String, mediaType: String, visibility: String = "public", tagged: List<String> = emptyList(), scheduledAt: String = ""): JSONObject =
         request("POST", "/api/posts", JSONObject().put("caption", caption.trim())
-            .put("mediaFileId", fileId).put("mediaType", mediaType).put("visibility", visibility).put("taggedUsernames", org.json.JSONArray(tagged)), token)
+            .put("mediaFileId", fileId).put("mediaType", mediaType).put("visibility", visibility).put("taggedUsernames", org.json.JSONArray(tagged))
+            .also { if (scheduledAt.isNotBlank()) it.put("scheduledAt", scheduledAt) }, token)
 
-    fun createPhotoAlbum(token: String, caption: String, fileIds: List<String>, visibility: String = "public", tagged: List<String> = emptyList()): JSONObject {
+    fun createPhotoAlbum(token: String, caption: String, fileIds: List<String>, visibility: String = "public", tagged: List<String> = emptyList(), scheduledAt: String = ""): JSONObject {
         require(fileIds.size in 1..10) { "Selecione de 1 a 10 fotos." }
         return request("POST", "/api/posts", JSONObject().put("caption", caption.trim())
             .put("mediaType", "image").put("mediaFileId", fileIds.first())
-            .put("mediaFileIds", org.json.JSONArray(fileIds)).put("visibility", visibility).put("taggedUsernames", org.json.JSONArray(tagged)), token)
+            .put("mediaFileIds", org.json.JSONArray(fileIds)).put("visibility", visibility).put("taggedUsernames", org.json.JSONArray(tagged))
+            .also { if (scheduledAt.isNotBlank()) it.put("scheduledAt", scheduledAt) }, token)
     }
 
     fun uploadPostMedia(context: Context, token: String, uri: Uri, fileName: String, contentType: String, sizeBytes: Long, category: String = "post_media"): String {

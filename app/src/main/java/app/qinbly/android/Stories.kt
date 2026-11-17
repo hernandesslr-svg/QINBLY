@@ -112,7 +112,6 @@ internal fun QinblyStoryMenu(
 
     when (step) {
         "menu" -> QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
-            val soon: (String) -> Unit = { onNotice("$it: em breve.") }
             val card = Color(0xFF232325)
             val red = Color(0xFFE5484D)
             @Composable fun Big(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, sub: String, modifier: Modifier, onClick: () -> Unit) {
@@ -252,12 +251,11 @@ internal fun StoryVideo(url: String, paused: Boolean = false, onProgress: suspen
 }
 
 @Composable
-private fun QinblyStoryMenuRow(label: String, soon: Boolean = false, danger: Boolean = false, onClick: () -> Unit) {
+private fun QinblyStoryMenuRow(label: String, danger: Boolean = false, onClick: () -> Unit) {
     androidx.compose.material3.DropdownMenuItem(
         text = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(label, color = if (danger) Color(0xFFD33B3B) else Color.Unspecified)
-                if (soon) { Spacer(Modifier.width(8.dp)); Text("em breve", fontSize = 11.sp, color = Color(0xFF8E87A8)) }
             }
         },
         onClick = onClick

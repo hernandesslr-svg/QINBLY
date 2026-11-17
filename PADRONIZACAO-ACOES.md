@@ -377,7 +377,7 @@ Precisa de um projeto Firebase seu: `google-services.json`, dependência `fireba
 - O visual novo do editor (X, lateral só de edição de foto, filtros em bolinhas, "Avançar" azul) vale somente quando a pessoa entra por Criar > Galeria (initialMode == "gallery"). O editor depois de tirar foto/vídeo na câmera voltou ao visual anterior.
 
 ## Rodada 75 (v95) — Recortar, Formato, Espelhar, Ajustes e foto final com as edições
-- Editor (visual da galeria): lateral = Texto, Stickers, Formato, Recortar (só foto), Retoque (em breve), Filtros; seta abre Desenho, Espelhar e Ajustes (brilho e contraste).
+- Editor (visual da galeria): lateral = Texto, Stickers, Formato, Recortar (só foto), Retoque (funciona), Filtros; seta abre Desenho, Espelhar e Ajustes (brilho e contraste).
 - Recortar: tela própria com quadro, grade, zoom e arrasto com os dedos, proporções (Original, 1:1, 4:5, 9:16, 16:9), girar 90° e botão "Usar recorte". Formato continua trocando só a proporção (centralizada).
 - Espelhar e Girar geram uma cópia da foto (cache) que passa a ser a base da edição.
 - IMPORTANTE (correção): até a v94 o filtro, o texto, o sticker e o desenho do editor só apareciam na prévia; a foto publicada era a original (createAdjustedImage/createEditorOverlayImage não eram chamadas). Agora, ao tocar em "Avançar", a foto é renderizada com recorte + filtro (com intensidade) + brilho/contraste + texto/sticker/desenho (qinblyRenderEditedPhoto) e é essa a enviada (bakedUri). Vale também para fotos vindas da câmera. Várias fotos de uma vez (álbum) seguem sem edição. Se a renderização falhar, publica a original e avisa.
@@ -423,7 +423,7 @@ Precisa de um projeto Firebase seu: `google-services.json`, dependência `fireba
 ## Rodada 83 (v103) — Tela de busca completa
 - Ordem: campo (pílula, microfone quando vazio → reconhecimento de voz do Android, pt-BR) e filtros Tudo/Pessoas/Hashtags/Vídeos; Recentes; Top 5 lives em alta; Pesquisas em alta (palavras); Explorar por assunto (Música, Comida, Viagem, Esportes, Humor, Moda); Hashtags em alta no fim. Sem "Perto de mim" e sem sugestão de pessoas.
 - `QinblyTopLives`: lista com coroa ouro/prata/bronze (1º–3º) e medalha (4º–5º), foto com aro vermelho (iniciais se sem foto), nome, @, telespectadores/curtidas, selo AO VIVO; ordenação por Telespectadores ou Curtidas. `QinblyLive` ganhou `displayName` e `avatarUrl`. Lista vazia ("Ninguém ao vivo agora") até o servidor fornecer lives.
-- Filtros: Pessoas/Tudo buscam usuários; Hashtags trata o texto como hashtag; Vídeos mostra "chega em breve" (busca de publicações não existe no servidor).
+- Filtros: Pessoas/Tudo buscam usuários; Hashtags trata o texto como hashtag; Publicações busca na legenda das publicações (rota /api/search); Vídeos foi trocado por Publicações.
 - Novos ícones: mic, crown, medal, eye. Não compilado/testado.
 
 ## Rodada 84 (v104) — Aba Lives: Lives em alta + Ver mais
@@ -606,10 +606,16 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - **Câmera → Som → Gravar narração**: grava a voz (barra de gravação de voz) e entra como "Narração" no mesmo caminho do som escolhido (misturada ao vídeo gravado em seguida).
 - **Fundo colorido** também no topo dos comentários e na grade do próprio perfil (o perfil de outra pessoa já usava o card).
 - Removidas sobras sem uso: `NOTICE_TAGS`, `noticeKindLabel`, `noticeTagColor`, `CameraGlyph`. O recorte de fundo guardado sem botão ficou como está (decisão do dono).
-- Sem mudança: Lives/Presentes (de fora a pedido), "Retoque" (continua "em breve"), anexo "Outro" (não existe mais item que caia nele) e Clipes sem vídeo (aviso e volta).
+- Sem mudança: Lives/Presentes (de fora a pedido), anexo "Outro" (não existe mais item que caia nele) e Clipes sem vídeo (aviso e volta).
 
 ## Editor de foto: aba "Fundo" e "Recortar pessoa" removidos (pedido do dono)
 
 - Saiu do editor todo o painel "Fundo" (Efeitos, Cores, Degradês, Cenários, Galeria e Recortar) e o botão "Recortar pessoa / Salva nas suas figurinhas". Saíram também os estados e miniaturas desse painel e a função de recortar a pessoa (`fxPersonCutout`).
 - O editor continua com Retoque e HDR (`QinblyFxSpec(retouch, hdr)`). Criar figurinha pela galeria (Figurinhas) continua igual, só sem a opção de tirar o fundo.
 - Ficou no código, porque a câmera usa: o desfoque de fundo do botão "Fundo" da câmera (`fxReplaceBackground`, `fxPersonMask`) e a dependência `segmentation-selfie`.
+
+## Agendar publicação também em foto e vídeo; limpeza de "em breve"
+
+- **Agendar publicação** agora existe na tela "Nova publicação" de foto/vídeo (linha com relógio, "Remover agendamento", botão vira "Agendar"). Mesma regra do texto: de 1 min a 90 dias no futuro. No servidor (`qinbly-api` v5) o campo `scheduledAt` vale para texto, foto, álbum e vídeo (enquete não, ela já tem prazo). Não aparece quando a tela é de story.
+- Sai do ar o resto de "em breve" sem uso: parâmetro `soon` das linhas de menu do story e da folha da câmera.
+- Continua de fora a pedido: Lives (transmissão de verdade) e Presentes.

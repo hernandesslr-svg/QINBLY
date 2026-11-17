@@ -10946,9 +10946,9 @@ private fun QinblyFilterBubble(label: String, selected: Boolean, onClick: () -> 
 
 /** Linha das folhas da câmera (Adicionar som). */
 @Composable
-private fun QinblyCameraSheetRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String, soon: Boolean = false, onClick: () -> Unit) {
+private fun QinblyCameraSheetRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable(enabled = !soon) { onClick() }.padding(vertical = 10.dp).alpha(if (soon) 0.6f else 1f),
+        Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -10959,8 +10959,6 @@ private fun QinblyCameraSheetRow(icon: androidx.compose.ui.graphics.vector.Image
             Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             Text(subtitle, color = Color(0xFFA9B5C8), fontSize = 11.sp)
         }
-        if (soon) Text("Em breve", color = Color(0xFFA9B5C8), fontSize = 10.sp, fontWeight = FontWeight.Bold,
-            modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFF222C3D)).padding(horizontal = 8.dp, vertical = 3.dp))
     }
 }
 
@@ -11138,6 +11136,22 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var saveToDevice by remember { mutableStateOf(prefs.getBoolean("setting_save_default", false)) }
     var allowSaveOthers by remember { mutableStateOf(true) }
     var postVisibility by remember { mutableStateOf("Todos") }
+    var mediaScheduledMs by remember { mutableStateOf(0L) }
+    val pickMediaSchedule: () -> Unit = {
+        val now = java.util.Calendar.getInstance()
+        android.app.DatePickerDialog(context, { _, y, m, d ->
+            android.app.TimePickerDialog(context, { _, hh, mm ->
+                val picked = java.util.Calendar.getInstance().apply { set(y, m, d, hh, mm, 0); set(java.util.Calendar.MILLISECOND, 0) }.timeInMillis
+                if (picked < System.currentTimeMillis() + 60_000L) onNotice("Escolha um horário no futuro.")
+                else if (picked > System.currentTimeMillis() + 90L * 86_400_000L) onNotice("Agende para no máximo 90 dias.")
+                else mediaScheduledMs = picked
+                Unit
+            }, now.get(java.util.Calendar.HOUR_OF_DAY), now.get(java.util.Calendar.MINUTE), true).show()
+        }, now.get(java.util.Calendar.YEAR), now.get(java.util.Calendar.MONTH), now.get(java.util.Calendar.DAY_OF_MONTH)).apply {
+            datePicker.minDate = System.currentTimeMillis() - 1000
+            datePicker.maxDate = System.currentTimeMillis() + 90L * 86_400_000L
+        }.show()
+    }
     val taggedPeople = remember { mutableStateListOf<String>() }
     var showTagDialog by remember { mutableStateOf(false) }
     var coverPicker by remember { mutableStateOf(false) }
@@ -12757,6 +12771,8 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                             val postCaption = qinblyAttachMusic(caption, musicToSend)
                             val directNow = storyDirect; val hoursNow = storyHours; val audienceNow = storyAudience; val feedNow = storyAlsoFeed
                             val cityNow = QinblyApi.myCity(prefs)
+                            val scheduledIsoMedia = if (mediaScheduledMs > 0L && !QinblyComposeSeed.story) java.time.Instant.ofEpochMilli(mediaScheduledMs).toString() else ""
+                            val wasScheduled = scheduledIsoMedia.isNotBlank()
                             QinblyHashtagStore.record(context, caption)
                             Thread {
                                 try {
@@ -12816,9 +12832,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                                             "qinbly-album-${System.currentTimeMillis()}-${index}.${extraExt}", extraMime, extraSize))
                                                     } finally { extraFile.delete() }
                                                 }
-                                                QinblyApi.createPhotoAlbum(token, postCaption, uploadedIds, if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList())
+                                                QinblyApi.createPhotoAlbum(token, postCaption, uploadedIds, if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList(), scheduledIsoMedia)
                                             } else {
-                                                QinblyApi.createMediaPost(token, postCaption, fileId, if (mime.startsWith("video/")) "video" else "image", if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList())
+                                                QinblyApi.createMediaPost(token, postCaption, fileId, if (mime.startsWith("video/")) "video" else "image", if (postVisibility == "Só eu") "private" else "public", taggedPeople.toList(), scheduledIsoMedia)
                                             }
                                         } finally {
                                             tempUploadFile?.delete()
@@ -12828,6 +12844,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                         publishing = false
                                         caption = ""
                                         storyMusic = null
+                                        mediaScheduledMs = 0L
                                         selectedUri = null
                                         gallerySelection.clear()
                                         selectedType = ""
@@ -12835,7 +12852,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                         showComposer = false
                                         sourceUri = null
                                         coverBitmap = null
-                                        onNotice(if (QinblyComposeSeed.collabNew) "Story coletivo publicado. Fica no ar por 24 horas." else if (QinblyComposeSeed.contribTo.isNotBlank()) "Resposta enviada." else if (QinblyComposeSeed.story) (if (directNow) "Story publicado. Fica no ar por $hoursNow horas." + (if (feedNow) " Também foi para o feed." else "") else "Story publicado. Fica no ar por 24 horas.") else "Publicado")
+                                        onNotice(if (QinblyComposeSeed.collabNew) "Story coletivo publicado. Fica no ar por 24 horas." else if (QinblyComposeSeed.contribTo.isNotBlank()) "Resposta enviada." else if (QinblyComposeSeed.story) (if (directNow) "Story publicado. Fica no ar por $hoursNow horas." + (if (feedNow) " Também foi para o feed." else "") else "Story publicado. Fica no ar por 24 horas.") else if (wasScheduled) "Publicação agendada. Aparece no horário escolhido." else "Publicado")
                                         QinblyComposeSeed.story = false
                                         QinblyComposeSeed.contribTo = ""
                                         QinblyComposeSeed.collabNew = false
@@ -13682,6 +13699,12 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     postVisibility = if (postVisibility == "Todos") "Só eu" else "Todos"
                     onNotice(if (postVisibility == "Só eu") "Só você verá esta publicação, no seu perfil." else "Todos poderão ver esta publicação.")
                 })
+                if (!QinblyComposeSeed.story) {
+                    QinblyPublishRow(QinblyCameraIcons.clock, "Agendar publicação",
+                        value = if (mediaScheduledMs > 0L) java.text.SimpleDateFormat("dd/MM HH:mm", java.util.Locale.getDefault()).format(java.util.Date(mediaScheduledMs)) else "", onClick = pickMediaSchedule)
+                    if (mediaScheduledMs > 0L) Text("Remover agendamento", color = QinblyBrand.Accent, fontSize = 13.sp,
+                        modifier = Modifier.clickable { mediaScheduledMs = 0L }.padding(start = 34.dp, bottom = 8.dp))
+                }
                 QinblyPublishRow(QinblyCameraIcons.comment, "Permitir comentários", checked = allowComments, onChecked = { allowComments = it })
                 QinblyPublishRow(QinblyCameraIcons.share, "Permitir compartilhar", checked = allowSharing, onChecked = { allowSharing = it })
                 QinblyPublishRow(QinblyCameraIcons.download, "Permitir que salvem", subtitle = "Outras pessoas podem baixar este conteúdo", checked = allowSaveOthers, onChecked = { allowSaveOthers = it })
@@ -13702,7 +13725,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 if (publishing) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp, color = Color.White)
                 else Icon(Icons.Default.Send, contentDescription = null, tint = Color.White)
                 Spacer(Modifier.width(8.dp))
-                Text(if (publishing) "Publicando…" else "Publicar", fontWeight = FontWeight.Bold, color = Color.White)
+                Text(if (publishing) "Publicando…" else if (mediaScheduledMs > 0L && !QinblyComposeSeed.story) "Agendar" else "Publicar", fontWeight = FontWeight.Bold, color = Color.White)
             }
           }
         }
