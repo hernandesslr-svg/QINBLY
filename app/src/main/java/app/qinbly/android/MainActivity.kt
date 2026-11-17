@@ -8636,6 +8636,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
             } } catch (_: Exception) { storyTray }
         }
     }
+    LaunchedEffect(Unit) { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyStoryMute.sync(prefs) } }
     var moods by remember { mutableStateOf<Map<String, QinblyMood>>(emptyMap()) }
     LaunchedEffect(storyTray) {
         val token = prefs.getString("token", null)

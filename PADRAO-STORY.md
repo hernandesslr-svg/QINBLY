@@ -6,7 +6,7 @@
 
 ## Menu dos três pontinhos
 - Seu story: Salvar na galeria (não aparece em story de publicação alheia nem em story de texto), Quem pode ver (Todos/Amigos/Seguidores/Perto de você, muda o story já publicado), Destacar no perfil (pede o nome e guarda o story na linha de Destaques do perfil; funcional), Excluir story (confirmação).
-- Story de outra pessoa: Silenciar @pessoa (só neste aparelho: vai para o fim da fila, sem aro colorido; o mesmo item vira "Reativar"), Denunciar story (motivo, vai como denúncia da pessoa), Bloquear @pessoa (confirmação).
+- Story de outra pessoa: Silenciar @pessoa (vale em todos os aparelhos, guardado na tabela story_mutes: vai para o fim da fila, sem aro colorido; o mesmo item vira "Reativar"), Denunciar story (motivo, vai como denúncia da pessoa), Bloquear @pessoa (confirmação).
 - Resposta de story coletivo: Apagar resposta (quem respondeu ou o dono do story), Ver perfil, Denunciar, Bloquear.
 - Story de publicação de outro perfil: entram também "Ver original" e "Ver perfil de @autor" no topo do menu.
 - Item que ainda não funciona aparece com "em breve" — nunca esconder.

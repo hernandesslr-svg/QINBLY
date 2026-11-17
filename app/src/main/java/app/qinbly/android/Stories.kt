@@ -897,7 +897,7 @@ internal fun QinblyHighlightsRow(username: String, prefs: android.content.Shared
 }
 
 
-/** Stories silenciados (só neste aparelho): a pessoa vai para o fim da fila, sem o aro colorido. */
+/** Stories silenciados: a pessoa vai para o fim da fila, sem o aro colorido. Fica guardado no celular (rápido) e no servidor (vale em todos os aparelhos). */
 internal object QinblyStoryMute {
     var version by mutableIntStateOf(0)
     private fun all(prefs: android.content.SharedPreferences): Set<String> = prefs.getStringSet("story_muted", emptySet()).orEmpty()
@@ -905,6 +905,32 @@ internal object QinblyStoryMute {
         version // faz a tela recompor quando muda
         return username.lowercase() in all(prefs)
     }
-    fun mute(prefs: android.content.SharedPreferences, username: String) { prefs.edit().putStringSet("story_muted", all(prefs) + username.lowercase()).apply(); version++ }
-    fun unmute(prefs: android.content.SharedPreferences, username: String) { prefs.edit().putStringSet("story_muted", all(prefs) - username.lowercase()).apply(); version++ }
+    fun mute(prefs: android.content.SharedPreferences, username: String) {
+        prefs.edit().putStringSet("story_muted", all(prefs) + username.lowercase()).apply(); version++
+        push(prefs, username, true)
+    }
+    fun unmute(prefs: android.content.SharedPreferences, username: String) {
+        prefs.edit().putStringSet("story_muted", all(prefs) - username.lowercase()).apply(); version++
+        push(prefs, username, false)
+    }
+    /** Avisa o servidor em segundo plano (para valer em todos os aparelhos). Se faltar rede, o próximo sync acerta. */
+    private fun push(prefs: android.content.SharedPreferences, username: String, muted: Boolean) {
+        val token = prefs.getString("token", null)?.takeIf { it.isNotBlank() } ?: return
+        Thread {
+            try { QinblyApi.rest(token, "POST", "rpc/story_mute_set", JSONObject().put("p_username", username.lowercase()).put("p_muted", muted).toString(), "return=minimal") } catch (_: Exception) {}
+        }.start()
+    }
+    /** Busca a lista do servidor. Na primeira vez, sobe o que já estava só neste celular; depois o servidor manda. Chamar fora da tela principal. */
+    fun sync(prefs: android.content.SharedPreferences) {
+        val token = prefs.getString("token", null)?.takeIf { it.isNotBlank() } ?: return
+        try {
+            val arr = org.json.JSONArray(QinblyApi.rest(token, "POST", "rpc/story_mute_list", "{}"))
+            val server = (0 until arr.length()).map { arr.optString(it).lowercase() }.filter { it.isNotBlank() }.toSet()
+            if (!prefs.getBoolean("story_mute_migrated", false)) {
+                for (u in all(prefs) - server) QinblyApi.rest(token, "POST", "rpc/story_mute_set", JSONObject().put("p_username", u).put("p_muted", true).toString(), "return=minimal")
+                prefs.edit().putBoolean("story_mute_migrated", true).putStringSet("story_muted", all(prefs) + server).apply()
+            } else prefs.edit().putStringSet("story_muted", server).apply()
+            version++
+        } catch (_: Exception) {}
+    }
 }
