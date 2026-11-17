@@ -660,3 +660,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 
 - Só as cores mudaram (layout, foto e campos iguais). Cada uma das 40 categorias tem uma cor própria, sem repetir (`categoryColors`, mesma ordem de `availableCategories`; se entrar categoria nova, acrescentar uma cor nova ao fim da lista).
 - Fundo transparente (16% da cor) e contorno de 1 dp (55%); selecionada fica com fundo 50%, contorno cheio de 2 dp e um check na frente do nome. O texto continua na cor padrão do tema.
+
+## Perfil: botão Editar perfil no tema branco
+
+- No tema branco o botão "Editar perfil" fica azul bem clarinho (`#E7F0FD`), sem contorno, com texto e lápis em `#1160D0`. Antes parecia lilás/rosa. No tema escuro continua o cinza de antes.
+- Tons de "branco" do tema claro (em `QiblyTheme`): fundo `#FBF9FF`, cartões `#FFFFFF`, campos/áreas suaves `#F3F0FA`, bordas `#E9E4F5`. Fundo, áreas suaves e bordas têm um fundo levemente lilás, herança do roxo antigo da marca.

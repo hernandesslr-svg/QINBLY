@@ -9000,7 +9000,16 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             ProfileStat("Seguidores", followersCount.toString(), Icons.Default.Groups) { onStat("Seguidores") }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(onClick = { if (username.isBlank()) onAuth() else onEdit() }, modifier = Modifier.weight(1f)) {
+            if (QiblyTheme.dark) OutlinedButton(onClick = { if (username.isBlank()) onAuth() else onEdit() }, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(17.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Editar perfil")
+            } else OutlinedButton(
+                onClick = { if (username.isBlank()) onAuth() else onEdit() }, modifier = Modifier.weight(1f),
+                // Tema branco: azul bem clarinho, sem contorno, com o texto e o lápis no azul do app.
+                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFFE7F0FD), contentColor = Color(0xFF1160D0)),
+                border = BorderStroke(0.dp, Color.Transparent)
+            ) {
                 Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(17.dp))
                 Spacer(Modifier.width(6.dp))
                 Text("Editar perfil")
