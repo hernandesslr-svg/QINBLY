@@ -8969,16 +8969,16 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
         Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             if (profileVerified) QinblyVerifiedBadge(22.dp)
         }
-        Text(if (username.isBlank()) "Entre ou crie sua conta" else "@${username.removePrefix("@")}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
+        Text(if (username.isBlank()) "Entre ou crie sua conta" else "@${username.removePrefix("@")}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 24.dp))
         if (shownBio.startsWith("✦ ")) {
             Text(shownBio.substringBefore('\n').removePrefix("✦ "), Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 7.dp), color = RemoteAppearance.screenTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
             val description = shownBio.substringAfter('\n', "")
             if (description.isNotBlank()) Text(description, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 5.dp), color = RemoteAppearance.screenSecondaryTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, maxLines = 4)
         } else if (shownBio.isNotBlank()) Text(shownBio, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 10.dp), color = RemoteAppearance.screenTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
-        else Text("Adicione uma descrição ao seu perfil", Modifier.padding(top = 9.dp), color = RemoteAppearance.screenSecondaryTextColor)
+        else Text("Adicione uma descrição ao seu perfil", Modifier.padding(top = 9.dp), color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
         Row(Modifier.fillMaxWidth().padding(top = 9.dp, start = 12.dp, end = 12.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             if (shownCountry.isNotBlank()) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {

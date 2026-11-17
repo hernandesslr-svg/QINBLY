@@ -647,3 +647,7 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 
 - Conta nova criada sem nome escolhido (principalmente pelo Google) recebe `user_` + 8 letras e números (ex.: `user_66b473ea`), em vez de 32. É o padrão da coluna `profiles.username` (`SUPABASE/26_username_curto_padrao.sql`, já aplicado). A pessoa troca depois em Editar perfil (3 a 24 caracteres).
 - Contas que já existiam não mudam.
+
+## Perfil: letras do cabeçalho um degrau menores
+
+- Nome de exibição: de `headlineSmall` para `bodyLarge` (negrito), numa linha só, com "…" se for muito comprido. @usuário: de `bodyMedium` para `bodySmall`. "Adicione uma descrição ao seu perfil": agora `bodyMedium`. Contadores (Publicações, Seguindo, Seguidores), abas e bio não mudaram.
