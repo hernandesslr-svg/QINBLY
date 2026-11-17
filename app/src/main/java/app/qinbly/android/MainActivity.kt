@@ -296,6 +296,8 @@ internal object QinblyBrand {
     val AccentSoft: Color get() = if (QiblyTheme.dark) Color(0xFF16284A) else Color(0xFFEAF2FE)
     val Highlight = Color(0xFFFFB020)
     val Pink = Color(0xFFFF4F9A)
+    /** Vermelho clássico do coração de curtida (preenchido). */
+    val Liked = Color(0xFFE53935)
     val Ink = Color(0xFF0B1F2A)
 }
 
@@ -3212,7 +3214,7 @@ private fun QinblyHeartBurst(trigger: Int, modifier: Modifier = Modifier) {
     val p = progress.value
     if (trigger > 0 && p < 1f) {
         Icon(
-            Icons.Default.Favorite, contentDescription = null, tint = Color(0xFFFF2D3F),
+            Icons.Default.Favorite, contentDescription = null, tint = QinblyBrand.Liked,
             modifier = modifier.size(96.dp).graphicsLayer {
                 val sc = if (QiblyTheme.reduceMotion) 1f else 0.6f + 0.6f * minOf(p * 3f, 1f)
                 scaleX = sc; scaleY = sc
@@ -3834,7 +3836,7 @@ private fun QinblyLikeButton(liked: Boolean, count: Int, onClick: () -> Unit, to
         Icon(
             if (liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
             contentDescription = if (liked) "Descurtir" else "Curtir",
-            tint = if (liked) QinblyBrand.Pink else qinblyIconTint(tone),
+            tint = if (liked) QinblyBrand.Liked else qinblyIconTint(tone),
             modifier = Modifier.size(24.dp).graphicsLayer { scaleX = pop.value; scaleY = pop.value }
         )
     }
@@ -4488,7 +4490,7 @@ private fun QinblyCommentsDialog(
                                         }.start()
                                     }.padding(horizontal = 6.dp, vertical = 4.dp)
                                 ) {
-                                    Icon(if (cLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Curtir comentário", tint = if (cLiked) Color(0xFFFF3045) else RemoteAppearance.commentTextColor, modifier = Modifier.size(22.dp))
+                                    Icon(if (cLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Curtir comentário", tint = if (cLiked) QinblyBrand.Liked else RemoteAppearance.commentTextColor, modifier = Modifier.size(22.dp))
                                     if (cCount > 0) Text(cCount.toString(), color = RemoteAppearance.commentSecondaryTextColor, fontSize = 12.sp)
                                 }
                             }

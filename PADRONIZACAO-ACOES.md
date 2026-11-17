@@ -721,3 +721,6 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 ## Busca de pessoas tolerante e perfil privado
 - Perfil privado **continua aparecendo** na busca e tem página pública; a privacidade só restringe publicações, stories e quem segue (regra `qinbly_can_see_author`). Nada no servidor esconde o perfil na busca.
 - Caso real: pesquisar "anarose" não achava `ana_rose` ("Ana Rose") porque o texto precisava casar exatamente. Agora a busca de pessoas (`searchUsers` e `searchAll`) também tenta uma versão tolerante (4+ letras): as letras digitadas com curinga entre elas, então "anarose" acha "ana_rose" e "Ana Rose". Resultados exatos vêm primeiro.
+
+## Cor da curtida: vermelho clássico
+- O coração de curtida é **todo preenchido** em vermelho clássico `#E53935` (`QinblyBrand.Liked`); sem curtir, só o contorno. Vale para a curtida da publicação, o coração animado do toque duplo e a curtida de comentário. O rosa antigo (`#FF4F9A`) não é mais usado para curtida.
