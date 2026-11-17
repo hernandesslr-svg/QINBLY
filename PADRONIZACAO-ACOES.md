@@ -619,3 +619,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - **Agendar publicação** agora existe na tela "Nova publicação" de foto/vídeo (linha com relógio, "Remover agendamento", botão vira "Agendar"). Mesma regra do texto: de 1 min a 90 dias no futuro. No servidor (`qinbly-api` v5) o campo `scheduledAt` vale para texto, foto, álbum e vídeo (enquete não, ela já tem prazo). Não aparece quando a tela é de story.
 - Sai do ar o resto de "em breve" sem uso: parâmetro `soon` das linhas de menu do story e da folha da câmera.
 - Continua de fora a pedido: Lives (transmissão de verdade) e Presentes.
+
+## "Fundo" tirado de vez (pedido do dono)
+
+- O botão/opção "Fundo" não existe mais em lugar nenhum (nem câmera, nem editor). Saiu também o código que ficava por trás: `fxReplaceBackground`, `fxPersonMask`, cenários/degradês, os campos de fundo do `QinblyFxSpec`, o estado `bgBlurOn` da câmera e a dependência `segmentation-selfie`.
+- Ficam só Retoque e HDR nos efeitos de foto. O fundo desfocado das laterais de foto/vídeo no Formato (`blurBg`) é outra coisa (preenchimento do quadro) e continua.

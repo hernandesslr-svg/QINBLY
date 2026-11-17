@@ -11087,7 +11087,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var exposureIndex by remember { mutableIntStateOf(0) }
     var nightOn by remember { mutableStateOf(false) }
     var retouchOn by remember { mutableStateOf(false) }
-    var bgBlurOn by remember { mutableStateOf(false) }
     var hdrOn by remember { mutableStateOf(false) }
     var collageCount by remember { mutableIntStateOf(0) }
     val collageShots = remember { mutableStateListOf<Uri>() }
@@ -11707,9 +11706,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     } else openEditor(uri)
                 }
                 fun withEffects(uri: Uri) {
-                    if (retouchOn || bgBlurOn || hdrOn) {
+                    if (retouchOn || hdrOn) {
                         flashLabel = "Aplicando efeitos…"
-                        qinblyApplyPhotoEffects(context, uri, retouchOn, bgBlurOn, hdrOn) { fx, note ->
+                        qinblyApplyPhotoEffects(context, uri, retouchOn, hdrOn) { fx, note ->
                             if (note.isNotBlank()) onNotice(note)
                             finishPhoto(fx ?: uri)
                         }

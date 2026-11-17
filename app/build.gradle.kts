@@ -76,7 +76,6 @@ dependencies {
     implementation("androidx.media3:media3-effect:1.5.1")
     implementation("androidx.media3:media3-common:1.5.1")
     implementation("com.google.mlkit:face-detection:16.1.7")
-    implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta6")
     implementation("com.google.mediapipe:tasks-vision:0.10.18")
     implementation("com.google.android.filament:filament-android:1.70.0")
     implementation("com.google.android.filament:gltfio-android:1.70.0")
