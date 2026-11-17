@@ -1259,7 +1259,38 @@ object QinblyApi {
         }
     }
 
+    /**
+     * Busca tolerante: "anarose" também acha "ana_rose" e "Ana Rose" (o texto digitado vira letras com curinga entre elas).
+     * Só roda com 4+ letras; os resultados exatos vêm primeiro.
+     */
+    private fun fuzzyUsers(normalized: String, token: String?): List<UserSummary> {
+        val compact = normalized.replace(Regex("[\\s_.]+"), "")
+        if (compact.length < 4 || compact.length > 20) return emptyList()
+        val pattern = compact.toCharArray().joinToString("%")
+        return try {
+            val response = request("GET", "/api/users/search?q=" + java.net.URLEncoder.encode(pattern, "UTF-8") + "&limit=30", token = token ?: storedAccessToken())
+            val arr = response.optJSONArray("users") ?: org.json.JSONArray()
+            (0 until arr.length()).mapNotNull { i ->
+                val u = arr.optJSONObject(i) ?: return@mapNotNull null
+                val username = u.optString("username").trim()
+                if (username.isBlank()) return@mapNotNull null
+                UserSummary(
+                    id = u.optString("id").ifBlank { username }, username = username,
+                    displayName = u.optString("displayName", u.optString("display_name")).ifBlank { username },
+                    bio = u.optString("bio"), avatarUrl = u.optString("avatarUrl", u.optString("avatar_url")),
+                    verified = u.optBoolean("verified", u.optBoolean("is_verified")), isFollowing = u.optBoolean("isFollowing")
+                )
+            }
+        } catch (_: Exception) { emptyList() }
+    }
+
     fun searchUsers(query: String, token: String? = null): List<UserSummary> {
+        val exact = searchUsersExact(query, token)
+        val normalized = query.trim().removePrefix("@").trim()
+        return (exact + fuzzyUsers(normalized, token)).distinctBy { it.username.lowercase() }
+    }
+
+    private fun searchUsersExact(query: String, token: String? = null): List<UserSummary> {
         val normalized = query.trim().removePrefix("@").trim()
         if (normalized.length < 2) return emptyList()
         val q = java.net.URLEncoder.encode(normalized, "UTF-8")
@@ -1301,7 +1332,7 @@ object QinblyApi {
                 bio = u.optString("bio"), avatarUrl = u.optString("avatarUrl", u.optString("avatar_url")),
                 verified = u.optBoolean("verified", u.optBoolean("is_verified")), isFollowing = u.optBoolean("isFollowing")
             )
-        }.distinctBy { it.username.lowercase() }
+        }.let { exact -> (exact + fuzzyUsers(normalized, token)).distinctBy { it.username.lowercase() } }
         val tagsArr = response.optJSONArray("tags") ?: org.json.JSONArray()
         val tags = (0 until tagsArr.length()).mapNotNull { i -> tagsArr.optJSONObject(i)?.let { it.optString("tag") to it.optInt("posts") } }.filter { it.first.isNotBlank() }
         return SearchAll(users, parsePosts(response.optJSONArray("posts")), tags)

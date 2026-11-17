@@ -717,3 +717,7 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 ## Barra de cima do Início some ao rolar (teste)
 - No Início, a barra com QINBLY, busca e sino sobe junto com a rolagem do feed e volta assim que a pessoa rola um pouco para cima. As abas (Descobrir, Seguindo, Em alta…) ficam fixas embaixo dela.
 - Implementação: `NestedScrollConnection` na coluna do `FeedPage` (`headerOffset`/`headerPx`); trocar de aba ou tocar em "Início" para ir ao topo mostra a barra de novo.
+
+## Busca de pessoas tolerante e perfil privado
+- Perfil privado **continua aparecendo** na busca e tem página pública; a privacidade só restringe publicações, stories e quem segue (regra `qinbly_can_see_author`). Nada no servidor esconde o perfil na busca.
+- Caso real: pesquisar "anarose" não achava `ana_rose` ("Ana Rose") porque o texto precisava casar exatamente. Agora a busca de pessoas (`searchUsers` e `searchAll`) também tenta uma versão tolerante (4+ letras): as letras digitadas com curinga entre elas, então "anarose" acha "ana_rose" e "Ana Rose". Resultados exatos vêm primeiro.
