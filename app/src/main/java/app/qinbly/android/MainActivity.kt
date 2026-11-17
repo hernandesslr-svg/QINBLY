@@ -517,7 +517,7 @@ private fun QinblyVerificationCard(token: String, onNotice: (String) -> Unit) {
 
 /** Selo de conta verificada (aparece ao lado do nome): selo ondulado azul com check branco. */
 @androidx.compose.runtime.Composable
-private fun QinblyVerifiedBadge(size: Dp = 16.dp) {
+internal fun QinblyVerifiedBadge(size: Dp = 16.dp) {
     androidx.compose.foundation.Canvas(Modifier.size(size)) {
         val w = this.size.minDimension
         val c = androidx.compose.ui.geometry.Offset(w / 2f, w / 2f)
@@ -11818,7 +11818,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         Box(Modifier.fillMaxWidth().height(0.5.dp).background(QiblyTheme.border))
                         QinblyPublishRow(QinblyCameraIcons.people, "Marcar pessoas", value = if (taggedPeople.isEmpty()) "" else taggedPeople.size.toString(), onClick = { showTagDialog = true })
                         if (showTagDialog) {
-                            QinblyTagPeopleDialog(prefs.getString("token", null), taggedPeople.toList(), QinblyBrand.Accent, onDismiss = { showTagDialog = false }) { chosen ->
+                            QinblyTagPeopleDialog(prefs.getString("token", null), prefs.getString("username", "").orEmpty(), taggedPeople.toList(), QinblyBrand.Accent, onDismiss = { showTagDialog = false }) { chosen ->
                                 taggedPeople.clear(); taggedPeople.addAll(chosen); showTagDialog = false
                             }
                         }
@@ -13652,7 +13652,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 Box(Modifier.fillMaxWidth().height(0.5.dp).background(QiblyTheme.border))
                 QinblyPublishRow(QinblyCameraIcons.people, "Marcar pessoas", value = if (taggedPeople.isEmpty()) "" else taggedPeople.size.toString(), onClick = { showTagDialog = true })
                 if (showTagDialog) {
-                    QinblyTagPeopleDialog(prefs.getString("token", null), taggedPeople.toList(), QinblyBrand.Accent, onDismiss = { showTagDialog = false }) { chosen ->
+                    QinblyTagPeopleDialog(prefs.getString("token", null), prefs.getString("username", "").orEmpty(), taggedPeople.toList(), QinblyBrand.Accent, onDismiss = { showTagDialog = false }) { chosen ->
                         taggedPeople.clear(); taggedPeople.addAll(chosen); showTagDialog = false
                     }
                 }

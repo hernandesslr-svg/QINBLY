@@ -4,6 +4,13 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -112,48 +119,113 @@ internal fun QinblyPollCreateDialog(accent: Color, onDismiss: () -> Unit, onCrea
     )
 }
 
-/** Janela "Marcar pessoas": busca por nome ou @ e escolhe até 10. Devolve os @ escolhidos (sem o "@"). */
+/**
+ * Tela cheia "Marcar pessoas": abas Seguindo e Seguidores, busca, check na linha de quem foi marcado (até 10).
+ * Devolve os @ escolhidos (sem o "@").
+ */
 @Composable
-internal fun QinblyTagPeopleDialog(token: String?, initial: List<String>, accent: Color, onDismiss: () -> Unit, onConfirm: (List<String>) -> Unit) {
+internal fun QinblyTagPeopleDialog(token: String?, myUsername: String, initial: List<String>, accent: Color, onDismiss: () -> Unit, onConfirm: (List<String>) -> Unit) {
+    var tab by remember { mutableStateOf(0) }
     var query by remember { mutableStateOf("") }
-    var results by remember { mutableStateOf<List<QinblyApi.UserSummary>>(emptyList()) }
+    var loading by remember { mutableStateOf(false) }
+    var following by remember { mutableStateOf<List<QinblyApi.UserSummary>>(emptyList()) }
+    var followers by remember { mutableStateOf<List<QinblyApi.UserSummary>>(emptyList()) }
+    var found by remember { mutableStateOf<List<QinblyApi.UserSummary>>(emptyList()) }
     val chosen = remember { mutableStateListOf<String>().apply { addAll(initial) } }
+    val limitNotice = remember { mutableStateOf(false) }
+
+    LaunchedEffect(myUsername) {
+        val name = myUsername.trim().removePrefix("@")
+        if (name.isBlank()) return@LaunchedEffect
+        loading = true
+        following = try { withContext(Dispatchers.IO) { QinblyApi.getConnections(name, "following") } } catch (_: Exception) { emptyList() }
+        followers = try { withContext(Dispatchers.IO) { QinblyApi.getConnections(name, "followers") } } catch (_: Exception) { emptyList() }
+        loading = false
+    }
     LaunchedEffect(query) {
         val q = query.trim().removePrefix("@")
         if (q.length < 2) {
-            results = emptyList()
+            found = emptyList()
         } else {
             delay(250)
-            results = try { withContext(Dispatchers.IO) { QinblyApi.searchUsers(q, token) } } catch (_: Exception) { emptyList() }
+            found = try { withContext(Dispatchers.IO) { QinblyApi.searchUsers(q, token) } } catch (_: Exception) { emptyList() }
         }
     }
-    AlertDialog(
+
+    val q = query.trim().removePrefix("@").lowercase()
+    val base = if (tab == 0) following else followers
+    val local = if (q.isEmpty()) base else base.filter { it.username.lowercase().contains(q) || it.displayName.lowercase().contains(q) }
+    val shown = if (q.length >= 2) (local + found.filter { f -> local.none { it.username.equals(f.username, ignoreCase = true) } }) else local
+
+    androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
-        title = { Text("Marcar pessoas") },
-        text = { QinblyClearFocusWhenKeyboardCloses();
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(query, { query = it.take(30) }, label = { Text("Buscar pessoa") }, singleLine = true)
-                if (chosen.isNotEmpty()) Text("Marcadas: " + chosen.joinToString(", ") { "@$it" }, color = accent, fontSize = 13.sp)
-                LazyColumn(Modifier.heightIn(max = 240.dp)) {
-                    items(results, key = { it.id }) { user ->
-                        val on = user.username in chosen
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+    ) {
+        Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding().navigationBarsPadding().imePadding()) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(36.dp).clip(CircleShape).clickable(onClick = onDismiss), contentAlignment = Alignment.CenterStart) {
+                    QinblyCloseIcon(QiblyTheme.text, 22.dp)
+                }
+                Text("Marcar pessoas", color = QiblyTheme.text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Text("Pronto", color = accent, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { onConfirm(chosen.toList()) }.padding(horizontal = 6.dp, vertical = 6.dp))
+            }
+            Box(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp)) {
+                OutlinedTextField(query, { query = it.take(30) }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Buscar pessoa") }, singleLine = true)
+            }
+            if (limitNotice.value) Text("Você pode marcar até 10 pessoas.", color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+            Row(Modifier.fillMaxWidth().padding(top = 6.dp)) {
+                listOf("Seguindo", "Seguidores").forEachIndexed { i, label ->
+                    Column(Modifier.weight(1f).clickable { tab = i }, horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(label, color = if (tab == i) QiblyTheme.text else QiblyTheme.secondary, style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (tab == i) FontWeight.SemiBold else FontWeight.Normal, modifier = Modifier.padding(vertical = 10.dp))
+                        Box(Modifier.fillMaxWidth().height(2.dp).background(if (tab == i) QiblyTheme.text else Color.Transparent))
+                    }
+                }
+            }
+            Box(Modifier.fillMaxWidth().height(0.5.dp).background(QiblyTheme.border))
+            if (shown.isEmpty()) {
+                Box(Modifier.fillMaxWidth().weight(1f).padding(24.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        if (loading) "Carregando…" else if (q.isNotEmpty()) "Ninguém encontrado." else if (tab == 0) "Você ainda não segue ninguém." else "Você ainda não tem seguidores.",
+                        color = QiblyTheme.secondary, style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            } else {
+                LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
+                    items(shown, key = { it.username.lowercase() }) { user ->
+                        val on = chosen.any { it.equals(user.username, ignoreCase = true) }
                         Row(
                             Modifier.fillMaxWidth().clickable {
-                                if (on) chosen.remove(user.username) else if (chosen.size < 10) chosen.add(user.username)
-                            }.padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                if (on) { chosen.removeAll { it.equals(user.username, ignoreCase = true) }; limitNotice.value = false }
+                                else if (chosen.size < 10) chosen.add(user.username)
+                                else limitNotice.value = true
+                            }.padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Column(Modifier.weight(1f)) {
-                                Text(user.displayName.ifBlank { user.username }, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                                Text("@" + user.username, fontSize = 12.sp, color = Color.Gray)
+                            Box(Modifier.size(44.dp).clip(CircleShape).background(QiblyTheme.soft), contentAlignment = Alignment.Center) {
+                                if (user.avatarUrl.isNotBlank()) {
+                                    coil.compose.AsyncImage(model = user.avatarUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                                } else {
+                                    Text((user.displayName.ifBlank { user.username }).take(1).uppercase(), color = QiblyTheme.text, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                }
                             }
-                            if (on) QinblyCheckIcon(accent, 18.dp)
+                            Column(Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(user.displayName.ifBlank { user.username }, color = QiblyTheme.text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                                    if (user.verified) QinblyVerifiedBadge(16.dp)
+                                }
+                                Text("@" + user.username, color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                            if (on) {
+                                Box(Modifier.size(24.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) { QinblyCheckIcon(Color.White, 15.dp) }
+                            } else {
+                                Box(Modifier.size(24.dp).clip(CircleShape).border(1.5.dp, QiblyTheme.border, CircleShape))
+                            }
                         }
                     }
                 }
             }
-        },
-        confirmButton = { TextButton(onClick = { onConfirm(chosen.toList()) }) { Text("Pronto", color = accent) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
-    )
+        }
+    }
 }

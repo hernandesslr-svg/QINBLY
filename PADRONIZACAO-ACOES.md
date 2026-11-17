@@ -688,3 +688,10 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - Padrão do app: todo campo de texto precisa manter a palavra que o teclado está montando (a "composição" do `TextFieldValue`), senão o teclado esconde a faixa de sugestões (todo → todos, todas).
 - Causa do sumiço no Editar perfil (Nome, Nome de usuário, Bio): `qinblySanitized` (Extras.kt) refazia o `TextFieldValue` a cada letra, sem a composição. Agora, se o filtro não mudou nada no texto, devolve o valor original com a composição; só refaz quando precisa descartar um caractere (ex.: maiúscula no nome de usuário).
 - Regra para campos novos: ao limitar/filtrar o texto, copiar `value.composition` junto (como em `Extras.kt` nos comentários) ou devolver o próprio valor quando nada mudou. Não usar `KeyboardType.Password/VisiblePassword` nem desligar `autoCorrect` em campo de texto comum.
+
+## Marcar pessoas (tela cheia)
+- Ao tocar em "Marcar pessoas" na publicação abre uma tela cheia (`QinblyTagPeopleDialog`, em `ChatExtras.kt`), não mais a janelinha.
+- Topo: X (fecha sem salvar), título "Marcar pessoas" e "Pronto" (salva). Embaixo: busca "Buscar pessoa" e as abas **Seguindo** e **Seguidores** (não existe aba "Amigos").
+- Cada linha: foto (ou inicial), nome com o selo de verificado (`QinblyVerifiedBadge`, sem escrever "verificado"), @usuário e círculo à direita; marcado = círculo azul com check branco.
+- Não há chips/marcações azuis embaixo da busca nem contador; o limite é de 10 pessoas (ao passar, aparece "Você pode marcar até 10 pessoas.").
+- Digitando 2+ letras, filtra a aba atual e acrescenta o resultado da busca geral. Devolve os @ sem o "@".
