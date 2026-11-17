@@ -9271,8 +9271,8 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
             !createAccount && !typed.contains("@") && !typed.removePrefix("@").matches(Regex("[A-Za-z0-9_.]{3,30}")) -> error = "Nome de usuário inválido. Use letras, números, ponto ou sublinhado."
             password.length < 8 && createAccount -> error = "A senha precisa ter pelo menos 8 caracteres."
             password.isBlank() -> error = "Digite sua senha."
-            createAccount && username.trim().length < 5 -> error = "O nome de usuário precisa ter 5 caracteres ou mais."
-            createAccount && !username.matches(Regex("[A-Za-z0-9_.]{5,24}")) -> error = "Use de 5 a 24 caracteres: letras, números, ponto ou sublinhado."
+            createAccount && username.trim().length < 3 -> error = "O nome de usuário precisa ter 3 caracteres ou mais."
+            createAccount && !username.matches(Regex("[A-Za-z0-9_.]{3,24}")) -> error = "Use 3–24 caracteres: letras, números, ponto ou sublinhado."
             else -> {
                 loading = true
                 error = ""
@@ -9327,7 +9327,7 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
                     icon = Icons.Outlined.AlternateEmail,
                     enabled = !loading
                 )
-                Text("De 5 a 24 letras, números, ponto ou sublinhado.", color = QiblyTheme.secondary, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 6.dp, top = 6.dp))
+                Text("De 3 a 24 letras, números, ponto ou sublinhado.", color = QiblyTheme.secondary, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 6.dp, top = 6.dp))
             }
             Spacer(Modifier.height(10.dp))
             QinblyAuthField(
@@ -9427,7 +9427,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     var usernameStatus by remember { mutableStateOf("") }
     LaunchedEffect(username) {
         val wanted = username.trim()
-        if (wanted.equals(initialUsername, ignoreCase = true) || !wanted.matches(Regex("[a-z0-9_.]{5,24}"))) { usernameStatus = ""; return@LaunchedEffect }
+        if (wanted.equals(initialUsername, ignoreCase = true) || !wanted.matches(Regex("[a-z0-9_.]{3,24}"))) { usernameStatus = ""; return@LaunchedEffect }
         usernameStatus = "checking"
         kotlinx.coroutines.delay(500)
         val free = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { QinblyApi.isUsernameAvailable(wanted) }.getOrNull() }
@@ -9449,8 +9449,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     val saveProfile: () -> Unit = {
                     if (name.isBlank()) error = "Informe seu nome."
                     else if (usernameStatus == "taken") error = "Esse nome de usuário já está em uso. Escolha outro."
-                    else if (!username.equals(initialUsername, ignoreCase = true) && !username.matches(Regex("[a-z0-9_.]{5,24}"))) error = "O @usuário precisa ter de 5 a 24 caracteres."
-                    else if (!username.matches(Regex("[a-z0-9_.]{3,24}"))) error = "O @usuário precisa ter de 5 a 24 caracteres."
+                    else if (!username.matches(Regex("[a-z0-9_.]{3,24}"))) error = "O @usuário precisa ter de 3 a 24 caracteres."
                     else {
                         loading = true; error = ""
                         val token = prefs.getString("token", null)
