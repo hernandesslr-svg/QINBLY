@@ -70,7 +70,7 @@ import kotlin.math.min
  * Sem tirar o fundo, a figurinha fica com cantos arredondados e uma borda branca.
  * O arquivo volta em [onDone] na thread principal; [info] traz um aviso (por exemplo, "não achei uma pessoa").
  */
-internal fun qinblyMakeSticker(context: Context, uri: Uri, removeBackground: Boolean, onDone: (File?, String) -> Unit) {
+internal fun qinblyMakeSticker(context: Context, uri: Uri, onDone: (File?, String) -> Unit) {
     val main = Handler(Looper.getMainLooper())
     Thread {
         var file: File? = null
@@ -83,10 +83,6 @@ internal fun qinblyMakeSticker(context: Context, uri: Uri, removeBackground: Boo
             val square = Bitmap.createScaledBitmap(cropped, 512, 512, true)
             if (square !== cropped) cropped.recycle()
             var result: Bitmap? = null
-            if (removeBackground) {
-                result = fxPersonCutout(square)
-                if (result == null) info = "Não achei uma pessoa na foto; usei a foto inteira."
-            }
             if (result == null) {
                 val out = Bitmap.createBitmap(512, 512, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(out)
@@ -122,7 +118,7 @@ internal fun QinblyStickerCreateDialog(accent: Color, onNotice: (String) -> Unit
         val token = prefs.getString("token", null)
         if (token.isNullOrBlank()) { onNotice("Entre na sua conta para criar figurinhas."); onDismiss(); return@rememberQinblyPhotoLauncher }
         busy = true
-        qinblyMakeSticker(context, source, false) { file, info ->
+        qinblyMakeSticker(context, source) { file, info ->
             if (file == null) { busy = false; onNotice(info.ifBlank { "Não foi possível criar a figurinha." }); onDismiss(); return@qinblyMakeSticker }
             Thread {
                 val main = Handler(Looper.getMainLooper())

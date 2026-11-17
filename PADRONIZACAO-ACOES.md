@@ -607,3 +607,9 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - **Fundo colorido** também no topo dos comentários e na grade do próprio perfil (o perfil de outra pessoa já usava o card).
 - Removidas sobras sem uso: `NOTICE_TAGS`, `noticeKindLabel`, `noticeTagColor`, `CameraGlyph`. O recorte de fundo guardado sem botão ficou como está (decisão do dono).
 - Sem mudança: Lives/Presentes (de fora a pedido), "Retoque" (continua "em breve"), anexo "Outro" (não existe mais item que caia nele) e Clipes sem vídeo (aviso e volta).
+
+## Editor de foto: aba "Fundo" e "Recortar pessoa" removidos (pedido do dono)
+
+- Saiu do editor todo o painel "Fundo" (Efeitos, Cores, Degradês, Cenários, Galeria e Recortar) e o botão "Recortar pessoa / Salva nas suas figurinhas". Saíram também os estados e miniaturas desse painel e a função de recortar a pessoa (`fxPersonCutout`).
+- O editor continua com Retoque e HDR (`QinblyFxSpec(retouch, hdr)`). Criar figurinha pela galeria (Figurinhas) continua igual, só sem a opção de tirar o fundo.
+- Ficou no código, porque a câmera usa: o desfoque de fundo do botão "Fundo" da câmera (`fxReplaceBackground`, `fxPersonMask`) e a dependência `segmentation-selfie`.

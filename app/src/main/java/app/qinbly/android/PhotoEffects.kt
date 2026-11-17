@@ -512,19 +512,3 @@ private fun fxReplaceBackground(context: Context, bmp: Bitmap, spec: QinblyFxSpe
     bmp.recycle()
     return bg
 }
-
-/** Recorta a pessoa da foto: devolve uma imagem com fundo transparente, ou null se não achar uma pessoa. */
-internal fun fxPersonCutout(bmp: Bitmap): Bitmap? {
-    val maskFull = fxPersonMask(bmp) ?: return null
-    val out = Bitmap.createBitmap(bmp.width, bmp.height, Bitmap.Config.ARGB_8888)
-    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        shader = ComposeShader(
-            BitmapShader(bmp, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP),
-            BitmapShader(maskFull, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP),
-            PorterDuff.Mode.DST_IN
-        )
-    }
-    Canvas(out).drawRect(0f, 0f, bmp.width.toFloat(), bmp.height.toFloat(), paint)
-    maskFull.recycle()
-    return out
-}
