@@ -4458,6 +4458,17 @@ private fun QinblyCommentsDialog(
                         val threaded = comments.filter { it.parentId.isBlank() }.sortedWith(compareByDescending<QinblyApi.CommentSummary> { it.likes }.thenByDescending { it.createdAt }).flatMap { top ->
                             listOf(top) + if (top.id in expandedThreads) comments.filter { it.parentId == top.id } else emptyList()
                         } + comments.filter { it.parentId.isNotBlank() && comments.none { c -> c.id == it.parentId } }
+                        val commentsBg = if (post.mediaType == "text" && post.caption.isNotBlank()) qinblyTextBgBrush(post.textBg) else null
+                        if (commentsBg != null) item(key = "post-preview") {
+                            Box(
+                                Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(16.dp)).background(commentsBg)
+                                    .heightIn(min = 110.dp).padding(horizontal = 18.dp, vertical = 18.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(post.caption, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 6,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            }
+                        }
                         items(threaded, key = { it.id }) { comment ->
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(start = if (comment.parentId.isNotBlank()) 44.dp else 0.dp, top = 14.dp, bottom = 14.dp),
@@ -8720,7 +8731,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
     }
     QinblyCapsuleInbox()
     val myStoryEntry = storyTray.firstOrNull { it.mine }
-    val trayOthers = storyTray.filter { !it.mine && it.stories.isNotEmpty() }
+    val trayOthers = storyTray.filter { !it.mine && it.stories.isNotEmpty() }.sortedBy { QinblyStoryMute.isMuted(prefs, it.username) }
     androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)) {
         item(key = "story-create") {
             val mine = myStoryEntry
@@ -8737,7 +8748,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
             QinblyStoryCard(
                 imageUrl = if (cover != null && cover.mediaType != "video" && cover.mediaType != "text") cover.mediaUrl else person.avatarUrl,
                 isAvatar = cover == null || cover.mediaType == "video" || cover.mediaType == "text", isVideo = cover != null && cover.mediaType == "video", label = person.displayName.ifBlank { person.username }, textStory = if (cover?.mediaType == "text") qinblyParseTextStory(cover.caption) else null,
-                ring = if (person.stories.isEmpty() || person.hasUnseen) QinblyBrand.Accent else Color(0xFF4A4066), plus = false, collabAvatars = cover?.contribAvatars.orEmpty(), mood = moods[person.username], showAvatar = true, avatarUrl = person.avatarUrl, onClick = open
+                ring = if (QinblyStoryMute.isMuted(prefs, person.username)) Color(0xFF55555C) else if (person.stories.isEmpty() || person.hasUnseen) QinblyBrand.Accent else Color(0xFF4A4066), plus = false, collabAvatars = cover?.contribAvatars.orEmpty(), mood = moods[person.username], showAvatar = true, avatarUrl = person.avatarUrl, onClick = open
             )
         }
     }
@@ -9182,7 +9193,13 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                         Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(8.dp)).background(qinblyPlaceholderColor).clickable { if (post.mediaUrl.isNotBlank()) viewerPostId = post.id }) {
                             if (post.mediaUrl.isNotBlank() && post.mediaType != "video") QinblyFaceThumb(post.mediaUrl, Modifier.fillMaxSize(), 0.75f, "Publicação")
                             else if (post.mediaUrl.isNotBlank()) AsyncImage(model = post.mediaUrl, contentDescription = "Publicação", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-                            else Text(post.caption.ifBlank { QinblyBrand.Name }, color = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.Center).padding(8.dp), maxLines = 4)
+                            else {
+                                val tileBg = if (post.mediaType == "text") qinblyTextBgBrush(post.textBg) else null
+                                if (tileBg != null) Box(Modifier.fillMaxSize().background(tileBg), contentAlignment = Alignment.Center) {
+                                    Text(post.caption, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(8.dp), maxLines = 5, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                }
+                                else Text(post.caption.ifBlank { QinblyBrand.Name }, color = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.Center).padding(8.dp), maxLines = 4)
+                            }
                             if (post.mediaType == "video") Icon(Icons.Default.PlayCircle, contentDescription = "Vídeo", tint = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.TopEnd).padding(5.dp))
                         }
                     }
@@ -11174,6 +11191,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var flashLabel by remember { mutableStateOf("") }
     var soundName by remember { mutableStateOf("") }
     var soundUri by remember { mutableStateOf<Uri?>(null) }
+    var narrating by remember { mutableStateOf(false) }
+    val narrationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) narrating = true else onNotice("Permita o microfone para gravar a narração.")
+    }
     var speedChoice by remember { mutableFloatStateOf(1f) }
     var latestThumb by remember { mutableStateOf<Bitmap?>(null) }
     val soundPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -12495,6 +12516,19 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
              }
 }
 
+            if (narrating) Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 14.dp)) {
+                QinblyVoiceBar(
+                    accent = QinblyBrand.Accent, textColor = Color.White, barColor = Color(0xFF161C27),
+                    onCancel = { narrating = false },
+                    onTooShort = { narrating = false; onNotice("A narração ficou muito curta.") },
+                    onFailed = { narrating = false; onNotice("Não foi possível gravar a narração agora.") },
+                    onSend = { file, _ ->
+                        narrating = false
+                        soundUri = Uri.fromFile(file); soundName = "Narração"; storyMusic = null
+                        onNotice("Narração pronta. Ela será misturada ao vídeo que você gravar.")
+                    }
+                )
+            }
             if (cameraSheet.isNotBlank()) {
  QinblySplit {
                 Box(Modifier.fillMaxSize().background(Color(0x73000000)).pointerInput(Unit) { detectTapGestures { cameraSheet = "" } })
@@ -12510,7 +12544,11 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     if (cameraSheet == "Som") {
                         Text("Escolher som", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         QinblyCameraSheetRow(QinblyCameraIcons.headphones, "Do seu celular", "Escolha uma música ou áudio seu") { soundPicker.launch("audio/*") }
-                        QinblyCameraSheetRow(QinblyCameraIcons.mic, "Gravar narração", "Fale sobre o vídeo", soon = true) { }
+                        QinblyCameraSheetRow(QinblyCameraIcons.mic, "Gravar narração", "Grave sua voz agora; ela entra no vídeo que você gravar") {
+                            cameraSheet = ""
+                            if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) narrating = true
+                            else narrationPermission.launch(android.Manifest.permission.RECORD_AUDIO)
+                        }
                         if (onCaptured == null) QinblyCameraSheetRow(QinblyCameraIcons.music, "Sons do Qinbly", "Músicas livres para usar no post") { cameraSheet = ""; showMusicPicker = true }
                         if (soundName.isNotBlank() || storyMusic != null) {
                             TextButton(onClick = { soundName = ""; soundUri = null; storyMusic = null; cameraSheet = "" }) { Text("Remover som escolhido", color = QinblyBrand.Accent) }

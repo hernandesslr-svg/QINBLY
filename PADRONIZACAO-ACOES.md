@@ -596,3 +596,14 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - **Destaques**: no story próprio, menu → "Destacar no perfil" (pede nome até 24 letras) copia o story para `story_highlights`; a linha de círculos aparece nos dois perfis (`QinblyHighlightsRow`); o dono remove pela lixeira dentro do visualizador.
 - **Estatísticas**: menu "⋮" da publicação própria → "Ver estatísticas" (visualizações, pessoas, curtidas, comentários, compartilhamentos, barras de 7 dias). A visualização é contada 1,2 s depois do card aparecer, uma por pessoa por dia, sem contar o dono (`post_views`).
 - **Avisos com o app fechado**: `NotifyWorker.kt` (WorkManager, a cada ~15 min, só com internet) consulta notificações e mensagens novas e mostra a notificação do sistema, respeitando as chaves `setting_notice_*`. **Não é push de verdade**: o atraso pode ser de 15 min ou mais e o Android pode adiar com economia de bateria. Push real exige um projeto Firebase (google-services.json).
+
+## Ajustes do check-up (rodada seguinte)
+
+- **Banco**: `request_follow` e `approve_follow_request` só para quem está logado; `qinbly_open_account` (gatilho) sem acesso por API; `qinbly_can_see_author` continua aberta porque as regras de leitura (posts/stories) a usam também para visitantes. Regras de acesso com `(select auth.uid())` e índices nas chaves estrangeiras (`SUPABASE/23_seguranca_e_velocidade.sql`). Falta ligar a proteção de senha vazada no painel (Authentication → Passwords); não dá por SQL.
+- **Story próprio → Quem pode ver**: escolhe Todos/Amigos/Seguidores/Perto de você e grava em `stories.audience` (regra `stories_update`, `SUPABASE/24_stories_update_proprio.sql`). "Perto" exige que o app já saiba a cidade.
+- **Story de outra pessoa → Silenciar/Reativar**: lista local (`story_muted`) em `QinblyStoryMute`; silenciados vão para o fim da bandeja com aro cinza.
+- **Menu "+" dos stories → Música**: escolhe uma música (seletor de músicas) e publica um story de texto com a música tocando por 24 h.
+- **Câmera → Som → Gravar narração**: grava a voz (barra de gravação de voz) e entra como "Narração" no mesmo caminho do som escolhido (misturada ao vídeo gravado em seguida).
+- **Fundo colorido** também no topo dos comentários e na grade do próprio perfil (o perfil de outra pessoa já usava o card).
+- Removidas sobras sem uso: `NOTICE_TAGS`, `noticeKindLabel`, `noticeTagColor`, `CameraGlyph`. O recorte de fundo guardado sem botão ficou como está (decisão do dono).
+- Sem mudança: Lives/Presentes (de fora a pedido), "Retoque" (continua "em breve"), anexo "Outro" (não existe mais item que caia nele) e Clipes sem vídeo (aviso e volta).

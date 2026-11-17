@@ -144,7 +144,7 @@ internal fun QinblyStoryMenu(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Big(Icons.Outlined.AddBox, "Story", "Compartilhe fotos e vídeos", Modifier.weight(1f)) { onDismiss(); onAddStory() }
                     Big(Icons.Outlined.TextFields, "Texto", "Escreva e deixe comentarem", Modifier.weight(1f)) { step = "text" }
-                    Big(Icons.Outlined.MusicNote, "Música", "Compartilhe uma música no seu perfil", Modifier.weight(1f)) { soon("Música") }
+                    Big(Icons.Outlined.MusicNote, "Música", "Compartilhe uma música no seu perfil", Modifier.weight(1f)) { step = "music" }
                 }
                 Text("Mais", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 22.dp, bottom = 8.dp))
                 Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF232325)).padding(vertical = 6.dp)) {
@@ -159,6 +159,24 @@ internal fun QinblyStoryMenu(
             storyId = "", newCollab = true, onNotice = onNotice,
             onCamera = { qinblyStartCollabStory(); onDismiss(); onAddStory() },
             onDone = { onChanged(); onDismiss() }, onDismiss = { step = "menu" }
+        )
+        "music" -> QinblyMusicPicker(
+            onPick = { m ->
+                val token = prefs.getString("token", null)
+                val uid = QinblyApi.currentUserId(prefs)
+                step = "menu"
+                if (token.isNullOrBlank() || uid.isNullOrBlank()) onNotice("Entre na sua conta.")
+                else Thread {
+                    val main = Handler(Looper.getMainLooper())
+                    try {
+                        val bg = (m.title.hashCode() and 0x7fffffff) % qinblyTextBgs.size
+                        val text = "♪ " + m.title + if (m.artist.isNotBlank()) "\n" + m.artist else ""
+                        QinblyApi.createTextStory(token, uid, qinblyAttachMusic(qinblyEncodeTextStory(QinblyTextStory(bg, 3, 1, text)), m))
+                        main.post { onNotice("Música compartilhada no seu story por 24 horas."); onChanged(); onDismiss() }
+                    } catch (e: Exception) { main.post { onNotice(e.message ?: "Não foi possível compartilhar agora.") } }
+                }.start()
+            },
+            onDismiss = { step = "menu" }
         )
         "mood" -> QinblyMoodDialog(onDismiss = { step = "menu" }, onNotice = onNotice, onChanged = onChanged)
         "capsule" -> QinblyCapsuleHub(accent, { step = "menu" }, onNotice)
@@ -277,6 +295,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     var menuOpen by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var highlightAsk by remember { mutableStateOf(false) }
+    var audienceAsk by remember { mutableStateOf(false) }
     var highlightTitle by remember { mutableStateOf("Destaques") }
     var confirmBlock by remember { mutableStateOf(false) }
     var reportOpen by remember { mutableStateOf(false) }
@@ -476,10 +495,17 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                             if (!isContribPage && entry.mine) {
                                 if (onAddStory != null) QinblyStoryMenuRow("Adicionar story") { menuOpen = false; onAddStory() }
                                 if (current.mediaType != "text" && origin == null) QinblyStoryMenuRow("Salvar na galeria") { menuOpen = false; saveCurrent() }
-                                QinblyStoryMenuRow("Quem pode ver", soon = true) { menuOpen = false; onNotice("Quem pode ver: em breve.") }
+                                if (current.page != "invite") QinblyStoryMenuRow("Quem pode ver") { menuOpen = false; audienceAsk = true }
                                 if (current.page != "invite") QinblyStoryMenuRow("Destacar no perfil") { menuOpen = false; highlightTitle = "Destaques"; highlightAsk = true }
                             }
-                            if (!isContribPage && !entry.mine) QinblyStoryMenuRow("Silenciar @" + storyOwner, soon = true) { menuOpen = false; onNotice("Silenciar: em breve.") }
+                            if (!isContribPage && !entry.mine) {
+                                val mutedNow = QinblyStoryMute.isMuted(prefs, storyOwner)
+                                QinblyStoryMenuRow(if (mutedNow) "Reativar stories de @" + storyOwner else "Silenciar @" + storyOwner) {
+                                    menuOpen = false
+                                    if (mutedNow) { QinblyStoryMute.unmute(prefs, storyOwner); onNotice("Stories de @$storyOwner reativados.") }
+                                    else { QinblyStoryMute.mute(prefs, storyOwner); onNotice("Stories de @$storyOwner silenciados. Eles vão para o fim da fila e sem o aro colorido.") }
+                                }
+                            }
                             if (deletable) QinblyStoryMenuRow(if (isContribPage) "Apagar resposta" else "Excluir story", danger = true) { menuOpen = false; confirmDelete = true }
                             if (!ownerIsMe && storyOwner.isNotBlank()) {
                                 QinblyStoryMenuRow("Denunciar story") { menuOpen = false; reportOpen = true }
@@ -541,6 +567,41 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
 
     if (showViewers) QinblyStorySummary(current.id, current.createdAt, accent, { showViewers = false }, onNotice, onOpenProfile = { u -> showViewers = false; onOpenProfile(u, index) })
 
+    if (audienceAsk) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { audienceAsk = false },
+        title = { Text("Quem pode ver este story") },
+        text = {
+            Column {
+                listOf(
+                    Triple("all", "Todos", "Qualquer pessoa"),
+                    Triple("friends", "Amigos", "Quem você segue e te segue"),
+                    Triple("followers", "Seguidores", "Só quem te segue"),
+                    Triple("near", "Perto de você", "Quem está na sua cidade")
+                ).forEach { (key, title, sub) ->
+                    Column(Modifier.fillMaxWidth().clickable {
+                        audienceAsk = false
+                        val sid = current.id.substringBefore("#")
+                        val city = QinblyApi.myCity(prefs)
+                        if (token.isNullOrBlank()) onNotice("Entre na sua conta.")
+                        else if (key == "near" && city.isBlank()) onNotice("O app ainda não sabe sua cidade. Abra o Perto de mim ou o Mercado e tente de novo.")
+                        else Thread {
+                            try {
+                                QinblyApi.setStoryAudience(token, sid, key, city)
+                                android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice("Pronto: agora este story é para \"$title\".") }
+                            } catch (e: Exception) {
+                                android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível mudar agora.") }
+                            }
+                        }.start()
+                    }.padding(vertical = 8.dp)) {
+                        Text(title, fontWeight = FontWeight.Bold)
+                        Text(sub, fontSize = 12.sp, color = Color(0xFF8E87A8))
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { audienceAsk = false }) { Text("Cancelar", color = accent) } },
+        containerColor = QiblyTheme.card, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
+    )
     if (highlightAsk) androidx.compose.material3.AlertDialog(
         onDismissRequest = { highlightAsk = false },
         title = { Text("Destacar no perfil") },
@@ -835,4 +896,17 @@ internal fun QinblyHighlightsRow(username: String, prefs: android.content.Shared
             containerColor = QiblyTheme.card, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
         )
     }
+}
+
+
+/** Stories silenciados (só neste aparelho): a pessoa vai para o fim da fila, sem o aro colorido. */
+internal object QinblyStoryMute {
+    var version by mutableIntStateOf(0)
+    private fun all(prefs: android.content.SharedPreferences): Set<String> = prefs.getStringSet("story_muted", emptySet()).orEmpty()
+    fun isMuted(prefs: android.content.SharedPreferences, username: String): Boolean {
+        version // faz a tela recompor quando muda
+        return username.lowercase() in all(prefs)
+    }
+    fun mute(prefs: android.content.SharedPreferences, username: String) { prefs.edit().putStringSet("story_muted", all(prefs) + username.lowercase()).apply(); version++ }
+    fun unmute(prefs: android.content.SharedPreferences, username: String) { prefs.edit().putStringSet("story_muted", all(prefs) - username.lowercase()).apply(); version++ }
 }

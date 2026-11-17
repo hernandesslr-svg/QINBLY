@@ -539,19 +539,6 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
     }
 }
 
-@Composable
-private fun CameraGlyph(color: Color, modifier: Modifier) {
-    androidx.compose.foundation.Canvas(modifier) {
-        val k = size.minDimension / 24f
-        val body = androidx.compose.ui.graphics.vector.PathParser().parsePathString("M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2c.5 0 1-.3 1.2-.7l.5-1c.2-.4.6-.7 1.1-.7h3c.5 0 .9.3 1.1.7l.5 1c.2.4.7.7 1.2.7h1.2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z").toPath()
-        val stroke = androidx.compose.ui.graphics.drawscope.Stroke(1.6f, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
-        withTransform({ scale(k, k, pivot = androidx.compose.ui.geometry.Offset.Zero) }) {
-            drawPath(body, color, style = stroke)
-            drawCircle(color, radius = 3.4f, center = androidx.compose.ui.geometry.Offset(12f, 12.5f), style = stroke)
-        }
-    }
-}
-
 private fun mentionText(body: String, color: Color): androidx.compose.ui.text.AnnotatedString {
     val end = if (body.startsWith("@")) body.indexOfFirst { it.isWhitespace() }.let { if (it < 0) body.length else it } else 0
     return androidx.compose.ui.text.buildAnnotatedString {
@@ -708,8 +695,3 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
     }
 }
 
-private val NOTICE_TAGS = listOf("Achado", "Perdido", "Pergunta", "Evento")
-private fun noticeKindLabel(kind: String): String = NOTICE_TAGS.firstOrNull { it.equals(kind, true) } ?: "Aviso"
-private fun noticeTagColor(label: String): Color = when (label) {
-    "Achado" -> Color(0xFFE0457B); "Perdido" -> Color(0xFFC2410C); "Pergunta" -> Color(0xFF3A5BA5); "Evento" -> Color(0xFFFF4F9A); else -> Color(0xFF1D9E75)
-}

@@ -850,6 +850,13 @@ object QinblyApi {
         rest(token, "POST", "stories", body.toString(), "return=minimal")
     }
 
+    /** Muda quem pode ver um story seu já publicado (all, followers, friends, near). */
+    fun setStoryAudience(token: String, storyId: String, audience: String, city: String) {
+        val body = JSONObject().put("audience", audience)
+        if (audience == "near") body.put("city", city)
+        rest(token, "PATCH", "stories?id=eq.$storyId", body.toString(), "return=minimal")
+    }
+
     /** Guarda a cidade da pessoa no perfil: é com ela que o servidor decide quem enxerga story "Perto de você". */
     fun syncProfileCity(token: String, userId: String, city: String) {
         if (city.isBlank() || userId.isBlank()) return
