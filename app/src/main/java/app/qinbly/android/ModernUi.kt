@@ -168,9 +168,11 @@ internal fun OutlinedButton(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit
 ) {
+    // Cores passadas de propósito por quem chama valem; sem isso, vale o padrão do app (cinza no escuro, lilás no claro).
+    val customColors = colors != ButtonDefaults.outlinedButtonColors()
     androidx.compose.material3.Button(
         onClick = onClick, modifier = modifier, enabled = enabled, shape = CircleShape,
-        colors = ButtonDefaults.buttonColors(
+        colors = if (customColors) colors else ButtonDefaults.buttonColors(
             containerColor = if (QiblyTheme.dark) Color(0xFF2C2C2E) else Color(0xFFEFE9FB),
             contentColor = QiblyTheme.text,
             disabledContainerColor = if (QiblyTheme.dark) Color(0xFF232325) else Color(0xFFF4F0FB),
