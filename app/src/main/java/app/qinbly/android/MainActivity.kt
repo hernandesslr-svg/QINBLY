@@ -9310,13 +9310,18 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
                 Text(if (createAccount) "Leva menos de um minuto." else "Entre para continuar", color = QiblyTheme.secondary, style = MaterialTheme.typography.bodyMedium)
             }
 
+            val emailOk = email.contains("@") && email.substringAfter("@", "").contains(".")
+            val userLenBad = username.isNotEmpty() && username.length !in 3..24
+            val userCharsBad = username.isNotEmpty() && !userLenBad && !username.matches(Regex("[A-Za-z0-9_.]+"))
+            val passTooShort = createAccount && password.isNotEmpty() && password.length < 8
             QinblyAuthField(
                 value = email,
                 onValueChange = { email = it.trim() },
                 hint = if (createAccount) "E-mail" else "E-mail ou nome de usuário",
                 icon = if (createAccount) Icons.Outlined.Email else Icons.Outlined.PersonOutline,
                 enabled = !loading,
-                keyboardType = androidx.compose.ui.text.input.KeyboardType.Email
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Email,
+                valid = createAccount && emailOk
             )
             if (createAccount) {
                 Spacer(Modifier.height(10.dp))
@@ -9325,19 +9330,24 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
                     onValueChange = { username = it.trim().replace(" ", "") },
                     hint = "Nome de usuário",
                     icon = Icons.Outlined.AlternateEmail,
-                    enabled = !loading
+                    enabled = !loading,
+                    invalid = userLenBad || userCharsBad,
+                    valid = username.isNotEmpty() && !userLenBad && !userCharsBad
                 )
-                Text("De 3 a 24 letras, números, ponto ou sublinhado.", color = QiblyTheme.secondary, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 6.dp, top = 6.dp))
+                if (userLenBad) QinblyAuthWarning("Use de 3 a 24 caracteres.")
+                else if (userCharsBad) QinblyAuthWarning("Use só letras, números, ponto ou sublinhado.")
             }
             Spacer(Modifier.height(10.dp))
             QinblyAuthField(
                 value = password,
                 onValueChange = { password = it },
-                hint = if (createAccount) "Senha (mínimo 8 caracteres)" else "Senha",
+                hint = "Senha",
                 icon = Icons.Outlined.Lock,
                 enabled = !loading,
-                password = true
+                password = true,
+                invalid = passTooShort
             )
+            if (passTooShort) QinblyAuthWarning("Mínimo de 8 caracteres.")
 
             if (error.isNotBlank()) Text(error, color = Color(0xFFF09595), style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth().padding(start = 6.dp, top = 10.dp))
             Spacer(Modifier.height(14.dp))

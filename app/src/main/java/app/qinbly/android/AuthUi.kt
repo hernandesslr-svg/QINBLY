@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
@@ -53,18 +55,20 @@ internal fun QinblyAuthField(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     password: Boolean = false,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    invalid: Boolean = false,
+    valid: Boolean = false
 ) {
     var shown by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(50)
     val muted = QiblyTheme.secondary
     Row(
         modifier.fillMaxWidth().height(46.dp).clip(shape)
-            .background(QiblyTheme.soft).border(0.5.dp, QiblyTheme.border, shape).padding(horizontal = 16.dp),
+            .background(QiblyTheme.soft).border(if (invalid) 1.dp else 0.5.dp, if (invalid) QinblyAuthWarnColor else QiblyTheme.border, shape).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Icon(icon, contentDescription = null, tint = muted, modifier = Modifier.size(19.dp))
+        Icon(icon, contentDescription = null, tint = if (invalid) QinblyAuthWarnColor else muted, modifier = Modifier.size(19.dp))
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             if (value.isEmpty()) Text(hint, color = muted, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
             BasicTextField(
@@ -79,6 +83,7 @@ internal fun QinblyAuthField(
                 modifier = Modifier.fillMaxWidth()
             )
         }
+        if (valid && !password) Icon(Icons.Outlined.CheckCircle, contentDescription = "Certo", tint = Color(0xFF5DCAA5), modifier = Modifier.size(19.dp))
         if (password) Icon(
             if (shown) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
             contentDescription = if (shown) "Esconder senha" else "Mostrar senha",
@@ -131,4 +136,15 @@ internal fun QinblyGoogleMark() {
 @Composable
 internal fun QinblyAuthLogo(modifier: Modifier = Modifier) {
     Image(painterResource(R.drawable.qinbly_icon_bitmap), contentDescription = "Logo", modifier = modifier.size(140.dp))
+}
+
+internal val QinblyAuthWarnColor = Color(0xFFF09595)
+
+/** Aviso pequeno embaixo do campo (aparece só quando o que foi digitado está fora da regra). */
+@Composable
+internal fun QinblyAuthWarning(text: String) {
+    Row(Modifier.fillMaxWidth().padding(start = 8.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = QinblyAuthWarnColor, modifier = Modifier.size(15.dp))
+        Text(text, color = QinblyAuthWarnColor, style = MaterialTheme.typography.labelMedium)
+    }
 }
