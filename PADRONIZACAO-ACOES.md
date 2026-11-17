@@ -708,3 +708,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 
 ## Pessoas marcadas ("Com @fulano") em cima, em todas as publicações
 - Padrão do app: a linha "Com @pessoas" fica logo abaixo do nome de quem publicou, **acima** da legenda/hashtags e da mídia (foto, vídeo, cartão colorido, texto, enquete). Nunca embaixo, perto dos botões. Componente: `QinblyTaggedUsersRow` (MainActivity.kt).
+
+## Sessão vencida: renovar antes de enviar (comentários, curtidas, etc.)
+- Sintoma: não dá para comentar/ver comentários ("permission denied for table comments" nos logs). Causa: o token de acesso vencia e o servidor tratava a pessoa como visitante, sem devolver 401, então o app não renovava.
+- Correção (`QinblyApi.request`): antes de enviar qualquer chamada com sessão, o app lê a validade (`exp`) do token e, se já venceu (ou vence em menos de 30 s), renova com o refresh token e só então envia. Vale para todas as telas; a renovação por 401 continua como segunda rede.
+- Se a renovação não for possível (sem refresh token), a chamada segue como antes e a pessoa precisa entrar de novo.

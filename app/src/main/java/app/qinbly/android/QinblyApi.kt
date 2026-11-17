@@ -1338,7 +1338,26 @@ object QinblyApi {
 
     fun deleteHighlight(token: String, id: String) { request("DELETE", "/api/highlights/$id", JSONObject(), token) }
 
+    /** true se o token de acesso (JWT) já venceu ou vence em menos de 30 segundos. */
+    private fun tokenExpired(token: String): Boolean = try {
+        val payload = String(android.util.Base64.decode(token.split(".")[1], android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING), Charsets.UTF_8)
+        val exp = JSONObject(payload).optLong("exp", 0L)
+        exp > 0L && exp * 1000L < System.currentTimeMillis() + 30_000L
+    } catch (_: Exception) { false }
+
+    /**
+     * Toda chamada com sessão renova o token ANTES de enviar se ele já venceu. Sem isso o servidor tratava a pessoa como
+     * visitante e dava "permission denied" (comentar, curtir, ver comentários, feed só de perfis públicos).
+     */
     private fun request(method: String, path: String, body: JSONObject? = null, token: String? = null, allowRefresh: Boolean = true): JSONObject {
+        var sendToken = token
+        if (allowRefresh && !token.isNullOrBlank() && !path.startsWith("/api/auth") && !path.startsWith("/signin/") && tokenExpired(token)) {
+            sendToken = try { renewExpiredSession(token) } catch (_: Exception) { token }
+        }
+        return requestRaw(method, path, body, sendToken, allowRefresh)
+    }
+
+    private fun requestRaw(method: String, path: String, body: JSONObject? = null, token: String? = null, allowRefresh: Boolean = true): JSONObject {
         val configuredBase = BuildConfig.API_BASE_URL.trim().trimEnd('/')
         // Rotas "/verify/..." ficam em outra função do Supabase (qinbly-verify), irmã da qinbly-api.
         val isVerify = path.startsWith("/verify/")
