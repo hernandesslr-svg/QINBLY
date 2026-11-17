@@ -46,8 +46,12 @@ object QinblyApi {
     }
 
     fun authenticate(register: Boolean, username: String, email: String, password: String): AuthResult {
-        val path = if (register) "/api/auth/register" else "/api/auth/login"
-        val payload = JSONObject().put("email", email.trim().lowercase()).put("password", password)
+        val typed = email.trim().lowercase()
+        // Sem "@" a pessoa digitou o nome de usuário: o servidor acha o e-mail da conta (ele não volta para o app).
+        val byUsername = !register && !typed.contains("@")
+        val path = if (register) "/api/auth/register" else if (byUsername) "/signin/username" else "/api/auth/login"
+        val payload = if (byUsername) JSONObject().put("username", typed.removePrefix("@")).put("password", password)
+            else JSONObject().put("email", typed).put("password", password)
         if (register) payload.put("username", username.trim().lowercase())
         val response = request("POST", path, payload)
         val user = response.optJSONObject("user") ?: throw IllegalStateException("Resposta inválida do servidor.")
@@ -1318,8 +1322,10 @@ object QinblyApi {
         val configuredBase = BuildConfig.API_BASE_URL.trim().trimEnd('/')
         // Rotas "/verify/..." ficam em outra função do Supabase (qinbly-verify), irmã da qinbly-api.
         val isVerify = path.startsWith("/verify/")
-        val base = if (isVerify) configuredBase.replace("/qinbly-api", "/qinbly-verify") else configuredBase
-        val path = if (isVerify) path.removePrefix("/verify") else path
+        // "/signin/username" é a função qinbly-login (entrar com nome de usuário), também irmã da qinbly-api.
+        val isSignin = path.startsWith("/signin/")
+        val base = if (isVerify) configuredBase.replace("/qinbly-api", "/qinbly-verify") else if (isSignin) configuredBase.replace("/qinbly-api", "/qinbly-login") else configuredBase
+        val path = if (isVerify) path.removePrefix("/verify") else if (isSignin) "" else path
         require(!base.contains("configure-your-qinbly-api.example") && (base.startsWith("https://") || base.startsWith("http://10.0.2.2"))) {
             "Backend ainda não configurado. Defina API_BASE_URL no app/build.gradle.kts com a URL HTTPS publicada."
         }

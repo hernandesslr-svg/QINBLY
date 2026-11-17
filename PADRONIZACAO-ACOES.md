@@ -624,3 +624,12 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 
 - O botão/opção "Fundo" não existe mais em lugar nenhum (nem câmera, nem editor). Saiu também o código que ficava por trás: `fxReplaceBackground`, `fxPersonMask`, cenários/degradês, os campos de fundo do `QinblyFxSpec`, o estado `bgBlurOn` da câmera e a dependência `segmentation-selfie`.
 - Ficam só Retoque e HDR nos efeitos de foto. O fundo desfocado das laterais de foto/vídeo no Formato (`blurBg`) é outra coisa (preenchimento do quadro) e continua.
+
+## Tela de entrar e criar conta (novo visual)
+
+- Peças em `AuthUi.kt`: `QinblyAuthField` (campo fino de 46 dp em pílula, ícone na frente, olhinho na senha), `QinblyAuthButton` (botão pílula de 46 dp, cheio ou só contorno), `QinblyGoogleMark` e `QinblyAuthLogo` (logo do app, o mesmo do ícone: anel em degradê com brilho). A tela em si continua em `MainActivity.kt` (mesma tela para entrar e criar conta, alternando por `createAccount`).
+- Entrar: logo, "Bem-vindo", "Entre para continuar", campo **E-mail ou nome de usuário**, senha com olhinho, **Entrar** (azul), "Esqueceu a senha?", "OU", **Continuar com Google** (botão branco, igual ao Entrar em tamanho) e **Criar nova conta** fixo embaixo (contorno azul, acima dos botões do celular).
+- Criar conta: logo, "Crie sua conta", e-mail, nome de usuário (3 a 24 letras, números, ponto ou sublinhado), senha (mínimo 8), **Criar conta**, "OU", **Cadastrar com Google**, aviso de Termos e Privacidade e **Já tenho uma conta** fixo embaixo.
+- Sai da tela: caixa em volta do formulário, "Acesso à conta", "Voltar ao perfil" (a seta de voltar já faz isso), o texto técnico sobre `API_BASE_URL` e o quadro fixo de erro do Google. Erro do Google agora é um aviso curto (Toast) que some sozinho; erros de e-mail e senha aparecem em texto pequeno vermelho logo acima do botão.
+- O "G" do botão do Google é um marcador simples. O G colorido oficial entra quando o arquivo da Google for adicionado ao app.
+- **Entrar com nome de usuário**: quando o texto digitado não tem "@", o app chama a função `qinbly-login` (`SUPABASE/functions/qinbly-login/index.ts`), irmã da `qinbly-api`. Ela acha o e-mail da conta no servidor (o e-mail nunca volta para o app), faz o login na `qinbly-api` e devolve a mesma resposta. Usuário que não existe e senha errada dão a mesma mensagem ("Usuário ou senha incorretos."), para não revelar quais nomes existem. No app, `QinblyApi.request` manda o caminho `/signin/username` para essa função.

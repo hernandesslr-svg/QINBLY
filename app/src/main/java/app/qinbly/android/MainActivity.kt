@@ -9230,214 +9230,145 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
                     val authMessage = e.message?.takeIf { it.isNotBlank() } ?: "Erro de autenticação sem detalhes retornados."
                     googleError = authMessage
                     error = ""
-                    android.widget.Toast.makeText(context, authMessage, android.widget.Toast.LENGTH_LONG).show()
                 }
             }
         }
     }
 
-    Column(
-        Modifier.fillMaxSize().background(Night).verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    // Erro do Google vira um aviso curto que some sozinho (nada de quadro fixo na tela).
+    androidx.compose.runtime.LaunchedEffect(googleError) {
+        if (googleError.isNotBlank()) {
+            android.widget.Toast.makeText(context, googleError, android.widget.Toast.LENGTH_LONG).show()
+            googleError = ""
+        }
+    }
+    val startGoogle: () -> Unit = {
+        val activity = context as? android.app.Activity
+        if (activity == null) {
+            googleError = "Não foi possível abrir a seleção da conta Google."
+        } else {
+            loading = true
+            error = ""
+            googleError = ""
+            GoogleSignIn.signOut(activity) {
+                try {
+                    googleSignInLauncher.launch(GoogleSignIn.signInIntent(activity))
+                } catch (e: Exception) {
+                    loading = false
+                    googleError = e.message ?: "Não foi possível abrir o login Google."
+                }
+            }
+        }
+    }
+    val submit: () -> Unit = {
+        // Entrar aceita e-mail OU nome de usuário; criar conta pede e-mail e nome de usuário.
+        val typed = email.trim().lowercase()
+        val looksLikeEmail = typed.contains("@") && typed.substringAfter("@", "").contains(".")
+        when {
+            typed.isBlank() -> error = if (createAccount) "Digite seu e-mail." else "Digite seu e-mail ou nome de usuário."
+            createAccount && !looksLikeEmail -> error = "Digite um e-mail válido."
+            !createAccount && typed.contains("@") && !looksLikeEmail -> error = "Digite um e-mail válido."
+            !createAccount && !typed.contains("@") && !typed.removePrefix("@").matches(Regex("[A-Za-z0-9_.]{3,30}")) -> error = "Nome de usuário inválido. Use letras, números, ponto ou sublinhado."
+            password.length < 8 && createAccount -> error = "A senha precisa ter pelo menos 8 caracteres."
+            password.isBlank() -> error = "Digite sua senha."
+            createAccount && username.trim().length < 3 -> error = "O nome de usuário precisa ter 3 caracteres ou mais."
+            createAccount && !username.matches(Regex("[A-Za-z0-9_.]{3,24}")) -> error = "Use 3–24 caracteres: letras, números, ponto ou sublinhado."
+            else -> {
+                loading = true
+                error = ""
+                Thread {
+                    try {
+                        val result = QinblyApi.authenticate(createAccount, username, typed, password)
+                        prefs.edit().putString("token", result.token).putString("refresh_token", result.refreshToken).putString("username", result.username).apply()
+                        rememberQinblyAccount(prefs, result.username, result.token, prefs.getString("display_name", "") ?: "", prefs.getString("bio", "") ?: "")
+                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            loading = false
+                            onSuccess(result.username)
+                        }
+                    } catch (e: Exception) {
+                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            loading = false
+                            error = e.message ?: "Não foi possível autenticar."
+                        }
+                    }
+                }.start()
+            }
+        }
+    }
+
+    Column(Modifier.fillMaxSize().background(Night)) {
+        Column(
+            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(top = 8.dp, bottom = 12.dp)
+        ) {
             IconButton(onClick = onCancel, enabled = !loading) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text)
             }
-            Spacer(Modifier.width(4.dp))
-            Text("Acesso à conta", color = Muted, style = MaterialTheme.typography.titleSmall)
-        }
-
-        Column(Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(
-                Modifier.size(76.dp).clip(RoundedCornerShape(24.dp)).background(Brush.linearGradient(listOf(Pink, Violet))),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("V", color = QiblyTheme.text, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black)
+            Column(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                QinblyAuthLogo()
+                Text(if (createAccount) "Crie sua conta" else "Bem-vindo", color = QiblyTheme.text, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(6.dp))
+                Text(if (createAccount) "Leva menos de um minuto." else "Entre para continuar", color = QiblyTheme.secondary, style = MaterialTheme.typography.bodyMedium)
             }
-            Text(QinblyBrand.Name, color = QiblyTheme.text, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
-            Text(
-                if (createAccount) "Crie sua conta e faça parte da comunidade." else "Entre para se conectar com sua comunidade.",
-                color = Muted, style = MaterialTheme.typography.bodyMedium
+
+            QinblyAuthField(
+                value = email,
+                onValueChange = { email = it.trim() },
+                hint = if (createAccount) "E-mail" else "E-mail ou nome de usuário",
+                icon = if (createAccount) Icons.Outlined.Email else Icons.Outlined.PersonOutline,
+                enabled = !loading,
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Email
+            )
+            if (createAccount) {
+                Spacer(Modifier.height(10.dp))
+                QinblyAuthField(
+                    value = username,
+                    onValueChange = { username = it.trim().replace(" ", "") },
+                    hint = "Nome de usuário",
+                    icon = Icons.Outlined.AlternateEmail,
+                    enabled = !loading
+                )
+                Text("De 3 a 24 letras, números, ponto ou sublinhado.", color = QiblyTheme.secondary, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 6.dp, top = 6.dp))
+            }
+            Spacer(Modifier.height(10.dp))
+            QinblyAuthField(
+                value = password,
+                onValueChange = { password = it },
+                hint = if (createAccount) "Senha (mínimo 8 caracteres)" else "Senha",
+                icon = Icons.Outlined.Lock,
+                enabled = !loading,
+                password = true
+            )
+
+            if (error.isNotBlank()) Text(error, color = Color(0xFFF09595), style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth().padding(start = 6.dp, top = 10.dp))
+            Spacer(Modifier.height(14.dp))
+            QinblyAuthButton(if (createAccount) "Criar conta" else "Entrar", onClick = submit, enabled = !loading, loading = loading, fill = QinblyBrand.Accent)
+            if (!createAccount) TextButton(
+                onClick = { forgotEmail = email.trim().takeIf { it.contains("@") } ?: ""; forgotMessage = ""; showForgot = true },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !loading
+            ) { Text("Esqueceu a senha?", color = QiblyTheme.text, style = MaterialTheme.typography.bodyMedium) }
+
+            Row(Modifier.fillMaxWidth().padding(top = if (createAccount) 18.dp else 8.dp, bottom = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.material3.HorizontalDivider(Modifier.weight(1f), color = QiblyTheme.border)
+                Text("  OU  ", color = QiblyTheme.secondary, style = MaterialTheme.typography.labelMedium)
+                androidx.compose.material3.HorizontalDivider(Modifier.weight(1f), color = QiblyTheme.border)
+            }
+            QinblyAuthButton(
+                if (createAccount) "Cadastrar com Google" else "Continuar com Google",
+                onClick = startGoogle, enabled = !loading, fill = Color.White, contentColor = Color(0xFF1B1B1F),
+                leading = { QinblyGoogleMark() }
+            )
+            if (createAccount) Text(
+                "Ao criar a conta, você concorda com os Termos de uso e a Política de privacidade (em Configurações, Ajuda e suporte).",
+                color = QiblyTheme.secondary, style = MaterialTheme.typography.labelMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 18.dp)
             )
         }
-
-        Surface(
-            modifier = Modifier.fillMaxWidth().border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(26.dp)),
-            color = Panel,
-            shape = RoundedCornerShape(26.dp)
-        ) {
-            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text(if (createAccount) "Criar conta" else "Bem-vindo de volta", color = QiblyTheme.text, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text(if (createAccount) "Preencha os dados para começar." else "Escolha como deseja entrar.", color = Muted, style = MaterialTheme.typography.bodySmall)
-
-                Button(
-                    onClick = {
-                        val activity = context as? android.app.Activity
-                        if (activity == null) {
-                            googleError = "Não foi possível abrir a seleção da conta Google."
-                        } else {
-                            loading = true
-                            // Reset errors for this Google attempt; profile errors stay separate.
-                            error = ""
-                            googleError = ""
-                            GoogleSignIn.signOut(activity) {
-                                try {
-                                    googleSignInLauncher.launch(GoogleSignIn.signInIntent(activity))
-                                } catch (e: Exception) {
-                                    loading = false
-                                    googleError = e.message ?: "Não foi possível abrir o login Google."
-                                }
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
-                    enabled = !loading,
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Violet, contentColor = Color.White)
-                ) {
-                    if (loading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = QiblyTheme.text)
-                    else Text("Continuar com Google", fontWeight = FontWeight.Bold)
-                }
-
-                // Show only errors from the current Google authentication attempt.
-                if (googleError.isNotBlank()) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = Pink.copy(alpha = 0.12f),
-                        shape = RoundedCornerShape(12.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Pink.copy(alpha = 0.45f))
-                    ) {
-                        Text(
-                            text = googleError,
-                            modifier = Modifier.fillMaxWidth().padding(12.dp),
-                            color = Pink,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.material3.HorizontalDivider(Modifier.weight(1f), color = Color.White.copy(alpha = 0.14f))
-                    Text("  ou entre com e-mail  ", color = Muted, style = MaterialTheme.typography.labelSmall)
-                    androidx.compose.material3.HorizontalDivider(Modifier.weight(1f), color = Color.White.copy(alpha = 0.14f))
-                }
-
-                if (createAccount) {
-                    var usernameField by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(username, androidx.compose.ui.text.TextRange(username.length))) }
-                    if (usernameField.text != username) usernameField = androidx.compose.ui.text.input.TextFieldValue(username, androidx.compose.ui.text.TextRange(minOf(usernameField.selection.end, username.length)))
-                    OutlinedTextField(
-                        value = usernameField,
-                        onValueChange = { typed -> usernameField = qinblySanitized(typed) { it.trim().replace(" ", "") }; username = usernameField.text },
-                        label = { Text("Nome de usuário") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !loading,
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Pink, unfocusedBorderColor = QiblyTheme.border,
-                            focusedLabelColor = Pink, cursorColor = Pink, focusedTextColor = QiblyTheme.text,
-                            unfocusedTextColor = QiblyTheme.text, focusedContainerColor = Night, unfocusedContainerColor = Night
-                        )
-                    )
-                }
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it.trim() },
-                    label = { Text("E-mail") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !loading,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Pink, unfocusedBorderColor = QiblyTheme.border,
-                        focusedLabelColor = Pink, cursorColor = Pink, focusedTextColor = QiblyTheme.text,
-                        unfocusedTextColor = QiblyTheme.text, focusedContainerColor = Night, unfocusedContainerColor = Night
-                    )
-                )
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Senha (mínimo 8 caracteres)") },
-                    singleLine = true,
-                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !loading,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Pink, unfocusedBorderColor = QiblyTheme.border,
-                        focusedLabelColor = Pink, cursorColor = Pink, focusedTextColor = QiblyTheme.text,
-                        unfocusedTextColor = QiblyTheme.text, focusedContainerColor = Night, unfocusedContainerColor = Night
-                    )
-                )
-
-                Button(
-                    onClick = {
-                        val normalizedEmail = email.trim().lowercase()
-                        when {
-                            !normalizedEmail.contains("@") || !normalizedEmail.substringAfter("@", "").contains(".") -> error = "Digite um e-mail válido."
-                            password.length < 8 -> error = "A senha precisa ter pelo menos 8 caracteres."
-                            createAccount && username.trim().length < 3 -> error = "O nome de usuário precisa ter 3 caracteres ou mais."
-                            createAccount && !username.matches(Regex("[A-Za-z0-9_.]{3,24}")) -> error = "Use 3–24 caracteres: letras, números, ponto ou sublinhado."
-                            else -> {
-                                loading = true
-                                error = ""
-                                Thread {
-                                    try {
-                                        val result = QinblyApi.authenticate(createAccount, username, normalizedEmail, password)
-                                        prefs.edit().putString("token", result.token).putString("refresh_token", result.refreshToken).putString("username", result.username).apply()
-                                        rememberQinblyAccount(prefs, result.username, result.token, prefs.getString("display_name", "") ?: "", prefs.getString("bio", "") ?: "")
-                                        android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                            loading = false
-                                            onSuccess(result.username)
-                                        }
-                                    } catch (e: Exception) {
-                                        android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                            loading = false
-                                            error = e.message ?: "Não foi possível autenticar."
-                                        }
-                                    }
-                                }.start()
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
-                    enabled = !loading,
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Pink, contentColor = Color.White)
-                ) {
-                    if (loading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = QiblyTheme.text)
-                    else Text(if (createAccount) "Criar minha conta" else "Entrar", fontWeight = FontWeight.Bold)
-                }
-
-                if (!createAccount) TextButton(
-                    onClick = { forgotEmail = email.trim(); forgotMessage = ""; showForgot = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !loading
-                ) { Text("Esqueci minha senha", color = Muted) }
-                TextButton(
-                    onClick = { createAccount = !createAccount; error = "" },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !loading
-                ) {
-                    Text(if (createAccount) "Já tem conta? Fazer login" else "Não tem conta? Criar agora", color = Violet, fontWeight = FontWeight.SemiBold)
-                }
-            }
-        }
-
-        OutlinedButton(
-            onClick = onCancel,
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            enabled = !loading,
-            shape = RoundedCornerShape(18.dp),
-            border = BorderStroke(1.dp, Violet.copy(alpha = 0.7f)),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Violet)
-        ) {
-            Text("Voltar ao perfil", fontWeight = FontWeight.SemiBold)
-        }
-        Text(
-            "Se o acesso falhar por configuração do servidor, verifique a API_BASE_URL conforme BACKEND/README.md.",
-            color = Muted, style = MaterialTheme.typography.labelSmall
+        QinblyAuthButton(
+            if (createAccount) "Já tenho uma conta" else "Criar nova conta",
+            onClick = { createAccount = !createAccount; error = "" },
+            enabled = !loading, outline = QinblyBrand.Accent, contentColor = QinblyBrand.AccentLight,
+            modifier = Modifier.padding(horizontal = 24.dp).padding(top = 8.dp, bottom = 16.dp).navigationBarsPadding()
         )
     }
 }
