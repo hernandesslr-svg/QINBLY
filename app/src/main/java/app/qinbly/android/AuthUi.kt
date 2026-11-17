@@ -6,6 +6,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.PersonOutline
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -146,5 +158,95 @@ internal fun QinblyAuthWarning(text: String) {
     Row(Modifier.fillMaxWidth().padding(start = 8.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = QinblyAuthWarnColor, modifier = Modifier.size(15.dp))
         Text(text, color = QinblyAuthWarnColor, style = MaterialTheme.typography.labelMedium)
+    }
+}
+
+/** Cartinha de dica (ícone de informação + texto). */
+@Composable
+private fun QinblyAuthTip(text: String) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(QiblyTheme.soft).padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Icon(Icons.Outlined.Info, contentDescription = null, tint = QinblyBrand.AccentLight, modifier = Modifier.size(18.dp))
+        Text(text, color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+/** Tela de "Esqueceu a senha?": pede e-mail ou nome de usuário; depois de enviar, mostra "Confira seu e-mail". */
+@Composable
+internal fun QinblyForgotScreen(
+    input: String,
+    onInput: (String) -> Unit,
+    busy: Boolean,
+    sent: Boolean,
+    error: String,
+    cooldown: Int,
+    onSend: () -> Unit,
+    onBack: () -> Unit
+) {
+    val green = Color(0xFF5DCAA5)
+    Column(Modifier.fillMaxSize().background(QiblyTheme.background)) {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(top = 8.dp, bottom = 12.dp)) {
+            IconButton(onClick = onBack, enabled = !busy) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text)
+            }
+            Column(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 26.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    Modifier.size(72.dp).clip(CircleShape).background(if (sent) Color(0xFF12332A) else QiblyTheme.soft)
+                        .border(0.5.dp, if (sent) Color(0xFF1D9E75) else QiblyTheme.border, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(if (sent) Icons.Outlined.Email else Icons.Outlined.Lock, contentDescription = null, tint = if (sent) green else QinblyBrand.AccentLight, modifier = Modifier.size(34.dp))
+                }
+                Spacer(Modifier.height(16.dp))
+                Text(if (sent) "Confira seu e-mail" else "Esqueceu a senha?", color = QiblyTheme.text, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    if (sent) "Se existir uma conta com esses dados, enviamos o link para criar uma senha nova. Pode levar alguns minutos."
+                    else "Digite seu e-mail ou nome de usuário e enviamos um link para criar uma senha nova.",
+                    color = QiblyTheme.secondary, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center
+                )
+            }
+            if (!sent) {
+                QinblyAuthField(
+                    value = input, onValueChange = onInput, hint = "E-mail ou nome de usuário",
+                    icon = Icons.Outlined.PersonOutline, enabled = !busy, keyboardType = KeyboardType.Email, invalid = error.isNotBlank()
+                )
+                if (error.isNotBlank()) QinblyAuthWarning(error)
+                Spacer(Modifier.height(16.dp))
+                QinblyAuthButton("Enviar link", onClick = onSend, enabled = !busy, loading = busy, fill = QinblyBrand.Accent)
+                Spacer(Modifier.height(22.dp))
+                QinblyAuthTip("Não lembra do nome de usuário? Sem problema: você também pode entrar usando o seu e-mail.")
+                Spacer(Modifier.height(10.dp))
+                QinblyAuthTip("Criou a conta com o Google? Volte e toque em Continuar com Google.")
+            } else {
+                QinblyAuthTip("Não chegou? Olhe também a caixa de spam e a lixeira.")
+                Spacer(Modifier.height(22.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    Text("Ainda nada? ", color = QiblyTheme.secondary, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Enviar de novo",
+                        color = if (cooldown > 0 || busy) QiblyTheme.secondary else QinblyBrand.AccentLight,
+                        style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
+                        modifier = Modifier.clickable(enabled = cooldown <= 0 && !busy, onClick = onSend)
+                    )
+                }
+                if (cooldown > 0) Text(
+                    "Você poderá pedir outro link em $cooldown segundos.",
+                    color = QiblyTheme.secondary, style = MaterialTheme.typography.labelMedium,
+                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                )
+                if (error.isNotBlank()) Text(error, color = QinblyAuthWarnColor, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+            }
+        }
+        QinblyAuthButton(
+            "Voltar para entrar", onClick = onBack, enabled = !busy,
+            fill = if (sent) QinblyBrand.Accent else null,
+            outline = if (sent) null else QinblyBrand.Accent,
+            contentColor = if (sent) Color.White else QinblyBrand.AccentLight,
+            modifier = Modifier.padding(horizontal = 24.dp).padding(top = 8.dp, bottom = 16.dp).navigationBarsPadding()
+        )
     }
 }

@@ -633,3 +633,12 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - Sai da tela: caixa em volta do formulário, "Acesso à conta", "Voltar ao perfil" (a seta de voltar já faz isso), o texto técnico sobre `API_BASE_URL` e o quadro fixo de erro do Google. Erro do Google agora é um aviso curto (Toast) que some sozinho; erros de e-mail e senha aparecem em texto pequeno vermelho logo acima do botão.
 - O "G" do botão do Google é um marcador simples. O G colorido oficial entra quando o arquivo da Google for adicionado ao app.
 - **Entrar com nome de usuário**: quando o texto digitado não tem "@", o app chama a função `qinbly-login` (`SUPABASE/functions/qinbly-login/index.ts`), irmã da `qinbly-api`. Ela acha o e-mail da conta no servidor (o e-mail nunca volta para o app), faz o login na `qinbly-api` e devolve a mesma resposta. Usuário que não existe e senha errada dão a mesma mensagem ("Usuário ou senha incorretos."), para não revelar quais nomes existem. No app, `QinblyApi.request` manda o caminho `/signin/username` para essa função.
+
+## Tela "Esqueceu a senha?" (substitui a janelinha antiga)
+
+- Vira uma tela inteira (`QinblyForgotScreen` em `AuthUi.kt`), no mesmo estilo do login. Abre ao tocar em "Esqueceu a senha?" no login (já leva o que a pessoa digitou no campo) e a seta ou o botão de voltar do celular voltam para o login.
+- Antes de enviar: ícone de cadeado, "Esqueceu a senha?", campo **E-mail ou nome de usuário**, **Enviar link** e duas dicas ("Não lembra do nome de usuário? ... entre usando o seu e-mail." e "Criou a conta com o Google? ..."). Erro de digitação aparece como aviso pequeno embaixo do campo.
+- Depois de enviar: ícone de e-mail verde, "Confira seu e-mail", dica de spam e lixeira, "Enviar de novo" (liberado depois de 60 segundos, com contagem), e **Voltar para entrar**.
+- A mensagem é sempre a mesma exista conta ou não ("Se existir uma conta com esses dados..."), para ninguém descobrir quem tem cadastro.
+- Com e-mail, o app usa `/api/auth/forgot` (como antes). Com nome de usuário, usa a função `qinbly-login` (versão 2, `action = "forgot"`): ela acha o e-mail da conta e manda o link do Supabase para lá; o e-mail nunca volta para o app.
+- O link do e-mail é o padrão do Supabase e abre a página do endereço configurado em Authentication, URL Configuration, "Site URL". O app ainda não recebe o link por dentro, então a página de criar a senha nova depende dessa configuração.

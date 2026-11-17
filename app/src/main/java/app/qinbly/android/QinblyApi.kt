@@ -591,9 +591,12 @@ object QinblyApi {
     }
 
     /** Pede o e-mail de redefinição de senha. */
-    fun forgotPassword(email: String): String {
-        val r = request("POST", "/api/auth/forgot", JSONObject().put("email", email.trim().lowercase()))
-        return r.optString("message", "Se esse e-mail tiver uma conta, enviamos o link para criar uma nova senha.")
+    /** Pede o link de nova senha. Sem "@" a pessoa digitou o nome de usuário: o servidor acha o e-mail da conta. */
+    fun forgotPassword(emailOrUsername: String): String {
+        val typed = emailOrUsername.trim().lowercase()
+        val r = if (typed.contains("@")) request("POST", "/api/auth/forgot", JSONObject().put("email", typed))
+            else request("POST", "/signin/username", JSONObject().put("action", "forgot").put("username", typed.removePrefix("@")))
+        return r.optString("message", "Se existir uma conta com esses dados, enviamos o link para criar uma nova senha.")
     }
 
     data class CommunitySummary(

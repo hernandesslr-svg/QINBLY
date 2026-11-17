@@ -9168,36 +9168,34 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
     var showForgot by remember { mutableStateOf(false) }
     // Voltar do celular: da tela de criar conta volta para o login (não fecha tudo).
     BackHandler(enabled = createAccount && !showForgot) { createAccount = false }
-    var forgotEmail by remember { mutableStateOf("") }
+    var forgotInput by remember { mutableStateOf("") }
     var forgotBusy by remember { mutableStateOf(false) }
-    var forgotMessage by remember { mutableStateOf("") }
-    if (showForgot) {
-        AlertDialog(
-        shape = RoundedCornerShape(28.dp),
-        containerColor = QiblyTheme.card,
-            onDismissRequest = { if (!forgotBusy) showForgot = false },
-            title = { Text("Recuperar senha") },
-            text = { QinblyClearFocusWhenKeyboardCloses();
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Digite o e-mail da sua conta. Vamos enviar um link para criar uma nova senha.")
-                    OutlinedTextField(value = forgotEmail, onValueChange = { forgotEmail = it.take(120) }, singleLine = true, label = { Text("E-mail") }, modifier = Modifier.fillMaxWidth())
-                    if (forgotMessage.isNotBlank()) Text(forgotMessage, color = Violet)
+    var forgotSent by remember { mutableStateOf(false) }
+    var forgotError by remember { mutableStateOf("") }
+    var forgotCooldown by remember { mutableStateOf(0) }
+    // Voltar do celular na tela de esqueci a senha volta para o login.
+    BackHandler(enabled = showForgot && !forgotBusy) { showForgot = false; forgotSent = false; forgotError = "" }
+    androidx.compose.runtime.LaunchedEffect(forgotSent, forgotCooldown) {
+        if (forgotSent && forgotCooldown > 0) { kotlinx.coroutines.delay(1000); forgotCooldown -= 1 }
+    }
+    val sendForgot: () -> Unit = {
+        val typed = forgotInput.trim().lowercase()
+        val valid = if (typed.contains("@")) typed.substringAfter("@", "").contains(".") && typed.substringBefore("@").isNotEmpty()
+            else typed.removePrefix("@").matches(Regex("[a-z0-9_.]{3,30}"))
+        if (typed.isBlank()) forgotError = "Digite seu e-mail ou nome de usuário."
+        else if (!valid) forgotError = "Confira o e-mail ou nome de usuário digitado."
+        else {
+            forgotBusy = true
+            forgotError = ""
+            Thread {
+                try {
+                    QinblyApi.forgotPassword(typed)
+                    android.os.Handler(android.os.Looper.getMainLooper()).post { forgotBusy = false; forgotSent = true; forgotCooldown = 60 }
+                } catch (e: Exception) {
+                    android.os.Handler(android.os.Looper.getMainLooper()).post { forgotBusy = false; forgotError = e.message ?: "Não foi possível enviar agora." }
                 }
-            },
-            confirmButton = {
-                TextButton(enabled = !forgotBusy, onClick = {
-                    val mail = forgotEmail.trim().lowercase()
-                    if (!mail.contains("@") || !mail.substringAfter("@", "").contains(".")) { forgotMessage = "Digite um e-mail válido."; return@TextButton }
-                    forgotBusy = true
-                    forgotMessage = ""
-                    Thread {
-                        val msg = try { QinblyApi.forgotPassword(mail) } catch (e: Exception) { e.message ?: "Não foi possível enviar agora." }
-                        android.os.Handler(android.os.Looper.getMainLooper()).post { forgotBusy = false; forgotMessage = msg }
-                    }.start()
-                }) { Text(if (forgotBusy) "Enviando…" else "Enviar link") }
-            },
-            dismissButton = { TextButton(enabled = !forgotBusy, onClick = { showForgot = false }) { Text("Fechar") } }
-        )
+            }.start()
+        }
     }
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -9296,7 +9294,11 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
         }
     }
 
-    Column(Modifier.fillMaxSize().background(Night)) {
+    if (showForgot) QinblyForgotScreen(
+        input = forgotInput, onInput = { forgotInput = it.trim().take(120); forgotError = "" }, busy = forgotBusy, sent = forgotSent,
+        error = forgotError, cooldown = forgotCooldown, onSend = sendForgot,
+        onBack = { showForgot = false; forgotSent = false; forgotError = "" }
+    ) else Column(Modifier.fillMaxSize().background(Night)) {
         Column(
             Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(top = 8.dp, bottom = 12.dp)
         ) {
@@ -9353,7 +9355,7 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
             Spacer(Modifier.height(14.dp))
             QinblyAuthButton(if (createAccount) "Criar conta" else "Entrar", onClick = submit, enabled = !loading, loading = loading, fill = QinblyBrand.Accent)
             if (!createAccount) TextButton(
-                onClick = { forgotEmail = email.trim().takeIf { it.contains("@") } ?: ""; forgotMessage = ""; showForgot = true },
+                onClick = { forgotInput = email.trim(); forgotSent = false; forgotError = ""; forgotCooldown = 0; showForgot = true },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !loading
             ) { Text("Esqueceu a senha?", color = QiblyTheme.text, style = MaterialTheme.typography.bodyMedium) }
