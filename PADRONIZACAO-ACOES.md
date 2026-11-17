@@ -703,5 +703,5 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - Gravação: `text_bg` agora é inteiro; 0 = sem fundo, 1..6 = paleta, 16777216 + RGB = cor livre (SUPABASE/28_texto_fundo_cor_livre.sql). O gateway só aceita 1..6 ao criar, então o app cria a publicação com 1 e logo em seguida grava a cor livre direto na própria publicação (regra `posts_update_own`).
 
 ## Texto com fundo colorido: hashtags fora do cartão
-- No feed, o cartão colorido mostra só o texto; as #hashtags do final aparecem logo abaixo do cartão, na cor normal do feed e clicáveis. Na prévia dos comentários e na miniatura do perfil o cartão também mostra só o texto.
+- No feed, o cartão colorido mostra só o texto; as #hashtags do final e o "Com @pessoas" marcadas aparecem **em cima** do cartão (hashtags primeiro, depois "Com"), na cor normal do feed e clicáveis. Na prévia dos comentários e na miniatura do perfil o cartão também mostra só o texto.
 - Se a publicação for só hashtags, elas ficam dentro do cartão (para não sobrar um cartão vazio).

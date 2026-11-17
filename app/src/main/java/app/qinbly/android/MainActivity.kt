@@ -4989,8 +4989,11 @@ private fun QinblyPostCard(
             } else if (post.mediaType != "image" && post.mediaType != "video" && post.caption.isNotBlank()) {
                 val textBgBrush = if (post.mediaType == "text") qinblyTextBgBrush(post.textBg) else null
                 if (textBgBrush != null) {
-                    // As #hashtags do final ficam fora do cartão colorido, logo abaixo dele.
+                    // As #hashtags do final e as pessoas marcadas ficam fora do cartão colorido, em cima dele.
                     val (cardText, cardTags) = qinblySplitCaption(post.caption).let { if (it.first.isBlank()) post.caption to emptyList() else it }
+                    if (cardTags.isNotEmpty()) QinblyRichText(cardTags.joinToString(" "), RemoteAppearance.feedTextColor, fontSize = 15.sp,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 2.dp), maxLines = 2)
+                    QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
                     Box(
                         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp)
                             .clip(RoundedCornerShape(20.dp)).background(textBgBrush)
@@ -5001,22 +5004,14 @@ private fun QinblyPostCard(
                             modifier = Modifier.fillMaxWidth(), maxLines = 8,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center, linkColor = Color.White)
                     }
-                    if (cardTags.isNotEmpty()) QinblyRichText(cardTags.joinToString(" "), RemoteAppearance.feedTextColor, fontSize = 15.sp,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 2.dp), maxLines = 2)
                 } else {
                     QinblyRichText(post.caption, RemoteAppearance.feedTextColor, fontSize = 15.sp,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
                         maxLines = 4)
                 }
             }
-            if (post.taggedUsers.isNotEmpty()) {
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Com", color = RemoteAppearance.feedTextColor.copy(alpha = 0.7f), fontSize = 13.sp)
-                    post.taggedUsers.forEach { tagged ->
-                        Text("@$tagged", color = QinblyBrand.Accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable { onOpenProfile(tagged) })
-                    }
-                }
-            }
+            val coloredTextPost = post.mediaType == "text" && post.caption.isNotBlank() && qinblyTextBgBrush(post.textBg) != null
+            if (!coloredTextPost) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
             if (post.mediaType != "poll") { // Enquetes exibem apenas votação e total de votos
                 QinblyPostActionBar(
                     post = post,
@@ -5030,6 +5025,18 @@ private fun QinblyPostCard(
             // Faixa fina (3 dp) separando uma publicação da outra; sem cartão em volta.
             Spacer(Modifier.height(6.dp))
             Box(Modifier.fillMaxWidth().padding(top = 6.dp).height(1.dp).background(RemoteAppearance.feedDividerColor.copy(alpha = 0.45f)))
+        }
+    }
+}
+
+/** Linha "Com @fulano @ciclano" das pessoas marcadas numa publicação. */
+@Composable
+private fun QinblyTaggedUsersRow(users: List<String>, onOpenProfile: (String) -> Unit) {
+    if (users.isEmpty()) return
+    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text("Com", color = RemoteAppearance.feedTextColor.copy(alpha = 0.7f), fontSize = 13.sp)
+        users.forEach { tagged ->
+            Text("@$tagged", color = QinblyBrand.Accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable { onOpenProfile(tagged) })
         }
     }
 }
