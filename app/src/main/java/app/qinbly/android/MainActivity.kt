@@ -8954,7 +8954,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             Box(Modifier.align(Alignment.BottomCenter).size(225.dp), contentAlignment = Alignment.Center) {
                 Box(Modifier.size(205.dp).zIndex(0f).clip(CircleShape).background(QiblyTheme.card).clickable {
                     val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
-                    if (image.isNotBlank()) { expandedImage = image } else onEditProfilePhoto()
+                    if (image.isNotBlank()) { expandedImage = image } else if (username.isBlank()) onAuth() else onEditProfilePhoto()
                 }) {
                     val image = profilePhotoUrl.ifBlank { avatarUrl }
                     if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
@@ -9000,7 +9000,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             ProfileStat("Seguidores", followersCount.toString(), Icons.Default.Groups) { onStat("Seguidores") }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(onClick = onEdit, modifier = Modifier.weight(1f)) {
+            OutlinedButton(onClick = { if (username.isBlank()) onAuth() else onEdit() }, modifier = Modifier.weight(1f)) {
                 Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(17.dp))
                 Spacer(Modifier.width(6.dp))
                 Text("Editar perfil")

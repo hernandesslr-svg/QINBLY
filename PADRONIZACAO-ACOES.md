@@ -651,3 +651,7 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 ## Perfil: letras do cabeçalho um degrau menores
 
 - Nome de exibição: de `headlineSmall` para `bodyLarge` (negrito), numa linha só, com "…" se for muito comprido. @usuário: de `bodyMedium` para `bodySmall`. "Adicione uma descrição ao seu perfil": agora `bodyMedium`. Contadores (Publicações, Seguindo, Seguidores), abas e bio não mudaram.
+
+## Perfil sem conta
+
+- Sem conta entrada (nome de usuário vazio), o botão "Editar perfil" e o toque na foto vazia abrem direto a tela de entrar/criar conta (`onAuth`), em vez da edição.
