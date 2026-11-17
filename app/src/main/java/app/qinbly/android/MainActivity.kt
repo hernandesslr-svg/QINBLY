@@ -273,7 +273,7 @@ private fun LivePostTime(createdAt: String, color: androidx.compose.ui.graphics.
 /** Guarda a proporção de cada foto já carregada: ao voltar para um post, a altura já está certa e a lista não pula. */
 private object QinblyImageRatioCache { val map = java.util.concurrent.ConcurrentHashMap<String, Float>() }
 
-private object QinblyBrand {
+internal object QinblyBrand {
     /** Nome do app mostrado nas telas. Para renomear a rede, troque só este valor (e app_name em res/values/strings.xml). */
     const val Name = "QINBLY"
     /** Roxo original: só o logotipo e o botão + do Criar continuam com ele. */
