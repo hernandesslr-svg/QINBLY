@@ -9448,6 +9448,8 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     val availableCategories = listOf("Criador de conteúdo", "Lifestyle", "Viagens 🌎", "Games 🎮", "Beleza 💄", "Moda", "Fitness", "Música", "Arte", "Fotografia", "Tecnologia", "Gastronomia", "Humor", "Educação", "Esportes", "Natureza", "Academia 🏋️", "Musculação 💪", "Corrida 🏃", "Dança 💃", "Saúde e bem-estar", "Nutrição 🥗", "Yoga 🧘", "Pets 🐾", "Família", "Maternidade", "Empreendedorismo", "Negócios", "Finanças", "Carros 🚗", "Motos 🏍️", "Cinema 🎬", "Livros 📚", "DIY e artesanato", "Decoração", "Jardinagem 🌱", "Ciência", "Comédia", "Futebol ⚽", "Culinária 🍳")
     val categoryPrefix = "✦ "
     val initialCategoryLine = initialBio.lineSequence().firstOrNull().orEmpty()
+    // Uma cor diferente para cada categoria (mesma ordem da lista acima), usada com transparência nos chips.
+    val categoryColors = listOf(Color(0xFFE53935), Color(0xFFFB8C00), Color(0xFFFDD835), Color(0xFF7CB342), Color(0xFF2E7D32), Color(0xFF00897B), Color(0xFF00ACC1), Color(0xFF1E88E5), Color(0xFF3949AB), Color(0xFF8E24AA), Color(0xFFD81B60), Color(0xFF6D4C41), Color(0xFF546E7A), Color(0xFFFF7043), Color(0xFFC0CA33), Color(0xFF80CBC4), Color(0xFF81D4FA), Color(0xFF5E35B1), Color(0xFFF06292), Color(0xFFA1887F), Color(0xFF004D40), Color(0xFFB71C1C), Color(0xFFFFB300), Color(0xFF0D47A1), Color(0xFFAED581), Color(0xFFCE93D8), Color(0xFFFF8A65), Color(0xFF827717), Color(0xFF00E5FF), Color(0xFF9FA8DA), Color(0xFFAD1457), Color(0xFFFFE082), Color(0xFFBF360C), Color(0xFF3E2723), Color(0xFFFFAB91), Color(0xFF9E9E9E), Color(0xFF212121), Color(0xFF00BFA5), Color(0xFFAEEA00), Color(0xFFE1BEE7))
     val storedCategories = if (initialCategoryLine.startsWith(categoryPrefix)) initialCategoryLine.removePrefix(categoryPrefix).split(" • ").filter { it in availableCategories } else emptyList()
     var selectedCategories by rememberKept("editprofile.categories", storedCategories)
     var bio by rememberKept("editprofile.bio", (if (storedCategories.isNotEmpty()) initialBio.substringAfter('\n', "") else initialBio).lineSequence().filterNot { it.startsWith(countryPrefix) }.joinToString("\n").trim())
@@ -9580,14 +9582,20 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
             }
             Text("Escolha até 5 categorias para aparecerem abaixo do seu nome.", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                availableCategories.forEach { category ->
+                availableCategories.forEachIndexed { index, category ->
                     val selected = category in selectedCategories
+                    val tint = categoryColors[index % categoryColors.size]
                     androidx.compose.material3.FilterChip(
                         selected = selected,
                         onClick = { selectedCategories = if (selected) selectedCategories - category else if (selectedCategories.size < 5) selectedCategories + category else selectedCategories },
-                        label = { Text(category.replace(Regex("\\s*[^\\p{L}\\p{N}\\s]+\\s*$"), ""), color = if (selected) Color.White else RemoteAppearance.screenTextColor) },
+                        label = { Text(category.replace(Regex("\\s*[^\\p{L}\\p{N}\\s]+\\s*$"), ""), color = RemoteAppearance.screenTextColor) },
                         shape = RoundedCornerShape(16.dp),
-                        colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(selectedContainerColor = QinblyBrand.Accent, containerColor = QiblyTheme.card)
+                        // Cor transparente: fundo e contorno com a cor da categoria; selecionada fica mais forte, com contorno cheio.
+                        border = BorderStroke(if (selected) 2.dp else 1.dp, tint.copy(alpha = if (selected) 1f else 0.55f)),
+                        colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
+                            containerColor = tint.copy(alpha = 0.16f),
+                            selectedContainerColor = tint.copy(alpha = 0.5f)
+                        )
                     )
                 }
             }
