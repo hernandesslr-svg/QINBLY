@@ -6522,7 +6522,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     }
     // Deslizar para os lados troca as abas de cima (Descobrir, Seguindo, Em alta, Vídeos, Lives, Perto de mim); a barra de baixo não muda por gesto.
     val feedTabOrder = listOf("Descobrir", "Seguindo", "Em alta", "Vídeos", "Lives", "Perto de mim")
-    // Barra de cima (QINBLY, busca e sino) sobe junto com a rolagem e volta ao rolar para cima; as abas ficam fixas.
+    // O cabeçalho inteiro (QINBLY, busca, sino e as abas Descobrir/Seguindo/Em alta/...) sobe junto com a rolagem e volta ao rolar para cima.
     var headerPx by remember { mutableFloatStateOf(0f) }
     var headerOffset by remember { mutableFloatStateOf(0f) }
     val headerConnection = remember {
@@ -6559,7 +6559,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 )
             }
     ) {
-        Box(
+        Column(
             Modifier.fillMaxWidth().clipToBounds()
                 .layout { measurable, constraints ->
                     val placeable = measurable.measure(constraints)
@@ -6567,8 +6567,8 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     val shownHeight = (placeable.height + headerOffset).toInt().coerceAtLeast(0)
                     layout(placeable.width, shownHeight) { placeable.place(0, headerOffset.toInt()) }
                 }
-                .padding(start = 16.dp, end = 8.dp, top = 6.dp).heightIn(min = 42.dp)
         ) {
+        Box(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 6.dp).heightIn(min = 42.dp)) {
             Text(QinblyBrand.Name, style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(QinblyBrand.Logo, QinblyBrand.Pink))), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, modifier = Modifier.align(Alignment.Center))
             Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onSearch, modifier = Modifier.size(42.dp)) {
@@ -6622,6 +6622,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             }
         }
         Box(Modifier.fillMaxWidth().height(0.5.dp).background(RemoteAppearance.feedDividerColor))
+        }
         if (selectedFeedTab == "Lives") {
             QinblyLivesPage(emptyList(), onNotice)
         } else if (selectedFeedTab == "Perto de mim") {
