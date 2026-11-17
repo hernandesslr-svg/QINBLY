@@ -1643,12 +1643,12 @@ internal object QiblyTheme {
     var largeText by androidx.compose.runtime.mutableStateOf(false)
     var reduceMotion by androidx.compose.runtime.mutableStateOf(false)
     // Tema escuro "azul-noite": fundo azul bem escuro, cartões um tom mais claros e texto sempre legível.
-    val background: Color get() = if (dark) Color(0xFF171719) else Color(0xFFF0F2F5)
-    val card: Color get() = if (dark) Color(0xFF171719) else Color.White
+    val background: Color get() = if (dark) Color(0xFF171719) else Color(0xFFF6F6F7)
+    val card: Color get() = if (dark) Color(0xFF171719) else Color(0xFFF6F6F7)
     val soft: Color get() = if (dark) Color(0xFF262628) else Color(0xFFE4E6EB)
     val text: Color get() = if (dark) Color(0xFFF2F4F8) else Color.Black
     val secondary: Color get() = if (dark) Color(0xFFA9B5C8) else Color(0xFF555555)
-    val border: Color get() = if (dark) Color(0xFF2E2E30) else Color(0xFFDADDE1)
+    val border: Color get() = if (dark) Color(0xFF2E2E30) else Color(0xFFDADADD)
 }
 
 private object RemoteAppearance {
@@ -2045,7 +2045,7 @@ private fun QinblyApp() {
     MaterialTheme(
         colorScheme = if (QiblyTheme.dark)
             darkColorScheme(primary = QinblyBrand.AccentLight, secondary = QinblyBrand.AccentLight, background = QiblyTheme.background, surface = QiblyTheme.card, onBackground = QiblyTheme.text, onSurface = QiblyTheme.text)
-        else androidx.compose.material3.lightColorScheme(primary = QinblyBrand.Accent, secondary = QinblyBrand.Accent, background = Color(0xFFF0F2F5), surface = Color.White, onBackground = Color.Black, onSurface = Color.Black),
+        else androidx.compose.material3.lightColorScheme(primary = QinblyBrand.Accent, secondary = QinblyBrand.Accent, background = Color(0xFFF6F6F7), surface = Color(0xFFF6F6F7), onBackground = Color.Black, onSurface = Color.Black),
         // Padrão de legibilidade para todas as telas e abas.
         typography = Typography(
             bodyLarge = androidx.compose.ui.text.TextStyle(fontFamily = nameFontFamily(appFontStyle), fontSize = 18.sp, lineHeight = 26.sp),
