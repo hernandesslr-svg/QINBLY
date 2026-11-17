@@ -670,3 +670,10 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 ## Botão de contorno (ModernUi.kt) respeita cores passadas
 
 - O app tem o seu próprio `OutlinedButton` em `ModernUi.kt` (pílula preenchida: cinza no escuro, lilás `#EFE9FB` no claro) e antes ele ignorava o parâmetro `colors`. Por isso o "Editar perfil" azul clarinho não aparecia. Agora, se quem chama passar `colors` de propósito, vale a cor passada; sem isso, continua o padrão de antes. Os outros botões de contorno do tema branco seguem lilás até pedirem para mudar.
+
+## Feed, contas privadas e Comunidades (diagnóstico de 17/11)
+
+- O feed (`GET /api/posts`) mostra tudo o que o banco libera para quem está olhando: publicações públicas de perfis não privados, as suas e as de perfis privados que você segue. Nada é filtrado no app além disso.
+- Perfil com "conta privada" (`profiles.is_private`) esconde as publicações de quem não o segue (regra `qinbly_can_see_author`). Em 17/11, `ana_rose` é privada: as 6 publicações mais novas do banco são dela e só aparecem para quem a segue.
+- Corrigido: Comunidades dava 500 por recursão infinita nas regras (migração 27, `SUPABASE/27_corrige_recursao_comunidades.sql`).
+- Ainda aberto: com a sessão vencida (401 no heartbeat/caixa de entrada), contar visualização (`/view`) dá 500 por falta de permissão. O feed continua carregando como visitante.
