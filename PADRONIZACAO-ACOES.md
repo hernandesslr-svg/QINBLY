@@ -664,4 +664,5 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 ## Perfil: botão Editar perfil no tema branco
 
 - No tema branco o botão "Editar perfil" fica azul bem clarinho (`#E7F0FD`), sem contorno, com texto e lápis em `#1160D0`. Antes parecia lilás/rosa. No tema escuro continua o cinza de antes.
-- Tons de "branco" do tema claro (em `QiblyTheme`): fundo `#FBF9FF`, cartões `#FFFFFF`, campos/áreas suaves `#F3F0FA`, bordas `#E9E4F5`. Fundo, áreas suaves e bordas têm um fundo levemente lilás, herança do roxo antigo da marca.
+- Tons de "branco" do tema claro (em `QiblyTheme`): fundo `#FBF9FF`, cartões `#FFFFFF`, campos/áreas suaves `#F3F0FA`, bordas `#E9E4F5`. Esses tons eram levemente lilás (herança do roxo antigo da marca) e foram trocados pelo cinza gelo.
+- Tons atuais do tema claro (cinza gelo, esboço A aprovado): fundo `#F0F2F5`, cartões `#FFFFFF`, áreas suaves `#E4E6EB`, bordas `#DADDE1`. O tema escuro não mudou.
