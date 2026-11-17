@@ -136,6 +136,9 @@ internal fun QinblyKeepChatAtBottom(state: androidx.compose.foundation.lazy.Lazy
  */
 internal fun qinblySanitized(new: androidx.compose.ui.text.input.TextFieldValue, sanitize: (String) -> String): androidx.compose.ui.text.input.TextFieldValue {
     val clean = sanitize(new.text)
+    // Nada mudou: devolve o valor original, com a palavra que o teclado está montando (composição).
+    // Recriar o TextFieldValue apagava essa palavra e o teclado deixava de mostrar a faixa de sugestões.
+    if (clean == new.text) return new
     val pos = sanitize(new.text.take(new.selection.end)).length.coerceAtMost(clean.length)
     return androidx.compose.ui.text.input.TextFieldValue(clean, androidx.compose.ui.text.TextRange(pos))
 }

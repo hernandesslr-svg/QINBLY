@@ -682,3 +682,9 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 
 - `GET /api/posts` aceita visitante: com o token vencido ele responde 200 só com publicações públicas (o app não via 401 e nunca renovava a sessão). Resultado: feed mostrando só perfis públicos e nenhuma publicação de conta privada que a pessoa segue.
 - `QinblyApi.getPosts` agora chama `/api/auth/me` antes (se der 401, o app renova o token sozinho) e só então busca o feed com o token novo.
+
+## Teclado: faixa de sugestões nos campos de texto
+
+- Padrão do app: todo campo de texto precisa manter a palavra que o teclado está montando (a "composição" do `TextFieldValue`), senão o teclado esconde a faixa de sugestões (todo → todos, todas).
+- Causa do sumiço no Editar perfil (Nome, Nome de usuário, Bio): `qinblySanitized` (Extras.kt) refazia o `TextFieldValue` a cada letra, sem a composição. Agora, se o filtro não mudou nada no texto, devolve o valor original com a composição; só refaz quando precisa descartar um caractere (ex.: maiúscula no nome de usuário).
+- Regra para campos novos: ao limitar/filtrar o texto, copiar `value.composition` junto (como em `Extras.kt` nos comentários) ou devolver o próprio valor quando nada mudou. Não usar `KeyboardType.Password/VisiblePassword` nem desligar `autoCorrect` em campo de texto comum.
