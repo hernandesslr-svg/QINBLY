@@ -954,6 +954,7 @@ private val QinblyTextBgPairs = listOf(
 )
 
 private fun qinblyTextBgBrush(index: Int): Brush? {
+    if (index >= 16777216) return androidx.compose.ui.graphics.SolidColor(Color((0xFF shl 24) or (index and 0xFFFFFF)))
     val pair = QinblyTextBgPairs.getOrNull(index - 1) ?: return null
     return Brush.linearGradient(listOf(pair.first, pair.second))
 }
@@ -11714,7 +11715,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         val maxChars = if (initialMode == "poll") 200 else 5000
         val ownUsername = prefs.getString("username", "").orEmpty().removePrefix("@")
         if (initialMode == "text") {
-            var textBg by remember { mutableStateOf(1) }
+            var textBg by remember { mutableStateOf(0) }
             val capState = remember { QinblyCaptionState(caption) }
             val bgBrush = qinblyTextBgBrush(textBg)
             // Rascunho: o texto e o fundo são salvos sozinhos e voltam na próxima vez que você abrir "Nova publicação".
@@ -11727,7 +11728,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     capState.legend = l
                     capState.tags.clear(); capState.tags.addAll(t)
                     caption = saved
-                    textBg = prefs.getInt("draft_text_bg", 1).coerceIn(0, QinblyTextBgPairs.size)
                     draftRestored = true
                 }
             }
@@ -11811,6 +11811,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                     .clickable { textBg = i }
                             )
                         }
+                        QinblyColorWheelDot(selected = textBg >= 16777216, startColor = if (textBg >= 16777216) Color((0xFF shl 24) or (textBg and 0xFFFFFF)) else Color.hsv(330f, 0.85f, 0.8f)) { textBg = it }
                     }
                     Text(if (textBg == 0) "Sem fundo" else "Fundo colorido", color = Muted, style = MaterialTheme.typography.labelSmall)
                     QinblyHashtagField(capState) { caption = it }

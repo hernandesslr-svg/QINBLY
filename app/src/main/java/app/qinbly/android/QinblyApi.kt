@@ -311,9 +311,19 @@ object QinblyApi {
         } catch (_: Exception) { /* Cache failure must never block the feed. */ }
     }
 
-    fun createTextPost(token: String, caption: String, visibility: String = "public", tagged: List<String> = emptyList(), textBg: Int = 0, scheduledAt: String = ""): JSONObject =
-        request("POST", "/api/posts", JSONObject().put("caption", caption.trim()).put("mediaType", "text").put("visibility", visibility).put("taggedUsernames", org.json.JSONArray(tagged)).put("textBg", textBg)
+    fun createTextPost(token: String, caption: String, visibility: String = "public", tagged: List<String> = emptyList(), textBg: Int = 0, scheduledAt: String = ""): JSONObject {
+        // 1..6 = fundos da paleta; a partir de 16777216 é cor livre (16777216 + RGB), gravada logo após criar a publicação.
+        val custom = textBg >= 16777216
+        val created = request("POST", "/api/posts", JSONObject().put("caption", caption.trim()).put("mediaType", "text").put("visibility", visibility).put("taggedUsernames", org.json.JSONArray(tagged)).put("textBg", if (custom) 1 else textBg)
             .also { if (scheduledAt.isNotBlank()) it.put("scheduledAt", scheduledAt) }, token)
+        if (custom) {
+            try {
+                val postId = created.optJSONObject("post")?.optString("id").orEmpty()
+                if (postId.isNotBlank()) restCall(token, "PATCH", "posts?id=eq.$postId", JSONObject().put("text_bg", textBg).toString(), "return=minimal")
+            } catch (_: Exception) { /* fica com o fundo 1 da paleta se não conseguir gravar a cor */ }
+        }
+        return created
+    }
 
     fun createPollPost(token: String, question: String, options: List<String>, durationHours: Int = 24, multipleAnswers: Boolean = false, showResultsAfterVote: Boolean = true): JSONObject =
         request("POST", "/api/posts", JSONObject().put("caption", question.trim())

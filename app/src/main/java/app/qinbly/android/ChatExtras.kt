@@ -3,6 +3,20 @@ package app.qinbly.android
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxSize
@@ -224,6 +238,75 @@ internal fun QinblyTagPeopleDialog(token: String?, myUsername: String, initial: 
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Bolinha de cor livre do fundo do texto. A bolinha é sempre colorida (nunca muda de cor). Segurar e girar o dedo em volta
+ * abre uma roda de cores; a cor escolhida aparece ao vivo no painel. Devolve 16777216 + RGB.
+ */
+@Composable
+internal fun QinblyColorWheelDot(selected: Boolean, startColor: Color, onPick: (Int) -> Unit) {
+    var holding by remember { mutableStateOf(false) }
+    var hue by remember { mutableStateOf(0f) }
+    var picked by remember { mutableStateOf(startColor) }
+    val ringCenter = remember { floatArrayOf(Float.NaN, Float.NaN) }
+    val rainbow = remember { Brush.sweepGradient(listOf(Color.hsv(0f, 0.85f, 0.95f), Color.hsv(60f, 0.85f, 0.95f), Color.hsv(120f, 0.85f, 0.95f), Color.hsv(180f, 0.85f, 0.95f), Color.hsv(240f, 0.85f, 0.95f), Color.hsv(300f, 0.85f, 0.95f), Color.hsv(360f, 0.85f, 0.95f))) }
+    Box(
+        Modifier.size(40.dp).clip(CircleShape).background(rainbow)
+            .border(if (selected) 3.dp else 0.dp, if (selected) QiblyTheme.text else Color.Transparent, CircleShape)
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    down.consume()
+                    holding = true
+                    var pressed = true
+                    while (pressed) {
+                        val event = awaitPointerEvent()
+                        val p = event.changes.firstOrNull { it.id == down.id } ?: break
+                        pressed = p.pressed
+                        if (pressed) {
+                            val cx = if (ringCenter[0].isNaN()) size.width / 2f else ringCenter[0]
+                            val cy = if (ringCenter[1].isNaN()) size.height / 2f else ringCenter[1]
+                            val dx = p.position.x - cx
+                            val dy = p.position.y - cy
+                            if (dx * dx + dy * dy > 20f * 20f) {
+                                hue = ((Math.toDegrees(Math.atan2(dy.toDouble(), dx.toDouble())) + 360.0) % 360.0).toFloat()
+                                picked = Color.hsv(hue, 0.85f, 0.8f)
+                                onPick(16777216 or (picked.toArgb() and 0xFFFFFF))
+                            }
+                            p.consume()
+                        }
+                    }
+                    holding = false
+                    ringCenter[0] = Float.NaN; ringCenter[1] = Float.NaN
+                }
+            }
+    ) {
+        if (holding) {
+            Popup(popupPositionProvider = object : PopupPositionProvider {
+                override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
+                    val x = (anchorBounds.center.x - popupContentSize.width / 2).coerceIn(0, (windowSize.width - popupContentSize.width).coerceAtLeast(0))
+                    val y = (anchorBounds.center.y - popupContentSize.height / 2).coerceIn(0, (windowSize.height - popupContentSize.height).coerceAtLeast(0))
+                    ringCenter[0] = x + popupContentSize.width / 2f - anchorBounds.left
+                    ringCenter[1] = y + popupContentSize.height / 2f - anchorBounds.top
+                    return IntOffset(x, y)
+                }
+            }) {
+                Box(Modifier.size(190.dp), contentAlignment = Alignment.Center) {
+                    Canvas(Modifier.fillMaxSize()) {
+                        val stroke = 28.dp.toPx()
+                        val r = size.minDimension / 2f - stroke / 2f
+                        drawCircle(brush = rainbow, radius = r, style = Stroke(stroke))
+                        val a = Math.toRadians(hue.toDouble())
+                        val knob = Offset(center.x + (Math.cos(a) * r).toFloat(), center.y + (Math.sin(a) * r).toFloat())
+                        drawCircle(Color.White, 16.dp.toPx(), knob)
+                        drawCircle(picked, 12.dp.toPx(), knob)
+                    }
+                    Box(Modifier.size(56.dp).clip(CircleShape).background(picked).border(3.dp, Color.White, CircleShape))
                 }
             }
         }

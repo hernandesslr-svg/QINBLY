@@ -695,3 +695,9 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - Cada linha: foto (ou inicial), nome com o selo de verificado (`QinblyVerifiedBadge`, sem escrever "verificado"), @usuário e círculo à direita; marcado = círculo azul com check branco.
 - Não há chips/marcações azuis embaixo da busca nem contador; o limite é de 10 pessoas (ao passar, aparece "Você pode marcar até 10 pessoas.").
 - Digitando 2+ letras, filtra a aba atual e acrescenta o resultado da busca geral. Devolve os @ sem o "@".
+
+## Fundo do texto: cor livre e início sem cor
+- Ao entrar em "Texto" a opção marcada é sempre "Aa" (sem cor); o fundo do rascunho não é mais restaurado, só o texto.
+- Depois dos 6 fundos da paleta há a **bolinha de cor livre** (`QinblyColorWheelDot`, em `ChatExtras.kt`). A bolinha é sempre colorida (arco-íris) e nunca muda de cor; quando a cor livre está em uso ela ganha só o contorno de "selecionada".
+- Segurar a bolinha e girar o dedo abre a roda de cores por cima; a cor aparece ao vivo no painel do texto e vale ao soltar.
+- Gravação: `text_bg` agora é inteiro; 0 = sem fundo, 1..6 = paleta, 16777216 + RGB = cor livre (SUPABASE/28_texto_fundo_cor_livre.sql). O gateway só aceita 1..6 ao criar, então o app cria a publicação com 1 e logo em seguida grava a cor livre direto na própria publicação (regra `posts_update_own`).
