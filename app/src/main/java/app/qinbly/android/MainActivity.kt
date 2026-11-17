@@ -4766,6 +4766,7 @@ private fun QinblyPostCard(
 
                 }
             }
+            QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
             if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video") && post.caption.isNotBlank()) {
                 QinblyFeedCaption(post.caption, Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp))
             }
@@ -4989,11 +4990,10 @@ private fun QinblyPostCard(
             } else if (post.mediaType != "image" && post.mediaType != "video" && post.caption.isNotBlank()) {
                 val textBgBrush = if (post.mediaType == "text") qinblyTextBgBrush(post.textBg) else null
                 if (textBgBrush != null) {
-                    // As #hashtags do final e as pessoas marcadas ficam fora do cartão colorido, em cima dele.
+                    // As #hashtags do final ficam fora do cartão colorido, em cima dele (as pessoas marcadas ficam logo abaixo do nome, em todas as publicações).
                     val (cardText, cardTags) = qinblySplitCaption(post.caption).let { if (it.first.isBlank()) post.caption to emptyList() else it }
                     if (cardTags.isNotEmpty()) QinblyRichText(cardTags.joinToString(" "), RemoteAppearance.feedTextColor, fontSize = 15.sp,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 2.dp), maxLines = 2)
-                    QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
                     Box(
                         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp)
                             .clip(RoundedCornerShape(20.dp)).background(textBgBrush)
@@ -5010,8 +5010,6 @@ private fun QinblyPostCard(
                         maxLines = 4)
                 }
             }
-            val coloredTextPost = post.mediaType == "text" && post.caption.isNotBlank() && qinblyTextBgBrush(post.textBg) != null
-            if (!coloredTextPost) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
             if (post.mediaType != "poll") { // Enquetes exibem apenas votação e total de votos
                 QinblyPostActionBar(
                     post = post,
