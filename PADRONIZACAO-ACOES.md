@@ -642,3 +642,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - A mensagem é sempre a mesma exista conta ou não ("Se existir uma conta com esses dados..."), para ninguém descobrir quem tem cadastro.
 - Com e-mail, o app usa `/api/auth/forgot` (como antes). Com nome de usuário, usa a função `qinbly-login` (versão 2, `action = "forgot"`): ela acha o e-mail da conta e manda o link do Supabase para lá; o e-mail nunca volta para o app.
 - O link do e-mail é o padrão do Supabase e abre a página do endereço configurado em Authentication, URL Configuration, "Site URL". O app ainda não recebe o link por dentro, então a página de criar a senha nova depende dessa configuração.
+
+## Nome de usuário inicial curto
+
+- Conta nova criada sem nome escolhido (principalmente pelo Google) recebe `user_` + 8 letras e números (ex.: `user_66b473ea`), em vez de 32. É o padrão da coluna `profiles.username` (`SUPABASE/26_username_curto_padrao.sql`, já aplicado). A pessoa troca depois em Editar perfil (3 a 24 caracteres).
+- Contas que já existiam não mudam.
