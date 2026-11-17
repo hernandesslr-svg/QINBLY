@@ -655,3 +655,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 ## Perfil sem conta
 
 - Sem conta entrada (nome de usuário vazio), o botão "Editar perfil" e o toque na foto vazia abrem direto a tela de entrar/criar conta (`onAuth`), em vez da edição.
+
+## Editar perfil: categorias coloridas e transparentes
+
+- Só as cores mudaram (layout, foto e campos iguais). Cada uma das 40 categorias tem uma cor própria, sem repetir (`categoryColors`, mesma ordem de `availableCategories`; se entrar categoria nova, acrescentar uma cor nova ao fim da lista).
+- Fundo transparente (16% da cor) e contorno de 1 dp (55%); selecionada fica com fundo 50%, contorno cheio de 2 dp e um check na frente do nome. O texto continua na cor padrão do tema.
