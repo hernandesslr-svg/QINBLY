@@ -764,3 +764,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - Depois de publicada, o bloco final de #hashtags **não aparece** em lugar nenhum: feed (foto/vídeo, texto simples, cartão colorido) e visualizador de vídeo mostram só a legenda. Perfil, comentários e chat já mostravam só a legenda.
 - Ao editar a publicação, as hashtags aparecem de volta no campo para poder mudar.
 - Esta regra substitui "hashtags sempre embaixo do texto" (17/11). As pessoas marcadas continuam embaixo do texto. #hashtags escritas no meio do texto continuam aparecendo.
+
+## Perto de mim só com publicações da região + Mercado e avisos separado (18/11)
+- **Perto de mim (aba do Início):** agora é um feed de publicações de quem mora na sua cidade. O botão "Cidades próximas" amplia para o mesmo estado. Usa o mesmo card, visualizador, comentários e envio do feed. A cidade vem de `profiles.city` (a pessoa só entra na lista depois que o app grava a cidade dela; isso é feito ao abrir o Perto de mim ou o Mercado e ao abrir o Início). Conta privada só aparece se você segue; suas publicações e as de quem você bloqueou não aparecem. Sem distância em km (não guardamos coordenadas).
+- **Mercado e avisos:** saiu do Perto de mim e fica em **Menu (três tracinhos) > Mercado e avisos**. É a mesma tela de antes (vendas, doações, achados, eventos, serviços e o Mural de avisos), em tela cheia com seta de voltar. Pede a localização como antes.
+- Busca de publicações da região: `QinblyApi.getNearbyPosts` (consulta `posts` ligada ao `profiles.city` e busca cada publicação completa).

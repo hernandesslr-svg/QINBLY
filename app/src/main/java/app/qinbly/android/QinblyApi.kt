@@ -893,6 +893,33 @@ object QinblyApi {
     fun myCity(prefs: android.content.SharedPreferences): String =
         (prefs.getString("market_city", null)?.takeIf { it.isNotBlank() } ?: prefs.getString("device_place", null)).orEmpty()
 
+    /**
+     * Publicações de quem mora na mesma cidade (region = false) ou no mesmo estado, as "cidades próximas" (region = true).
+     * Usa profiles.city e a regra do banco: conta privada só aparece se você segue. Não mostra as suas nem as de quem você bloqueou.
+     */
+    fun getNearbyPosts(token: String?, place: String, region: Boolean): List<PostSummary> {
+        val tk = token?.takeIf { it.isNotBlank() } ?: storedAccessToken() ?: return emptyList()
+        val me = userIdFromToken(tk)
+        val clean = { s: String -> s.replace(Regex("[*%,()]"), " ").trim() }
+        val cityName = clean(place.substringBefore(","))
+        val state = clean(place.substringAfter(",", ""))
+        if (cityName.isBlank()) return emptyList()
+        fun enc(v: String) = java.net.URLEncoder.encode(v, "UTF-8")
+        val cityFilter = if (region && state.isNotBlank()) "profiles.city=ilike.*" + enc(state) else "profiles.city=ilike." + enc(cityName) + "*"
+        val blocked = try { getBlockedUsers(tk).map { it.id } } catch (_: Exception) { emptyList() }
+        val skip = (blocked + listOfNotNull(me)).filter { it.isNotBlank() }
+        val now = enc(java.time.Instant.now().toString())
+        val path = "posts?select=id,profiles!posts_user_id_fkey!inner(city)&$cityFilter&visibility=eq.public&archived_at=is.null" +
+            "&or=(publish_at.is.null,publish_at.lte.$now)" + (if (skip.isNotEmpty()) "&user_id=not.in.(" + skip.joinToString(",") + ")" else "") +
+            "&order=created_at.desc&limit=24"
+        val rows = org.json.JSONArray(rest(tk, "GET", path))
+        val ids = (0 until rows.length()).mapNotNull { rows.optJSONObject(it)?.optString("id")?.takeIf { id -> id.isNotBlank() } }
+        val results = arrayOfNulls<PostSummary>(ids.size)
+        val threads = ids.mapIndexed { i, id -> Thread { try { results[i] = getPost(id) } catch (_: Exception) { } }.also { it.start() } }
+        threads.forEach { it.join() }
+        return results.filterNotNull()
+    }
+
     /** Só envia ao servidor quando a cidade mudou desde a última vez. */
     fun syncMyCity(prefs: android.content.SharedPreferences, token: String) {
         val city = myCity(prefs)

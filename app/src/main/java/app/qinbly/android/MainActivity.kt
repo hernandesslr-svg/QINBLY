@@ -74,6 +74,7 @@ import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Accessibility
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material.icons.outlined.PersonAddAlt1
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.SwapHoriz
@@ -2166,6 +2167,7 @@ private fun QinblyApp() {
                         onEditProfile = { showSettings = false; showEditProfile = true },
                         onAuth = { showSettings = false; showAuth = true; tab = 4 },
                         onSwitchAccounts = { showAccountSwitcher = true },
+                        onOpenConversation = { u -> showSettings = false; messageRecipient = u; tab = 1 },
                         onLogout = {
                             // Encerrar apenas a sessão atual; manter as outras contas salvas para uso futuro.
                             QinblyCache.clear(appContext)
@@ -5962,9 +5964,67 @@ private fun QinblyLiveSearch(lives: List<QinblyLive>, onBack: () -> Unit, onOpen
     }
 }
 
+/** Perto de mim: publicações de quem está na sua cidade ou nas cidades próximas (mesmo estado). O Mercado fica em Configurações. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun QinblyNearbyFeed(
+    place: String,
+    posts: List<QinblyApi.PostSummary>,
+    onPosts: (List<QinblyApi.PostSummary>) -> Unit,
+    postItem: @Composable (QinblyApi.PostSummary) -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    var region by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(true) }
+    var failed by remember { mutableStateOf(false) }
+    var refresh by remember { mutableIntStateOf(0) }
+    val cityName = place.substringBefore(",").trim().ifBlank { "sua cidade" }
+    val stateName = place.substringAfter(",", "").trim()
+    LaunchedEffect(place, region, refresh) {
+        loading = true; failed = false
+        val token = prefs.getString("token", null)
+        val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                if (!token.isNullOrBlank()) try { QinblyApi.syncMyCity(prefs, token) } catch (_: Exception) { }
+                QinblyApi.getNearbyPosts(token, place.ifBlank { QinblyApi.myCity(prefs) }, region)
+            } catch (_: Exception) { null }
+        }
+        if (result == null) failed = true else onPosts(result)
+        loading = false
+    }
+    androidx.compose.material3.pulltorefresh.PullToRefreshBox(isRefreshing = loading, onRefresh = { refresh++ }, modifier = Modifier.fillMaxSize()) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 18.dp)) {
+            item(key = "nearby-head") {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = RemoteAppearance.feedSecondaryTextColor, modifier = Modifier.size(18.dp))
+                        Text(" " + (if (region && stateName.isNotBlank()) stateName else place.ifBlank { cityName }), color = RemoteAppearance.feedTextColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(false to "Na cidade", true to "Cidades próximas").forEach { (isRegion, label) ->
+                            val on = region == isRegion
+                            Text(label, color = if (on) QiblyTheme.background else RemoteAppearance.feedSecondaryTextColor, style = MaterialTheme.typography.labelLarge, fontWeight = if (on) FontWeight.Bold else FontWeight.Medium,
+                                modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (on) QiblyTheme.text else QiblyTheme.soft).clickable { region = isRegion }.padding(horizontal = 14.dp, vertical = 8.dp))
+                        }
+                    }
+                }
+            }
+            if (!loading && posts.isEmpty()) item(key = "nearby-empty") {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 36.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = RemoteAppearance.feedSecondaryTextColor, modifier = Modifier.size(36.dp))
+                    Text(if (failed) "Não foi possível carregar" else if (region) "Ainda não há publicações nas cidades próximas" else "Ainda não há publicações em $cityName", color = RemoteAppearance.feedTextColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Text(if (failed) "Puxe a tela para baixo para tentar de novo." else if (region) "Quando alguém do seu estado publicar, aparece aqui." else "Toque em Cidades próximas para ver a região toda.", color = RemoteAppearance.feedSecondaryTextColor, style = MaterialTheme.typography.bodyMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
+            }
+            items(posts, key = { "near-" + it.id }) { post -> Column(Modifier.fillMaxWidth()) { postItem(post) } }
+        }
+    }
+}
+
 /** Aba "Perto de mim": pede a localização, mostra onde você está e abre as configurações se a permissão foi bloqueada. */
 @Composable
-private fun QinblyNearbyPage(onNotice: (String) -> Unit, onOpenConversation: (String) -> Unit = {}) {
+private fun QinblyNearbyPage(onNotice: (String) -> Unit, content: @Composable (Double, Double, String, () -> Unit) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val locPrefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
     var locEnabled by remember { mutableStateOf(locPrefs.getBoolean("setting_location_enabled", true)) }
@@ -6034,7 +6094,7 @@ private fun QinblyNearbyPage(onNotice: (String) -> Unit, onOpenConversation: (St
     }
     val hereNow = here
     if (allowed && !failed && hereNow != null) {
-        QinblyNearbyHub(hereNow.first, hereNow.second, place, RemoteAppearance.feedTextColor, RemoteAppearance.feedSecondaryTextColor, onRefreshLocation = { attempt++ }, onOpenConversation = onOpenConversation, onNotice = onNotice)
+        content(hereNow.first, hereNow.second, place) { attempt++ }
         return
     }
     Column(
@@ -6559,7 +6619,9 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         "Comunidade" -> allFeedPosts.filter { it.comments > 0 }
         else -> allFeedPosts
     }
+    var nearbyPosts by remember { mutableStateOf<List<QinblyApi.PostSummary>>(emptyList()) }
     val displayedPosts = when (selectedFeedTab) {
+        "Perto de mim" -> nearbyPosts
         "Vídeos" -> allFeedPosts.filter { it.mediaType.equals("video", ignoreCase = true) }
         "Em alta" -> allFeedPosts.filter { qinblyInPeriod(it, emAltaPeriod) }.sortedByDescending { qinblyHotScore(it) }.take(20)
         else -> feedTabPosts
@@ -6706,7 +6768,22 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         if (selectedFeedTab == "Lives") {
             QinblyLivesPage(emptyList(), onNotice)
         } else if (selectedFeedTab == "Perto de mim") {
-            QinblyNearbyPage(onNotice, onOpenConversation)
+            QinblyNearbyPage(onNotice) { _, _, place, _ ->
+                QinblyNearbyFeed(place, nearbyPosts, { nearbyPosts = it }) { post ->
+                    QinblyPostCard(
+                        post = post,
+                        prefs = prefs,
+                        nameFontStyle = nameFontStyle,
+                        onNotice = onNotice,
+                        onOpenProfile = onOpenProfile,
+                        onOpenViewer = { fullscreenVideoId = it.id },
+                        onComment = { openFeedComments(it) },
+                        onShare = { sharePost = it },
+                        onPostsTransform = { change -> nearbyPosts = change(nearbyPosts) },
+                        onRefresh = { }
+                    )
+                }
+            }
         } else if (!loading && displayedPosts.isEmpty() && selectedFeedTab != "Em alta" && selectedFeedTab != "Descobrir") {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -9983,7 +10060,7 @@ private fun nameFontFamily(style: String): androidx.compose.ui.text.font.FontFam
 }
 
 @Composable
-private fun SettingsPage(prefs: android.content.SharedPreferences, username: String, nameFontStyle: String, appFontStyle: String, onAppFontChange: (String) -> Unit, onNameFontChange: (String) -> Unit, onBack: () -> Unit, onNotice: (String) -> Unit, onEditProfile: () -> Unit, onAuth: () -> Unit, onSwitchAccounts: () -> Unit, onLogout: () -> Unit) {
+private fun SettingsPage(prefs: android.content.SharedPreferences, username: String, nameFontStyle: String, appFontStyle: String, onAppFontChange: (String) -> Unit, onNameFontChange: (String) -> Unit, onBack: () -> Unit, onNotice: (String) -> Unit, onEditProfile: () -> Unit, onAuth: () -> Unit, onSwitchAccounts: () -> Unit, onLogout: () -> Unit, onOpenConversation: (String) -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var section by remember { mutableStateOf("home") }
     var fontSection by remember { mutableStateOf("names") }
@@ -10090,6 +10167,17 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
         }.start()
     }
 
+    var showMarket by remember { mutableStateOf(false) }
+    if (showMarket) {
+        QinblyDialog(onDismissRequest = { showMarket = false }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+            Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding().navigationBarsPadding()) {
+                QinblyNearbyPage(onNotice) { lat, lng, place, refresh ->
+                    QinblyNearbyHub(lat, lng, place, RemoteAppearance.feedTextColor, RemoteAppearance.feedSecondaryTextColor, onRefreshLocation = refresh,
+                        onOpenConversation = { showMarket = false; onOpenConversation(it) }, onNotice = onNotice, onClose = { showMarket = false })
+                }
+            }
+        }
+    }
     val title = when (section) {
         "account" -> "Conta"
         "privacy" -> "Privacidade"
@@ -10138,6 +10226,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
             if (section == "home") {
                 item { Text("CONFIGURAÇÕES", color = Color(0xFF8A9BAB), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold) }
                 val categories = listOf(
+                    Triple("market", "Mercado e avisos", "Vendas, doações, achados e avisos do bairro"),
                     Triple("account", "Conta", "Senha, e-mail, aparelhos e exclusão"),
                     Triple("privacy", "Privacidade", "Quem vê, quem fala com você e bloqueios"),
                     Triple("location", "Localização", "Usar a localização e apagar o que foi guardado"),
@@ -10156,6 +10245,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                 categories.forEach { category ->
                     item {
                         val icon = when (category.first) {
+                            "market" -> Icons.Outlined.Storefront
                             "account" -> Icons.Outlined.PersonOutline
                             "privacy" -> Icons.Outlined.Lock
                             "location" -> Icons.Outlined.LocationOn
@@ -10173,7 +10263,8 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                                     val share = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Venha para o ${QinblyBrand.Name}! Baixe o app e me siga: @${username}") }
                                     context.startActivity(Intent.createChooser(share, "Convidar amigos"))
                                 } catch (_: Exception) { onNotice("Não foi possível abrir o compartilhamento neste aparelho.") }
-                            } else section = category.first
+                            } else if (category.first == "market") showMarket = true
+                            else section = category.first
                         }
                     }
                 }

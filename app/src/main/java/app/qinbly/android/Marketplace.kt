@@ -147,12 +147,13 @@ internal fun uploadMarketPhoto(context: Context, token: String, userId: String, 
     return MARKET_STORAGE + path
 }
 
-/** Tela "Perto de mim" depois que a localização foi encontrada: categorias em cima, anúncios embaixo e "+" para publicar. */
+/** Tela "Mercado e avisos" (fica em Configurações) depois que a localização foi encontrada: categorias em cima, anúncios embaixo e "+" para publicar. */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 internal fun QinblyNearbyHub(
     lat: Double, lng: Double, place: String, textColor: Color, secondary: Color,
-    onRefreshLocation: () -> Unit, onOpenConversation: (String) -> Unit, onNotice: (String) -> Unit
+    onRefreshLocation: () -> Unit, onOpenConversation: (String) -> Unit, onNotice: (String) -> Unit,
+    onClose: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
@@ -213,6 +214,7 @@ internal fun QinblyNearbyHub(
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 12.dp, top = 6.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (onClose != null) Box(Modifier.size(44.dp).clip(CircleShape).clickable { onClose() }, contentAlignment = Alignment.Center) { QinblyBackIcon(textColor, 22.dp) }
             Column(Modifier.size(44.dp).clip(CircleShape).clickable { showDrawer = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 for (i in 0 until 3) Box(Modifier.padding(vertical = 2.5.dp).size(width = 20.dp, height = 2.5.dp).clip(CircleShape).background(textColor))
             }
@@ -221,7 +223,7 @@ internal fun QinblyNearbyHub(
                     Text(if (mine == "doacao") "Minhas doações" else if (mine == "saved") "Anúncios salvos" else "Meus anúncios", color = textColor, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                     Text("Toque nos três tracinhos para voltar", color = secondary, fontSize = 12.sp)
                 } else {
-                    Text("Perto de mim", color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                    Text("Mercado e avisos", color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
                     Row(Modifier.clip(RoundedCornerShape(10.dp)).clickable { showCityPicker = true }.padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(if (city.isNotBlank()) city else "Escolher cidade", color = secondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                         Text(" ▾", color = secondary, fontSize = 11.sp)
@@ -405,7 +407,7 @@ internal fun QinblyNearbyHub(
                     if (mine != null) Row(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF262628)).clickable { showDrawer = false; mine = null }.padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
-                    ) { QinblyBackIcon(Color.White, 20.dp); Text("  Voltar para Perto de mim", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp) }
+                    ) { QinblyBackIcon(Color.White, 20.dp); Text("  Voltar para o Mercado", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp) }
                     Spacer(Modifier.height(6.dp))
                     Row(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(MarketBlue).clickable { showDrawer = false; showMenu = true }.padding(vertical = 14.dp),
