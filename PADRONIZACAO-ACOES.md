@@ -835,3 +835,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - Anel de story (faixa de stories e fotos das publicações/perfil): agora vale também o que você já abriu neste aparelho (`seen_story_ids`, guardado a cada story que aparece no visualizador), não só o "visto" do servidor. Antes só marcava o último story da fila ao fechar, e o anel de quem você viu no meio ficava aceso.
 - Na publicação, tocar na **foto** com anel abre o story da pessoa (`QinblyStoryRings.openRequest`); tocar no **nome** continua abrindo o perfil. Sem anel, a foto abre o perfil como antes. Em abas sem a faixa de stories (Seguindo, Em alta...) um host invisível (`QinblyStoriesRow(hostOnly = true)`) mostra o visualizador.
 - Cartão Pergunta do dia/Desafio: sem pedaço do próximo na beirada (`contentPadding` 14dp nos dois lados e `pageSpacing` 16dp).
+
+## Pesquisas, hashtags e stories vistos são de cada conta
+- Antes, o histórico "Recentes" da busca, as "Suas hashtags" e os stories já vistos ficavam guardados no aparelho inteiro, então apareciam em todas as contas que entravam nele.
+- Agora cada conta tem o seu: `qinbly_search_history:<usuário>`, `qinbly_hashtags_<usuário>` (arquivo próprio) e `seen_story_ids:<usuário>`. A chave vem de `qinblyAccountKey(prefs)` (usuário em minúsculas).
+- Dados antigos compartilhados deixam de ser lidos; cada conta recomeça vazia.

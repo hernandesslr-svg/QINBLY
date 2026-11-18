@@ -720,7 +720,7 @@ private fun qinblyFeedTagCounts(): Map<String, Int> =
 
 /** Histórico das hashtags que a própria pessoa usou (salvo no aparelho): últimas usadas e quantas vezes cada uma. */
 private object QinblyHashtagStore {
-    private fun prefs(context: android.content.Context) = context.getSharedPreferences("qinbly_hashtags", android.content.Context.MODE_PRIVATE)
+    private fun prefs(context: android.content.Context) = context.getSharedPreferences("qinbly_hashtags_" + qinblyAccountKey(context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE)), android.content.Context.MODE_PRIVATE)
     private fun readCounts(context: android.content.Context): LinkedHashMap<String, Int> {
         val out = LinkedHashMap<String, Int>()
         try {
@@ -2792,17 +2792,18 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
             QinblyEngagement.learnFromUsers(prefs, s)
         } catch (_: Exception) { }
     }
-    var history by remember { mutableStateOf((prefs.getString("qinbly_search_history", "") ?: "").split("\n").filter { it.isNotBlank() }) }
+    val historyKey = "qinbly_search_history:" + qinblyAccountKey(prefs)
+    var history by remember(historyKey) { mutableStateOf((prefs.getString(historyKey, "") ?: "").split("\n").filter { it.isNotBlank() }) }
     val saveHistory: (String) -> Unit = { term ->
         val t = term.trim()
         if (t.length >= 2) {
             history = (listOf(t) + history.filterNot { it.equals(t, true) }).take(10)
-            prefs.edit().putString("qinbly_search_history", history.joinToString("\n")).apply()
+            prefs.edit().putString(historyKey, history.joinToString("\n")).apply()
         }
     }
     val removeHistory: (String) -> Unit = { term ->
         history = history.filterNot { it == term }
-        prefs.edit().putString("qinbly_search_history", history.joinToString("\n")).apply()
+        prefs.edit().putString(historyKey, history.joinToString("\n")).apply()
     }
     // Se o servidor não devolver hashtags em alta, usa as do feed já carregado.
     val hotTags = if (trending.isNotEmpty()) trending else remember(QinblyCache.feed) {
@@ -3008,7 +3009,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                                 Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Text("Recentes", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.weight(1f))
                                     Text("Limpar tudo", color = QiblyTheme.text, fontSize = 13.sp,
-                                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { history = emptyList(); prefs.edit().remove("qinbly_search_history").apply() }.padding(6.dp))
+                                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { history = emptyList(); prefs.edit().remove(historyKey).apply() }.padding(6.dp))
                                 }
                             }
                             items(history.size, key = { "h-" + history[it] }) { i ->
@@ -8841,6 +8842,10 @@ private fun rememberKeptListState(key: String): androidx.compose.foundation.lazy
  * de voltar (do celular ou da tela), a janela volta como estava.
  */
 /** Voltar de "Ver original"/"Ver perfil" para o story de onde a pessoa saiu (no mesmo story). */
+/** Chave por conta: histórico de busca, hashtags usadas e stories vistos são de cada perfil, não do aparelho. */
+internal fun qinblyAccountKey(prefs: android.content.SharedPreferences): String =
+    prefs.getString("username", "").orEmpty().removePrefix("@").trim().lowercase().ifBlank { "anon" }
+
 /** Quem tem story novo (ainda não visto por você): o anel azul na foto das publicações e do perfil acende e apaga a partir daqui. */
 internal object QinblyStoryRings {
     val unseen = androidx.compose.runtime.mutableStateMapOf<String, Boolean>()
@@ -8849,7 +8854,7 @@ internal object QinblyStoryRings {
     var openRequest by mutableStateOf<QinblyApi.TrayEntry?>(null)
     var version by mutableIntStateOf(0)
     private fun key(username: String) = username.removePrefix("@").trim().lowercase()
-    private fun seenIds(prefs: android.content.SharedPreferences): Set<String> = prefs.getStringSet("seen_story_ids", emptySet()).orEmpty()
+    private fun seenIds(prefs: android.content.SharedPreferences): Set<String> = prefs.getStringSet("seen_story_ids:" + qinblyAccountKey(prefs), emptySet()).orEmpty()
     fun hasUnseen(username: String): Boolean = unseen[key(username)] == true
     /** Tem story que você ainda não viu? Vale o que o servidor diz e também o que você já abriu neste aparelho. */
     fun entryUnseen(prefs: android.content.SharedPreferences, e: QinblyApi.TrayEntry): Boolean {
@@ -8867,7 +8872,7 @@ internal object QinblyStoryRings {
     fun markViewed(prefs: android.content.SharedPreferences, entry: QinblyApi.TrayEntry, storyId: String) {
         val all = seenIds(prefs)
         if (storyId in all) return
-        prefs.edit().putStringSet("seen_story_ids", (if (all.size > 800) all.toList().takeLast(600).toSet() else all) + storyId).apply()
+        prefs.edit().putStringSet("seen_story_ids:" + qinblyAccountKey(prefs), (if (all.size > 800) all.toList().takeLast(600).toSet() else all) + storyId).apply()
         version++
         entries[key(entry.username)] = entry
         unseen[key(entry.username)] = !QinblyStoryMute.isMuted(prefs, entry.username) && entryUnseen(prefs, entry)
