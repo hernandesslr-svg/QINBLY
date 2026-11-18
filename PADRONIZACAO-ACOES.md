@@ -730,3 +730,9 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - **Embaixo da mídia** ficam a foto pequena e o nome de quem publicou (com o selo de verificado, sem escrever "verificado") e, logo abaixo, a legenda. A hora e o check ficam do lado de fora.
 - Publicação só de texto: o texto aparece num bloco cinza arredondado, com o perfil embaixo. Recado escrito junto aparece acima.
 - O texto enviado continua levando o link por baixo (versões antigas e fora do app), mas ele não é mostrado. Se a publicação não estiver no cache, ela é buscada pelo id.
+
+## Tela "Enviar para" (compartilhar publicação) e envio para comunidades
+- **Enviar para:** sem o letreiro de prévia da publicação no topo; só a barra "Buscar pessoas". As conversas recentes (ou pessoas encontradas) aparecem em **lista**: foto, nome, @ e um círculo à direita. Tocar na linha marca/desmarca, dá para marcar várias.
+- Com alguém marcado, o rodapé vira o botão **"Enviar (N)"** (e o campo opcional de mensagem). Sem ninguém marcado, o rodapé mostra as ações: **Copiar link, Outros apps, Seu story e Comunidade**.
+- **Comunidade:** abre uma tela cheia "Comunidades" com a busca "Buscar comunidade" e a lista das comunidades em que a pessoa participa (emoji, nome, membros, círculo de seleção). Marca várias e toca em **"Enviar (N)"** (fixo embaixo, acima dos botões do celular). Não tem campo de texto. Cada envio vira uma mensagem na comunidade com o texto e o link da publicação.
+- Sem comunidade nenhuma: aviso "Você ainda não está em nenhuma comunidade", com a dica de entrar em uma na aba Comunidades.
