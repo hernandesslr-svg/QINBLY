@@ -3306,12 +3306,13 @@ private fun QiblyPublicationVideo(url: String, modifier: Modifier = Modifier) {
     val saverContext = androidx.compose.ui.platform.LocalContext.current
     // Padrão do app: o vídeo já começa sozinho (sem som) e repete até a pessoa pausar.
     Box(modifier.clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
-        InlineVideoPlayer(url = url, modifier = Modifier.fillMaxSize(), autoplay = true)
+        // No feed não tem pausar/tocar por toque: o toque abre o vídeo, e é lá dentro que a pessoa pausa.
+        InlineVideoPlayer(url = url, modifier = Modifier.fillMaxSize(), autoplay = true, pausable = false)
     }
 }
 
 @Composable
-private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autoplay: Boolean = false) {
+private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autoplay: Boolean = false, pausable: Boolean = true) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var playbackError by remember(url) { mutableStateOf(false) }
     var isPlaying by remember(url) { mutableStateOf(autoplay) }
@@ -3460,7 +3461,7 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
             }
             if (isPlaying && (buffering || !firstFrameShown)) QinblyLoadingSpinner(Modifier.fillMaxSize(), tint = QinblyBrand.Accent)
             if (!isPlaying) {
-                Box(
+                if (pausable) Box(
                     modifier = Modifier.size(62.dp).clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.55f))
                         .clickable {
@@ -3473,7 +3474,7 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
                     Icon(Icons.Default.PlayArrow, contentDescription = "Reproduzir vídeo", tint = Color.White, modifier = Modifier.size(38.dp))
                 }
             } else {
-                Box(Modifier.fillMaxSize().clickable { player.pause(); isPlaying = false })
+                if (pausable) Box(Modifier.fillMaxSize().clickable { player.pause(); isPlaying = false })
                 // Barra de progresso fina + botão de som, só enquanto o vídeo toca.
                 Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(3.dp).background(Color.White.copy(alpha = 0.25f))) {
                     Box(Modifier.fillMaxHeight().fillMaxWidth(progress).background(QinblyBrand.Accent))

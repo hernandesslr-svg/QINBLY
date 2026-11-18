@@ -774,3 +774,6 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - Um símbolo só (cestinha de mercado, `Icons.Outlined.ShoppingBasket`, opção N escolhida no esboço) no canto esquerdo do cabeçalho do Início, do lado oposto da busca e do sino. Toque abre o **Mercado e avisos** em tela cheia (`QinblyMarketDialog`), com tudo dentro: Tudo, Vendas, Doações, Achados, Eventos, Serviços e Avisos, e o "+" para anunciar.
 - O atalho em Menu > Mercado e avisos continua existindo e abre a mesma tela.
 - Ainda não existe: pontinho de "novidade" no mercadinho e a tela de quadros (Vendas/Doações/...) do esboço; por enquanto abre a tela com as categorias em cima.
+
+## Vídeo no feed sem pausar (18/11)
+- No feed (card da publicação) o vídeo toca sozinho, sem som, e **não tem mais toque para pausar nem botão de play**: tocar no vídeo abre o visualizador, e é lá dentro que a pessoa pausa. O botão de som continua. (`InlineVideoPlayer(pausable = false)` só no `QiblyPublicationVideo`; o vídeo solto no chat continua com o play.)
