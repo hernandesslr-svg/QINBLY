@@ -4159,7 +4159,7 @@ private fun QinblyPostViewer(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            QiblyAccountAvatar(post.username, post.avatarUrl, 52.dp) { onOpenProfile(post.username) }
+                            QiblyAccountAvatar(post.username, post.avatarUrl, 52.dp, storyRing = true) { onOpenProfile(post.username) }
                             Text("@" + post.username, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, fontSize = 17.sp)
                             if (post.username.isNotBlank() && !post.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
                                 QinblyFollowButton(
@@ -4725,7 +4725,7 @@ private fun QinblyPostCard(
                         if (post.mediaUrl.isBlank() || (post.mediaType != "image" && post.mediaType != "video")) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().background(Color.Transparent).padding(horizontal = 14.dp, vertical = 7.dp)) {
                     val avatarUrl = post.avatarUrl
-                    QiblyAccountAvatar(post.username, avatarUrl, 52.dp) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
+                    QiblyAccountAvatar(post.username, avatarUrl, 52.dp, storyRing = true) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }) {
                         Row(verticalAlignment = Alignment.CenterVertically) { Text(post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name }, color = RemoteAppearance.feedTextColor, fontSize = 17.sp, fontWeight = if (nameFontStyle == "Elegante") FontWeight.Medium else FontWeight.Bold, fontFamily = nameFontFamily(nameFontStyle)); if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(16.dp) } }
@@ -4742,7 +4742,7 @@ private fun QinblyPostCard(
                     verticalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                        QiblyAccountAvatar(post.username, post.avatarUrl, 52.dp) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
+                        QiblyAccountAvatar(post.username, post.avatarUrl, 52.dp, storyRing = true) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
                         Column(Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -6553,6 +6553,13 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     val resumeFeedReels = remember { QinblyKeep.state("feed.resumeReels", false) }
     var selectedStory by remember { mutableStateOf<Pair<String, String>?>(null) }
     var unreadNotifications by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        val token = prefs.getString("token", null)
+        if (!token.isNullOrBlank()) try {
+            val tray = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getStoryTray(token) }
+            QinblyStoryRings.update(prefs, tray)
+        } catch (_: Exception) { }
+    }
     // Primeira abertura: pede de uma vez as permissões que o app usa (câmera, microfone, mídia, localização, notificações).
     // Isso só pede a permissão; a câmera continua sendo ligada apenas na tela Criar.
     val startupPermissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
@@ -8808,6 +8815,25 @@ private fun rememberKeptListState(key: String): androidx.compose.foundation.lazy
  * de voltar (do celular ou da tela), a janela volta como estava.
  */
 /** Voltar de "Ver original"/"Ver perfil" para o story de onde a pessoa saiu (no mesmo story). */
+/** Quem tem story novo (ainda não visto por você): o anel azul na foto das publicações e do perfil acende e apaga a partir daqui. */
+internal object QinblyStoryRings {
+    val unseen = androidx.compose.runtime.mutableStateMapOf<String, Boolean>()
+    private fun key(username: String) = username.removePrefix("@").trim().lowercase()
+    fun hasUnseen(username: String): Boolean = unseen[key(username)] == true
+    fun update(prefs: android.content.SharedPreferences, tray: List<QinblyApi.TrayEntry>) {
+        val ownSeen = prefs.getStringSet("own_story_seen", emptySet()).orEmpty()
+        tray.forEach { e ->
+            unseen[key(e.username)] = e.stories.isNotEmpty() && !QinblyStoryMute.isMuted(prefs, e.username) &&
+                (if (e.mine) e.stories.any { it.id !in ownSeen } else e.hasUnseen)
+        }
+    }
+    /** Chamado ao fechar o visualizador: apaga o anel na hora (depois a bandeja confirma com o servidor). */
+    fun markSeen(prefs: android.content.SharedPreferences, entry: QinblyApi.TrayEntry) {
+        if (entry.mine) prefs.edit().putStringSet("own_story_seen", prefs.getStringSet("own_story_seen", emptySet()).orEmpty() + entry.stories.map { it.id }).apply()
+        unseen[key(entry.username)] = false
+    }
+}
+
 private object QinblyStoryReturn {
     var entry by mutableStateOf<QinblyApi.TrayEntry?>(null)
     var index = 0
@@ -8856,6 +8882,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
                 try { QinblyApi.syncMyCity(prefs, token) } catch (_: Exception) { }
                 QinblyApi.getStoryTray(token)
             } } catch (_: Exception) { storyTray }
+            QinblyStoryRings.update(prefs, storyTray)
         }
     }
     LaunchedEffect(Unit) { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyStoryMute.sync(prefs) } }
@@ -8903,7 +8930,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
         // Fila de pessoas na ordem da faixa: o seu story primeiro, depois quem você segue.
         val storyQueue = listOfNotNull(myStoryEntry?.takeIf { it.stories.isNotEmpty() }) + trayOthers
         val personPos = storyQueue.indexOfFirst { it.username.equals(entry.username, ignoreCase = true) }
-        QinblyStoryViewer(entry, QinblyBrand.Accent, onNotice, onDismiss = { viewingStory = null; storyRefresh++ }, onCamera = { id -> qinblyStartContribution(id); onAddStory() },
+        QinblyStoryViewer(entry, QinblyBrand.Accent, onNotice, onDismiss = { QinblyStoryRings.markSeen(prefs, viewingStory ?: entry); viewingStory = null; storyRefresh++ }, onCamera = { id -> qinblyStartContribution(id); onAddStory() },
             startIndex = viewingIndex,
             hasNextPerson = personPos >= 0 && personPos < storyQueue.lastIndex,
             hasPreviousPerson = personPos > 0,
@@ -8992,7 +9019,7 @@ private fun QinblyNoteBubble(note: String, onClick: (() -> Unit)? = null) {
 }
 
 @Composable
-private fun QiblyAccountAvatar(username: String, fallbackUrl: String, diameter: Dp, onClick: () -> Unit) {
+private fun QiblyAccountAvatar(username: String, fallbackUrl: String, diameter: Dp, storyRing: Boolean = false, onClick: () -> Unit) {
     val avatarVersion = qiblyAvatarRefreshVersion.intValue
     val avatarContext = androidx.compose.ui.platform.LocalContext.current
     QinblyAvatarCache.init(avatarContext)
@@ -9016,8 +9043,10 @@ private fun QiblyAccountAvatar(username: String, fallbackUrl: String, diameter: 
             }
         }
     }
+    val ringOn = storyRing && QinblyStoryRings.hasUnseen(key)
     Box(Modifier.size(diameter).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
-        Box(Modifier.size(diameter).clip(CircleShape).background(QiblyTheme.card)) {
+        if (ringOn) Box(Modifier.size(diameter).border(2.5.dp, QinblyBrand.Accent, CircleShape))
+        Box(Modifier.size(if (ringOn) diameter - 8.dp else diameter).clip(CircleShape).background(QiblyTheme.card)) {
             if (resolvedUrl.isNotBlank()) AsyncImage(model = coil.request.ImageRequest.Builder(avatarContext).data(resolvedUrl).memoryCacheKey("avatar:$username:$avatarVersion:$resolvedUrl").diskCacheKey("avatar:$username:$avatarVersion:$resolvedUrl").build(), contentDescription = "Foto de @$username", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             else Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.fillMaxSize().padding(8.dp))
         }
@@ -9174,6 +9203,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             }
             // Retrato centralizado na capa.
             Box(Modifier.align(Alignment.BottomCenter).size(225.dp), contentAlignment = Alignment.Center) {
+                if (QinblyStoryRings.hasUnseen(username)) Box(Modifier.size(219.dp).border(3.dp, QinblyBrand.Accent, CircleShape))
                 Box(Modifier.size(205.dp).zIndex(0f).clip(CircleShape).background(QiblyTheme.card).clickable {
                     val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
                     if (image.isNotBlank()) { expandedImage = image } else if (username.isBlank()) onAuth() else onEditProfilePhoto()
@@ -10604,6 +10634,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
         }
         Box(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
             Box(Modifier.size(225.dp), contentAlignment = Alignment.Center) {
+                if (QinblyStoryRings.hasUnseen(publicUsername)) Box(Modifier.size(219.dp).border(3.dp, QinblyBrand.Accent, CircleShape))
                 Box(Modifier.size(205.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
                     if (profilePhotoUrl.isNotBlank()) { expandedImage = profilePhotoUrl }
                 }) {

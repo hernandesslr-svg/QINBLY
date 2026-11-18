@@ -812,3 +812,10 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 ## "Limpar tudo" da busca em branco
 - O botão "Limpar tudo" dos recentes (topo da busca) agora usa a cor do texto (branco no escuro), igual ao "Limpar" de "Suas hashtags".
 - Correção: dentro da janela da busca os insets do Compose chegam zerados, então a folga do fim usa o padrão do app `qinblyNavBarPadding()` (a mesma medida usada nas outras telas cheias) em vez de `WindowInsets.navigationBars`.
+
+## Anel de story na foto do perfil
+- Quem tem story novo (ainda não visto por você) ganha o anel azul (`QinblyBrand.Accent`) na foto: no cabeçalho das publicações (feed, vídeos) e na página do perfil, própria e de outras pessoas.
+- Quando a pessoa abre e fecha o story, o anel apaga (some por completo, igual à faixa de stories). Quem você silenciou não mostra anel.
+- Estado único em `QinblyStoryRings` (MainActivity.kt): atualizado quando a bandeja de stories carrega (faixa do Início e Feed) e ao fechar o visualizador. Para o seu próprio story, o "visto" fica guardado no aparelho (`own_story_seen`).
+- `QiblyAccountAvatar` ganhou o parâmetro `storyRing` (padrão desligado); só as publicações ligam. Chat, notificações e listas continuam sem anel.
+- Limite: só aparece anel para quem está na sua bandeja (você e quem você segue, mais stories coletivos).
