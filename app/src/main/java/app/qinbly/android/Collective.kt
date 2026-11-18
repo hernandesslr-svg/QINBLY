@@ -107,7 +107,7 @@ internal fun MediaThumb(uri: Uri, video: Boolean, modifier: Modifier, size: Int 
 internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, onCamera: () -> Unit, onDone: () -> Unit, onDismiss: () -> Unit, newCollab: Boolean = false) {
     val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
     var step by remember { mutableStateOf("gallery") }
     var picked by remember { mutableStateOf<GalleryItem?>(null) }
     var granted by remember { mutableStateOf(hasGalleryPermission(context)) }

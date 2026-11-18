@@ -840,3 +840,12 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - Antes, o histórico "Recentes" da busca, as "Suas hashtags" e os stories já vistos ficavam guardados no aparelho inteiro, então apareciam em todas as contas que entravam nele.
 - Agora cada conta tem o seu: `qinbly_search_history:<usuário>`, `qinbly_hashtags_<usuário>` (arquivo próprio) e `seen_story_ids:<usuário>`. A chave vem de `qinblyAccountKey(prefs)` (usuário em minúsculas).
 - Dados antigos compartilhados deixam de ser lidos; cada conta recomeça vazia.
+
+## Check-up: o que é da conta fica só na conta
+Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o que é do aparelho (token, tema, tamanho da letra, permissões, atualização do app) é compartilhado.
+- Novo `AccountPrefs.kt`: `QinblyScopedPrefs` / `.byAccount()` embrulha a sessão (`qinbly_session`) e guarda por usuário (`chave@usuário`) estas chaves: `following_*` (quem você segue, cache local), `muted_*`, `pinned_*`, `inbox_hidden_*` (conversas silenciadas, fixadas e ocultas), `draft_text*` (rascunho), `hidden_words`, `story_default_audience`, `story_muted`, `story_mute_migrated`, `market_city`, `market_recent_cities`, `qinbly_live_search_history`, `notif_seen_ids`, `bg_notified*` (avisos em segundo plano), `setting_notice_*`, `setting_notifications`, `setting_activity_status`, `setting_comments`. Todas as telas e o NotifyWorker usam `.byAccount()`.
+- `qinblyAccountFile(context, base)`: arquivos próprios por conta para `qinbly_pins` (mensagem fixada no chat), `qinbly_hidden` (mensagens apagadas para mim) e `qinbly_stickers` (favoritas e recentes). Já feitos antes: histórico de busca, hashtags usadas e stories vistos.
+- Dados antigos (de antes da separação) vão para a primeira conta que abrir cada chave; as outras contas começam vazias.
+- Ao trocar ou sair da conta: `QinblyStoryRings.clear()` (anéis de story) e as palavras ocultas passam a ser lidas sempre da conta aberta.
+- Já estavam certos: curtidas/salvos/seguindo em memória (chave por conta), cache de leituras da API (por id do usuário), cache do feed e snapshot do perfil (limpos ao trocar).
+- Continuam do aparelho (de propósito): `setting_theme`, `setting_large_text`, `setting_reduce_motion`, `setting_autoplay`, `setting_save_default`, `setting_location_enabled`, `name_font_style`, `app_font_style`, `device_place`, histórico de emoji dos comentários, `permissions_asked_v2` e dados de atualização do app.

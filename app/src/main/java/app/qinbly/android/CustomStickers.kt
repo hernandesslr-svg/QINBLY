@@ -111,7 +111,7 @@ internal fun qinblyMakeSticker(context: Context, uri: Uri, onDone: (File?, Strin
 @Composable
 internal fun QinblyStickerCreateDialog(accent: Color, onNotice: (String) -> Unit, onDismiss: () -> Unit, onCreated: () -> Unit) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
     var busy by remember { mutableStateOf(false) }
     val picker = rememberQinblyPhotoLauncher { source ->
         if (source == null) { onDismiss(); return@rememberQinblyPhotoLauncher }
@@ -141,7 +141,7 @@ internal fun QinblyStickerCreateDialog(accent: Color, onNotice: (String) -> Unit
 @Composable
 internal fun QinblyCustomStickerRow(accent: Color, textColor: Color, refreshKey: Int, onPick: (QinblyApi.CustomSticker) -> Unit, onNotice: (String) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
     var list by remember { mutableStateOf<List<QinblyApi.CustomSticker>>(emptyList()) }
     LaunchedEffect(refreshKey) {
         val token = prefs.getString("token", null)
@@ -182,8 +182,8 @@ internal fun QinblyCustomStickerRow(accent: Color, textColor: Color, refreshKey:
 @Composable
 internal fun QinblyStickerGrid(accent: Color, cardColor: Color, textColor: Color, refreshKey: Int, onCreate: () -> Unit, onPick: (QinblyApi.CustomSticker) -> Unit, onNotice: (String) -> Unit, modifier: Modifier = Modifier, bleed: androidx.compose.ui.unit.Dp = 0.dp) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
-    val local = remember { context.getSharedPreferences("qinbly_stickers", Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
+    val local = remember { context.getSharedPreferences(qinblyAccountFile(context, "qinbly_stickers"), Context.MODE_PRIVATE) }
     var list by remember { mutableStateOf<List<QinblyApi.CustomSticker>>(emptyList()) }
     var toDelete by remember { mutableStateOf<QinblyApi.CustomSticker?>(null) }
     var tab by remember { mutableStateOf(0) }

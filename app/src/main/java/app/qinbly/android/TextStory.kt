@@ -118,7 +118,7 @@ internal fun QinblyTextStoryContent(s: QinblyTextStory, modifier: Modifier = Mod
 internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> Unit, onNotice: (String) -> Unit, collab: Boolean = false, contributeTo: String? = null, onCompose: ((String) -> Unit)? = null) {
     val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
     var text by remember { mutableStateOf("") }
     var bg by remember { mutableStateOf(0) }
     var font by remember { mutableStateOf(0) }
@@ -239,7 +239,7 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
 internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent: Color, collab: Boolean, onNotice: (String) -> Unit, onDismiss: () -> Unit) {
     val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
     val token = remember { prefs.getString("token", null) }
     val uid = remember { QinblyApi.currentUserId(prefs) }
     var comments by remember { mutableStateOf<List<QinblyApi.StoryComment>?>(null) }
@@ -303,7 +303,7 @@ internal fun QinblyStoryReplyBar(
 ) {
     val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
     val token = remember { prefs.getString("token", null) }
     val uid = remember { QinblyApi.currentUserId(prefs) }
     var draft by remember { mutableStateOf("") }

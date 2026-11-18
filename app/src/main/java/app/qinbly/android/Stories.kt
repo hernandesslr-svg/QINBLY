@@ -105,7 +105,7 @@ internal fun QinblyStoryMenu(
     onDismiss: () -> Unit, onNotice: (String) -> Unit, onChanged: () -> Unit, onViewMine: () -> Unit, onAddStory: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
     var step by remember { mutableStateOf("menu") } // menu, text, collab, mood, capsule, note
     var noteText by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
@@ -277,7 +277,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                                onOpenProfile: (String, Int) -> Unit = { _, _ -> }, onOpenOriginal: (QinblyStoryOrigin, Int) -> Unit = { _, _ -> },
                                hasNextPerson: Boolean = false, hasPreviousPerson: Boolean = false, onNextPerson: () -> Unit = {}, onPreviousPerson: () -> Unit = {}, onAddStory: (() -> Unit)? = null) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
     val token = remember { prefs.getString("token", null) }
     val items = remember(entry.username) {
         mutableStateListOf<QinblyApi.StoryItem>().apply {
@@ -342,7 +342,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                 try {
                     QinblyApi.markStoryViewed(token, current.id)
                     // Guarda a cidade de quem viu (só a dona do story enxerga) para separar "Perto de você" de "De mais longe".
-                    val sp = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)
+                    val sp = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
                     val uid = QinblyApi.currentUserId(sp)
                     val city = (sp.getString("market_city", null)?.takeIf { it.isNotBlank() } ?: sp.getString("device_place", null)).orEmpty()
                     if (!uid.isNullOrBlank() && city.isNotBlank())
@@ -361,7 +361,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     var likeCount by remember(current.id) { mutableIntStateOf(0) }
     LaunchedEffect(current.id) {
         if (token.isNullOrBlank() || current.page != "story") return@LaunchedEffect
-        val sp = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)
+        val sp = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
         val uid = QinblyApi.currentUserId(sp)
         try {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -371,7 +371,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
         } catch (_: Exception) { }
     }
     fun toggleLike() {
-        val sp = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)
+        val sp = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
         val uid = QinblyApi.currentUserId(sp)
         if (token.isNullOrBlank() || uid.isNullOrBlank()) return
         val id = current.id
@@ -674,7 +674,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
 internal fun QinblyStoryMessageBar(username: String, fieldBg: Color, hintColor: Color, onNotice: (String) -> Unit, onSent: () -> Unit = {}, onFocus: (Boolean) -> Unit = {}, liked: Boolean = false, onLike: () -> Unit = {}) {
     val onNotice: (String) -> Unit = qinblyToast(onNotice)
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     val token = remember { prefs.getString("token", null) }
     var draft by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
@@ -712,7 +712,7 @@ internal fun QinblyStoryMessageBar(username: String, fieldBg: Color, hintColor: 
 @Composable
 internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Color, onDismiss: () -> Unit, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
     val token = remember { prefs.getString("token", null) }
     val ownerCity = remember { (prefs.getString("market_city", null)?.takeIf { it.isNotBlank() } ?: prefs.getString("device_place", null)).orEmpty() }
     var viewers by remember { mutableStateOf<List<QinblyApi.StoryViewer>?>(null) }

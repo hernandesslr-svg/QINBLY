@@ -34,7 +34,7 @@ import kotlinx.coroutines.withContext
 @Composable
 internal fun QinblyLiveCommentsList(host: String, refreshKey: Int, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val token = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).getString("token", null) }
+    val token = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount().getString("token", null) }
     var comments by remember(host) { mutableStateOf<List<QinblyApi.LiveComment>>(emptyList()) }
     LaunchedEffect(host, refreshKey) {
         while (true) {
@@ -63,7 +63,7 @@ internal fun QinblyLiveCommentsList(host: String, refreshKey: Int, modifier: Mod
 
 /** Envia o comentário numa thread e, ao terminar, avisa [onSent] (thread principal) ou [onError]. */
 internal fun qinblySendLiveComment(context: Context, host: String, text: String, onSent: () -> Unit, onError: (String) -> Unit) {
-    val token = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).getString("token", null)
+    val token = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount().getString("token", null)
     if (token.isNullOrBlank()) { onError("Entre na sua conta para comentar."); return }
     val main = android.os.Handler(android.os.Looper.getMainLooper())
     Thread {

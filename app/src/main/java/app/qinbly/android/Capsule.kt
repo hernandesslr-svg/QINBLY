@@ -80,7 +80,7 @@ private val CapAccent = Color(0xFF2F68E0)
 private val CapMuted = Color(0xFFA9B5C8)
 private val CapMonths = listOf("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro")
 
-private fun capSess(c: Context) = c.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)
+private fun capSess(c: Context) = c.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
 private fun capMain(block: () -> Unit) { Handler(Looper.getMainLooper()).post(block) }
 private fun capLong(d: LocalDate) = "${d.dayOfMonth} de ${CapMonths[d.monthValue - 1]} de ${d.year}"
 private fun capShort(i: Instant): String { val d = i.atZone(ZoneId.systemDefault()).toLocalDate(); return "%02d/%02d/%d".format(d.dayOfMonth, d.monthValue, d.year) }

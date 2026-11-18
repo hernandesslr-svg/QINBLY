@@ -105,7 +105,7 @@ internal fun QinblyMessageSheet(
     onReply: (QinblyApi.MessageSummary) -> Unit, onTogglePin: (String) -> Unit, onSavedSticker: () -> Unit, onNotice: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
     var confirmCancel by remember { mutableStateOf(false) }
     var showInfo by remember { mutableStateOf(false) }
     var showMore by remember { mutableStateOf(false) }
@@ -145,7 +145,7 @@ internal fun QinblyMessageSheet(
                     found = try { QinblyApi.createSticker(context, token, tmp, "image/png") } finally { tmp.delete() }
                 }
                 if (favorite) {
-                    val local = context.getSharedPreferences("qinbly_stickers", Context.MODE_PRIVATE)
+                    val local = context.getSharedPreferences(qinblyAccountFile(context, "qinbly_stickers"), Context.MODE_PRIVATE)
                     local.edit().putStringSet("favs", (local.getStringSet("favs", emptySet()) ?: emptySet()) + found.id).apply()
                 }
                 main.post { onNotice(if (favorite) "Figurinha nos favoritos." else if (existed) "Essa figurinha já está nas suas." else "Figurinha salva nas suas figurinhas."); onSavedSticker() }

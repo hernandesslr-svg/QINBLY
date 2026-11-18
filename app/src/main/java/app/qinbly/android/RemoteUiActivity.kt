@@ -28,7 +28,7 @@ import org.json.JSONObject
  */
 class RemoteUiActivity : ComponentActivity() {
     private lateinit var webView: WebView
-    private val prefs by lazy { getSharedPreferences("qinbly_session", MODE_PRIVATE) }
+    private val prefs by lazy { getSharedPreferences("qinbly_session", MODE_PRIVATE).byAccount() }
     private var pendingDownloadId: Long = -1L
 
     private val handler = Handler(Looper.getMainLooper())

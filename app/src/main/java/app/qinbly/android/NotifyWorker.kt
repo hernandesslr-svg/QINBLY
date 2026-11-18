@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
 class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
     override fun doWork(): Result {
         val ctx = applicationContext
-        val prefs = ctx.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)
+        val prefs = ctx.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
         val token = prefs.getString("token", null)
         if (token.isNullOrBlank() || !prefs.getBoolean("setting_notifications", true)) return Result.success()
         if (isAppInForeground(ctx)) return Result.success()

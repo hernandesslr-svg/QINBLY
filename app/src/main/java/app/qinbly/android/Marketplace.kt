@@ -156,7 +156,7 @@ internal fun QinblyNearbyHub(
     onClose: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
     val myId = remember { QinblyApi.currentUserId(prefs) }
     // Cidade: a da localização, ou a que a pessoa escolheu (fica guardada no aparelho).
     var chosenCity by remember { mutableStateOf(prefs.getString("market_city", null)?.takeIf { it.isNotBlank() }) }
@@ -620,7 +620,7 @@ private fun ListingDetail(
 @Composable
 private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPosted: (String) -> Unit, onNotice: (String) -> Unit) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
     var subKind by remember { mutableStateOf(if (kind == "achado") "achado" else kind) }
     var title by remember { mutableStateOf("") }
     var desc by remember { mutableStateOf("") }

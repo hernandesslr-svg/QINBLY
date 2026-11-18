@@ -390,8 +390,8 @@ class MainActivity : ComponentActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        QinblyEngagement.init(getSharedPreferences("qinbly_session", MODE_PRIVATE))
-        QinblyHidden.load(getSharedPreferences("qinbly_session", MODE_PRIVATE))
+        QinblyEngagement.init(getSharedPreferences("qinbly_session", MODE_PRIVATE).byAccount())
+        QinblyHidden.load(getSharedPreferences("qinbly_session", MODE_PRIVATE).byAccount())
         QinblyAvatarCache.init(applicationContext)
         QinblyNotifyWorker.schedule(applicationContext)
         // Janela clara desde o primeiro quadro: qualquer vão entre telas mostra a cor do app, não preto.
@@ -720,7 +720,7 @@ private fun qinblyFeedTagCounts(): Map<String, Int> =
 
 /** Histórico das hashtags que a própria pessoa usou (salvo no aparelho): últimas usadas e quantas vezes cada uma. */
 private object QinblyHashtagStore {
-    private fun prefs(context: android.content.Context) = context.getSharedPreferences("qinbly_hashtags_" + qinblyAccountKey(context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE)), android.content.Context.MODE_PRIVATE)
+    private fun prefs(context: android.content.Context) = context.getSharedPreferences("qinbly_hashtags_" + qinblyAccountKey(context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount()), android.content.Context.MODE_PRIVATE)
     private fun readCounts(context: android.content.Context): LinkedHashMap<String, Int> {
         val out = LinkedHashMap<String, Int>()
         try {
@@ -1732,7 +1732,7 @@ private fun QinblyApp() {
     // GitHub-hosted, data-only UI configuration. No executable code is downloaded.
     val appContext = androidx.compose.ui.platform.LocalContext.current
     val uiPreferences = remember { appContext.getSharedPreferences("qinbly_remote_ui", android.content.Context.MODE_PRIVATE) }
-    val themePrefs = remember { appContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val themePrefs = remember { appContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     LaunchedEffect(Unit) {
         QiblyTheme.dark = themePrefs.getString("setting_theme", "dark") == "dark"
         QiblyTheme.largeText = themePrefs.getBoolean("setting_large_text", false)
@@ -1874,7 +1874,7 @@ private fun QinblyApp() {
     var messageRecipient by remember { mutableStateOf("") }
     LaunchedEffect(tab) { if (tab != 1 && messageRecipient.isNotEmpty()) messageRecipient = "" }
     QinblyApi.initialize(appContext)
-    val appPrefs = remember { appContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val appPrefs = remember { appContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var loggedInUser by remember { mutableStateOf(appPrefs.getString("username", "") ?: "") }
     QinblyDeepLinkHost(appPrefs, loggedInUser) { notice = it }
     QinblyTagHost(appPrefs, loggedInUser) { notice = it }
@@ -2171,6 +2171,7 @@ private fun QinblyApp() {
                         onLogout = {
                             // Encerrar apenas a sessão atual; manter as outras contas salvas para uso futuro.
                             QinblyCache.clear(appContext)
+                            QinblyStoryRings.clear()
                             appPrefs.edit()
                                 .remove("token")
                                 .remove("refresh_token")
@@ -2336,7 +2337,7 @@ private fun QinblyApp() {
                 showAccountSwitcher=false; showSettings=false; showAuth=false; showEditProfile=false
                 showEditProfilePhoto=false; showNotifications=false; showSearchDialog=false
                 publicProfileUsername=""; messageRecipient=""; profileStat=""; profileStatUsers=emptyList()
-                liked=emptySet(); unreadMessages=0; QinblyCache.clear(appContext); QinblyKeep.clear(); QinblyResume.clear(); accountSessionVersion++
+                liked=emptySet(); unreadMessages=0; QinblyCache.clear(appContext); QinblyKeep.clear(); QinblyResume.clear(); QinblyStoryRings.clear(); QinblyHidden.load(appPrefs); accountSessionVersion++
                 tab=0
                 notice="Conta alterada para @"+account.username+"."
                 Thread {
@@ -2490,7 +2491,7 @@ private fun NotificationsPage(
     var loading by remember { mutableStateOf(true) }
     var selectedFilter by remember { mutableStateOf("Todas") }
     val notifContext = androidx.compose.ui.platform.LocalContext.current
-    val notifPrefs = remember { notifContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val notifPrefs = remember { notifContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var showNotifSettings by remember { mutableStateOf(false) }
     var followRequests by remember { mutableStateOf<List<QinblyApi.FollowRequest>>(emptyList()) }
     var showFollowRequests by remember { mutableStateOf(false) }
@@ -2771,7 +2772,7 @@ private fun QinblySplit(content: @Composable () -> Unit) { content() }
 @Composable
 private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOpenProfile: (String) -> Unit, onError: (String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var query by rememberKept("search.query", "")
     var results by rememberKept<List<QinblyApi.UserSummary>>("search.results", emptyList())
     var postResults by remember { mutableStateOf<List<QinblyApi.PostSummary>>(emptyList()) }
@@ -3326,7 +3327,7 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
     var prepared by remember(url) { mutableStateOf(false) }
     var retryCount by remember(url) { mutableIntStateOf(0) }
     var resumePos by remember(url) { mutableLongStateOf(0L) }
-    val videoPrefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val videoPrefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     // Reprodução automática no feed começa sem som; o botão do alto-falante liga.
     var muted by remember(url) { mutableStateOf(!QinblyVideoFocus.soundOn) }
     val instanceKey = remember { java.util.UUID.randomUUID().toString() }
@@ -5922,7 +5923,7 @@ private fun qinblyHighlight(text: String, query: String): androidx.compose.ui.te
 @Composable
 private fun QinblyLiveSearch(lives: List<QinblyLive>, onBack: () -> Unit, onOpen: (QinblyLive) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var query by remember { mutableStateOf("") }
     var history by remember { mutableStateOf((prefs.getString("qinbly_live_search_history", "") ?: "").split("\n").filter { it.isNotBlank() }) }
     val save: (String) -> Unit = { term ->
@@ -6001,7 +6002,7 @@ private fun QinblyNearbyFeed(
     postItem: @Composable (QinblyApi.PostSummary) -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var loading by remember { mutableStateOf(true) }
     var failed by remember { mutableStateOf(false) }
     var refresh by remember { mutableIntStateOf(0) }
@@ -6040,7 +6041,7 @@ private fun QinblyNearbyFeed(
 @Composable
 private fun QinblyNearbyPage(onNotice: (String) -> Unit, content: @Composable (Double, Double, String, () -> Unit) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val locPrefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val locPrefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var locEnabled by remember { mutableStateOf(locPrefs.getBoolean("setting_location_enabled", true)) }
     if (!locEnabled) {
         // Configurações > Localização desligada: estas telas não pedem a posição.
@@ -6103,7 +6104,7 @@ private fun QinblyNearbyPage(onNotice: (String) -> Unit, content: @Composable (D
                 listOfNotNull(a?.subAdminArea ?: a?.locality, a?.adminArea).distinct().joinToString(", ")
             }
         } catch (_: Exception) { "" }
-        if (place.isNotBlank()) context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).edit().putString("device_place", place).apply()
+        if (place.isNotBlank()) context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount().edit().putString("device_place", place).apply()
         locating = false
     }
     val hereNow = here
@@ -6175,7 +6176,7 @@ private fun QinblyLivesPage(lives: List<QinblyLive>, onNotice: (String) -> Unit)
         QinblyAllLives(lives, onBack = { allOpen = false }, onOpen = { openLive = it })
         return
     }
-    val livesPrefs = androidx.compose.ui.platform.LocalContext.current.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE)
+    val livesPrefs = androidx.compose.ui.platform.LocalContext.current.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount()
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -6221,7 +6222,7 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
     var summary by remember { mutableStateOf(false) }
     val liveContext = androidx.compose.ui.platform.LocalContext.current
     var hostCommentRefresh by remember { mutableIntStateOf(0) }
-    val hostHandle = remember { liveContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).getString("username", "").orEmpty().removePrefix("@") }
+    val hostHandle = remember { liveContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount().getString("username", "").orEmpty().removePrefix("@") }
     var liveCamOk by remember { mutableStateOf(androidx.core.content.ContextCompat.checkSelfPermission(liveContext, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) }
     val liveCamPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { liveCamOk = it }
     var liveFront by remember { mutableStateOf(true) }
@@ -6550,7 +6551,7 @@ private fun QinblyRankRow(rank: Int, post: QinblyApi.PostSummary, onClick: () ->
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername: String, photoRefreshKey: Int, nameFontStyle: String, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onAddStory: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit, onCreateWith: (String, String) -> Unit = { _, _ -> }, onOpenConversation: (String) -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var posts by remember { mutableStateOf(QinblyCache.feed.ifEmpty { QinblyApi.getCachedPosts(context) }) }
     var loading by remember { mutableStateOf(posts.isEmpty()) }
     var refreshKey by remember { mutableIntStateOf(0) }
@@ -6599,11 +6600,11 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             while (true) {
                 try {
                     val loaded = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getNotifications(token) }
-                    val seenIds = context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).getStringSet("notif_seen_ids", emptySet()).orEmpty()
+                    val seenIds = context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount().getStringSet("notif_seen_ids", emptySet()).orEmpty()
                     val newUnread = loaded.count { it.readAt.isBlank() && it.kind != "message" && it.id !in seenIds }
                     if (!firstLoad && newUnread > unreadNotifications) {
                         loaded.firstOrNull { it.readAt.isBlank() && it.kind != "message" }?.takeIf { n ->
-                            val sp = context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE)
+                            val sp = context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount()
                             sp.getBoolean("setting_notifications", true) && when (n.kind) {
                                 "like" -> sp.getBoolean("setting_notice_likes", true)
                                 "comment", "reply" -> sp.getBoolean("setting_notice_comments", true)
@@ -7053,7 +7054,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
 @Composable
 private fun CommunitiesPage(onNotice: (String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
     var selected by rememberKept("comm.selected", "Minhas")
     var list by remember { mutableStateOf(QinblyCache.communities[selected] ?: emptyList<QinblyApi.CommunitySummary>()) }
@@ -7292,7 +7293,7 @@ private fun QinblyCommunityAvatar(name: String, diameter: Dp) {
 @Composable
 private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Unit, onChanged: () -> Unit, onDismiss: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
     var community by remember { mutableStateOf<QinblyApi.CommunitySummary?>(null) }
     var posts by remember { mutableStateOf<List<QinblyApi.CommunityPost>>(emptyList()) }
@@ -7857,7 +7858,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var confirmBlockConv by remember { mutableStateOf<String?>(null) }
     var reportConvUser by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     val inboxListState = rememberKeptListState("msg.list")
     LaunchedEffect(scrollToTopRequest) { if (scrollToTopRequest > 0) inboxListState.animateScrollToItem(0) }
     var draft by remember { mutableStateOf("") }
@@ -7882,7 +7883,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
     var messageSearch by remember { mutableStateOf("") }
     var showClearConfirm by remember { mutableStateOf(false) }
     var menuMessage by remember { mutableStateOf<QinblyApi.MessageSummary?>(null) }
-    var hiddenMsgIds by remember { mutableStateOf(context.getSharedPreferences("qinbly_hidden", android.content.Context.MODE_PRIVATE).getStringSet("ids", emptySet()) ?: emptySet()) }
+    var hiddenMsgIds by remember { mutableStateOf(context.getSharedPreferences(qinblyAccountFile(context, "qinbly_hidden"), android.content.Context.MODE_PRIVATE).getStringSet("ids", emptySet()) ?: emptySet()) }
     var reportingMessageId by remember { mutableStateOf<String?>(null) }
     var replyingTo by remember { mutableStateOf<QinblyApi.MessageSummary?>(null) }
     var menuAnchor by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
@@ -7896,7 +7897,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             try { reactions = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getReactions(token, messages.takeLast(100).map { it.id }) } } catch (_: Exception) { }
         }
     }
-    var pinnedId by remember(recipientUsername) { mutableStateOf(context.getSharedPreferences("qinbly_pins", android.content.Context.MODE_PRIVATE).getString("pin_" + recipientUsername, "") ?: "") }
+    var pinnedId by remember(recipientUsername) { mutableStateOf(context.getSharedPreferences(qinblyAccountFile(context, "qinbly_pins"), android.content.Context.MODE_PRIVATE).getString("pin_" + recipientUsername, "") ?: "") }
     var showBlockConfirm by remember { mutableStateOf(false) }
     var showReportConfirm by remember { mutableStateOf(false) }
     // Envia algo na conversa (foto, local, contato) e recarrega as mensagens.
@@ -8390,7 +8391,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                     Text("Fixada: " + qinblyMessageSnippet(pm), color = QiblyTheme.text, fontSize = 13.sp, maxLines = 1, modifier = Modifier.weight(1f))
                     QinblyCloseIcon(QiblyTheme.secondary, 16.dp, modifier = Modifier.clickable {
                         pinnedId = ""
-                        context.getSharedPreferences("qinbly_pins", android.content.Context.MODE_PRIVATE).edit().putString("pin_" + recipientUsername, "").apply()
+                        context.getSharedPreferences(qinblyAccountFile(context, "qinbly_pins"), android.content.Context.MODE_PRIVATE).edit().putString("pin_" + recipientUsername, "").apply()
                     }.padding(start = 10.dp))
                 }
             }
@@ -8656,12 +8657,12 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                     }, QinblyBrand.Accent, QiblyTheme.card, QiblyTheme.text,
                     onDismiss = { menuMessage = null },
                     onCanceled = { id -> messages = messages.filterNot { it.id == id } },
-                    onHide = { id -> hiddenMsgIds = hiddenMsgIds + id; context.getSharedPreferences("qinbly_hidden", android.content.Context.MODE_PRIVATE).edit().putStringSet("ids", hiddenMsgIds).apply() },
+                    onHide = { id -> hiddenMsgIds = hiddenMsgIds + id; context.getSharedPreferences(qinblyAccountFile(context, "qinbly_hidden"), android.content.Context.MODE_PRIVATE).edit().putStringSet("ids", hiddenMsgIds).apply() },
                     onReport = { id -> menuMessage = null; reportingMessageId = id },
                     onReply = { replyingTo = it },
                     onTogglePin = { id ->
                         pinnedId = if (pinnedId == id) "" else id
-                        context.getSharedPreferences("qinbly_pins", android.content.Context.MODE_PRIVATE).edit().putString("pin_" + recipientUsername, pinnedId).apply()
+                        context.getSharedPreferences(qinblyAccountFile(context, "qinbly_pins"), android.content.Context.MODE_PRIVATE).edit().putString("pin_" + recipientUsername, pinnedId).apply()
                     },
                     onSavedSticker = { stickerRefresh++ },
                     onNotice = onNotice)
@@ -8856,6 +8857,8 @@ internal object QinblyStoryRings {
     private fun key(username: String) = username.removePrefix("@").trim().lowercase()
     private fun seenIds(prefs: android.content.SharedPreferences): Set<String> = prefs.getStringSet("seen_story_ids:" + qinblyAccountKey(prefs), emptySet()).orEmpty()
     fun hasUnseen(username: String): Boolean = unseen[key(username)] == true
+    /** Trocou ou saiu da conta: o que era da conta anterior não pode aparecer na nova. */
+    fun clear() { unseen.clear(); entries.clear(); openRequest = null; version++ }
     /** Tem story que você ainda não viu? Vale o que o servidor diz e também o que você já abriu neste aparelho. */
     fun entryUnseen(prefs: android.content.SharedPreferences, e: QinblyApi.TrayEntry): Boolean {
         version
@@ -8915,7 +8918,7 @@ private object QinblyResume {
 @Composable
 private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onOpenConversation: (String) -> Unit, onAddStory: () -> Unit, hostOnly: Boolean = false) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var storyTray by remember { mutableStateOf<List<QinblyApi.TrayEntry>>(emptyList()) }
     var storyRefresh by remember { mutableIntStateOf(0) }
     var showStoryMenu by remember { mutableStateOf(false) }
@@ -9150,7 +9153,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     val shownBio = bio.lineSequence().filterNot { it.startsWith("🌍 ") }.joinToString("\n").trim()
     val shownCountry = bio.lineSequence().firstOrNull { it.startsWith("🌍 ") }?.removePrefix("🌍 ").orEmpty()
     val profileContext = androidx.compose.ui.platform.LocalContext.current
-    val profilePrefs = remember { profileContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val profilePrefs = remember { profileContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     LaunchedEffect(profileTab, reloadKey) {
         if (profileTab == "Salvos") {
             val token = profilePrefs.getString("token", null)
@@ -9477,7 +9480,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
 @Composable
 private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var createAccount by remember { mutableStateOf(false) }
     var showForgot by remember { mutableStateOf(false) }
     // Voltar do celular: da tela de criar conta volta para o login (não fecha tudo).
@@ -9703,7 +9706,7 @@ private fun AuthPage(onSuccess: (String) -> Unit, onCancel: () -> Unit) {
 @Composable
 private fun EditProfilePage(initialUsername: String, initialName: String, initialBio: String, photoRefreshKey: Int, onEditProfilePhoto: () -> Unit, onBack: () -> Unit, onSaved: (String, String, String) -> Unit, onNotice: (String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var editPhotoUrl by remember { mutableStateOf("") }
     // Ao ir escolher a foto, o que a pessoa já digitou fica guardado; ao sair da edição de verdade, limpa.
     androidx.compose.runtime.LaunchedEffect(Unit) { QinblyKeep.state("editphoto.flag", false).value = false }
@@ -9923,7 +9926,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
 @Composable
 private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNotice: (String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var selectedProfilePhoto by remember { mutableStateOf<Uri?>(null) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
@@ -10588,7 +10591,7 @@ private fun saveProfilePhotoToDevice(context: android.content.Context, imageUrl:
 @Composable
 private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (String) -> Unit, onNotice: (String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var reloadKey by remember { mutableIntStateOf(0) }
     val cachedProfile = remember(username) { QinblyCache.profiles[QinblyCache.profileKey(username)] }
     var user by remember(username) { mutableStateOf(cachedProfile?.first ?: org.json.JSONObject()) }
@@ -11325,7 +11328,7 @@ internal fun QinblyCameraCapture(onResult: (Uri) -> Unit, onDismiss: () -> Unit)
 private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, initialMode: String = "camera", onSwitchMode: (String) -> Unit = {}, onCaptured: ((Uri) -> Unit)? = null, editBeforeReturn: Boolean = false) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QinblyComposeSeed.story = false; QinblyComposeSeed.contribTo = ""; QinblyComposeSeed.collabNew = false; QinblyComposeSeed.fromGallery = false; QinblyComposeSeed.origin = "" } }
     var caption by remember { mutableStateOf(QinblyComposeSeed.text.also { QinblyComposeSeed.text = "" }) }
     var showCapEmojis by remember { mutableStateOf(false) }

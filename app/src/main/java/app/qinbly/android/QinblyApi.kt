@@ -9,10 +9,11 @@ import java.net.URL
 /** Cliente HTTP mínimo para a API QINBLY. Nunca usa senha local como autenticação. */
 /** Palavras ocultas (Configurações > Conteúdo): comentários que tiverem alguma delas não aparecem. */
 object QinblyHidden {
-    @Volatile var words: List<String> = emptyList()
-    fun load(prefs: android.content.SharedPreferences) {
-        words = prefs.getString("hidden_words", "").orEmpty().split(",").map { it.trim().lowercase() }.filter { it.isNotEmpty() }
-    }
+    @Volatile private var source: android.content.SharedPreferences? = null
+    /** Sempre da conta que está aberta agora (a sessão separa "hidden_words" por usuário). */
+    val words: List<String>
+        get() = source?.getString("hidden_words", "").orEmpty().split(",").map { it.trim().lowercase() }.filter { it.isNotEmpty() }
+    fun load(prefs: android.content.SharedPreferences) { source = prefs }
     fun matches(text: String): Boolean {
         val w = words
         if (w.isEmpty()) return false
@@ -31,7 +32,7 @@ object QinblyApi {
 
     /** Token da sessão atual. Leituras públicas o enviam sempre, para o servidor devolver curtidas/seguindo do usuário e aplicar bloqueios. */
     private fun storedAccessToken(): String? =
-        applicationContext?.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)?.getString("token", null)?.takeIf { it.isNotBlank() }
+        applicationContext?.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()?.getString("token", null)?.takeIf { it.isNotBlank() }
 
     data class AuthResult(val username: String, val token: String, val refreshToken: String)
 
@@ -105,7 +106,7 @@ object QinblyApi {
             output.toByteArray()
         } ?: throw IllegalStateException("Não foi possível ler a imagem selecionada.")
         require(bytes.isNotEmpty()) { "A imagem selecionada está vazia." }
-        val prefs = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
         val storedRefreshToken = prefs.getString("refresh_token", null).orEmpty()
         var activeToken = token
         if (storedRefreshToken.isBlank()) {
@@ -1285,7 +1286,7 @@ object QinblyApi {
     fun getConnections(username: String, type: String): List<UserSummary> {
         require(type == "followers" || type == "following") { "Tipo de lista inválido." }
         val name = java.net.URLEncoder.encode(username.trim().removePrefix("@").lowercase(), "UTF-8")
-        val sessionToken = applicationContext?.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)?.getString("token", null)
+        val sessionToken = applicationContext?.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()?.getString("token", null)
         val response = request("GET", "/api/users/" + name + "/" + type, null, sessionToken)
         val users = response.optJSONArray("users") ?: org.json.JSONArray()
         return (0 until users.length()).mapNotNull { index ->
@@ -1493,7 +1494,7 @@ object QinblyApi {
     private fun renewExpiredSession(expiredToken: String): String = synchronized(refreshLock) {
         val context = applicationContext
             ?: throw IllegalStateException("A sessão expirou. Abra novamente o aplicativo e entre na sua conta.")
-        val prefs = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
         val currentToken = prefs.getString("token", null).orEmpty()
         if (currentToken.isNotBlank() && currentToken != expiredToken) return@synchronized currentToken
         val refreshToken = prefs.getString("refresh_token", null).orEmpty()
