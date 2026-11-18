@@ -8357,7 +8357,6 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                                     val openShared = { QinblyDeepLink.postId = sharedPostId }
                                     val cap = sp?.caption?.ifBlank { sharedCaption } ?: sharedCaption
                                     val hasMedia = sp != null && sp.mediaUrl.isNotBlank()
-                                    if (note.isNotBlank()) Text(note, color = textColor, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp))
                                     Column(Modifier.width(250.dp)) {
                                         if (sp != null && hasMedia && sp.mediaType == "video") {
                                             InlineVideoPlayer(url = sp.mediaUrl, modifier = Modifier.fillMaxWidth().aspectRatio(0.8f).clip(RoundedCornerShape(26.dp)), autoplay = false)
@@ -8379,6 +8378,8 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                                             }
                                             if (hasMedia && cap.isNotBlank()) Text(cap, color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall, maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(start = 37.dp, top = 2.dp))
                                         }
+                                        // Recado escrito junto com a publicação: aparece embaixo dela, para ficar claro a que publicação ele se refere.
+                                        if (note.isNotBlank()) Text(note, color = textColor, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 4.dp, top = 8.dp))
                                     }
                                 }
                                 val timeLabel = try {
