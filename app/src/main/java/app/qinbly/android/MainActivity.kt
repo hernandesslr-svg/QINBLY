@@ -906,47 +906,22 @@ private fun QinblyHashtagField(state: QinblyCaptionState, onChange: (String) -> 
     }
 }
 
-/** Legenda no card do feed: hashtags logo abaixo; com muitas hashtags, mostra as primeiras e um "mais". */
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+/** Legenda no card do feed. As #hashtags do fim continuam salvas na publicação (busca, em alta), mas não aparecem. */
 @Composable
 private fun QinblyFeedCaption(caption: String, modifier: Modifier = Modifier) {
-    val (legend, tags) = remember(caption) { qinblySplitCaption(caption) }
-    var open by remember(caption) { mutableStateOf(false) }
-    val limit = 4
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        if (legend.isNotBlank()) QinblyRichText(legend, RemoteAppearance.feedTextColor, fontSize = 15.sp)
-        if (tags.isNotEmpty()) {
-            val shown = if (open || tags.size <= limit) tags else tags.take(limit)
-            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                shown.forEach { t -> Text(t, color = QinblyBrand.Accent, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.clickable { QinblyTagNav.tag = t.removePrefix("#") }) }
-                if (!open && tags.size > limit) Text("mais", color = RemoteAppearance.feedSecondaryTextColor, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.clickable { open = true })
-                if (open && tags.size > limit) Text("menos", color = RemoteAppearance.feedSecondaryTextColor, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.clickable { open = false })
-            }
-        }
+    val legend = remember(caption) { qinblySplitCaption(caption).first }
+    if (legend.isBlank()) return
+    Column(modifier) {
+        QinblyRichText(legend, RemoteAppearance.feedTextColor, fontSize = 15.sp)
     }
 }
 
-/** Legenda sobre o vídeo no visualizador: as hashtags ficam escondidas atrás do "mais". */
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+/** Legenda sobre o vídeo no visualizador: só a legenda; as hashtags ficam salvas mas escondidas. */
 @Composable
 private fun QinblyViewerCaption(caption: String) {
-    val (legend, tags) = remember(caption) { qinblySplitCaption(caption) }
-    var open by remember(caption) { mutableStateOf(false) }
-    val showTags = tags.isNotEmpty() && (open || legend.isBlank())
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        if (legend.isNotBlank()) {
-            Row(verticalAlignment = Alignment.Bottom) {
-                QinblyRichText(legend, Color.White, modifier = Modifier.weight(1f, fill = false), fontSize = 17.sp, maxLines = if (open) Int.MAX_VALUE else 3)
-                if (tags.isNotEmpty() && !open) Text("  mais", color = Color(0xCCFFFFFF), fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.clickable { open = true })
-            }
-        }
-        if (showTags) {
-            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                tags.forEach { t -> Text(t, color = Color(0xFF5AA7FF), fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.clickable { QinblyTagNav.tag = t.removePrefix("#") }) }
-            }
-            if (legend.isNotBlank()) Text("menos", color = Color(0xCCFFFFFF), fontWeight = FontWeight.Bold, fontSize = 13.sp, modifier = Modifier.clickable { open = false })
-        }
-    }
+    val legend = remember(caption) { qinblySplitCaption(caption).first }
+    if (legend.isBlank()) return
+    QinblyRichText(legend, Color.White, fontSize = 17.sp, maxLines = 3)
 }
 
 /** Fundos coloridos da publicação de texto: 1..6 (0 = sem fundo). Mesma paleta no editor e no feed. */
@@ -5004,8 +4979,8 @@ private fun QinblyPostCard(
             } else if (post.mediaType != "image" && post.mediaType != "video" && post.caption.isNotBlank()) {
                 val textBgBrush = if (post.mediaType == "text") qinblyTextBgBrush(post.textBg) else null
                 if (textBgBrush != null) {
-                    // As #hashtags do final e as pessoas marcadas ficam fora do cartão colorido, embaixo do texto.
-                    val (cardText, cardTags) = qinblySplitCaption(post.caption).let { if (it.first.isBlank()) post.caption to emptyList() else it }
+                    // As #hashtags do final ficam salvas mas escondidas; as pessoas marcadas ficam embaixo do cartão.
+                    val cardText = qinblySplitCaption(post.caption).first.ifBlank { post.caption }
                     Box(
                         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp)
                             .clip(RoundedCornerShape(20.dp)).background(textBgBrush)
@@ -5016,11 +4991,9 @@ private fun QinblyPostCard(
                             modifier = Modifier.fillMaxWidth(), maxLines = 8,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center, linkColor = Color.White)
                     }
-                    if (cardTags.isNotEmpty()) QinblyRichText(cardTags.joinToString(" "), RemoteAppearance.feedTextColor, fontSize = 15.sp,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 2.dp), maxLines = 2)
                     QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
                 } else {
-                    QinblyRichText(post.caption, RemoteAppearance.feedTextColor, fontSize = 15.sp,
+                    QinblyRichText(qinblySplitCaption(post.caption).first.ifBlank { post.caption }, RemoteAppearance.feedTextColor, fontSize = 15.sp,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
                         maxLines = 4)
                 }

@@ -758,3 +758,9 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - **Perto de mim:** as categorias (Tudo, Vendas, Doações, Achados, Eventos, Serviços, Avisos), a tela vazia (Vender, Doar, Achados, Eventos) e o menu lateral usam ícone de linha (`Icons.Outlined.*` via `EmojiIcon`) cinza, sem bolinha colorida. Na categoria selecionada o ícone acompanha a cor do texto.
 - **Categorias do perfil:** cada categoria tem um ícone de linha que combina com ela (`qinblyCategoryIcon` em Extras.kt: Games = controle, Esportes/Futebol = bola, Música = nota, Carros = carro...). Aparece na tela de editar perfil (nos chips), no seu perfil e no perfil dos outros (`QinblyCategoryLine`). Categoria nova sem ícone cai no `Tag`.
 - O texto salvo no banco continua igual ("Games 🎮"); o emoji é cortado só na hora de mostrar (`qinblyCategoryName`).
+
+## Hashtags usadas mas escondidas na publicação (18/11)
+- Na hora de criar/editar, as hashtags continuam num campo próprio e seguem salvas no fim da legenda (a busca e o "Em alta" continuam achando a publicação por elas).
+- Depois de publicada, o bloco final de #hashtags **não aparece** em lugar nenhum: feed (foto/vídeo, texto simples, cartão colorido) e visualizador de vídeo mostram só a legenda. Perfil, comentários e chat já mostravam só a legenda.
+- Ao editar a publicação, as hashtags aparecem de volta no campo para poder mudar.
+- Esta regra substitui "hashtags sempre embaixo do texto" (17/11). As pessoas marcadas continuam embaixo do texto. #hashtags escritas no meio do texto continuam aparecendo.
