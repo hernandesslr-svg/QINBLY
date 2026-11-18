@@ -724,3 +724,9 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 
 ## Cor da curtida: vermelho clássico
 - O coração de curtida é **todo preenchido** em vermelho clássico `#E53935` (`QinblyBrand.Liked`); sem curtir, só o contorno. Vale para a curtida da publicação, o coração animado do toque duplo e a curtida de comentário. O rosa antigo (`#FF4F9A`) não é mais usado para curtida.
+
+## Publicação enviada na conversa: a própria mídia, sem cartão nem link
+- Ao compartilhar uma publicação por mensagem, na conversa aparece **a foto ou o vídeo da publicação** (vídeo toca ali mesmo, ao apertar play), como uma foto/vídeo enviado. Não existe mais o cartão com "Abrir publicação" nem o link comprido.
+- Foto: tocar abre a publicação no app. Publicação só de texto: aparece o texto da legenda (tocar abre a publicação). Se a pessoa escreveu um recado junto, ele aparece acima da mídia.
+- O texto enviado continua levando o link por baixo (compatibilidade com versões antigas e com quem abrir fora do app), mas ele não é mostrado.
+- Se a publicação ainda não estiver no cache do app, ela é buscada pelo id ao abrir a conversa.

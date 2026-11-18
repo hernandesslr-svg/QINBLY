@@ -8224,8 +8224,9 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         val bubbleShape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = if (isOwn) 18.dp else 4.dp, bottomEnd = if (isOwn) 4.dp else 18.dp)
                         val bubbleColor = if (isOwn) QinblyBrand.Accent else if (QiblyTheme.dark) QiblyTheme.soft else Color(0xFFF0F2F6)
                         val textColor = if (isOwn) Color.White else if (QiblyTheme.dark) Color.White else Color(0xFF111827)
+                        val sharedPostForPad = remember(message.body) { Regex("post/([0-9a-fA-F-]{36})").find(message.body)?.groupValues?.get(1) }
                         Surface(color = if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) Color.Transparent else bubbleColor, shape = bubbleShape, modifier = Modifier.widthIn(max = 300.dp).onGloballyPositioned { bubbleRect[0] = it.boundsInWindow() }.clip(bubbleShape).combinedClickable(onClick = { if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) { menuAnchor = bubbleRect[0]; menuMessage = message } else if (message.poll == null && message.fileUrl.isBlank() && message.imageUrl.isNotBlank()) { chatPhotoUrl = message.imageUrl } }, onLongClick = { menuAnchor = bubbleRect[0]; menuMessage = message })) {
-                            Column(Modifier.padding(horizontal = if (message.imageUrl.isNotBlank() && message.poll == null && message.fileUrl.isBlank() && message.stickerUrl.isBlank()) 3.dp else 12.dp, vertical = if (message.imageUrl.isNotBlank() && message.poll == null && message.fileUrl.isBlank() && message.stickerUrl.isBlank()) 3.dp else 8.dp)) {
+                            Column(Modifier.padding(horizontal = if ((message.imageUrl.isNotBlank() || sharedPostForPad != null) && message.poll == null && message.fileUrl.isBlank() && message.stickerUrl.isBlank()) 3.dp else 12.dp, vertical = if ((message.imageUrl.isNotBlank() || sharedPostForPad != null) && message.poll == null && message.fileUrl.isBlank() && message.stickerUrl.isBlank()) 3.dp else 8.dp)) {
                                 val sharedPostId = remember(message.body) { Regex("post/([0-9a-fA-F-]{36})").find(message.body)?.groupValues?.get(1) }
                                 val stickerId = remember(message.body) { QinblyStickers.idOf(message.body) }
                                 if (message.poll != null) {
@@ -8249,31 +8250,27 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                                     } else
                                     Text(message.body, color = textColor, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 21.sp))
                                 } else {
-                                    // Publicação compartilhada: cartão com miniatura, autor e legenda no lugar do link comprido.
+                                    // Publicação compartilhada: aparece a própria mídia (foto ou vídeo) na conversa, sem cartão e sem link.
                                     val lines = message.body.split("\n").filter { it.isNotBlank() && !it.contains("/post/") }
                                     val intro = Regex("^Confira esta publicação no [^:]*: ?(.*)$")
                                     val introIndex = lines.indexOfFirst { intro.containsMatchIn(it) }
                                     val note = if (introIndex > 0) lines.take(introIndex).joinToString("\n") else ""
                                     val sharedCaption = if (introIndex >= 0) intro.find(lines[introIndex])?.groupValues?.get(1).orEmpty() else ""
-                                    val sharedPost = QinblyCache.feed.firstOrNull { it.id == sharedPostId }
-                                    if (note.isNotBlank()) Text(note, color = textColor, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 21.sp), modifier = Modifier.padding(bottom = 6.dp))
-                                    Column(
-                                        Modifier.width(220.dp).clip(RoundedCornerShape(14.dp)).background(QiblyTheme.card)
-                                            .clickable { QinblyDeepLink.postId = sharedPostId }
-                                    ) {
-                                        if (sharedPost != null && sharedPost.mediaUrl.isNotBlank()) {
-                                            Box(Modifier.fillMaxWidth().height(120.dp).background(Color.Black)) {
-                                                if (sharedPost.mediaType == "video") QinblyVideoPoster(sharedPost.mediaUrl, Modifier.fillMaxSize(), androidx.compose.ui.layout.ContentScale.Crop)
-                                                else AsyncImage(model = sharedPost.mediaUrl, contentDescription = "Publicação compartilhada", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-                                            }
+                                    val sharedPost by produceState<QinblyApi.PostSummary?>(QinblyCache.feed.firstOrNull { it.id == sharedPostId }, sharedPostId) {
+                                        if (value == null && sharedPostId != null) {
+                                            value = try { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getPost(sharedPostId) } } catch (_: Exception) { null }
                                         }
-                                        Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
-                                            val author = sharedPost?.displayName?.ifBlank { sharedPost.username }.orEmpty()
-                                            if (author.isNotBlank()) Text(author, color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1)
-                                            val cap = sharedPost?.caption?.ifBlank { sharedCaption } ?: sharedCaption
-                                            if (cap.isNotBlank()) Text(cap, color = QiblyTheme.secondary, fontSize = 13.sp, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                                            Text("Abrir publicação", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
-                                        }
+                                    }
+                                    val sp = sharedPost
+                                    if (note.isNotBlank()) Text(note, color = textColor, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 21.sp), modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp))
+                                    val openShared = { QinblyDeepLink.postId = sharedPostId }
+                                    if (sp != null && sp.mediaUrl.isNotBlank() && sp.mediaType == "video") {
+                                        InlineVideoPlayer(url = sp.mediaUrl, modifier = Modifier.width(260.dp).aspectRatio(0.8f).clip(RoundedCornerShape(15.dp)), autoplay = false)
+                                    } else if (sp != null && sp.mediaUrl.isNotBlank()) {
+                                        AsyncImage(model = sp.mediaUrl, contentDescription = "Publicação compartilhada", modifier = Modifier.width(260.dp).heightIn(min = 160.dp, max = 340.dp).clip(RoundedCornerShape(15.dp)).clickable(onClick = openShared), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                                    } else {
+                                        val cap = sp?.caption?.ifBlank { sharedCaption } ?: sharedCaption
+                                        Text(cap.ifBlank { "Publicação" }, color = textColor, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 21.sp), modifier = Modifier.widthIn(max = 260.dp).padding(horizontal = 9.dp, vertical = 5.dp).clickable(onClick = openShared))
                                     }
                                 }
                                 val timeLabel = try {
