@@ -819,3 +819,9 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - Estado único em `QinblyStoryRings` (MainActivity.kt): atualizado quando a bandeja de stories carrega (faixa do Início e Feed) e ao fechar o visualizador. Para o seu próprio story, o "visto" fica guardado no aparelho (`own_story_seen`).
 - `QiblyAccountAvatar` ganhou o parâmetro `storyRing` (padrão desligado); só as publicações ligam. Chat, notificações e listas continuam sem anel.
 - Limite: só aparece anel para quem está na sua bandeja (você e quem você segue, mais stories coletivos).
+
+## Topo do Início: cartão que desliza entre Pergunta do dia e Desafio da semana
+- Saíram do topo do Descobrir a saudação ("Boa tarde, nome") e as novidades de quem você segue.
+- Pergunta do dia e Desafio da semana agora são um cartão só, no tamanho de antes (altura 112dp), que desliza para o lado (`HorizontalPager`). Abre na pergunta; o desafio aparece um pedaço na beirada; dois pontinhos mostram a posição.
+- Tocar na pergunta abre o Criar com #perguntadodia; tocar no desafio abre a hashtag; "Participar" abre a câmera com a hashtag do desafio (tudo como antes).
+- Código em `QinblyHomeHeader` (MainActivity.kt).
