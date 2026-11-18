@@ -805,3 +805,6 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - `QinblyBrand.Mention` (hashtags e @) agora é a mesma cor principal `#2F68E0`.
 - Busca: "Limpar" na cor do texto (branco no escuro); "Suas hashtags" sem fundo, sem contorno e sem contagem (3x), só a letra azul, separadas por tracinho vertical fino (7dp de cada lado).
 - Logo e botão Criar continuam roxos. Para trocar o azul de novo, mexa em `QinblyBrand.Accent`.
+
+## Rolagem da busca até o fim
+- Na tela "Buscar pessoas e publicações", as duas listas (sugestões e resultados) agora somam a altura da barra de navegação do celular na folga do fim (`20.dp + WindowInsets.navigationBars`), para o último item não ficar escondido atrás dela.
