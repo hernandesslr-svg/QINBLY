@@ -798,8 +798,3 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - `QinblyBrand.Mention` (hashtags e @marcações nas legendas, comentários e campos de texto) agora é `#5865DE`, mais clara.
 - Botões (Seguir, Participar etc.) e o resto do app continuam no índigo `#4B5BFF`.
 - Para mudar só a cor das hashtags e marcações, troque apenas `QinblyBrand.Mention`.
-
-## Tom mais quebrado na busca (teste)
-- Na tela "Buscar pessoas e publicações": "Hashtags mais usadas", "Limpar" e os chips de "Suas hashtags" usam `QinblyBrand.TagSoft` (escuro `#8A93D6`, claro `#5865DE`) e fundo `QinblyBrand.TagSoftBg` (escuro `#25283F`).
-- Ícones de "Pesquisas em alta" e botões continuam no índigo `#4B5BFF`.
-- Para trocar o tom, edite só `TagSoft` e `TagSoftBg` em `QinblyBrand`.
