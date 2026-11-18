@@ -745,3 +745,6 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 
 ## Pessoas marcadas: embaixo do texto, sem a palavra "Com"
 - Substitui a regra anterior ("em cima de tudo"). As marcações aparecem só como **@fulano @ciclano** (sem escrever "Com"), **logo embaixo do texto da legenda e antes da mídia**: foto/vídeo = legenda, marcações, mídia; cartão colorido = hashtags, marcações, cartão; texto simples ou enquete = marcações embaixo do texto. Componente: `QinblyTaggedUsersRow`.
+
+## Hashtags e marcações sempre embaixo do texto (inclui cartão colorido)
+- Padrão final: hashtags e pessoas marcadas ficam **sempre embaixo do texto**. Foto/vídeo: legenda, hashtags, marcações, mídia. **Cartão colorido: o cartão (texto) primeiro e, logo embaixo dele, as hashtags e depois as marcações.** Texto simples/enquete: marcações embaixo do texto. Substitui as regras anteriores de "em cima".

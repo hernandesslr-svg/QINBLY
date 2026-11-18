@@ -5004,11 +5004,8 @@ private fun QinblyPostCard(
             } else if (post.mediaType != "image" && post.mediaType != "video" && post.caption.isNotBlank()) {
                 val textBgBrush = if (post.mediaType == "text") qinblyTextBgBrush(post.textBg) else null
                 if (textBgBrush != null) {
-                    // As #hashtags do final ficam fora do cartão colorido, em cima dele (as pessoas marcadas ficam logo abaixo do texto).
+                    // As #hashtags do final e as pessoas marcadas ficam fora do cartão colorido, embaixo do texto.
                     val (cardText, cardTags) = qinblySplitCaption(post.caption).let { if (it.first.isBlank()) post.caption to emptyList() else it }
-                    if (cardTags.isNotEmpty()) QinblyRichText(cardTags.joinToString(" "), RemoteAppearance.feedTextColor, fontSize = 15.sp,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 2.dp), maxLines = 2)
-                    QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
                     Box(
                         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp)
                             .clip(RoundedCornerShape(20.dp)).background(textBgBrush)
@@ -5019,6 +5016,9 @@ private fun QinblyPostCard(
                             modifier = Modifier.fillMaxWidth(), maxLines = 8,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center, linkColor = Color.White)
                     }
+                    if (cardTags.isNotEmpty()) QinblyRichText(cardTags.joinToString(" "), RemoteAppearance.feedTextColor, fontSize = 15.sp,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 2.dp), maxLines = 2)
+                    QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
                 } else {
                     QinblyRichText(post.caption, RemoteAppearance.feedTextColor, fontSize = 15.sp,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
