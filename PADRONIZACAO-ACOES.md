@@ -748,3 +748,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 
 ## Hashtags e marcações sempre embaixo do texto (inclui cartão colorido)
 - Padrão final: hashtags e pessoas marcadas ficam **sempre embaixo do texto**. Foto/vídeo: legenda, hashtags, marcações, mídia. **Cartão colorido: o cartão (texto) primeiro e, logo embaixo dele, as hashtags e depois as marcações.** Texto simples/enquete: marcações embaixo do texto. Substitui as regras anteriores de "em cima".
+
+## Perfil privado de outra pessoa (17/11)
+- O perfil continua aparecendo na busca e no perfil (nome, foto, bio, contadores); só o conteúdo é privado.
+- Se a conta é privada (`profiles.is_private`, lido por `QinblyApi.isProfilePrivate`) e você NÃO segue (nem é você mesmo): no lugar das publicações aparece o cadeado com "Publicações privadas" + "Siga esta conta para ver as publicações e stories.", e o botão **Mensagem** some (sobra só Seguir).
+- Depois que você segue (ou o pedido é aprovado), o botão Mensagem e as publicações aparecem normalmente.

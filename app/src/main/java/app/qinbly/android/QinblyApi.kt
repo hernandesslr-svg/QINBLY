@@ -1214,6 +1214,15 @@ object QinblyApi {
         return arr.optJSONObject(0)
     }
 
+    /** Perfil de outra pessoa é privado? (profiles é legível; qualquer falha conta como não privado.) */
+    fun isProfilePrivate(token: String?, username: String): Boolean {
+        return try {
+            val t = token ?: storedAccessToken() ?: return false
+            val name = java.net.URLEncoder.encode(username.trim().removePrefix("@").lowercase(), "UTF-8")
+            org.json.JSONArray(rest(t, "GET", "profiles?username=eq.$name&select=is_private")).optJSONObject(0)?.optBoolean("is_private", false) ?: false
+        } catch (_: Exception) { false }
+    }
+
     fun setPrivacy(token: String, field: String, value: Any) {
         require(field in setOf("is_private", "who_can_message", "who_can_comment"))
         val me = userIdFromToken(token) ?: throw IllegalStateException("Entre na sua conta primeiro.")

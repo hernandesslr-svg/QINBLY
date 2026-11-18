@@ -10483,6 +10483,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
     var publicationComment by remember { mutableStateOf("") }
     var showMoreOptions by remember { mutableStateOf(false) }
     var profilePosts by remember(username) { mutableStateOf(cachedProfile?.second ?: emptyList()) }
+    var accountPrivate by remember(username) { mutableStateOf(false) }
     val openPublicComments: (QinblyApi.PostSummary) -> Unit = { target ->
         selectedPublication = target
         commentsOpen = true
@@ -10492,6 +10493,8 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
     val avatarUrl = user.optString("avatar_url").ifBlank { user.optString("avatarUrl").ifBlank { user.optString("profile_photo_url").ifBlank { user.optString("profilePhotoUrl") } } }
     val profilePhotoUrl = user.optString("coverUrl").ifBlank { user.optString("cover_url").ifBlank { user.optString("profilePhotoUrl").ifBlank { avatarUrl } } }
     val bio = user.optString("bio")
+    val privateLocked = accountPrivate && !publicUsername.equals(prefs.getString("username", "").orEmpty().removePrefix("@"), ignoreCase = true) &&
+        !QinblyEngagement.isFollowing(prefs, publicUsername, user.optBoolean("isFollowing"))
     LaunchedEffect(username, reloadKey) {
         loading = cachedProfile == null && user.length() == 0
         profileLoadError = null
@@ -10507,8 +10510,10 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                     try { QinblyApi.getPosts(prefs.getString("token", null)).filter { it.username.equals(resolvedUsername, ignoreCase = true) } } catch (_: Exception) { emptyList() }
                 }
                 QinblyCache.profiles[QinblyCache.profileKey(username)] = found to posts
+                val privateNow = QinblyApi.isProfilePrivate(prefs.getString("token", null), resolvedUsername)
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                     user = found
+                    accountPrivate = privateNow
                     profileLoadError = null
                     QinblyEngagement.syncFollow(prefs, resolvedUsername, found.optBoolean("isFollowing"))
                     profilePosts = posts
@@ -10606,7 +10611,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                 large = true,
                 modifier = Modifier.weight(1f)
             )
-            OutlinedButton(onClick = {
+            if (!privateLocked) OutlinedButton(onClick = {
                 onMessage(publicUsername)
             }, modifier = Modifier.weight(0.88f).height(46.dp), border = BorderStroke(1.dp, QinblyBrand.Accent)) {
                 Icon(Icons.Default.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(17.dp), tint = QinblyBrand.Accent)
@@ -10644,6 +10649,16 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                     "Salvos" -> "Publicações salvas por $displayName"
                     else -> "Publicações de $displayName"
                 }, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
+            }
+        } else if (privateLocked) {
+            Box(Modifier.fillMaxWidth().padding(28.dp), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Outlined.Lock, contentDescription = null, tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(38.dp))
+                    Spacer(Modifier.height(8.dp))
+                    Text("Publicações privadas", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Siga esta conta para ver as publicações e stories.", color = RemoteAppearance.screenSecondaryTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
+                }
             }
         } else if (profilePosts.isEmpty()) {
             Box(Modifier.fillMaxWidth().padding(28.dp), contentAlignment = Alignment.Center) {
