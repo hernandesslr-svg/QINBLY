@@ -74,7 +74,7 @@ import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Accessibility
 import androidx.compose.material.icons.outlined.Storage
-import androidx.compose.material.icons.outlined.Storefront
+import androidx.compose.material.icons.outlined.ShoppingBasket
 import androidx.compose.material.icons.outlined.PersonAddAlt1
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.SwapHoriz
@@ -6727,7 +6727,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         ) {
         Box(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 6.dp).heightIn(min = 42.dp)) {
             IconButton(onClick = { showMarket = true }, modifier = Modifier.align(Alignment.CenterStart).size(44.dp).offset(x = (-8).dp)) {
-                Icon(androidx.compose.material.icons.Icons.Outlined.Storefront, contentDescription = "Mercado e avisos", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(30.dp))
+                Icon(androidx.compose.material.icons.Icons.Outlined.ShoppingBasket, contentDescription = "Mercado e avisos", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(30.dp))
             }
             Text(QinblyBrand.Name, style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(QinblyBrand.Logo, QinblyBrand.Pink))), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, modifier = Modifier.align(Alignment.Center))
             Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
@@ -10254,7 +10254,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                 categories.forEach { category ->
                     item {
                         val icon = when (category.first) {
-                            "market" -> Icons.Outlined.Storefront
+                            "market" -> Icons.Outlined.ShoppingBasket
                             "account" -> Icons.Outlined.PersonOutline
                             "privacy" -> Icons.Outlined.Lock
                             "location" -> Icons.Outlined.LocationOn

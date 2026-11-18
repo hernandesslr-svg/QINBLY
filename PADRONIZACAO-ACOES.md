@@ -770,7 +770,7 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - **Mercado e avisos:** saiu do Perto de mim e fica em **Menu (três tracinhos) > Mercado e avisos**. É a mesma tela de antes (vendas, doações, achados, eventos, serviços e o Mural de avisos), em tela cheia com seta de voltar. Pede a localização como antes.
 - Busca de publicações da região: `QinblyApi.getNearbyPosts` (consulta `posts` ligada ao `profiles.city` e busca cada publicação completa).
 
-## Mercado e avisos: mercadinho no topo do Início (18/11)
-- Um símbolo só (mercadinho com toldo, `Icons.Outlined.Storefront`) no canto esquerdo do cabeçalho do Início, do lado oposto da busca e do sino. Toque abre o **Mercado e avisos** em tela cheia (`QinblyMarketDialog`), com tudo dentro: Tudo, Vendas, Doações, Achados, Eventos, Serviços e Avisos, e o "+" para anunciar.
+## Mercado e avisos: cestinha no topo do Início (18/11)
+- Um símbolo só (cestinha de mercado, `Icons.Outlined.ShoppingBasket`, opção N escolhida no esboço) no canto esquerdo do cabeçalho do Início, do lado oposto da busca e do sino. Toque abre o **Mercado e avisos** em tela cheia (`QinblyMarketDialog`), com tudo dentro: Tudo, Vendas, Doações, Achados, Eventos, Serviços e Avisos, e o "+" para anunciar.
 - O atalho em Menu > Mercado e avisos continua existindo e abre a mesma tela.
 - Ainda não existe: pontinho de "novidade" no mercadinho e a tela de quadros (Vendas/Doações/...) do esboço; por enquanto abre a tela com as categorias em cima.
