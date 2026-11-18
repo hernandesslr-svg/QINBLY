@@ -793,3 +793,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - O azul de destaque (#1877F2, igual ao do Facebook) virou **índigo `#4B5BFF`**, parente do roxo do logo (`#7C4DFF`). Troca feita em todos os arquivos: botões, links, hashtags, @menções, abas, caixas de texto em foco, ícones.
 - Variantes: claro `#8E99FF` (antes `#6AA6F8`), escuro `#3A49E6` (antes `#1565D8`), tema branco com botão "Editar perfil" `#EDEFFF` com texto `#3342D6`, faixa/fundo suave `#DDE1FF`/`#EEF0FF` (claro) e `#232B6B`/`#1A2054` (escuro).
 - Para mudar a cor da marca de novo, é só trocar `QinblyBrand.Accent` e as variantes em `MainActivity.kt` (e os poucos arquivos que ainda têm a cor escrita direto: Capsule, Extras, Marketplace, PhotoPicker, PhotoVideoEditor, Stories, TextStory, Music, ModernUi, Collective).
+
+## Hashtags e marcações em índigo mais claro
+- `QinblyBrand.Mention` (hashtags e @marcações nas legendas, comentários e campos de texto) agora é `#5865DE`, mais clara.
+- Botões (Seguir, Participar etc.) e o resto do app continuam no índigo `#4B5BFF`.
+- Para mudar só a cor das hashtags e marcações, troque apenas `QinblyBrand.Mention`.

@@ -289,10 +289,10 @@ internal object QinblyBrand {
     val AccentLight = Color(0xFF8E99FF)
     /** Cor dos letreiros que antes eram roxos (branco no escuro). Logo e botão Criar continuam roxos. */
     val TextAccent: Color get() = if (QiblyTheme.dark) Color.White else Accent
-    /** Hashtags e @menções. */
+    /** Hashtags e @menções: índigo mais claro (#5865DE); os botões continuam #4B5BFF. */
     /** Ícone da aba/botão selecionado: branco no escuro (achar uma cor depois). */
     val SelectedIcon: Color get() = if (QiblyTheme.dark) Color.White else Color(0xFF111111)
-    val Mention: Color get() = if (QiblyTheme.dark) Color(0xFF4B5BFF) else Color(0xFF4B5BFF)
+    val Mention: Color get() = Color(0xFF5865DE)
     val AccentLine: Color get() = if (QiblyTheme.dark) Color(0xFF232B6B) else Color(0xFFDDE1FF)
     val AccentSoft: Color get() = if (QiblyTheme.dark) Color(0xFF1A2054) else Color(0xFFEEF0FF)
     val Highlight = Color(0xFFFFB020)
