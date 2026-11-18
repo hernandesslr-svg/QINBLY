@@ -808,3 +808,6 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 
 ## Rolagem da busca até o fim
 - Na tela "Buscar pessoas e publicações", as duas listas (sugestões e resultados) agora somam a altura da barra de navegação do celular na folga do fim (`20.dp + WindowInsets.navigationBars`), para o último item não ficar escondido atrás dela.
+
+## "Limpar tudo" da busca em branco
+- O botão "Limpar tudo" dos recentes (topo da busca) agora usa a cor do texto (branco no escuro), igual ao "Limpar" de "Suas hashtags".

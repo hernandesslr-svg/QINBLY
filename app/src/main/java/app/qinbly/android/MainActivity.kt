@@ -3007,7 +3007,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                             item {
                                 Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Text("Recentes", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.weight(1f))
-                                    Text("Limpar tudo", color = QinblyBrand.Accent, fontSize = 13.sp,
+                                    Text("Limpar tudo", color = QiblyTheme.text, fontSize = 13.sp,
                                         modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { history = emptyList(); prefs.edit().remove("qinbly_search_history").apply() }.padding(6.dp))
                                 }
                             }
