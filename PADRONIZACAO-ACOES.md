@@ -798,3 +798,10 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - `QinblyBrand.Mention` (hashtags e @marcações nas legendas, comentários e campos de texto) agora é `#5865DE`, mais clara.
 - Botões (Seguir, Participar etc.) e o resto do app continuam no índigo `#4B5BFF`.
 - Para mudar só a cor das hashtags e marcações, troque apenas `QinblyBrand.Mention`.
+
+## Azul do app #2F68E0 (opção 2) e ajustes da busca
+- Cor principal do app trocada de índigo `#4B5BFF` para azul `#2F68E0` em todos os arquivos (botões, ícones, hashtags, @, letreiros).
+- Variantes: `AccentDeep` (`#3A72E8` escuro / `#2558C4` claro), `AccentLight` e links claros `#7FA6F2`, `AccentLine` (`#1E3A70` / `#D6E4FF`), `AccentSoft` (`#162447` / `#E8F0FF`), degradês `#1F4FB0`.
+- `QinblyBrand.Mention` (hashtags e @) agora é a mesma cor principal `#2F68E0`.
+- Busca: "Limpar" na cor do texto (branco no escuro); "Suas hashtags" sem fundo, sem contorno e sem contagem (3x), só a letra azul, separadas por tracinho vertical fino (7dp de cada lado).
+- Logo e botão Criar continuam roxos. Para trocar o azul de novo, mexa em `QinblyBrand.Accent`.

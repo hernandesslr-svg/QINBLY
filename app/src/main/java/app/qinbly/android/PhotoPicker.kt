@@ -115,7 +115,7 @@ private fun QinblyPhotoPickerDialog(
                 Text(if (multi && selected.isNotEmpty()) "${selected.size} selecionada(s)" else "Escolher foto", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 17.sp,
                     modifier = Modifier.weight(1f).padding(horizontal = 12.dp))
                 if (multi) Text("Pronto", color = if (selected.isEmpty()) Color(0x66FFFFFF) else Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
-                    modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (selected.isEmpty()) Color(0x22FFFFFF) else Color(0xFF4B5BFF))
+                    modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (selected.isEmpty()) Color(0x22FFFFFF) else Color(0xFF2F68E0))
                         .clickable(enabled = selected.isNotEmpty()) { onDone(selected.toList()) }.padding(horizontal = 18.dp, vertical = 9.dp))
             }
             LazyVerticalGrid(GridCells.Fixed(3), modifier = Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -139,7 +139,7 @@ private fun QinblyPhotoPickerDialog(
                         MediaThumb(g.uri, false, Modifier.fillMaxSize())
                         if (multi) Box(
                             Modifier.align(Alignment.TopEnd).padding(6.dp).size(22.dp).clip(CircleShape)
-                                .background(if (idx >= 0) Color(0xFF4B5BFF) else Color(0x66000000)),
+                                .background(if (idx >= 0) Color(0xFF2F68E0) else Color(0x66000000)),
                             contentAlignment = Alignment.Center
                         ) { if (idx >= 0) Text("${idx + 1}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
                     }
@@ -148,11 +148,11 @@ private fun QinblyPhotoPickerDialog(
                     Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("Permita o acesso às suas fotos para escolher daqui.", color = Color(0xFFA9B5C8), fontSize = 15.sp)
                         Text("Permitir acesso", color = Color.White, fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFF4B5BFF)).clickable { permissionLauncher.launch(perms) }.padding(horizontal = 20.dp, vertical = 10.dp))
+                            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFF2F68E0)).clickable { permissionLauncher.launch(perms) }.padding(horizontal = 20.dp, vertical = 10.dp))
                     }
                 }
             }
-            Text("Ver todas as fotos", color = Color(0xFF8E99FF), fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
+            Text("Ver todas as fotos", color = Color(0xFF7FA6F2), fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
                 modifier = Modifier.fillMaxWidth().clickable { openSystem() }.padding(vertical = 14.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
