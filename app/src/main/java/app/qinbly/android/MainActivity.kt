@@ -293,6 +293,9 @@ internal object QinblyBrand {
     /** Ícone da aba/botão selecionado: branco no escuro (achar uma cor depois). */
     val SelectedIcon: Color get() = if (QiblyTheme.dark) Color.White else Color(0xFF111111)
     val Mention: Color get() = Color(0xFF5865DE)
+    /** Tela de busca (hashtags, Limpar, chips): tom mais quebrado/fosco que o índigo dos botões. */
+    val TagSoft: Color get() = if (QiblyTheme.dark) Color(0xFF8A93D6) else Color(0xFF5865DE)
+    val TagSoftBg: Color get() = if (QiblyTheme.dark) Color(0xFF25283F) else Color(0xFFEEF0FF)
     val AccentLine: Color get() = if (QiblyTheme.dark) Color(0xFF232B6B) else Color(0xFFDDE1FF)
     val AccentSoft: Color get() = if (QiblyTheme.dark) Color(0xFF1A2054) else Color(0xFFEEF0FF)
     val Highlight = Color(0xFFFFB020)
@@ -3061,7 +3064,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                                     ) {
                                         Text("${i + 1}", modifier = Modifier.width(22.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 15.sp,
                                             color = when (i) { 0 -> Color(0xFFF5B800); 1 -> Color(0xFFA8B0BC); 2 -> Color(0xFFC98A4B); else -> Muted })
-                                        Text("#$tag", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                                        Text("#$tag", color = QinblyBrand.TagSoft, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f))
                                         Text(qinblyPostsLabel(count), color = Muted, fontSize = 13.sp)
                                     }
                                 }
@@ -3071,12 +3074,12 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                             item { QinblySplit {
                                 Row(Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Text("Suas hashtags", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.weight(1f))
-                                    Text("Limpar", color = QinblyBrand.Accent, fontSize = 14.sp, modifier = Modifier.clickable { QinblyHashtagStore.clear(context); myTags = emptyList() }.padding(4.dp))
+                                    Text("Limpar", color = QinblyBrand.TagSoft, fontSize = 14.sp, modifier = Modifier.clickable { QinblyHashtagStore.clear(context); myTags = emptyList() }.padding(4.dp))
                                 }
                                 androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     myTags.take(10).forEach { (tag, times) ->
-                                        Text("#$tag · ${times}×", color = QinblyBrand.Accent, fontSize = 14.sp,
-                                            modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(QinblyBrand.AccentSoft)
+                                        Text("#$tag · ${times}×", color = QinblyBrand.TagSoft, fontSize = 14.sp,
+                                            modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(QinblyBrand.TagSoftBg)
                                                 .clickable { openTag(tag) }.padding(horizontal = 13.dp, vertical = 7.dp))
                                     }
                                 }
