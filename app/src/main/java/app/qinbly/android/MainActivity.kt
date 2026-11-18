@@ -281,20 +281,20 @@ internal object QinblyBrand {
     const val Name = "QINBLY"
     /** Roxo original: só o logotipo e o botão + do Criar continuam com ele. */
     val Logo = Color(0xFF7C4DFF)
-    /** Cor padrão do app (azul #1877F2). */
-    val Accent: Color get() = if (QiblyTheme.dark) Color(0xFF1877F2) else Color(0xFF1877F2)
-    val AccentDeep: Color get() = if (QiblyTheme.dark) Color(0xFF1565D8) else Color(0xFF1160D0)
+    /** Cor padrão do app (azul #4B5BFF). */
+    val Accent: Color get() = if (QiblyTheme.dark) Color(0xFF4B5BFF) else Color(0xFF4B5BFF)
+    val AccentDeep: Color get() = if (QiblyTheme.dark) Color(0xFF3A49E6) else Color(0xFF3342D6)
     /** Letreiros (PERGUNTA DO DIA, DESAFIO) e hashtags: azul padrão. */
-    val Lavender = Color(0xFF1877F2)
-    val AccentLight = Color(0xFF6AA6F8)
+    val Lavender = Color(0xFF4B5BFF)
+    val AccentLight = Color(0xFF8E99FF)
     /** Cor dos letreiros que antes eram roxos (branco no escuro). Logo e botão Criar continuam roxos. */
     val TextAccent: Color get() = if (QiblyTheme.dark) Color.White else Accent
     /** Hashtags e @menções. */
     /** Ícone da aba/botão selecionado: branco no escuro (achar uma cor depois). */
     val SelectedIcon: Color get() = if (QiblyTheme.dark) Color.White else Color(0xFF111111)
-    val Mention: Color get() = if (QiblyTheme.dark) Color(0xFF1877F2) else Color(0xFF1877F2)
-    val AccentLine: Color get() = if (QiblyTheme.dark) Color(0xFF1E3A66) else Color(0xFFD6E6FD)
-    val AccentSoft: Color get() = if (QiblyTheme.dark) Color(0xFF16284A) else Color(0xFFEAF2FE)
+    val Mention: Color get() = if (QiblyTheme.dark) Color(0xFF4B5BFF) else Color(0xFF4B5BFF)
+    val AccentLine: Color get() = if (QiblyTheme.dark) Color(0xFF232B6B) else Color(0xFFDDE1FF)
+    val AccentSoft: Color get() = if (QiblyTheme.dark) Color(0xFF1A2054) else Color(0xFFEEF0FF)
     val Highlight = Color(0xFFFFB020)
     val Pink = Color(0xFFFF4F9A)
     /** Vermelho clássico do coração de curtida (preenchido). */
@@ -2644,7 +2644,7 @@ private fun NotificationsPage(
                         "like" -> Icons.Default.Favorite to Color(0xFFE5365B)
                         "follow", "follow_accepted", "follow_request" -> Icons.Default.PersonAdd to QinblyBrand.Accent
                         "comment", "reply" -> Icons.Default.ChatBubbleOutline to Color(0xFF2FA36B)
-                        "mention", "mention_comment", "tag" -> Icons.Default.AlternateEmail to Color(0xFF1877F2)
+                        "mention", "mention_comment", "tag" -> Icons.Default.AlternateEmail to Color(0xFF4B5BFF)
                         else -> Icons.Default.Info to Color(0xFF6B7280)
                     }
                     Row(
@@ -7587,7 +7587,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                         if (showAttach) {
                             val attachOptions = listOf(
                                 Triple("Documento", Icons.Outlined.Description, Color(0xFF5B6CF0)),
-                                Triple("Galeria", Icons.Outlined.Image, Color(0xFF1877F2)),
+                                Triple("Galeria", Icons.Outlined.Image, Color(0xFF4B5BFF)),
                                 Triple("Áudio", Icons.Outlined.Headphones, Color(0xFFF97316)),
                                 Triple("Localização", Icons.Outlined.LocationOn, Color(0xFF16A34A)),
                                 Triple("Contato", Icons.Outlined.PersonOutline, Color(0xFF0EA5E9)),
@@ -8481,7 +8481,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             if (showAttachPanel) {
                 val attachOptions = listOf(
                     Triple("Documento", Icons.Outlined.Description, Color(0xFF5B6CF0)),
-                    Triple("Galeria", Icons.Outlined.Image, Color(0xFF1877F2)),
+                    Triple("Galeria", Icons.Outlined.Image, Color(0xFF4B5BFF)),
                     Triple("Áudio", Icons.Outlined.Headphones, Color(0xFFF97316)),
                     Triple("Localização", Icons.Outlined.LocationOn, Color(0xFF16A34A)),
                     Triple("Contato", Icons.Outlined.PersonOutline, Color(0xFF0EA5E9)),
@@ -9226,7 +9226,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             } else OutlinedButton(
                 onClick = { if (username.isBlank()) onAuth() else onEdit() }, modifier = Modifier.weight(1f),
                 // Tema branco: azul bem clarinho, sem contorno, com o texto e o lápis no azul do app.
-                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFFE7F0FD), contentColor = Color(0xFF1160D0)),
+                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFFEDEFFF), contentColor = Color(0xFF3342D6)),
                 border = BorderStroke(0.dp, Color.Transparent)
             ) {
                 Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(17.dp))
@@ -12777,7 +12777,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 }
                             }
                             Box(Modifier.align(Alignment.TopEnd).padding(6.dp).size(23.dp).border(1.5.dp, Color.White, CircleShape)
-                                .background(if (selectedIndex >= 0) Color(0xFF1877F2) else Color(0x55000000), CircleShape),
+                                .background(if (selectedIndex >= 0) Color(0xFF4B5BFF) else Color(0x55000000), CircleShape),
                                 contentAlignment = Alignment.Center) {
                                 if (selectedIndex >= 0) Text("${selectedIndex + 1}", color = Color.White, style = MaterialTheme.typography.labelSmall)
                             }
@@ -13945,7 +13945,7 @@ private fun LivePage(scrollToTopRequest: Int, onNotice: (String) -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
             categories.forEachIndexed { index, category ->
                 Surface(
-                    color = if (selectedCategory == category) Color(0xFF1877F2) else Panel,
+                    color = if (selectedCategory == category) Color(0xFF4B5BFF) else Panel,
                     shape = RoundedCornerShape(24.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, if (selectedCategory == category) Pink else Color(0xFF292D48)),
                     modifier = Modifier.clickable { selectedCategory = category }
@@ -14028,7 +14028,7 @@ private fun QinblyStoryPublishBar(
                     Box(
                         Modifier.size(40.dp).clip(CircleShape)
                             .background(if (on) accent else chipBg)
-                            .border(1.5.dp, if (on) Color(0xFF6AA6F8) else chipLine, CircleShape)
+                            .border(1.5.dp, if (on) Color(0xFF8E99FF) else chipLine, CircleShape)
                             .clickable { onHours(h) },
                         contentAlignment = Alignment.Center
                     ) { Text("${h}h", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
@@ -14038,7 +14038,7 @@ private fun QinblyStoryPublishBar(
             Box(Modifier.fillMaxWidth().height(86.dp).padding(horizontal = 14.dp)) {
                 Row(
                     Modifier.align(Alignment.CenterStart).height(42.dp).clip(RoundedCornerShape(21.dp))
-                        .background(chipBg).border(1.5.dp, Color(0xFF6AA6F8), RoundedCornerShape(21.dp))
+                        .background(chipBg).border(1.5.dp, Color(0xFF8E99FF), RoundedCornerShape(21.dp))
                         .clickable { sheetOpen = true }.padding(start = 14.dp, end = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -14061,7 +14061,7 @@ private fun QinblyStoryPublishBar(
                 }
                 Box(
                     Modifier.align(Alignment.CenterEnd).height(42.dp).widthIn(min = 78.dp).clip(RoundedCornerShape(21.dp))
-                        .background(if (alsoFeed) accent else chipBg).border(1.5.dp, if (alsoFeed) Color(0xFF6AA6F8) else chipLine, RoundedCornerShape(21.dp))
+                        .background(if (alsoFeed) accent else chipBg).border(1.5.dp, if (alsoFeed) Color(0xFF8E99FF) else chipLine, RoundedCornerShape(21.dp))
                         .clickable { onAlsoFeed(!alsoFeed) }.padding(horizontal = 14.dp),
                     contentAlignment = Alignment.Center
                 ) { Text(if (alsoFeed) "✓ Feed" else "+ Feed", color = if (alsoFeed) Color.White else Color(0xFFB4B4BC), fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
@@ -14077,7 +14077,7 @@ private fun QinblyStoryPublishBar(
             ) {
                 Column(
                     Modifier.width(250.dp).clip(RoundedCornerShape(22.dp)).background(chipBg)
-                        .border(1.5.dp, Color(0xFF6AA6F8), RoundedCornerShape(22.dp)).padding(vertical = 12.dp, horizontal = 8.dp)
+                        .border(1.5.dp, Color(0xFF8E99FF), RoundedCornerShape(22.dp)).padding(vertical = 12.dp, horizontal = 8.dp)
                 ) {
                     Text("QUEM PODE VER", color = Color(0xFF8E87A8), fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp, bottom = 6.dp))
                     options.forEach { (key, title, sub) ->
@@ -14088,8 +14088,8 @@ private fun QinblyStoryPublishBar(
                                 .clickable { onAudience(key); sheetOpen = false }.padding(horizontal = 12.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(Modifier.size(18.dp).border(2.dp, if (on) Color(0xFF6AA6F8) else Color(0xFF55555C), CircleShape), contentAlignment = Alignment.Center) {
-                                if (on) Box(Modifier.size(9.dp).clip(CircleShape).background(Color(0xFF6AA6F8)))
+                            Box(Modifier.size(18.dp).border(2.dp, if (on) Color(0xFF8E99FF) else Color(0xFF55555C), CircleShape), contentAlignment = Alignment.Center) {
+                                if (on) Box(Modifier.size(9.dp).clip(CircleShape).background(Color(0xFF8E99FF)))
                             }
                             Spacer(Modifier.width(12.dp))
                             Column {

@@ -788,3 +788,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - A última aba do Início, no lugar de "Perto de mim", mostra o lugar de quem está usando (ex.: "Vilhena, RO"), com o estado em sigla. Sem localização/cidade guardada, continua "Perto de mim". A aba fica um pouco mais larga (peso 1,35) e sempre numa linha só.
 - Abreviação para nomes grandes (`qinblyShortPlace`, limite 18 letras): Santa→Sta., Santo→Sto., São→S., Doutor→Dr.; se ainda passar, tira "do/da/dos/d'..." no fim ("Santa Luzia d'Oeste" → "Sta. Luzia"); depois vira inicial no primeiro nome ("Nova Brasilândia" → "N. Brasilândia"); por último corta com "…". "Vale do Anari, RO" e "Porto Velho, RO" não mudam.
 - Nas publicações do Perto de mim, ao lado da hora aparece a cidade e o estado de quem postou ("Agora · Vilhena, RO"), com o nome da cidade inteiro (`qinblyFullPlace`). Vem de `profiles.city` (`PostSummary.authorCity`); no resto do app não aparece.
+
+## Cor própria: índigo no lugar do azul do Facebook (18/11)
+- O azul de destaque (#1877F2, igual ao do Facebook) virou **índigo `#4B5BFF`**, parente do roxo do logo (`#7C4DFF`). Troca feita em todos os arquivos: botões, links, hashtags, @menções, abas, caixas de texto em foco, ícones.
+- Variantes: claro `#8E99FF` (antes `#6AA6F8`), escuro `#3A49E6` (antes `#1565D8`), tema branco com botão "Editar perfil" `#EDEFFF` com texto `#3342D6`, faixa/fundo suave `#DDE1FF`/`#EEF0FF` (claro) e `#232B6B`/`#1A2054` (escuro).
+- Para mudar a cor da marca de novo, é só trocar `QinblyBrand.Accent` e as variantes em `MainActivity.kt` (e os poucos arquivos que ainda têm a cor escrita direto: Capsule, Extras, Marketplace, PhotoPicker, PhotoVideoEditor, Stories, TextStory, Music, ModernUi, Collective).

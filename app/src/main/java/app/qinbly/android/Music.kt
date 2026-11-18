@@ -164,7 +164,7 @@ internal fun QinblyPostMusicChip(post: QinblyApi.PostSummary, modifier: Modifier
 @Composable
 private fun QinblyMusicRow(m: QinblyMusic, playing: String, onToggle: () -> Unit, onPick: () -> Unit) {
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { onPick() }.padding(vertical = 8.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF3A3260)), contentAlignment = Alignment.Center) { QinblyIconOf(QinblyIcon.MusicNote, Color(0xFF6AA6F8), 22.dp) }
+        Box(Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF3A3260)), contentAlignment = Alignment.Center) { QinblyIconOf(QinblyIcon.MusicNote, Color(0xFF8E99FF), 22.dp) }
         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
             Text(m.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(m.artist, color = Color(0xFFA9B5C8), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)

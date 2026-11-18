@@ -76,7 +76,7 @@ import java.net.URL
 
 // ───────── Perto de mim: anúncios do bairro (vendas, doações, achados, eventos, serviços) ─────────
 
-private val MarketBlue = Color(0xFF1877F2)
+private val MarketBlue = Color(0xFF4B5BFF)
 private const val MARKET_STORAGE = "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/"
 private fun marketMain(block: () -> Unit) { Handler(Looper.getMainLooper()).post(block) }
 
@@ -390,7 +390,7 @@ internal fun QinblyNearbyHub(
                     }
                     Box(Modifier.fillMaxWidth().padding(vertical = 6.dp).height(1.dp).background(Color(0xFF2E2E30)))
                     for ((label, emoji, color) in listOf(
-                        Triple("Trocar cidade", "\uD83D\uDCCD", 0xFF1877F2L), Triple("Dicas de segurança", "\uD83D\uDEE1\uFE0F", 0xFF7C4DFFL), Triple("Regras da comunidade", "\uD83D\uDCCB", 0xFF6B7280L)
+                        Triple("Trocar cidade", "\uD83D\uDCCD", 0xFF4B5BFFL), Triple("Dicas de segurança", "\uD83D\uDEE1\uFE0F", 0xFF7C4DFFL), Triple("Regras da comunidade", "\uD83D\uDCCB", 0xFF6B7280L)
                     )) {
                         Row(
                             Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable {

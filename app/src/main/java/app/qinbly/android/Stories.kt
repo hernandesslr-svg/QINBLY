@@ -703,7 +703,7 @@ internal fun QinblyStoryMessageBar(username: String, fieldBg: Color, hintColor: 
             QinblyIconOf(if (liked) QinblyIcon.Favorite else QinblyIcon.FavoriteBorder, if (liked) Color(0xFFE5484D) else Color.White, 24.dp)
         }
         val ready = draft.isNotBlank() && !sending
-        Box(Modifier.size(46.dp).clip(CircleShape).background(if (ready) Color(0xFF1877F2) else Color(0x66000000)).clickable(enabled = ready) { send() }, contentAlignment = Alignment.Center) { QinblySendIcon(Color.White, 20.dp) }
+        Box(Modifier.size(46.dp).clip(CircleShape).background(if (ready) Color(0xFF4B5BFF) else Color(0x66000000)).clickable(enabled = ready) { send() }, contentAlignment = Alignment.Center) { QinblySendIcon(Color.White, 20.dp) }
     }
 }
 
