@@ -5989,19 +5989,22 @@ private fun QinblyNearbyFeed(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
-    var region by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
     var failed by remember { mutableStateOf(false) }
     var refresh by remember { mutableIntStateOf(0) }
     val cityName = place.substringBefore(",").trim().ifBlank { "sua cidade" }
-    val stateName = place.substringAfter(",", "").trim()
-    LaunchedEffect(place, region, refresh) {
+    LaunchedEffect(place, refresh) {
         loading = true; failed = false
         val token = prefs.getString("token", null)
         val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 if (!token.isNullOrBlank()) try { QinblyApi.syncMyCity(prefs, token) } catch (_: Exception) { }
-                QinblyApi.getNearbyPosts(token, place.ifBlank { QinblyApi.myCity(prefs) }, region)
+                // Primeiro quem é da sua cidade, depois quem é das cidades próximas (mesmo estado).
+                val where = place.ifBlank { QinblyApi.myCity(prefs) }
+                val inCity = QinblyApi.getNearbyPosts(token, where, false)
+                val inRegion = try { QinblyApi.getNearbyPosts(token, where, true) } catch (_: Exception) { emptyList() }
+                val seen = inCity.map { it.id }.toSet()
+                (inCity + inRegion.filter { it.id !in seen }).take(30)
             } catch (_: Exception) { null }
         }
         if (result == null) failed = true else onPosts(result)
@@ -6013,22 +6016,15 @@ private fun QinblyNearbyFeed(
                 Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = RemoteAppearance.feedSecondaryTextColor, modifier = Modifier.size(18.dp))
-                        Text(" " + (if (region && stateName.isNotBlank()) stateName else place.ifBlank { cityName }), color = RemoteAppearance.feedTextColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(false to "Na cidade", true to "Cidades próximas").forEach { (isRegion, label) ->
-                            val on = region == isRegion
-                            Text(label, color = if (on) QiblyTheme.background else RemoteAppearance.feedSecondaryTextColor, style = MaterialTheme.typography.labelLarge, fontWeight = if (on) FontWeight.Bold else FontWeight.Medium,
-                                modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (on) QiblyTheme.text else QiblyTheme.soft).clickable { region = isRegion }.padding(horizontal = 14.dp, vertical = 8.dp))
-                        }
+                        Text(" " + place.ifBlank { cityName }, color = RemoteAppearance.feedTextColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
                 }
             }
             if (!loading && posts.isEmpty()) item(key = "nearby-empty") {
                 Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 36.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = RemoteAppearance.feedSecondaryTextColor, modifier = Modifier.size(36.dp))
-                    Text(if (failed) "Não foi possível carregar" else if (region) "Ainda não há publicações nas cidades próximas" else "Ainda não há publicações em $cityName", color = RemoteAppearance.feedTextColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                    Text(if (failed) "Puxe a tela para baixo para tentar de novo." else if (region) "Quando alguém do seu estado publicar, aparece aqui." else "Toque em Cidades próximas para ver a região toda.", color = RemoteAppearance.feedSecondaryTextColor, style = MaterialTheme.typography.bodyMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Text(if (failed) "Não foi possível carregar" else "Ainda não há publicações perto de você", color = RemoteAppearance.feedTextColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Text(if (failed) "Puxe a tela para baixo para tentar de novo." else "Quando alguém da sua cidade ou das cidades próximas publicar, aparece aqui.", color = RemoteAppearance.feedSecondaryTextColor, style = MaterialTheme.typography.bodyMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
             items(posts, key = { "near-" + it.id }) { post -> Column(Modifier.fillMaxWidth()) { postItem(post) } }

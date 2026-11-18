@@ -777,3 +777,6 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 
 ## Vídeo no feed sem pausar (18/11)
 - No feed (card da publicação) o vídeo toca sozinho, sem som, e **não tem mais toque para pausar nem botão de play**: tocar no vídeo abre o visualizador, e é lá dentro que a pessoa pausa. O botão de som continua. (`InlineVideoPlayer(pausable = false)` só no `QiblyPublicationVideo`; o vídeo solto no chat continua com o play.)
+
+## Perto de mim sem os botões "Na cidade / Cidades próximas" (18/11)
+- Saíram os dois botões. A lista é uma só: primeiro as publicações de quem é da sua cidade, depois as de quem é das cidades próximas (mesmo estado), sem repetir. Continua o nome da cidade no topo e puxar para baixo atualiza.
