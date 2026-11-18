@@ -32,7 +32,7 @@ object QinblyApi {
 
     /** Token da sessão atual. Leituras públicas o enviam sempre, para o servidor devolver curtidas/seguindo do usuário e aplicar bloqueios. */
     private fun storedAccessToken(): String? =
-        applicationContext?.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()?.getString("token", null)?.takeIf { it.isNotBlank() }
+        applicationContext?.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)?.byAccount()?.getString("token", null)?.takeIf { it.isNotBlank() }
 
     data class AuthResult(val username: String, val token: String, val refreshToken: String)
 
@@ -1286,7 +1286,7 @@ object QinblyApi {
     fun getConnections(username: String, type: String): List<UserSummary> {
         require(type == "followers" || type == "following") { "Tipo de lista inválido." }
         val name = java.net.URLEncoder.encode(username.trim().removePrefix("@").lowercase(), "UTF-8")
-        val sessionToken = applicationContext?.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()?.getString("token", null)
+        val sessionToken = applicationContext?.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE)?.byAccount()?.getString("token", null)
         val response = request("GET", "/api/users/" + name + "/" + type, null, sessionToken)
         val users = response.optJSONArray("users") ?: org.json.JSONArray()
         return (0 until users.length()).mapNotNull { index ->
