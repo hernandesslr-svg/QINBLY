@@ -5992,7 +5992,6 @@ private fun QinblyNearbyFeed(
     var loading by remember { mutableStateOf(true) }
     var failed by remember { mutableStateOf(false) }
     var refresh by remember { mutableIntStateOf(0) }
-    val cityName = place.substringBefore(",").trim().ifBlank { "sua cidade" }
     LaunchedEffect(place, refresh) {
         loading = true; failed = false
         val token = prefs.getString("token", null)
@@ -6012,14 +6011,6 @@ private fun QinblyNearbyFeed(
     }
     androidx.compose.material3.pulltorefresh.PullToRefreshBox(isRefreshing = loading, onRefresh = { refresh++ }, modifier = Modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 18.dp)) {
-            item(key = "nearby-head") {
-                Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = RemoteAppearance.feedSecondaryTextColor, modifier = Modifier.size(18.dp))
-                        Text(" " + place.ifBlank { cityName }, color = RemoteAppearance.feedTextColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
             if (!loading && posts.isEmpty()) item(key = "nearby-empty") {
                 Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 36.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = RemoteAppearance.feedSecondaryTextColor, modifier = Modifier.size(36.dp))

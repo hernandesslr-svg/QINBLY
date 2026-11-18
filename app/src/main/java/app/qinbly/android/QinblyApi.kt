@@ -905,7 +905,9 @@ object QinblyApi {
         val state = clean(place.substringAfter(",", ""))
         if (cityName.isBlank()) return emptyList()
         fun enc(v: String) = java.net.URLEncoder.encode(v, "UTF-8")
-        val cityFilter = if (region && state.isNotBlank()) "profiles.city=ilike.*" + enc(state) else "profiles.city=ilike." + enc(cityName) + "*"
+        // Estado: acha "Rondônia" e "Rondonia" em qualquer parte do texto da cidade (letras com acento viram curinga).
+        val stateLike = state.replace(Regex("[^A-Za-z0-9 ]"), "*")
+        val cityFilter = if (region && state.isNotBlank()) "profiles.city=ilike.*" + enc(stateLike).replace("%2A", "*") + "*" else "profiles.city=ilike." + enc(cityName) + "*"
         val blocked = try { getBlockedUsers(tk).map { it.id } } catch (_: Exception) { emptyList() }
         val skip = (blocked + listOfNotNull(me)).filter { it.isNotBlank() }
         val now = enc(java.time.Instant.now().toString())

@@ -780,3 +780,6 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 
 ## Perto de mim sem os botões "Na cidade / Cidades próximas" (18/11)
 - Saíram os dois botões. A lista é uma só: primeiro as publicações de quem é da sua cidade, depois as de quem é das cidades próximas (mesmo estado), sem repetir. Continua o nome da cidade no topo e puxar para baixo atualiza.
+
+## Perto de mim: sem título da cidade, estado inteiro (18/11)
+- Saiu a linha com o nome da cidade no topo; só fica a aba "Perto de mim". A lista continua: sua cidade primeiro e depois o estado inteiro (ex.: Rondônia), agora achando o estado com ou sem acento e em qualquer parte do texto da cidade. Só aparece quem já tem a cidade gravada no perfil (acontece quando a pessoa abre o Perto de mim).
