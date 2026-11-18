@@ -5964,6 +5964,19 @@ private fun QinblyLiveSearch(lives: List<QinblyLive>, onBack: () -> Unit, onOpen
     }
 }
 
+/** Mercado e avisos em tela cheia (aberto pelo mercadinho no topo do Início e pelo Menu). */
+@Composable
+private fun QinblyMarketDialog(onNotice: (String) -> Unit, onOpenConversation: (String) -> Unit, onDismiss: () -> Unit) {
+    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+        Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding().navigationBarsPadding()) {
+            QinblyNearbyPage(onNotice) { lat, lng, place, refresh ->
+                QinblyNearbyHub(lat, lng, place, RemoteAppearance.feedTextColor, RemoteAppearance.feedSecondaryTextColor, onRefreshLocation = refresh,
+                    onOpenConversation = { onDismiss(); onOpenConversation(it) }, onNotice = onNotice, onClose = onDismiss)
+            }
+        }
+    }
+}
+
 /** Perto de mim: publicações de quem está na sua cidade ou nas cidades próximas (mesmo estado). O Mercado fica em Configurações. */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -6620,6 +6633,8 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         else -> allFeedPosts
     }
     var nearbyPosts by remember { mutableStateOf<List<QinblyApi.PostSummary>>(emptyList()) }
+    var showMarket by remember { mutableStateOf(false) }
+    if (showMarket) QinblyMarketDialog(onNotice, onOpenConversation) { showMarket = false }
     val displayedPosts = when (selectedFeedTab) {
         "Perto de mim" -> nearbyPosts
         "Vídeos" -> allFeedPosts.filter { it.mediaType.equals("video", ignoreCase = true) }
@@ -6711,6 +6726,9 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 }
         ) {
         Box(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 6.dp).heightIn(min = 42.dp)) {
+            IconButton(onClick = { showMarket = true }, modifier = Modifier.align(Alignment.CenterStart).size(44.dp).offset(x = (-8).dp)) {
+                Icon(androidx.compose.material.icons.Icons.Outlined.Storefront, contentDescription = "Mercado e avisos", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(30.dp))
+            }
             Text(QinblyBrand.Name, style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(QinblyBrand.Logo, QinblyBrand.Pink))), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, modifier = Modifier.align(Alignment.Center))
             Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onSearch, modifier = Modifier.size(42.dp)) {
@@ -10168,16 +10186,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
     }
 
     var showMarket by remember { mutableStateOf(false) }
-    if (showMarket) {
-        QinblyDialog(onDismissRequest = { showMarket = false }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-            Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding().navigationBarsPadding()) {
-                QinblyNearbyPage(onNotice) { lat, lng, place, refresh ->
-                    QinblyNearbyHub(lat, lng, place, RemoteAppearance.feedTextColor, RemoteAppearance.feedSecondaryTextColor, onRefreshLocation = refresh,
-                        onOpenConversation = { showMarket = false; onOpenConversation(it) }, onNotice = onNotice, onClose = { showMarket = false })
-                }
-            }
-        }
-    }
+    if (showMarket) QinblyMarketDialog(onNotice, onOpenConversation) { showMarket = false }
     val title = when (section) {
         "account" -> "Conta"
         "privacy" -> "Privacidade"
