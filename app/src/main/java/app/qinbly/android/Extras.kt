@@ -698,3 +698,71 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
     }
 }
 
+
+// ───────── Ícones de linha (sem cor) para as categorias do perfil ─────────
+/** Tira emoji/símbolos do fim do nome ("Games 🎮" → "Games"). */
+internal fun qinblyCategoryName(raw: String): String = raw.replace(Regex("\\s*[^\\p{L}\\p{N}\\s]+\\s*$"), "").trim()
+
+internal fun qinblyCategoryIcon(raw: String): androidx.compose.ui.graphics.vector.ImageVector {
+    val o = androidx.compose.material.icons.Icons.Outlined
+    return when (qinblyCategoryName(raw)) {
+        "Criador de conteúdo" -> o.Videocam
+        "Lifestyle" -> o.WbSunny
+        "Viagens" -> o.Flight
+        "Games" -> o.SportsEsports
+        "Beleza" -> o.Face
+        "Moda" -> o.Checkroom
+        "Fitness", "Academia", "Musculação" -> o.FitnessCenter
+        "Música" -> o.MusicNote
+        "Arte" -> o.Palette
+        "Fotografia" -> o.PhotoCamera
+        "Tecnologia" -> o.Memory
+        "Gastronomia" -> o.Restaurant
+        "Humor" -> o.SentimentVerySatisfied
+        "Educação" -> o.School
+        "Esportes" -> o.SportsBasketball
+        "Futebol" -> o.SportsSoccer
+        "Natureza" -> o.Park
+        "Corrida" -> o.DirectionsRun
+        "Dança" -> o.Nightlife
+        "Saúde e bem-estar" -> o.Spa
+        "Nutrição" -> o.Eco
+        "Yoga" -> o.SelfImprovement
+        "Pets" -> o.Pets
+        "Família" -> o.FamilyRestroom
+        "Maternidade" -> o.ChildCare
+        "Empreendedorismo" -> o.Lightbulb
+        "Negócios" -> o.BusinessCenter
+        "Finanças" -> o.AccountBalance
+        "Carros" -> o.DirectionsCar
+        "Motos" -> o.TwoWheeler
+        "Cinema" -> o.Movie
+        "Livros" -> o.MenuBook
+        "DIY e artesanato" -> o.Build
+        "Decoração" -> o.Chair
+        "Jardinagem" -> o.LocalFlorist
+        "Ciência" -> o.Science
+        "Comédia" -> o.Mic
+        "Culinária" -> o.Kitchen
+        else -> o.Tag
+    }
+}
+
+/** Linha de categorias do perfil: ícone de linha + nome, separadas por "•". Aceita o texto salvo (com ou sem emoji). */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+internal fun QinblyCategoryLine(raw: String, textColor: Color, iconColor: Color, modifier: Modifier = Modifier) {
+    val items = raw.split(" • ").map { it.trim() }.filter { it.isNotBlank() }
+    androidx.compose.foundation.layout.FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        items.forEach { item ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.material3.Icon(qinblyCategoryIcon(item), contentDescription = null, tint = iconColor, modifier = Modifier.size(17.dp))
+                androidx.compose.material3.Text(qinblyCategoryName(item), color = textColor, style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 5.dp))
+            }
+        }
+    }
+}

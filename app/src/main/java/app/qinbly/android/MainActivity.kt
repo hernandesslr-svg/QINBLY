@@ -9135,7 +9135,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
         Text(if (username.isBlank()) "Entre ou crie sua conta" else "@${username.removePrefix("@")}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 24.dp))
         if (shownBio.startsWith("✦ ")) {
-            Text(shownBio.substringBefore('\n').removePrefix("✦ "), Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 7.dp), color = RemoteAppearance.screenTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
+            QinblyCategoryLine(shownBio.substringBefore('\n').removePrefix("✦ "), RemoteAppearance.screenTextColor, RemoteAppearance.screenSecondaryTextColor, Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 7.dp))
             val description = shownBio.substringAfter('\n', "")
             if (description.isNotBlank()) Text(description, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 5.dp), color = RemoteAppearance.screenSecondaryTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, maxLines = 4)
         } else if (shownBio.isNotBlank()) Text(shownBio, Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 10.dp), color = RemoteAppearance.screenTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium, maxLines = 4)
@@ -9758,8 +9758,9 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                     androidx.compose.material3.FilterChip(
                         selected = selected,
                         onClick = { selectedCategories = if (selected) selectedCategories - category else if (selectedCategories.size < 5) selectedCategories + category else selectedCategories },
-                        label = { Text(category.replace(Regex("\\s*[^\\p{L}\\p{N}\\s]+\\s*$"), ""), color = RemoteAppearance.screenTextColor) },
-                        leadingIcon = if (selected) ({ Icon(Icons.Default.Check, contentDescription = null, tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(16.dp)) }) else null,
+                        label = { Text(qinblyCategoryName(category), color = RemoteAppearance.screenTextColor) },
+                        leadingIcon = { Icon(qinblyCategoryIcon(category), contentDescription = null, tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(17.dp)) },
+                        trailingIcon = if (selected) ({ Icon(Icons.Default.Check, contentDescription = null, tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(16.dp)) }) else null,
                         shape = RoundedCornerShape(16.dp),
                         // Cor transparente: fundo e contorno com a cor da categoria; selecionada fica mais forte, com contorno cheio.
                         border = BorderStroke(if (selected) 2.dp else 1.dp, tint.copy(alpha = if (selected) 1f else 0.55f)),
@@ -10553,7 +10554,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
         val publicCategories = bio.lineSequence().firstOrNull { it.startsWith("✦ ") }?.removePrefix("✦ ").orEmpty()
         val publicCountry = bio.lineSequence().firstOrNull { it.startsWith("🌍 ") }?.removePrefix("🌍 ").orEmpty()
         val publicDescription = bio.lineSequence().filterNot { it.startsWith("✦ ") || it.startsWith("🌍 ") }.joinToString("\n").trim()
-        if (publicCategories.isNotBlank()) Text(publicCategories, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenTextColor)
+        if (publicCategories.isNotBlank()) QinblyCategoryLine(publicCategories, RemoteAppearance.screenTextColor, RemoteAppearance.screenSecondaryTextColor, Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp))
         if (publicDescription.isNotBlank()) Text(publicDescription, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenTextColor)
         val joinedDate = listOf("createdAt", "created_at", "joined_at").map { user.optString(it) }.firstOrNull { it.matches(Regex("\\d{4}-\\d{2}.*")) }.orEmpty()
         val joinMonth = joinedDate.drop(5).take(2).toIntOrNull() ?: 0

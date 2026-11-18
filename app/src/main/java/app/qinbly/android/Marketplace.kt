@@ -244,11 +244,11 @@ internal fun QinblyNearbyHub(
                 val selected = name == cat
                 val (emoji, tone) = chipStyle(name)
                 Row(
-                    Modifier.clip(RoundedCornerShape(20.dp)).background(if (selected) QiblyTheme.text else QiblyTheme.soft).clickable { cat = name }.padding(start = 6.dp, end = 14.dp, top = 5.dp, bottom = 5.dp),
+                    Modifier.clip(RoundedCornerShape(20.dp)).background(if (selected) QiblyTheme.text else QiblyTheme.soft).clickable { cat = name }.padding(start = 11.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(Modifier.size(24.dp).clip(CircleShape).background(tone), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 14.dp) }
-                    Text(name, color = if (selected) QiblyTheme.background else secondary, fontSize = 13.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.padding(start = 7.dp))
+                    EmojiIcon(emoji, 17.dp, if (selected) QiblyTheme.background else secondary)
+                    Text(name, color = if (selected) QiblyTheme.background else secondary, fontSize = 13.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.padding(start = 6.dp))
                 }
             }
         }
@@ -306,7 +306,7 @@ internal fun QinblyNearbyHub(
                                     listOf("Achados", "\uD83D\uDD0E", 0xFFE0457B, "achado"), listOf("Eventos", "\uD83C\uDF89", 0xFFFF4F9A, "evento")
                                 ).map { Quad(it[0] as String, it[1] as String, it[2] as Long, it[3] as String) }) {
                                     Column(Modifier.clickable { createKind = key }, horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Box(Modifier.size(46.dp).clip(CircleShape).background(Color(tone)), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 22.dp) }
+                                        Box(Modifier.size(46.dp).clip(CircleShape).background(QiblyTheme.soft), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 22.dp, secondary) }
                                         Text(label, color = textColor, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))
                                     }
                                 }
@@ -369,7 +369,7 @@ internal fun QinblyNearbyHub(
                                 Modifier.weight(1f).clip(RoundedCornerShape(18.dp)).background(Color(0xFF262628)).clickable { showDrawer = false; mine = target }.padding(vertical = 14.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Box(Modifier.size(36.dp).clip(CircleShape).background(Color(color)), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 19.dp) }
+                                Box(Modifier.size(36.dp).clip(CircleShape).background(Color(0xFF343437)), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 19.dp, Color(0xFFA9B5C8)) }
                                 Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
                             }
                         }
@@ -385,7 +385,7 @@ internal fun QinblyNearbyHub(
                             }.padding(horizontal = 6.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(Modifier.size(34.dp).clip(CircleShape).background(Color(color)), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 18.dp) }
+                            Box(Modifier.size(34.dp).clip(CircleShape).background(Color(0xFF343437)), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 18.dp, Color(0xFFA9B5C8)) }
                             Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(start = 14.dp).weight(1f))
                             QinblyIconOf(QinblyIcon.KeyboardArrowRight, Color(0xFFA9B5C8), 26.dp)
                         }
@@ -767,23 +767,23 @@ private fun CityRow(name: String, selected: Boolean, onClick: () -> Unit) {
 
 /** Troca o emoji de categoria por um ícone de verdade. */
 @Composable
-private fun EmojiIcon(e: String, size: androidx.compose.ui.unit.Dp) {
+private fun EmojiIcon(e: String, size: androidx.compose.ui.unit.Dp, tint: Color = Color.Gray) {
     val icon = when (e) {
-        "\uD83D\uDCB2" -> QinblyIcon.AttachMoney
-        "\uD83C\uDF81" -> QinblyIcon.CardGiftcard
-        "\uD83D\uDD0E" -> QinblyIcon.Search
-        "\uD83C\uDF89" -> QinblyIcon.Celebration
-        "\u2728" -> QinblyIcon.AutoAwesome
-        "\uD83D\uDEE0\uFE0F" -> QinblyIcon.Build
-        "\uD83D\uDCAC" -> QinblyIcon.ChatBubble
-        "\uD83C\uDFF7\uFE0F" -> QinblyIcon.Sell
-        "\uD83D\uDD16" -> QinblyIcon.Bookmark
-        "\uD83D\uDCCD" -> QinblyIcon.LocationOn
-        "\uD83D\uDEE1\uFE0F" -> QinblyIcon.Shield
-        "\uD83D\uDCCB" -> QinblyIcon.Assignment
-        else -> QinblyIcon.Info
+        "\uD83D\uDCB2" -> androidx.compose.material.icons.Icons.Outlined.LocalOffer
+        "\uD83C\uDF81" -> androidx.compose.material.icons.Icons.Outlined.CardGiftcard
+        "\uD83D\uDD0E" -> androidx.compose.material.icons.Icons.Outlined.Search
+        "\uD83C\uDF89" -> androidx.compose.material.icons.Icons.Outlined.Celebration
+        "\u2728" -> androidx.compose.material.icons.Icons.Outlined.AutoAwesome
+        "\uD83D\uDEE0\uFE0F" -> androidx.compose.material.icons.Icons.Outlined.Build
+        "\uD83D\uDCAC" -> androidx.compose.material.icons.Icons.Outlined.ChatBubbleOutline
+        "\uD83C\uDFF7\uFE0F" -> androidx.compose.material.icons.Icons.Outlined.LocalOffer
+        "\uD83D\uDD16" -> androidx.compose.material.icons.Icons.Outlined.BookmarkBorder
+        "\uD83D\uDCCD" -> androidx.compose.material.icons.Icons.Outlined.LocationOn
+        "\uD83D\uDEE1\uFE0F" -> androidx.compose.material.icons.Icons.Outlined.Shield
+        "\uD83D\uDCCB" -> androidx.compose.material.icons.Icons.Outlined.Assignment
+        else -> androidx.compose.material.icons.Icons.Outlined.Info
     }
-    androidx.compose.material3.Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(size))
+    androidx.compose.material3.Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(size))
 }
 
 private data class Quad(val a: String, val b: String, val c: Long, val d: String)

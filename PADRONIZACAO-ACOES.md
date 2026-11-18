@@ -753,3 +753,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - O perfil continua aparecendo na busca e no perfil (nome, foto, bio, contadores); só o conteúdo é privado.
 - Se a conta é privada (`profiles.is_private`, lido por `QinblyApi.isProfilePrivate`) e você NÃO segue (nem é você mesmo): no lugar das publicações aparece o cadeado com "Publicações privadas" + "Siga esta conta para ver as publicações e stories.", e o botão **Mensagem** some (sobra só Seguir).
 - Depois que você segue (ou o pedido é aprovado), o botão Mensagem e as publicações aparecem normalmente.
+
+## Ícones de linha sem cor: Perto de mim e categorias do perfil (17/11)
+- **Perto de mim:** as categorias (Tudo, Vendas, Doações, Achados, Eventos, Serviços, Avisos), a tela vazia (Vender, Doar, Achados, Eventos) e o menu lateral usam ícone de linha (`Icons.Outlined.*` via `EmojiIcon`) cinza, sem bolinha colorida. Na categoria selecionada o ícone acompanha a cor do texto.
+- **Categorias do perfil:** cada categoria tem um ícone de linha que combina com ela (`qinblyCategoryIcon` em Extras.kt: Games = controle, Esportes/Futebol = bola, Música = nota, Carros = carro...). Aparece na tela de editar perfil (nos chips), no seu perfil e no perfil dos outros (`QinblyCategoryLine`). Categoria nova sem ícone cai no `Tag`.
+- O texto salvo no banco continua igual ("Games 🎮"); o emoji é cortado só na hora de mostrar (`qinblyCategoryName`).
