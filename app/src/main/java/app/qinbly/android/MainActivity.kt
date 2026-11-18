@@ -3001,7 +3001,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                     }
                     query.trim().removePrefix("@").trim().length < 2 -> LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 20.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
+                        contentPadding = PaddingValues(bottom = 20.dp + qinblyNavBarPadding())
                     ) {
                         if (history.isNotEmpty() && (filter == "Tudo" || filter == "Pessoas" || filter == "Publicações")) {
                             item {
@@ -3095,7 +3095,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                     else -> LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(2.dp),
-                        contentPadding = PaddingValues(bottom = 20.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
+                        contentPadding = PaddingValues(bottom = 20.dp + qinblyNavBarPadding())
                     ) {
                         if (filter != "Publicações") items(results, key = { "u-" + it.id }) { user ->
                             QinblyUserRow(user, prefs, openUser, onError)

@@ -811,3 +811,4 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 
 ## "Limpar tudo" da busca em branco
 - O botão "Limpar tudo" dos recentes (topo da busca) agora usa a cor do texto (branco no escuro), igual ao "Limpar" de "Suas hashtags".
+- Correção: dentro da janela da busca os insets do Compose chegam zerados, então a folga do fim usa o padrão do app `qinblyNavBarPadding()` (a mesma medida usada nas outras telas cheias) em vez de `WindowInsets.navigationBars`.
