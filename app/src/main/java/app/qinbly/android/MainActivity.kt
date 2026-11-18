@@ -4726,7 +4726,7 @@ private fun QinblyPostCard(
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }) {
                         Row(verticalAlignment = Alignment.CenterVertically) { Text(post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name }, color = RemoteAppearance.feedTextColor, fontSize = 17.sp, fontWeight = if (nameFontStyle == "Elegante") FontWeight.Medium else FontWeight.Bold, fontFamily = nameFontFamily(nameFontStyle)); if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(16.dp) } }
-                        LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor)
+                        LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor, suffix = if (post.authorCity.isNotBlank()) " · " + qinblyFullPlace(post.authorCity) else "")
                     }
                     QinblyCardFollow(post, prefs, onNotice)
                     QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = null, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true })
@@ -4749,7 +4749,7 @@ private fun QinblyPostCard(
                             )
                             if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) }
                             }
-                            LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor)
+                            LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor, suffix = if (post.authorCity.isNotBlank()) " · " + qinblyFullPlace(post.authorCity) else "")
                         }
                     QinblyCardFollow(post, prefs, onNotice)
                         QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = RemoteAppearance.feedTextColor, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true })
@@ -6746,7 +6746,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 val tint = if (selected) QinblyBrand.SelectedIcon else RemoteAppearance.headerTextColor.copy(alpha = 0.62f)
                 val labelTint = if (selected) QinblyBrand.TextAccent else tint
                 Column(
-                    modifier = Modifier.weight(1f).clickable {
+                    modifier = Modifier.weight(if (feedTab == "Perto de mim") 1.35f else 1f).clickable {
                         selectedFeedTab = feedTab
                     }.padding(top = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -6763,7 +6763,9 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                             }, contentDescription = feedTab, tint = tint, modifier = Modifier.size(22.dp)
                         )
                     }
-                    Text(feedTab, color = labelTint, fontSize = 10.sp, maxLines = 1, softWrap = false, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.padding(top = 2.dp))
+                    // A última aba mostra o lugar de cada pessoa ("Vilhena, RO"); sem localização continua "Perto de mim".
+                    val tabLabel = if (feedTab == "Perto de mim") qinblyShortPlace(prefs.getString("device_place", null).orEmpty().ifBlank { QinblyApi.myCity(prefs) }).ifBlank { feedTab } else feedTab
+                    Text(tabLabel, color = labelTint, fontSize = 10.sp, maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.padding(top = 2.dp))
                     Spacer(Modifier.height(5.dp))
                     Box(Modifier.fillMaxWidth().height(3.dp).background(if (selected) QinblyBrand.TextAccent else Color.Transparent))
                 }

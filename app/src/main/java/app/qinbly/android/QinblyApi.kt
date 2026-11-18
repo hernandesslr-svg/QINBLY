@@ -230,7 +230,9 @@ object QinblyApi {
         /** Fundo colorido da publicação de texto (0 = sem fundo, 1..6 = cor da paleta). */
         val textBg: Int = 0,
         /** Só preenchido na sua própria publicação agendada ainda não publicada (data ISO). */
-        val scheduledAt: String = ""
+        val scheduledAt: String = "",
+        /** Cidade de quem postou (só preenchida no Perto de mim). */
+        val authorCity: String = ""
     )
 
     /** Converte uma publicação do JSON da API. `fallback` (dono do perfil) preenche o autor quando a lista não o traz. */
@@ -916,8 +918,9 @@ object QinblyApi {
             "&order=created_at.desc&limit=24"
         val rows = org.json.JSONArray(rest(tk, "GET", path))
         val ids = (0 until rows.length()).mapNotNull { rows.optJSONObject(it)?.optString("id")?.takeIf { id -> id.isNotBlank() } }
+        val cities = (0 until rows.length()).associate { rows.optJSONObject(it)?.optString("id").orEmpty() to (rows.optJSONObject(it)?.optJSONObject("profiles")?.optString("city").orEmpty()) }
         val results = arrayOfNulls<PostSummary>(ids.size)
-        val threads = ids.mapIndexed { i, id -> Thread { try { results[i] = getPost(id) } catch (_: Exception) { } }.also { it.start() } }
+        val threads = ids.mapIndexed { i, id -> Thread { try { results[i] = getPost(id).copy(authorCity = cities[id].orEmpty()) } catch (_: Exception) { } }.also { it.start() } }
         threads.forEach { it.join() }
         return results.filterNotNull()
     }

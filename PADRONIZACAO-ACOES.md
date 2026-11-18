@@ -783,3 +783,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 
 ## Perto de mim: sem título da cidade, estado inteiro (18/11)
 - Saiu a linha com o nome da cidade no topo; só fica a aba "Perto de mim". A lista continua: sua cidade primeiro e depois o estado inteiro (ex.: Rondônia), agora achando o estado com ou sem acento e em qualquer parte do texto da cidade. Só aparece quem já tem a cidade gravada no perfil (acontece quando a pessoa abre o Perto de mim).
+
+## Aba com o lugar de cada pessoa + cidade nas publicações (18/11)
+- A última aba do Início, no lugar de "Perto de mim", mostra o lugar de quem está usando (ex.: "Vilhena, RO"), com o estado em sigla. Sem localização/cidade guardada, continua "Perto de mim". A aba fica um pouco mais larga (peso 1,35) e sempre numa linha só.
+- Abreviação para nomes grandes (`qinblyShortPlace`, limite 18 letras): Santa→Sta., Santo→Sto., São→S., Doutor→Dr.; se ainda passar, tira "do/da/dos/d'..." no fim ("Santa Luzia d'Oeste" → "Sta. Luzia"); depois vira inicial no primeiro nome ("Nova Brasilândia" → "N. Brasilândia"); por último corta com "…". "Vale do Anari, RO" e "Porto Velho, RO" não mudam.
+- Nas publicações do Perto de mim, ao lado da hora aparece a cidade e o estado de quem postou ("Agora · Vilhena, RO"), com o nome da cidade inteiro (`qinblyFullPlace`). Vem de `profiles.city` (`PostSummary.authorCity`); no resto do app não aparece.

@@ -805,3 +805,41 @@ internal fun QinblyCategoryLine(raw: String, textColor: Color, iconColor: Color,
         }
     }
 }
+
+
+// ───────── Nome do lugar na aba Perto de mim e nas publicações ─────────
+private fun qinblyNoAccent(s: String): String =
+    java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD).replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "").lowercase().trim()
+
+private val qinblyStateSiglas: Map<String, String> = mapOf(
+    "Acre" to "AC", "Alagoas" to "AL", "Amapá" to "AP", "Amazonas" to "AM", "Bahia" to "BA", "Ceará" to "CE", "Distrito Federal" to "DF",
+    "Espírito Santo" to "ES", "Goiás" to "GO", "Maranhão" to "MA", "Mato Grosso" to "MT", "Mato Grosso do Sul" to "MS", "Minas Gerais" to "MG",
+    "Pará" to "PA", "Paraíba" to "PB", "Paraná" to "PR", "Pernambuco" to "PE", "Piauí" to "PI", "Rio de Janeiro" to "RJ", "Rio Grande do Norte" to "RN",
+    "Rio Grande do Sul" to "RS", "Rondônia" to "RO", "Roraima" to "RR", "Santa Catarina" to "SC", "São Paulo" to "SP", "Sergipe" to "SE", "Tocantins" to "TO"
+).mapKeys { qinblyNoAccent(it.key) }
+
+/** "Vilhena, Rondônia" → "Vilhena, RO" (nome da cidade inteiro, estado em sigla). */
+internal fun qinblyFullPlace(place: String): String {
+    val city = place.substringBefore(",").trim()
+    val state = place.substringAfter(",", "").trim()
+    if (city.isBlank()) return ""
+    val sigla = qinblyStateSiglas[qinblyNoAccent(state)] ?: (if (state.length == 2) state.uppercase() else state)
+    return if (sigla.isBlank()) city else "$city, $sigla"
+}
+
+/** Versão curta para a aba (cabe numa linha): Sta./S./Dr., tira "do/da/d'Oeste" no fim, inicial do primeiro nome e, por último, corta com "…". */
+internal fun qinblyShortPlace(place: String, max: Int = 18): String {
+    val city0 = place.substringBefore(",").trim()
+    if (city0.isBlank()) return ""
+    val tail = qinblyFullPlace(place).removePrefix(city0)   // ", RO" ou ""
+    var city = city0
+        .replace(Regex("^Santa\\s+"), "Sta. ").replace(Regex("^Santo\\s+"), "Sto. ")
+        .replace(Regex("^São\\s+"), "S. ").replace(Regex("^Doutor\\s+"), "Dr. ")
+    if ((city + tail).length > max) city = city.replace(Regex("\\s+(?:d[aeo]s?\\s|d['’]).*$"), "")
+    if ((city + tail).length > max) {
+        val parts = city.split(" ").filter { it.isNotBlank() }
+        if (parts.size >= 2 && !parts[0].endsWith(".")) city = parts[0].take(1) + ". " + parts.drop(1).joinToString(" ")
+    }
+    if ((city + tail).length > max) city = city.take((max - tail.length - 1).coerceAtLeast(3)).trimEnd() + "…"
+    return city + tail
+}
