@@ -816,7 +816,7 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 ## Anel de story na foto do perfil
 - Quem tem story novo (ainda não visto por você) ganha o anel azul (`QinblyBrand.Accent`) na foto: no cabeçalho das publicações (feed, vídeos) e na página do perfil, própria e de outras pessoas.
 - Quando a pessoa abre e fecha o story, o anel apaga (some por completo, igual à faixa de stories). Quem você silenciou não mostra anel.
-- Estado único em `QinblyStoryRings` (MainActivity.kt): atualizado quando a bandeja de stories carrega (faixa do Início e Feed) e ao fechar o visualizador. Para o seu próprio story, o "visto" fica guardado no aparelho (`own_story_seen`).
+- Estado único em `QinblyStoryRings` (MainActivity.kt): atualizado quando a bandeja de stories carrega e a cada story que aparece no visualizador.
 - `QiblyAccountAvatar` ganhou o parâmetro `storyRing` (padrão desligado); só as publicações ligam. Chat, notificações e listas continuam sem anel.
 - Limite: só aparece anel para quem está na sua bandeja (você e quem você segue, mais stories coletivos).
 
@@ -830,3 +830,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - A aba "Seguindo" (barra de cima do Início) mostra uma bolinha vermelha (`#E53935`, 10dp, com borda da cor do fundo) no canto do ícone quando alguém que você segue postou depois da última vez que você abriu essa aba. Posts seus não contam.
 - Ao abrir a aba Seguindo, a bolinha apaga e só volta com publicação nova. O momento da última visita fica em `following_tab_seen_at` (no primeiro uso começa sem bolinha).
 - Substitui o texto "N novidades de quem você segue", que saiu do topo do Descobrir.
+
+## Correções: anel que não apagava, toque na foto e cartão do topo
+- Anel de story (faixa de stories e fotos das publicações/perfil): agora vale também o que você já abriu neste aparelho (`seen_story_ids`, guardado a cada story que aparece no visualizador), não só o "visto" do servidor. Antes só marcava o último story da fila ao fechar, e o anel de quem você viu no meio ficava aceso.
+- Na publicação, tocar na **foto** com anel abre o story da pessoa (`QinblyStoryRings.openRequest`); tocar no **nome** continua abrindo o perfil. Sem anel, a foto abre o perfil como antes. Em abas sem a faixa de stories (Seguindo, Em alta...) um host invisível (`QinblyStoriesRow(hostOnly = true)`) mostra o visualizador.
+- Cartão Pergunta do dia/Desafio: sem pedaço do próximo na beirada (`contentPadding` 14dp nos dois lados e `pageSpacing` 16dp).

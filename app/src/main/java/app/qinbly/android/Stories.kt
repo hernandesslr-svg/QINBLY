@@ -336,6 +336,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
     fun previous() { if (index > 0) index-- else if (hasPreviousPerson) onPreviousPerson() }
 
     LaunchedEffect(current.id) {
+        if (current.page == "story") QinblyStoryRings.markViewed(prefs, entry, current.id)
         if (!entry.mine && current.page == "story" && !token.isNullOrBlank()) {
             Thread {
                 try {
