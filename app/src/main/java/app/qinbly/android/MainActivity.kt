@@ -5743,24 +5743,49 @@ private fun qinblyPostAgeHours(createdAt: String): Long? = try {
     java.time.Duration.between(java.time.Instant.parse(createdAt), java.time.Instant.now()).toHours()
 } catch (_: Exception) { null }
 
-/** Só a pergunta do dia, numa faixa fina no topo do Descobrir (saudação, novidades e desafio da semana saíram daqui). */
+/** Saudação, pergunta do dia e desafio da semana, no topo do Descobrir. */
 @Composable
 private fun QinblyHomeHeader(
     posts: List<QinblyApi.PostSummary>, prefs: android.content.SharedPreferences,
     onCreateWith: (String, String) -> Unit
 ) {
+    val hour = java.time.LocalTime.now().hour
+    val greeting = if (hour < 12) "Bom dia" else if (hour < 18) "Boa tarde" else "Boa noite"
+    val name = prefs.getString("display_name", "").orEmpty().ifBlank { prefs.getString("username", "").orEmpty() }.removePrefix("@").trim().substringBefore(" ")
+    val news = posts.count { QinblyEngagement.isFollowing(prefs, it.username, it.isFollowing) && (qinblyPostAgeHours(it.createdAt) ?: 99L) < 24 }
     val today = java.time.LocalDate.now()
     val question = qinblyDailyQuestions[today.dayOfYear % qinblyDailyQuestions.size]
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp).clip(RoundedCornerShape(12.dp))
-            .border(1.dp, RemoteAppearance.feedDividerColor, RoundedCornerShape(12.dp))
-            .clickable { onCreateWith("text", "#perguntadodia ") }.padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text("PERGUNTA", color = QinblyBrand.Lavender, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp, maxLines = 1)
-        Text(question, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-        Icon(androidx.compose.material.icons.Icons.Default.ChevronRight, contentDescription = "Responder", tint = RemoteAppearance.feedSecondaryTextColor, modifier = Modifier.size(18.dp))
+    val challenge = qinblyWeeklyChallenges[(today.dayOfYear / 7) % qinblyWeeklyChallenges.size]
+    val participants = posts.filter { it.caption.contains("#" + challenge.first, ignoreCase = true) }.map { it.username.lowercase() }.distinct().size
+    Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column {
+            Text(if (name.isBlank()) greeting else "$greeting, $name", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 24.sp)
+            Text(if (news > 0) (if (news == 1) "1 novidade de quem você segue" else "$news novidades de quem você segue") else "Veja o que está acontecendo agora",
+                color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
+        }
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).border(1.dp, RemoteAppearance.feedDividerColor, RoundedCornerShape(16.dp))
+                .clickable { onCreateWith("text", "#perguntadodia ") }.padding(horizontal = 14.dp, vertical = 12.dp)
+        ) {
+            Text("PERGUNTA DO DIA", color = QinblyBrand.Lavender, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
+            Text(question, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.padding(top = 2.dp))
+            Text("Responder com uma publicação  →", color = Color(0xFFB4B4BC), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
+        }
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).border(1.dp, RemoteAppearance.feedDividerColor, RoundedCornerShape(16.dp))
+                .clickable { QinblyTagNav.tag = challenge.first }.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(androidx.compose.material.icons.Icons.Default.PhotoCamera, contentDescription = null, tint = QinblyBrand.Lavender, modifier = Modifier.size(26.dp))
+            Column(Modifier.weight(1f)) {
+                Text("DESAFIO DA SEMANA", color = QinblyBrand.Lavender, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, maxLines = 1)
+                Text(challenge.second, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 2)
+                if (participants > 0) Text(if (participants == 1) "1 participante" else "$participants participantes", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp, maxLines = 1)
+            }
+            Text("Participar", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp,
+                modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(QinblyBrand.Lavender)
+                    .clickable { onCreateWith("camera", "#" + challenge.first + " ") }.padding(horizontal = 14.dp, vertical = 7.dp))
+        }
     }
     Box(Modifier.fillMaxWidth().height(1.dp).background(RemoteAppearance.feedDividerColor.copy(alpha = 0.45f)))
 }
