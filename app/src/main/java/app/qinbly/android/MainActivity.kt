@@ -4779,10 +4779,11 @@ private fun QinblyPostCard(
 
                 }
             }
-            QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
             if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video") && post.caption.isNotBlank()) {
                 QinblyFeedCaption(post.caption, Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp))
             }
+            // Pessoas marcadas: logo embaixo do texto da legenda e antes da mídia.
+            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
             if (post.musicUrl.isNotBlank() && post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) {
                 QinblyPostMusicChip(post, Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp), RemoteAppearance.feedTextColor)
             }
@@ -5003,10 +5004,11 @@ private fun QinblyPostCard(
             } else if (post.mediaType != "image" && post.mediaType != "video" && post.caption.isNotBlank()) {
                 val textBgBrush = if (post.mediaType == "text") qinblyTextBgBrush(post.textBg) else null
                 if (textBgBrush != null) {
-                    // As #hashtags do final ficam fora do cartão colorido, em cima dele (as pessoas marcadas ficam logo abaixo do nome, em todas as publicações).
+                    // As #hashtags do final ficam fora do cartão colorido, em cima dele (as pessoas marcadas ficam logo abaixo do texto).
                     val (cardText, cardTags) = qinblySplitCaption(post.caption).let { if (it.first.isBlank()) post.caption to emptyList() else it }
                     if (cardTags.isNotEmpty()) QinblyRichText(cardTags.joinToString(" "), RemoteAppearance.feedTextColor, fontSize = 15.sp,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 2.dp), maxLines = 2)
+                    QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
                     Box(
                         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp)
                             .clip(RoundedCornerShape(20.dp)).background(textBgBrush)
@@ -5023,6 +5025,7 @@ private fun QinblyPostCard(
                         maxLines = 4)
                 }
             }
+            if (!(post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) && !(post.mediaType == "text" && post.caption.isNotBlank() && qinblyTextBgBrush(post.textBg) != null)) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
             if (post.mediaType != "poll") { // Enquetes exibem apenas votação e total de votos
                 QinblyPostActionBar(
                     post = post,
@@ -5040,12 +5043,11 @@ private fun QinblyPostCard(
     }
 }
 
-/** Linha "Com @fulano @ciclano" das pessoas marcadas numa publicação. */
+/** Linha "@fulano @ciclano" das pessoas marcadas numa publicação (sem a palavra "Com"). */
 @Composable
 private fun QinblyTaggedUsersRow(users: List<String>, onOpenProfile: (String) -> Unit) {
     if (users.isEmpty()) return
     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text("Com", color = RemoteAppearance.feedTextColor.copy(alpha = 0.7f), fontSize = 13.sp)
         users.forEach { tagged ->
             Text("@$tagged", color = QinblyBrand.Accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable { onOpenProfile(tagged) })
         }

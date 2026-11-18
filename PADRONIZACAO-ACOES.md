@@ -742,3 +742,6 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - O crédito "@autor" vai junto no story (marca de origem na legenda, como antes), então "Ver original" continua funcionando. A marca é limpa ao publicar, ao sair do editor ou ao sair do Criar, para não vazar para o próximo story.
 - Publicação só de texto (sem foto/vídeo) continua avisando que não tem mídia para o story.
 - Implementação: `QinblyStoryRequest` (pedido de navegação) + `QinblyComposeSeed.pickedUri/origin/story`; o `PostPage` aplica a mídia ao abrir.
+
+## Pessoas marcadas: embaixo do texto, sem a palavra "Com"
+- Substitui a regra anterior ("em cima de tudo"). As marcações aparecem só como **@fulano @ciclano** (sem escrever "Com"), **logo embaixo do texto da legenda e antes da mídia**: foto/vídeo = legenda, marcações, mídia; cartão colorido = hashtags, marcações, cartão; texto simples ou enquete = marcações embaixo do texto. Componente: `QinblyTaggedUsersRow`.
