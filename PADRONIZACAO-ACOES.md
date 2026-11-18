@@ -736,3 +736,9 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - Com alguém marcado, o rodapé vira o botão **"Enviar (N)"** (e o campo opcional de mensagem). Sem ninguém marcado, o rodapé mostra as ações: **Copiar link, Outros apps, Seu story e Comunidade**.
 - **Comunidade:** abre uma tela cheia "Comunidades" com a busca "Buscar comunidade" e a lista das comunidades em que a pessoa participa (emoji, nome, membros, círculo de seleção). Marca várias e toca em **"Enviar (N)"** (fixo embaixo, acima dos botões do celular). Não tem campo de texto. Cada envio vira uma mensagem na comunidade com o texto e o link da publicação.
 - Sem comunidade nenhuma: aviso "Você ainda não está em nenhuma comunidade", com a dica de entrar em uma na aba Comunidades.
+
+## "Seu story" na tela Enviar para: abre a tela de criar story
+- Tocar em **Seu story** não publica mais direto. O app baixa a foto/vídeo da publicação e abre a **tela de criar story** (a mesma do Criar) já com a mídia carregada; a pessoa edita (texto, figurinha, música…) e só publica ao compartilhar. Sair do editor sem compartilhar não posta nada.
+- O crédito "@autor" vai junto no story (marca de origem na legenda, como antes), então "Ver original" continua funcionando. A marca é limpa ao publicar, ao sair do editor ou ao sair do Criar, para não vazar para o próximo story.
+- Publicação só de texto (sem foto/vídeo) continua avisando que não tem mídia para o story.
+- Implementação: `QinblyStoryRequest` (pedido de navegação) + `QinblyComposeSeed.pickedUri/origin/story`; o `PostPage` aplica a mídia ao abrir.

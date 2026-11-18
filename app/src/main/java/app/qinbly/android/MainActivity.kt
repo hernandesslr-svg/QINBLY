@@ -589,7 +589,9 @@ internal fun qinblyNotify(context: android.content.Context, title: String, text:
 
 /** Navegação global para hashtags e menções: qualquer texto clicável abre daqui. */
 /** Texto inicial para a próxima publicação (pergunta do dia, desafio da semana). */
-private object QinblyComposeSeed { var text: String = ""; var story: Boolean = false; var contribTo: String = ""; var collabNew: Boolean = false; var pickedUri: Uri? = null; var pickedVideo: Boolean = false; var fromGallery: Boolean = false }
+/** Pedido vindo de "Seu story" (tela Enviar para): abre a tela de criar story com a mídia da publicação já carregada. */
+private object QinblyStoryRequest { var pending by androidx.compose.runtime.mutableStateOf(false) }
+private object QinblyComposeSeed { var origin: String = ""; var text: String = ""; var story: Boolean = false; var contribTo: String = ""; var collabNew: Boolean = false; var pickedUri: Uri? = null; var pickedVideo: Boolean = false; var fromGallery: Boolean = false }
 /** Chamado antes de abrir a câmera do app: a foto/vídeo tirado vira resposta do story coletivo [storyId] em vez de story novo. */
 internal fun qinblyStartContribution(storyId: String) { QinblyComposeSeed.contribTo = storyId }
 /** Chamado antes de abrir a câmera do app: a foto/vídeo tirado vira um story coletivo novo. */
@@ -2069,6 +2071,13 @@ private fun QinblyApp() {
             androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(baseDensity.density, baseDensity.fontScale * (if (QiblyTheme.largeText) 1.18f else 1f))
         ) {
         val keyboardOpen = WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
+        LaunchedEffect(QinblyStoryRequest.pending) {
+            if (QinblyStoryRequest.pending) {
+                QinblyStoryRequest.pending = false
+                QinblyResume.clear(); showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false
+                showCreateOptions = false; createEntryMode = "camera"; tab = 2
+            }
+        }
         Scaffold(containerColor = QiblyTheme.background, bottomBar = {
             if (tab != 2 && !keyboardOpen) {
             Column {
@@ -5578,19 +5587,23 @@ private fun QiblyShareDialog(
                                     path.endsWith(".webp") -> "image/webp"
                                     else -> "image/jpeg"
                                 }
-                                onNotice("Adicionando ao seu story...")
+                                onNotice("Abrindo o story...")
                                 val appContext = context.applicationContext
                                 val marker = qinblyEncodeOrigin(post.id, post.username, isVideo)
                                 Thread {
                                     val main = android.os.Handler(android.os.Looper.getMainLooper())
                                     val file = qinblyDownloadToCache(appContext, url, if (isVideo) ".mp4" else ".jpg")
-                                    try {
-                                        if (file == null) throw IllegalStateException("Não foi possível baixar a mídia agora.")
-                                        QinblyApi.createStoryFromLocalFile(appContext, token, file, mime, marker)
-                                        main.post { onNotice("Adicionado ao seu story.") }
-                                    } catch (e: Exception) {
-                                        main.post { onNotice(e.message ?: "Não foi possível adicionar ao story.") }
-                                    } finally { file?.delete() }
+                                    main.post {
+                                        if (file == null) onNotice("Não foi possível baixar a mídia agora.")
+                                        else {
+                                            // Abre a tela de criar story com a mídia carregada; só publica quando a pessoa tocar em compartilhar.
+                                            QinblyComposeSeed.pickedUri = Uri.fromFile(file)
+                                            QinblyComposeSeed.pickedVideo = isVideo
+                                            QinblyComposeSeed.origin = marker
+                                            QinblyComposeSeed.story = true
+                                            QinblyStoryRequest.pending = true
+                                        }
+                                    }
                                 }.start()
                                 onDismiss()
                             }
@@ -11145,7 +11158,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     val context = androidx.compose.ui.platform.LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE) }
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QinblyComposeSeed.story = false; QinblyComposeSeed.contribTo = ""; QinblyComposeSeed.collabNew = false; QinblyComposeSeed.fromGallery = false } }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QinblyComposeSeed.story = false; QinblyComposeSeed.contribTo = ""; QinblyComposeSeed.collabNew = false; QinblyComposeSeed.fromGallery = false; QinblyComposeSeed.origin = "" } }
     var caption by remember { mutableStateOf(QinblyComposeSeed.text.also { QinblyComposeSeed.text = "" }) }
     var showCapEmojis by remember { mutableStateOf(false) }
     var storyMusic by remember { mutableStateOf<QinblyMusic?>(null) }
@@ -11481,6 +11494,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     // Tela nova só para o story comum: publica direto do editor (sem "Avançar"). Story coletivo e resposta continuam como eram.
     val storyDirect = onCaptured == null && QinblyComposeSeed.story && QinblyComposeSeed.contribTo.isBlank() && !QinblyComposeSeed.collabNew
     fun leaveEditor() {
+        QinblyComposeSeed.origin = ""
         if (QinblyComposeSeed.fromGallery) {
             // Veio da galeria do story coletivo: voltar leva de novo a ela, não à câmera.
             publishSettings = false
@@ -12916,14 +12930,14 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                                 val contribTo = QinblyComposeSeed.contribTo
                                                 if (contribTo.isNotBlank()) QinblyApi.addContribution(token, contribTo, fileId, if (mime.startsWith("video/")) "video" else "image", qinblyAttachMusic(caption, musicToSend))
                                                 else if (directNow) {
-                                                    QinblyApi.createStoryCustom(token, fileId, mime.startsWith("video/"), qinblyAttachMusic(caption, musicToSend), hoursNow, audienceNow, cityNow)
+                                                    QinblyApi.createStoryCustom(token, fileId, mime.startsWith("video/"), qinblyAttachMusic((if (QinblyComposeSeed.origin.isNotBlank()) QinblyComposeSeed.origin + "\n" else "") + caption, musicToSend), hoursNow, audienceNow, cityNow)
                                                     if (feedNow) {
                                                         // "+ Feed": publica também como publicação (precisa de uma cópia no lugar das publicações).
                                                         val feedFileId = QinblyApi.uploadPostMedia(context, token, uploadUri, fileName, mime, size, "post_media")
                                                         QinblyApi.createMediaPost(token, caption, feedFileId, if (mime.startsWith("video/")) "video" else "image", "public", emptyList())
                                                     }
                                                 }
-                                                else QinblyApi.createStoryFromFile(token, fileId, mime.startsWith("video/"), qinblyAttachMusic(if (QinblyComposeSeed.collabNew) qinblyCollabCaption(caption) else caption, musicToSend))
+                                                else QinblyApi.createStoryFromFile(token, fileId, mime.startsWith("video/"), qinblyAttachMusic((if (QinblyComposeSeed.origin.isNotBlank()) QinblyComposeSeed.origin + "\n" else "") + (if (QinblyComposeSeed.collabNew) qinblyCollabCaption(caption) else caption), musicToSend))
                                             } else if (selectedType == "foto" && gallerySelection.size > 1) {
                                                 val uploadedIds = mutableListOf(fileId)
                                                 for ((index, extraUri) in gallerySelection.drop(1).withIndex()) {
@@ -12961,6 +12975,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                         coverBitmap = null
                                         onNotice(if (QinblyComposeSeed.collabNew) "Story coletivo publicado. Fica no ar por 24 horas." else if (QinblyComposeSeed.contribTo.isNotBlank()) "Resposta enviada." else if (QinblyComposeSeed.story) (if (directNow) "Story publicado. Fica no ar por $hoursNow horas." + (if (feedNow) " Também foi para o feed." else "") else "Story publicado. Fica no ar por 24 horas.") else if (wasScheduled) "Publicação agendada. Aparece no horário escolhido." else "Publicado")
                                         QinblyComposeSeed.story = false
+                                        QinblyComposeSeed.origin = ""
                                         QinblyComposeSeed.contribTo = ""
                                         QinblyComposeSeed.collabNew = false
                                         QinblyComposeSeed.fromGallery = false
