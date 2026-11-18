@@ -825,3 +825,8 @@ Uma tela só (`ListingDetail`, em `Marketplace.kt`) para venda, doação, achado
 - Pergunta do dia e Desafio da semana agora são um cartão só, no tamanho de antes (altura 112dp), que desliza para o lado (`HorizontalPager`). Abre na pergunta; o desafio aparece um pedaço na beirada; dois pontinhos mostram a posição.
 - Tocar na pergunta abre o Criar com #perguntadodia; tocar no desafio abre a hashtag; "Participar" abre a câmera com a hashtag do desafio (tudo como antes).
 - Código em `QinblyHomeHeader` (MainActivity.kt).
+
+## Bolinha vermelha na aba Seguindo
+- A aba "Seguindo" (barra de cima do Início) mostra uma bolinha vermelha (`#E53935`, 10dp, com borda da cor do fundo) no canto do ícone quando alguém que você segue postou depois da última vez que você abriu essa aba. Posts seus não contam.
+- Ao abrir a aba Seguindo, a bolinha apaga e só volta com publicação nova. O momento da última visita fica em `following_tab_seen_at` (no primeiro uso começa sem bolinha).
+- Substitui o texto "N novidades de quem você segue", que saiu do topo do Descobrir.

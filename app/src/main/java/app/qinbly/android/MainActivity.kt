@@ -6634,6 +6634,23 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     var demoComments by remember { mutableStateOf<Map<String, List<QinblyApi.CommentSummary>>>(emptyMap()) }
     // O feed usa somente publicações reais retornadas pela API.
     val allFeedPosts = posts.sortedByDescending { it.createdAt }.distinctBy { it.id }
+    // Bolinha vermelha na aba Seguindo: alguém que você segue postou depois da última vez que você abriu essa aba.
+    var followingSeenAt by remember { mutableStateOf(prefs.getString("following_tab_seen_at", null) ?: java.time.Instant.now().toString().also { prefs.edit().putString("following_tab_seen_at", it).apply() }) }
+    val hasNewFollowing = remember(allFeedPosts, followingSeenAt) {
+        val seen = try { java.time.Instant.parse(followingSeenAt) } catch (_: Exception) { java.time.Instant.now() }
+        allFeedPosts.any { post ->
+            !post.username.equals(currentUsername.removePrefix("@"), ignoreCase = true) &&
+                QinblyEngagement.isFollowing(prefs, post.username, post.isFollowing) &&
+                (try { java.time.Instant.parse(post.createdAt).isAfter(seen) } catch (_: Exception) { false })
+        }
+    }
+    LaunchedEffect(selectedFeedTab, allFeedPosts.size) {
+        if (selectedFeedTab == "Seguindo") {
+            val now = java.time.Instant.now().toString()
+            followingSeenAt = now
+            prefs.edit().putString("following_tab_seen_at", now).apply()
+        }
+    }
     val feedTabPosts = when (selectedFeedTab) {
         "Seguindo" -> allFeedPosts.filter { QinblyEngagement.isFollowing(prefs, it.username, it.isFollowing) }
         "Comunidade" -> allFeedPosts.filter { it.comments > 0 }
@@ -6772,15 +6789,21 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 ) {
                     when (feedTab) {
                         "Descobrir" -> QinblySparkIcon(tint, 22.dp)
-                        else -> Icon(
-                            when (feedTab) {
-                                "Seguindo" -> Icons.Default.People
-                                "Em alta" -> Icons.Default.LocalFireDepartment
-                                "Vídeos" -> Icons.Default.PlayCircle
-                                "Lives" -> androidx.compose.material.icons.Icons.Default.Sensors
-                                else -> Icons.Default.LocationOn
-                            }, contentDescription = feedTab, tint = tint, modifier = Modifier.size(22.dp)
-                        )
+                        else -> Box(Modifier.size(22.dp)) {
+                            Icon(
+                                when (feedTab) {
+                                    "Seguindo" -> Icons.Default.People
+                                    "Em alta" -> Icons.Default.LocalFireDepartment
+                                    "Vídeos" -> Icons.Default.PlayCircle
+                                    "Lives" -> androidx.compose.material.icons.Icons.Default.Sensors
+                                    else -> Icons.Default.LocationOn
+                                }, contentDescription = feedTab, tint = tint, modifier = Modifier.size(22.dp)
+                            )
+                            if (feedTab == "Seguindo" && hasNewFollowing && !selected) Box(
+                                Modifier.align(Alignment.TopEnd).offset(x = 3.dp, y = (-2).dp).size(10.dp)
+                                    .border(1.5.dp, RemoteAppearance.screenBackgroundColor, CircleShape).clip(CircleShape).background(Color(0xFFE53935))
+                            )
+                        }
                     }
                     // A última aba mostra o lugar de cada pessoa ("Vilhena, RO"); sem localização continua "Perto de mim".
                     val tabLabel = if (feedTab == "Perto de mim") qinblyShortPlace(prefs.getString("device_place", null).orEmpty().ifBlank { QinblyApi.myCity(prefs) }).ifBlank { feedTab } else feedTab
