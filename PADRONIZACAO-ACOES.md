@@ -870,3 +870,8 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - `NotifyWorker.kt`: a verificação em segundo plano (a cada ~15 min) agora também consulta a última versão no GitHub (no máximo 1x por hora, `qinbly_update_check`). Se o código da versão publicada (major*1.000.000 + minor*10.000 + patch, igual ao workflow) for maior que `BuildConfig.VERSION_CODE`, mostra uma notificação "Nova atualização disponível" uma única vez por versão (`notified_code`).
 - Respeita "Notificações" e "Avisos do sistema" (`setting_notice_system`); funciona mesmo sem conta logada; não avisa com o app aberto.
 - Canal próprio "Atualizações do app" (`qinbly_update`). Ao tocar, abre `RemoteUiActivity` (tela de atualização, com download e instalação por dentro do app).
+
+## Tela de atualização no visual novo
+- `RemoteUiActivity`: a tela de atualização usa o visual do app (fundo `#171719`, cartão `#262628`, botão azul `#2F68E0`, marca QINBLY roxa, texto branco). Sai o roxo/rosa antigo e o "V".
+- Estados: versão disponível (instalada x disponível + novidades + "Atualizar agora"), baixando (barra e % no botão), "Você está na versão mais recente" (compara o código da versão com `BuildConfig.VERSION_CODE`, botão "Verificar de novo") e erro/sem internet (com "Tentar novamente" e link para os downloads no GitHub).
+- Instalação: a sessão do instalador já pede `USER_ACTION_NOT_REQUIRED` (Android 12+), então, quando o sistema permitir, instala logo ao terminar de baixar sem a pergunta "Atualizar?". O Android só dispensa a pergunta se o QINBLY foi o instalador da versão atual e com o app fora de uso; a primeira atualização por dentro do app ainda pergunta.

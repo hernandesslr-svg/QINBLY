@@ -271,6 +271,7 @@ class RemoteUiActivity : ComponentActivity() {
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
         webView = WebView(this)
+        webView.setBackgroundColor(0xFF171719.toInt())
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -320,21 +321,59 @@ class RemoteUiActivity : ComponentActivity() {
      * A tela de atualização é montada localmente e consulta o GitHub Releases.
      * Assim, a atualização do APK não depende da disponibilidade do backend Railway.
      */
+    private fun updatePage(body: String, script: String = ""): String = """
+        <!doctype html><html lang="pt-BR"><meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta charset="utf-8"><title>Atualizações do QINBLY</title>
+        <style>
+        *{box-sizing:border-box}
+        body{margin:0;padding:34px 18px 28px;background:#171719;color:#f2f4f8;font:15px/1.5 sans-serif}
+        .brand{text-align:center;margin:10px 0 22px}
+        .logo{display:inline-flex;width:64px;height:64px;align-items:center;justify-content:center;border-radius:20px;background:#7C4DFF;color:#fff;font-size:32px;font-weight:600}
+        .word{font-size:22px;font-weight:600;color:#7C4DFF;margin-top:8px;letter-spacing:1px}
+        .mut{color:#f2f4f8;font-size:14px}
+        .card{background:#262628;border:1px solid #2e2e30;border-radius:18px;padding:18px}
+        .row{display:flex;justify-content:space-between;padding:3px 0}
+        hr{border:0;border-top:1px solid #3a3b40;margin:14px 0}
+        b{font-weight:600}
+        .notes{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0}
+        .btn{display:block;width:100%;border:0;border-radius:14px;padding:15px;background:#2F68E0;color:#fff;font-size:15px;font-weight:600;margin-top:18px}
+        .btn.sec{background:#2e2e30;color:#f2f4f8}
+        .btn:disabled{opacity:.7}
+        .bar{height:8px;border-radius:4px;background:#3a3b40;margin-top:16px;overflow:hidden;display:none}
+        .bar div{height:8px;width:0;background:#2F68E0}
+        .small{font-size:13px;margin:14px 0 0}
+        .center{text-align:center}
+        a{color:#f2f4f8}
+        </style><body>
+        <div class="brand"><div class="logo">Q</div><div class="word">QINBLY</div><div class="mut">Atualização do aplicativo</div></div>
+        $body
+        <script>$script</script>
+        </body></html>
+    """.trimIndent()
+
+    private fun showReleasePage(html: String) {
+        runOnUiThread { if (::webView.isInitialized) webView.loadDataWithBaseURL("https://github.com/", html, "text/html", "UTF-8", null) }
+    }
+
+    private fun showUpdateError(message: String) {
+        val quoted = JSONObject.quote(message)
+        showReleasePage(updatePage("""
+            <section class="card center">
+            <b>Não foi possível verificar atualizações</b>
+            <p class="mut" id="msg"></p>
+            <button class="btn" onclick="QinblyNative.retryUpdateCheck()">Tentar novamente</button>
+            <p class="small"><a href="https://github.com/hernandesslr-svg/QINBLY/releases">Abrir downloads no GitHub</a></p>
+            </section>
+        """.trimIndent(), "document.getElementById('msg').textContent=$quoted;"))
+    }
+
     private fun showReleaseFallback() {
-        val html = """
-            <!doctype html><html lang="pt-BR"><meta name="viewport" content="width=device-width,initial-scale=1">
-            <meta charset="utf-8"><title>Atualizações do QINBLY</title>
-            <style>body{background:#050711;color:#f5f5fb;font:16px Arial,sans-serif;padding:20px}
-            .card{background:#111528;border:1px solid #292d43;border-radius:20px;padding:24px;margin-top:24px}
-            button{background:#8b35ff;color:white;border:0;border-radius:12px;padding:16px;font-weight:bold}
-            p{line-height:1.5;color:#c8ccdb}</style>
-            <h1>Atualizações do QINBLY</h1><section class="card">
-            <h3>Não foi possível verificar atualizações</h3>
-            <p>A consulta ao GitHub está temporariamente indisponível. Nenhuma atualização nova foi confirmada.</p>
-            <button onclick="QinblyNative.retryUpdateCheck()">Tentar novamente</button>
-            </section></html>
-        """.trimIndent()
-        runOnUiThread { webView.loadDataWithBaseURL("https://github.com/", html, "text/html", "UTF-8", null) }
+        showUpdateError("A consulta ao GitHub está temporariamente indisponível. Nenhuma atualização nova foi confirmada.")
+    }
+
+    private fun versionCodeOf(tag: String): Int {
+        val m = Regex("^v?(\\d+)\\.(\\d+)\\.(\\d+)$").matchEntire(tag.trim()) ?: return 0
+        return m.groupValues[1].toInt() * 1000000 + m.groupValues[2].toInt() * 10000 + m.groupValues[3].toInt()
     }
 
     private fun loadLatestReleasePage() {
@@ -354,18 +393,30 @@ class RemoteUiActivity : ComponentActivity() {
                     val stream = if (status in 200..299) connection.inputStream else connection.errorStream
                     val response = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
                     if (status !in 200..299) {
-                        if (status == 403 || status == 429) {
-                            // GitHub REST API can be rate-limited on shared mobile IPs.
-                            // Fall back to the public release download URL without requiring API access.
-                            return@Thread showReleaseFallback()
-                        }
+                        // A API do GitHub pode limitar IPs compartilhados de rede móvel.
+                        if (status == 403 || status == 429) return@Thread showReleaseFallback()
                         throw IllegalStateException("GitHub respondeu HTTP $status.")
                     }
                     JSONObject(response)
                 } finally {
                     connection.disconnect()
                 }
-                val tag = release.optString("tag_name", "Versão mais recente")
+                val tag = release.optString("tag_name", "")
+                val shownVersion = tag.removePrefix("v").ifBlank { "mais recente" }
+                val installedName = BuildConfig.VERSION_NAME
+                val latestCode = versionCodeOf(tag)
+                if (latestCode in 1..BuildConfig.VERSION_CODE) {
+                    val nameJs = JSONObject.quote(installedName)
+                    showReleasePage(updatePage("""
+                        <section class="card center">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f2f4f8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+                        <p><b>Você está na versão mais recente</b></p>
+                        <p class="mut" id="cur"></p>
+                        <button class="btn sec" onclick="QinblyNative.retryUpdateCheck()">Verificar de novo</button>
+                        </section>
+                    """.trimIndent(), "document.getElementById('cur').textContent=$nameJs;"))
+                    return@Thread
+                }
                 val notes = release.optString("body").takeUnless { it.isBlank() || it == "null" } ?: "Melhorias e correções do QINBLY."
                 val assets = release.optJSONArray("assets") ?: org.json.JSONArray()
                 var apkUrl = ""
@@ -377,36 +428,40 @@ class RemoteUiActivity : ComponentActivity() {
                     }
                 }
                 if (apkUrl.isBlank()) throw IllegalStateException("A publicação mais recente ainda não contém o arquivo de atualização.")
-                val tagJs = JSONObject.quote(tag)
+                val verJs = JSONObject.quote(shownVersion)
+                val curJs = JSONObject.quote(installedName)
                 val notesJs = JSONObject.quote(notes)
                 val urlJs = JSONObject.quote(apkUrl)
-                val html = """
-                    <!doctype html><html lang="pt-BR"><meta name="viewport" content="width=device-width,initial-scale=1">
-                    <meta charset="utf-8"><title>Atualizações do QINBLY</title>
-                    <style>
-                    *{box-sizing:border-box}body{margin:0;padding:24px 18px;background:#050711;color:#f5f5fb;font:16px Arial,sans-serif}
-                    .brand{text-align:center;margin:28px 0 30px}.logo{display:inline-flex;width:76px;height:76px;align-items:center;justify-content:center;border-radius:24px;background:linear-gradient(135deg,#ff2a9d,#8b35ff);font-size:42px;font-weight:800}
-                    h1{font-size:27px;margin:14px 0 8px}.muted{color:#adb2cb;line-height:1.5}.card{background:#111528;border:1px solid #292d43;border-radius:22px;padding:22px;margin-top:22px}
-                    .version{color:#c58bff;font-weight:700;font-size:19px;margin:10px 0 18px}.btn{display:block;width:100%;border:0;border-radius:14px;padding:17px;background:linear-gradient(90deg,#8b35ff,#ff2a9d);color:white;font-size:16px;font-weight:700;margin-top:22px}
-                    .error{color:#ff6ba9;white-space:pre-wrap;overflow-wrap:anywhere}.notes{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;color:#d7d9e8}
-                    </style><body><div class="brand"><div class="logo">V</div><h1>QINBLY</h1><div class="muted">Atualização do aplicativo</div></div>
-                    <section class="card"><div class="muted">Versão disponível</div><div class="version" id="version"></div><div class="muted">Novidades</div><p class="notes" id="notes"></p>
-                    <button class="btn" id="updateBtn" onclick="this.disabled=true;this.textContent='Iniciando download…';QinblyNative.downloadAndInstall(apkUrl)">Baixar e instalar atualização</button>
-                    <p class="muted" id="updateStatus" role="status"></p>
-                    <p class="muted">O Android solicitará confirmação antes de instalar. Suas informações não são apagadas pela atualização normal.</p></section>
-                    <script>const apkUrl=$urlJs;document.getElementById('version').textContent=$tagJs;document.getElementById('notes').textContent=$notesJs;window.qinblyOtaNativeStatus=function(message,isError){document.getElementById('updateStatus').textContent=message;document.getElementById('updateBtn').disabled=!isError;document.getElementById('updateBtn').textContent=isError?'Tentar novamente':message;};</script>
-                    </body></html>
-                """.trimIndent()
-                runOnUiThread { webView.loadDataWithBaseURL("https://github.com/", html, "text/html", "UTF-8", null) }
+                showReleasePage(updatePage("""
+                    <section class="card">
+                    <div class="row"><span class="mut">Instalada</span><span id="cur"></span></div>
+                    <div class="row"><span class="mut">Disponível</span><b id="ver"></b></div>
+                    <hr>
+                    <b>Novidades</b>
+                    <p class="notes" id="notes"></p>
+                    <div class="bar" id="bar"><div id="fill"></div></div>
+                    <button class="btn" id="updateBtn" onclick="this.disabled=true;this.textContent='Iniciando…';QinblyNative.downloadAndInstall(apkUrl)">Atualizar agora</button>
+                    <p class="small" id="updateStatus" role="status"></p>
+                    <p class="small mut">Quando terminar de baixar, a instalação começa em seguida. O Android pode pedir uma confirmação. Seus dados não são apagados.</p>
+                    </section>
+                """.trimIndent(), """
+                    var apkUrl=$urlJs;
+                    document.getElementById('cur').textContent=$curJs;
+                    document.getElementById('ver').textContent=$verJs;
+                    document.getElementById('notes').textContent=$notesJs;
+                    window.qinblyOtaNativeStatus=function(message,isError){
+                      var btn=document.getElementById('updateBtn');
+                      document.getElementById('updateStatus').textContent=message;
+                      var m=/(\d+)%/.exec(message);
+                      var bar=document.getElementById('bar');
+                      if(m&&!isError){bar.style.display='block';document.getElementById('fill').style.width=m[1]+'%';}
+                      else if(isError){bar.style.display='none';}
+                      btn.disabled=!isError;
+                      btn.textContent=isError?'Tentar novamente':(m?'Baixando… '+m[1]+'%':'Atualizando…');
+                    };
+                """.trimIndent()))
             } catch (e: Exception) {
-                val message = JSONObject.quote(e.message ?: "Não foi possível consultar o GitHub Releases.")
-                val html = """
-                    <!doctype html><html lang="pt-BR"><meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="utf-8">
-                    <style>body{background:#050711;color:#f5f5fb;font:16px Arial;padding:28px 20px}.card{background:#111528;border:1px solid #292d43;border-radius:20px;padding:22px}.muted{color:#adb2cb;line-height:1.5}.error{color:#ff6ba9;overflow-wrap:anywhere}button{padding:14px 18px;background:#8b35ff;color:white;border:0;border-radius:12px;font-weight:bold}</style>
-                    <h1>Atualizações do QINBLY</h1><div class="card"><p class="error" id="error"></p><p class="muted">Não foi possível consultar as versões no GitHub.</p><button onclick="location.reload()">Tentar novamente</button><p><a style="color:#c58bff" href="https://github.com/hernandesslr-svg/QINBLY/releases">Abrir downloads no GitHub</a></p></div>
-                    <script>document.getElementById('error').textContent=$message;</script></html>
-                """.trimIndent()
-                runOnUiThread { if (::webView.isInitialized) webView.loadDataWithBaseURL("https://github.com/", html, "text/html", "UTF-8", null) }
+                showUpdateError(e.message ?: "Não foi possível consultar o GitHub Releases.")
             }
         }.start()
     }
