@@ -849,3 +849,9 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Ao trocar ou sair da conta: `QinblyStoryRings.clear()` (anéis de story) e as palavras ocultas passam a ser lidas sempre da conta aberta.
 - Já estavam certos: curtidas/salvos/seguindo em memória (chave por conta), cache de leituras da API (por id do usuário), cache do feed e snapshot do perfil (limpos ao trocar).
 - Continuam do aparelho (de propósito): `setting_theme`, `setting_large_text`, `setting_reduce_motion`, `setting_autoplay`, `setting_save_default`, `setting_location_enabled`, `name_font_style`, `app_font_style`, `device_place`, histórico de emoji dos comentários, `permissions_asked_v2` e dados de atualização do app.
+
+## Atualização dentro do app (sem arquivo na pasta Downloads)
+- `RemoteUiActivity`: o botão "Baixar e instalar atualização" agora baixa o APK direto para uma sessão do instalador do Android (`PackageInstaller`), sem gravar arquivo em Downloads. Mostra o progresso em % na própria tela e abre a confirmação do Android ao final.
+- Em Android 12+ pede instalação sem confirmação extra quando o sistema permitir (`USER_ACTION_NOT_REQUIRED`); caso contrário aparece a confirmação normal "Atualizar".
+- Se a permissão "Instalar apps desconhecidos" estiver desligada, abre a tela de permissão e continua a atualização sozinha ao voltar (`pending_update_apk_url`).
+- Se o instalador interno falhar por qualquer motivo, cai no caminho antigo (DownloadManager + instalador do Android).

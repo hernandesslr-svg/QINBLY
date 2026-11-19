@@ -1,10 +1,12 @@
 package app.qinbly.android
 
 import android.app.DownloadManager
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageInstaller
 import android.net.Uri
 import android.os.Bundle
 import android.os.Build
@@ -93,6 +95,12 @@ class RemoteUiActivity : ComponentActivity() {
             handler.removeCallbacks(monitor)
             if (prefs.getLong("pending_update_download_id", -1L) > 0L) handler.postDelayed(monitor, 1500L)
         }
+        val pendingUrl = prefs.getString("pending_update_apk_url", null)
+        if (pendingUrl != null && (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || packageManager.canRequestPackageInstalls())) {
+            prefs.edit().remove("pending_update_apk_url").apply()
+            startInAppUpdate(pendingUrl)
+            return
+        }
         val pending = prefs.getString("pending_update_apk_uri", null) ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) return
         prefs.edit().remove("pending_update_apk_uri").apply()
@@ -127,11 +135,140 @@ class RemoteUiActivity : ComponentActivity() {
         }
     }
 
+    private val installStatusReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action != ACTION_INSTALL_STATUS) return
+            when (val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
+                PackageInstaller.STATUS_PENDING_USER_ACTION -> {
+                    @Suppress("DEPRECATION")
+                    val confirm = if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
+                    else intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
+                    if (confirm != null) {
+                        try { startActivity(confirm) } catch (_: Exception) {
+                            notifyWeb("Não foi possível abrir a confirmação de instalação. Toque em Atualizar novamente.", true)
+                        }
+                    }
+                }
+                PackageInstaller.STATUS_SUCCESS -> notifyWeb("Atualização instalada.", false)
+                PackageInstaller.STATUS_FAILURE_ABORTED -> notifyWeb("Instalação cancelada. Toque em Atualizar para tentar de novo.", true)
+                else -> {
+                    val detail = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE).orEmpty()
+                    notifyWeb("Falha ao instalar (código $status). $detail".trim(), true)
+                }
+            }
+        }
+    }
+
+    /**
+     * Atualização dentro do app: baixa o APK direto para a sessão do instalador do Android
+     * (sem gravar arquivo na pasta Downloads) e pede a confirmação do sistema ao final.
+     */
+    private fun startInAppUpdate(apkUrl: String) {
+        val uri = Uri.parse(apkUrl)
+        if (uri.scheme != "https" || uri.host != "github.com" || !uri.path.orEmpty().contains("/releases/download/") || !uri.path.orEmpty().endsWith("/qinbly-release.apk")) {
+            notifyWeb("O endereço do APK não passou na validação de segurança.", true)
+            return
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) {
+            prefs.edit().putString("pending_update_apk_url", apkUrl).apply()
+            notifyWeb("Autorize 'Instalar apps desconhecidos' para o QINBLY. Ao voltar, a atualização continua sozinha.", false)
+            try {
+                startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")))
+            } catch (_: Exception) {
+                notifyWeb("Ative a permissão de instalar apps desconhecidos para o QINBLY e volte ao aplicativo.", true)
+            }
+            return
+        }
+        notifyWeb("Baixando atualização…", false)
+        Thread {
+            var sessionId = -1
+            val installer = packageManager.packageInstaller
+            try {
+                val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
+                }
+                sessionId = installer.createSession(params)
+                val connection = (java.net.URL(apkUrl).openConnection() as java.net.HttpURLConnection).apply {
+                    connectTimeout = 15000
+                    readTimeout = 30000
+                    instanceFollowRedirects = true
+                    setRequestProperty("User-Agent", "QINBLY-Android-Updater")
+                }
+                try {
+                    if (connection.responseCode !in 200..299) throw IllegalStateException("HTTP " + connection.responseCode)
+                    val total = connection.contentLengthLong
+                    installer.openSession(sessionId).use { session ->
+                        session.openWrite("qinbly-release.apk", 0, total.takeIf { it > 0 } ?: -1L).use { out ->
+                            connection.inputStream.use { input ->
+                                val buffer = ByteArray(64 * 1024)
+                                var done = 0L
+                                var lastPercent = -1
+                                while (true) {
+                                    val n = input.read(buffer)
+                                    if (n < 0) break
+                                    out.write(buffer, 0, n)
+                                    done += n
+                                    if (total > 0) {
+                                        val percent = (done * 100 / total).toInt().coerceIn(0, 100)
+                                        if (percent != lastPercent && percent % 3 == 0) {
+                                            lastPercent = percent
+                                            notifyWeb("Baixando atualização: $percent%", false)
+                                        }
+                                    }
+                                }
+                            }
+                            session.fsync(out)
+                        }
+                        notifyWeb("Preparando instalação…", false)
+                        val callback = Intent(ACTION_INSTALL_STATUS).setPackage(packageName)
+                        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+                            (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0)
+                        val pending = PendingIntent.getBroadcast(this, sessionId, callback, flags)
+                        session.commit(pending.intentSender)
+                    }
+                } finally {
+                    connection.disconnect()
+                }
+            } catch (e: Exception) {
+                if (sessionId >= 0) try { installer.abandonSession(sessionId) } catch (_: Exception) { }
+                // Se o instalador interno falhar, usa o caminho antigo (download + instalador do Android).
+                runOnUiThread { downloadViaManager(apkUrl) }
+            }
+        }.start()
+    }
+
+    private fun downloadViaManager(apkUrl: String) {
+        try {
+            val uri = Uri.parse(apkUrl)
+            val request = DownloadManager.Request(uri)
+                .setTitle("Atualização do QINBLY")
+                .setDescription("Baixando a versão mais recente")
+                .setMimeType("application/vnd.android.package-archive")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setAllowedOverMetered(true)
+                .setAllowedOverRoaming(false)
+                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "QINBLY-update-" + System.currentTimeMillis() + ".apk")
+            val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+            pendingDownloadId = manager.enqueue(request)
+            prefs.edit().putLong("pending_update_download_id", pendingDownloadId).apply()
+            notifyWeb("Download iniciado. Acompanhando o progresso…", false)
+            handler.removeCallbacks(monitor)
+            handler.postDelayed(monitor, 700L)
+        } catch (_: Exception) {
+            notifyWeb("Não foi possível iniciar o download. Verifique a conexão e tente novamente.", true)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ContextCompat.registerReceiver(
             this, downloadReceiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
             ContextCompat.RECEIVER_EXPORTED
+        )
+        ContextCompat.registerReceiver(
+            this, installStatusReceiver, IntentFilter(ACTION_INSTALL_STATUS),
+            ContextCompat.RECEIVER_NOT_EXPORTED
         )
         webView = WebView(this)
         webView.settings.apply {
@@ -290,6 +427,7 @@ class RemoteUiActivity : ComponentActivity() {
     override fun onDestroy() {
         handler.removeCallbacks(monitor)
         try { unregisterReceiver(downloadReceiver) } catch (_: Exception) { }
+        try { unregisterReceiver(installStatusReceiver) } catch (_: Exception) { }
         if (::webView.isInitialized) {
             webView.stopLoading()
             webView.removeJavascriptInterface("QinblyNative")
@@ -319,35 +457,12 @@ class RemoteUiActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun downloadAndInstall(apkUrl: String?) {
-            runOnUiThread {
-                try {
-                    val uri = Uri.parse(apkUrl.orEmpty())
-                    if (uri.scheme != "https" || uri.host != "github.com" || !uri.path.orEmpty().contains("/releases/download/") || !uri.path.orEmpty().endsWith("/qinbly-release.apk")) {
-                        notifyWeb("O endereço do APK não passou na validação de segurança.", true)
-                        return@runOnUiThread
-                    }
-                    val request = DownloadManager.Request(uri)
-                        .setTitle("Atualização do QINBLY")
-                        .setDescription("Baixando a versão mais recente")
-                        .setMimeType("application/vnd.android.package-archive")
-                        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                        .setAllowedOverMetered(true)
-                        .setAllowedOverRoaming(false)
-                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "QINBLY-update-" + System.currentTimeMillis() + ".apk")
-                    val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
-                    pendingDownloadId = manager.enqueue(request)
-                    prefs.edit().putLong("pending_update_download_id", pendingDownloadId).apply()
-                    notifyWeb("Download iniciado. Acompanhando o progresso…", false)
-                    handler.removeCallbacks(monitor)
-                    handler.postDelayed(monitor, 700L)
-                } catch (_: Exception) {
-                    notifyWeb("Não foi possível iniciar o download. Verifique a conexão e tente novamente.", true)
-                }
-            }
+            runOnUiThread { startInAppUpdate(apkUrl.orEmpty()) }
         }
     }
 
     companion object {
+        private const val ACTION_INSTALL_STATUS = "app.qinbly.android.UPDATE_INSTALL_STATUS"
         private const val OTA_HOST = "qinbly-production.up.railway.app"
         private const val OTA_ORIGIN = "https://qinbly-production.up.railway.app"
     }
