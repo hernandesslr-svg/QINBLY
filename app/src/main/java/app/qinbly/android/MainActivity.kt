@@ -2084,7 +2084,7 @@ private fun QinblyApp() {
                     )
                     NavigationBarItem(selected = tab == 0 && !showNotifications, onClick = { QinblyResume.clear(); showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; messageRecipient = ""; showAuth = false; if (tab == 0) navTopRequest++; tab = 0 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Home, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 0 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.SelectedIcon)) } }, label = { Text(RemoteAppearance.navigationLabels[0], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                     NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { QinblyResume.clear(); showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 3) navTopRequest++; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Groups, contentDescription = "Comunidades"); if (RemoteAppearance.navigationUnderlineVisible && tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.SelectedIcon)) } }, label = { Text("Comunidades", fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
-                    NavigationBarItem(selected = false, onClick = { QinblyResume.clear(); showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; showCreateOptions = true }, icon = {
+                    NavigationBarItem(selected = false, onClick = { QinblyResume.clear(); showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; createEntryMode = "camera"; tab = 2 }, icon = {
                         Box(
                             Modifier.size(36.dp).clip(CircleShape).background(Color.White).border(1.dp, Color.Black, CircleShape),
                             contentAlignment = Alignment.Center
@@ -5748,6 +5748,33 @@ private fun qinblyPostAgeHours(createdAt: String): Long? = try {
     java.time.Duration.between(java.time.Instant.parse(createdAt), java.time.Instant.now()).toHours()
 } catch (_: Exception) { null }
 
+/** Barra "Escrever algo..." no início: foto de perfil + atalhos para Texto e Enquete (saíram da câmera). */
+@Composable
+private fun QinblyHomeComposer(username: String, onCreateWith: (String, String) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(16.dp)).background(QiblyTheme.soft)
+            .clickable { onCreateWith("text", "") }
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        QiblyAccountAvatar(username, "", 34.dp) { onCreateWith("text", "") }
+        Text("Escrever algo...", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp, modifier = Modifier.weight(1f), maxLines = 1)
+        listOf(Triple("Texto", "text", QinblyCreateIcons.text), Triple("Enquete", "poll", QinblyCreateIcons.poll)).forEach { (label, mode, icon) ->
+            Row(
+                Modifier.clip(RoundedCornerShape(18.dp)).background(QiblyTheme.background.copy(alpha = 0.55f))
+                    .clickable { onCreateWith(mode, "") }.padding(horizontal = 10.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(icon, contentDescription = null, tint = RemoteAppearance.feedTextColor, modifier = Modifier.size(15.dp))
+                Text(label, color = RemoteAppearance.feedTextColor, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+            }
+        }
+    }
+}
+
 /** Pergunta do dia e desafio da semana num cartão que desliza para o lado, no topo do Descobrir (sem saudação nem novidades). */
 @Composable
 private fun QinblyHomeHeader(
@@ -6861,6 +6888,9 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             ) {
                 if (selectedFeedTab == "Descobrir") item(key = "home-stories") {
                     QinblyStoriesRow(onNotice, onOpenProfile, onOpenConversation, onAddStory)
+                }
+                if (selectedFeedTab == "Descobrir") item(key = "home-composer") {
+                    QinblyHomeComposer(currentUsername, onCreateWith)
                 }
                 if (selectedFeedTab == "Descobrir") item(key = "home-header") {
                     QinblyHomeHeader(allFeedPosts, prefs, onCreateWith)
@@ -11926,7 +11956,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             while (isRecording) {
                 kotlinx.coroutines.delay(1000)
                 recElapsed += 1
-                val limit = if (captureMode == "Foto") 60 else when (selectedDuration) { "10 min" -> 600; "60 s" -> 60; else -> 15 }
+                val limit = if (captureMode == "Foto") 60 else when (selectedDuration) { "5 min" -> 300; "60 s" -> 60; "20 s" -> 20; else -> 15 }
                 if (recElapsed >= limit) activeRecording?.stop()
             }
         } else {
@@ -12594,18 +12624,24 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     }
                     if (!isRecording) {
  QinblySplit {
+                        // Tempos do vídeo: aparecem acima dos chips só no modo VÍDEO.
+                        if (captureMode == "Vídeo") {
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                listOf("15 s", "20 s", "60 s", "5 min").forEach { dur ->
+                                    val chosen = dur == selectedDuration
+                                    Text(dur, color = if (chosen) Color.Black else Color.White, fontWeight = FontWeight.SemiBold, fontSize = 11.sp,
+                                        modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(if (chosen) Color.White else Color.Transparent)
+                                            .clickable { selectedDuration = dur }.padding(horizontal = 9.dp, vertical = 4.dp))
+                                }
+                            }
+                        }
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            listOf("10 min", "60 s", "15 s", "FOTO", "TEXTO").forEach { chip ->
-                                val chosen = (chip == "FOTO" && captureMode == "Foto" && !camTextMode) || (chip == "TEXTO" && camTextMode) || (chip == selectedDuration && captureMode == "Vídeo" && !camTextMode)
+                            listOf("FOTO", "VÍDEO").forEach { chip ->
+                                val chosen = (chip == "FOTO" && captureMode == "Foto") || (chip == "VÍDEO" && captureMode == "Vídeo")
                                 Text(chip, color = if (chosen) Color.Black else Color.White, fontWeight = FontWeight.SemiBold, fontSize = 11.sp,
                                     modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(if (chosen) Color.White else Color.Transparent)
-                                        .clickable {
-                                            when (chip) {
-                                                "FOTO" -> { captureMode = "Foto"; camTextMode = false }
-                                                "TEXTO" -> { captureMode = "Foto"; camTextMode = true; camTextEditing = true }
-                                                else -> { captureMode = "Vídeo"; selectedDuration = chip; camTextMode = false }
-                                            }
-                                        }.padding(horizontal = 9.dp, vertical = 5.dp))
+                                        .clickable { captureMode = if (chip == "FOTO") "Foto" else "Vídeo"; camTextMode = false }
+                                        .padding(horizontal = 10.dp, vertical = 5.dp))
                             }
                         }
                         if (filtersVisible && selectedFilter != "Original") {
@@ -12691,7 +12727,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                             contentAlignment = Alignment.Center
                         ) {
  QinblySplit {
-                            val limit = if (captureMode == "Foto") 60 else when (selectedDuration) { "10 min" -> 600; "60 s" -> 60; else -> 15 }
+                            val limit = if (captureMode == "Foto") 60 else when (selectedDuration) { "5 min" -> 300; "60 s" -> 60; "20 s" -> 20; else -> 15 }
                             androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
                                 val stroke = 4.dp.toPx()
                                 drawCircle(if (isRecording) Color(0x59FFFFFF) else Color.White, radius = size.minDimension / 2f - stroke / 2f, style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))

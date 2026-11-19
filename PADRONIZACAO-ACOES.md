@@ -875,3 +875,10 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - `RemoteUiActivity`: a tela de atualização usa o visual do app (fundo `#171719`, cartão `#262628`, botão azul `#2F68E0`, marca QINBLY roxa, texto branco). Sai o roxo/rosa antigo e o "V".
 - Estados: versão disponível (instalada x disponível + novidades + "Atualizar agora"), baixando (barra e % no botão), "Você está na versão mais recente" (compara o código da versão com `BuildConfig.VERSION_CODE`, botão "Verificar de novo") e erro/sem internet (com "Tentar novamente" e link para os downloads no GitHub).
 - Instalação: a sessão do instalador já pede `USER_ACTION_NOT_REQUIRED` (Android 12+), então, quando o sistema permitir, instala logo ao terminar de baixar sem a pergunta "Atualizar?". O Android só dispensa a pergunta se o QINBLY foi o instalador da versão atual e com o app fora de uso; a primeira atualização por dentro do app ainda pergunta.
+
+## Criar abre na câmera; Texto e Enquete vão para o início
+- Botão "+" (barra de baixo): não abre mais a tela de 4 cartões; abre direto a câmera do app (`createEntryMode = "camera"; tab = 2`). A tela antiga (`showCreateOptions`) ficou sem uso.
+- Câmera (`PostPage`): fileira de chips agora é só **FOTO** e **VÍDEO**. No modo VÍDEO aparecem, acima dela, os tempos **15 s, 20 s, 60 s e 5 min** (limite da gravação: 15/20/60/300 s; o 10 min saiu). O chip TEXTO da câmera (texto por cima do fundo) foi removido; texto sobre a foto continua no editor, depois de tirar a foto. As variáveis `camTextMode`/`camTextEditing` ficaram, sempre desligadas.
+- Galeria: continua pela miniatura embaixo à esquerda da câmera (seletor do sistema).
+- Início (aba Descobrir): nova barra `QinblyHomeComposer` entre os Stories e a Pergunta do dia, com a foto de perfil, "Escrever algo..." e os botões **Texto** e **Enquete** (abrem as telas de texto longo e de enquete de antes, via `onCreateWith`). Tocar na barra abre o texto.
+- Esboços aprovados guardados em `/home/claude/esbocos/` (sessão), fora do repositório.
