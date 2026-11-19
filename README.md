@@ -1,4 +1,13 @@
-# QINBLY Android + Backend 0.3.0
+# QINBLY
+
+> ## 🌐 Site oficial: **https://hernandesslr-svg.github.io/QINBLY/**
+> Baixe o aplicativo para Android, veja o que ele faz e envie sugestões ou erros pelo site.
+>
+> [**Abrir o site**](https://hernandesslr-svg.github.io/QINBLY/) · [Baixar o APK mais recente](https://github.com/hernandesslr-svg/QINBLY/releases/latest/download/qinbly-release.apk) · [Todas as versões](https://github.com/hernandesslr-svg/QINBLY/releases)
+
+---
+
+## QINBLY Android + Backend 0.3.0
 
 Projeto Android Kotlin/Jetpack Compose e API REST Node.js/Express com PostgreSQL. Inclui guia e SQL para configurar um banco PostgreSQL gerenciado pelo Supabase.
 
