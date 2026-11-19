@@ -865,3 +865,8 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 ## Textos de apoio brancos e abas do perfil só com ícone preenchido
 - Modo escuro: cinza secundário (`QiblyTheme.secondary`, `Muted` e todos os usos diretos de `0xFFBAC4D4`) virou o mesmo branco do texto principal (`#F2F4F8`). A hierarquia passa a depender só de tamanho e peso. Modo claro não mudou. Botões de seguir/participar e hashtags/@ continuam azuis (`#2F68E0`).
 - Abas do perfil (próprio e público): a aba selecionada não tem mais azul, sublinhado nem borda; só o ícone troca de contorno para preenchido (grade, vídeo, foto, salvos), tudo em branco. Texto das abas igual em todas.
+
+## Aviso de nova atualização (notificação)
+- `NotifyWorker.kt`: a verificação em segundo plano (a cada ~15 min) agora também consulta a última versão no GitHub (no máximo 1x por hora, `qinbly_update_check`). Se o código da versão publicada (major*1.000.000 + minor*10.000 + patch, igual ao workflow) for maior que `BuildConfig.VERSION_CODE`, mostra uma notificação "Nova atualização disponível" uma única vez por versão (`notified_code`).
+- Respeita "Notificações" e "Avisos do sistema" (`setting_notice_system`); funciona mesmo sem conta logada; não avisa com o app aberto.
+- Canal próprio "Atualizações do app" (`qinbly_update`). Ao tocar, abre `RemoteUiActivity` (tela de atualização, com download e instalação por dentro do app).

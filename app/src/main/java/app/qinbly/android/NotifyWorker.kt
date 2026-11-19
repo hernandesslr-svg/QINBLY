@@ -19,6 +19,10 @@ class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(co
     override fun doWork(): Result {
         val ctx = applicationContext
         val prefs = ctx.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
+        // Aviso de nova versão do app: roda mesmo sem conta logada, respeitando "Notificações" e "Avisos do sistema".
+        if (prefs.getBoolean("setting_notifications", true) && prefs.getBoolean("setting_notice_system", true) && !isAppInForeground(ctx)) {
+            checkAppUpdate(ctx)
+        }
         val token = prefs.getString("token", null)
         if (token.isNullOrBlank() || !prefs.getBoolean("setting_notifications", true)) return Result.success()
         if (isAppInForeground(ctx)) return Result.success()
@@ -58,6 +62,36 @@ class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(co
         }
     }
 
+    /**
+     * Consulta a última versão publicada no GitHub (no máximo 1 vez por hora) e avisa uma única vez por versão nova.
+     * O código da versão segue a mesma conta do workflow: major*1.000.000 + minor*10.000 + patch.
+     */
+    private fun checkAppUpdate(ctx: Context) {
+        try {
+            val sp = ctx.getSharedPreferences("qinbly_update_check", Context.MODE_PRIVATE)
+            val now = System.currentTimeMillis()
+            if (now - sp.getLong("last_check", 0L) < TimeUnit.HOURS.toMillis(1)) return
+            sp.edit().putLong("last_check", now).apply()
+            val connection = (java.net.URL("https://api.github.com/repos/hernandesslr-svg/QINBLY/releases/latest").openConnection() as java.net.HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 12000
+                readTimeout = 12000
+                setRequestProperty("Accept", "application/vnd.github+json")
+                setRequestProperty("User-Agent", "QINBLY-Android-Updater")
+            }
+            val tag = try {
+                if (connection.responseCode !in 200..299) return
+                org.json.JSONObject(connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }).optString("tag_name")
+            } finally {
+                connection.disconnect()
+            }
+            val m = Regex("^v(\\d+)\\.(\\d+)\\.(\\d+)$").matchEntire(tag) ?: return
+            val latestCode = m.groupValues[1].toInt() * 1000000 + m.groupValues[2].toInt() * 10000 + m.groupValues[3].toInt()
+            if (latestCode <= BuildConfig.VERSION_CODE || latestCode == sp.getInt("notified_code", 0)) return
+            if (qinblyNotifyUpdate(ctx)) sp.edit().putInt("notified_code", latestCode).apply()
+        } catch (_: Exception) { }
+    }
+
     private fun kindAllowed(sp: android.content.SharedPreferences, kind: String): Boolean = when (kind) {
         "like" -> sp.getBoolean("setting_notice_likes", true)
         "comment", "reply" -> sp.getBoolean("setting_notice_comments", true)
@@ -84,4 +118,31 @@ class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(co
             } catch (_: Exception) { }
         }
     }
+}
+
+/** Aviso "Nova atualização disponível". Ao tocar, abre a tela de atualização do app. Retorna false se não pôde mostrar. */
+internal fun qinblyNotifyUpdate(context: Context): Boolean {
+    return try {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+        if (android.os.Build.VERSION.SDK_INT >= 26) {
+            manager.createNotificationChannel(android.app.NotificationChannel("qinbly_update", "Atualizações do app", android.app.NotificationManager.IMPORTANCE_DEFAULT))
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+            androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) return false
+        val open = android.app.PendingIntent.getActivity(
+            context, 7001, android.content.Intent(context, RemoteUiActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        val notification = androidx.core.app.NotificationCompat.Builder(context, "qinbly_update")
+            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setContentTitle("Nova atualização disponível")
+            .setContentText("A versão mais recente do QINBLY está pronta. Toque para atualizar.")
+            .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText("A versão mais recente do QINBLY está pronta. Toque para atualizar."))
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        manager.notify(7001, notification)
+        true
+    } catch (_: Exception) { false }
 }
