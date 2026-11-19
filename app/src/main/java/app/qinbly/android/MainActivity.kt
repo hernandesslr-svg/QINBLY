@@ -5748,9 +5748,9 @@ private fun qinblyPostAgeHours(createdAt: String): Long? = try {
     java.time.Duration.between(java.time.Instant.parse(createdAt), java.time.Instant.now()).toHours()
 } catch (_: Exception) { null }
 
-/** Barra "Escrever algo..." no início: foto de perfil + atalhos para Texto e Enquete (saíram da câmera). */
+/** Barra "Escrever algo..." no início: lápis + atalho para Enquete (Texto abre ao tocar na barra; saíram da câmera). */
 @Composable
-private fun QinblyHomeComposer(username: String, onCreateWith: (String, String) -> Unit) {
+private fun QinblyHomeComposer(onCreateWith: (String, String) -> Unit) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(16.dp)).background(QiblyTheme.soft)
@@ -5759,18 +5759,16 @@ private fun QinblyHomeComposer(username: String, onCreateWith: (String, String) 
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        QiblyAccountAvatar(username, "", 34.dp) { onCreateWith("text", "") }
-        Text("Escrever algo...", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp, modifier = Modifier.weight(1f), maxLines = 1)
-        listOf(Triple("Texto", "text", QinblyCreateIcons.text), Triple("Enquete", "poll", QinblyCreateIcons.poll)).forEach { (label, mode, icon) ->
-            Row(
-                Modifier.clip(RoundedCornerShape(18.dp)).background(QiblyTheme.background.copy(alpha = 0.55f))
-                    .clickable { onCreateWith(mode, "") }.padding(horizontal = 10.dp, vertical = 7.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(icon, contentDescription = null, tint = RemoteAppearance.feedTextColor, modifier = Modifier.size(15.dp))
-                Text(label, color = RemoteAppearance.feedTextColor, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
-            }
+        Icon(Icons.Default.Edit, contentDescription = "Escrever", tint = RemoteAppearance.feedTextColor, modifier = Modifier.size(22.dp))
+        Text("Escrever algo...", color = RemoteAppearance.feedTextColor, fontSize = 14.sp, modifier = Modifier.weight(1f), maxLines = 1)
+        Row(
+            Modifier.clip(RoundedCornerShape(18.dp)).background(QiblyTheme.background.copy(alpha = 0.55f))
+                .clickable { onCreateWith("poll", "") }.padding(horizontal = 10.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(QinblyCreateIcons.poll, contentDescription = null, tint = RemoteAppearance.feedTextColor, modifier = Modifier.size(15.dp))
+            Text("Enquete", color = RemoteAppearance.feedTextColor, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
         }
     }
 }
@@ -6890,7 +6888,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     QinblyStoriesRow(onNotice, onOpenProfile, onOpenConversation, onAddStory)
                 }
                 if (selectedFeedTab == "Descobrir") item(key = "home-composer") {
-                    QinblyHomeComposer(currentUsername, onCreateWith)
+                    QinblyHomeComposer(onCreateWith)
                 }
                 if (selectedFeedTab == "Descobrir") item(key = "home-header") {
                     QinblyHomeHeader(allFeedPosts, prefs, onCreateWith)
