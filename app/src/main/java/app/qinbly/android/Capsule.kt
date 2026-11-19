@@ -77,7 +77,7 @@ private val CapBg = Color(0xFF171719)
 private val CapCard = Color(0xFF232325)
 private val CapField = Color(0xFF262628)
 private val CapAccent = Color(0xFF2F68E0)
-private val CapMuted = Color(0xFFBAC4D4)
+private val CapMuted = Color(0xFFF2F4F8)
 private val CapMonths = listOf("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro")
 
 private fun capSess(c: Context) = c.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()

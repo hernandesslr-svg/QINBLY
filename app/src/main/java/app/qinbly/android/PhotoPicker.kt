@@ -146,7 +146,7 @@ private fun QinblyPhotoPickerDialog(
                 }
                 if (!granted) item(span = { GridItemSpan(maxLineSpan) }) {
                     Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("Permita o acesso às suas fotos para escolher daqui.", color = Color(0xFFBAC4D4), fontSize = 15.sp)
+                        Text("Permita o acesso às suas fotos para escolher daqui.", color = Color(0xFFF2F4F8), fontSize = 15.sp)
                         Text("Permitir acesso", color = Color.White, fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFF2F68E0)).clickable { permissionLauncher.launch(perms) }.padding(horizontal = 20.dp, vertical = 10.dp))
                     }

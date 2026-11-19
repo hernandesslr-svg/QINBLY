@@ -274,8 +274,8 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
     }
     QinblyFullScreen(if (collab) "Contribuições" else if (isOwner) "Comentários" else "Comentar no story", onDismiss, scroll = false) {
         val list = comments?.filter { (it.kind == "contrib") == collab }
-        if (list == null) Text("Carregando…", color = Color(0xFFBAC4D4), modifier = Modifier.weight(1f).padding(16.dp))
-        else if (list.isEmpty()) Text(if (isOwner) "Ninguém comentou ainda." else if (collab) "Seja o primeiro a contribuir." else "Só quem postou o story vê o seu comentário.", color = Color(0xFFBAC4D4), modifier = Modifier.weight(1f).padding(16.dp))
+        if (list == null) Text("Carregando…", color = Color(0xFFF2F4F8), modifier = Modifier.weight(1f).padding(16.dp))
+        else if (list.isEmpty()) Text(if (isOwner) "Ninguém comentou ainda." else if (collab) "Seja o primeiro a contribuir." else "Só quem postou o story vê o seu comentário.", color = Color(0xFFF2F4F8), modifier = Modifier.weight(1f).padding(16.dp))
         else LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp)) {
             items(list, key = { it.id }) { c ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {

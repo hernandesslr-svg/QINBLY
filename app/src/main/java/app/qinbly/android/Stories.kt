@@ -118,7 +118,7 @@ internal fun QinblyStoryMenu(
                 Column(modifier.clip(RoundedCornerShape(18.dp)).background(card).clickable { onClick() }.padding(horizontal = 6.dp, vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
                     Text(title, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    Text(sub, color = Color(0xFFBAC4D4), fontSize = 10.sp, lineHeight = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Text(sub, color = Color(0xFFF2F4F8), fontSize = 10.sp, lineHeight = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
             @Composable fun Short(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, sub: String, tint: Color = Color.White, onClick: () -> Unit) {
@@ -127,9 +127,9 @@ internal fun QinblyStoryMenu(
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
                         Text(title, color = tint, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        Text(sub, color = Color(0xFFBAC4D4), fontSize = 10.sp)
+                        Text(sub, color = Color(0xFFF2F4F8), fontSize = 10.sp)
                     }
-                    Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = Color(0xFFBAC4D4), modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = Color(0xFFF2F4F8), modifier = Modifier.size(18.dp))
                 }
             }
             Column(Modifier.fillMaxSize().background(Color(0xFF171719)).statusBarsPadding().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 24.dp)) {
@@ -802,7 +802,7 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
                 }
                 androidx.compose.material3.HorizontalDivider(Modifier.padding(top = 14.dp), color = line)
             }
-            if (list.isEmpty()) item { Text("Ninguém viu ainda.", color = Color(0xFFBAC4D4), fontSize = 15.sp, modifier = Modifier.padding(vertical = 24.dp)) }
+            if (list.isEmpty()) item { Text("Ninguém viu ainda.", color = Color(0xFFF2F4F8), fontSize = 15.sp, modifier = Modifier.padding(vertical = 24.dp)) }
             else {
                 item { Row(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 4.dp)) {
                     Text("Quem viu", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f))

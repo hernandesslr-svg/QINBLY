@@ -179,13 +179,13 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                     Spacer(Modifier.size(10.dp))
                     if (!granted) {
                         Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text("Permita o acesso às suas fotos para escolher daqui.", color = Color(0xFFBAC4D4), fontSize = 15.sp)
+                            Text("Permita o acesso às suas fotos para escolher daqui.", color = Color(0xFFF2F4F8), fontSize = 15.sp)
                             Text("Permitir acesso", color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFF2F68E0))
                                 .clickable { permissionLauncher.launch(if (Build.VERSION.SDK_INT >= 33) arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES, android.Manifest.permission.READ_MEDIA_VIDEO) else arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)) }.padding(horizontal = 22.dp, vertical = 11.dp))
                             Text("Escolher pela galeria do celular", color = Color(0xFF7FA6F2), modifier = Modifier.clickable { systemPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }.padding(8.dp))
                         }
                     } else if (items.isEmpty()) {
-                        Text("Nenhuma foto ou vídeo encontrado.", color = Color(0xFFBAC4D4), modifier = Modifier.padding(24.dp))
+                        Text("Nenhuma foto ou vídeo encontrado.", color = Color(0xFFF2F4F8), modifier = Modifier.padding(24.dp))
                     } else {
                         LazyVerticalGrid(GridCells.Fixed(3), modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             items(items, key = { it.uri.toString() }) { g ->

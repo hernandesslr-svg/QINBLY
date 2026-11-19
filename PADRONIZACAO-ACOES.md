@@ -861,3 +861,7 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Pesos: `FontWeight.Bold` virou `SemiBold` em todo o app (nomes, números, títulos). `ExtraBold`/`Black` (logo) ficaram como estavam; o peso "negrito" escolhido pelo usuário nos stories de texto (`qinblyFontWeight`) continua Bold.
 - Cinza secundário (modo escuro): `#A9B5C8` -> `#BAC4D4` em todos os pontos (QiblyTheme.secondary, Muted e usos diretos) para as letras ficarem menos apagadas.
 - Para ajustar o tamanho geral depois, basta mudar `QINBLY_TEXT_SCALE` (ex.: 0.85f menor, 0.95f maior).
+
+## Textos de apoio brancos e abas do perfil só com ícone preenchido
+- Modo escuro: cinza secundário (`QiblyTheme.secondary`, `Muted` e todos os usos diretos de `0xFFBAC4D4`) virou o mesmo branco do texto principal (`#F2F4F8`). A hierarquia passa a depender só de tamanho e peso. Modo claro não mudou. Botões de seguir/participar e hashtags/@ continuam azuis (`#2F68E0`).
+- Abas do perfil (próprio e público): a aba selecionada não tem mais azul, sublinhado nem borda; só o ícone troca de contorno para preenchido (grade, vídeo, foto, salvos), tudo em branco. Texto das abas igual em todas.

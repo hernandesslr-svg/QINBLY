@@ -306,7 +306,7 @@ private val Night: Color get() = QiblyTheme.background
 private val Panel: Color get() = QiblyTheme.card
 private val Violet = QinblyBrand.Accent
 private val Pink = QinblyBrand.Accent
-private val Muted: Color get() = if (QiblyTheme.dark) Color(0xFFBAC4D4) else Color(0xFF333333)
+private val Muted: Color get() = if (QiblyTheme.dark) Color(0xFFF2F4F8) else Color(0xFF333333)
 
 
 
@@ -1633,7 +1633,7 @@ internal object QiblyTheme {
     val card: Color get() = if (dark) Color(0xFF171719) else Color(0xFFF6F6F7)
     val soft: Color get() = if (dark) Color(0xFF262628) else Color(0xFFE4E6EB)
     val text: Color get() = if (dark) Color(0xFFF2F4F8) else Color.Black
-    val secondary: Color get() = if (dark) Color(0xFFBAC4D4) else Color(0xFF555555)
+    val secondary: Color get() = if (dark) Color(0xFFF2F4F8) else Color(0xFF555555)
     val border: Color get() = if (dark) Color(0xFF2E2E30) else Color(0xFFDADADD)
 }
 
@@ -9338,15 +9338,16 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         ) {
             listOf("Publicações", "Vídeos", "Fotos", "Salvos").forEach { item ->
                 Column(Modifier.weight(1f).clickable { profileTab = item }.padding(vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    // Aba selecionada: só o ícone fica preenchido (branco); sem sublinhado, borda ou cor de destaque.
+                    val tabOn = profileTab == item
                     Icon(when(item) {
-                        "Vídeos" -> Icons.Default.PlayCircle
-                        "Fotos" -> Icons.Default.Image
-                        "Salvos" -> Icons.Default.BookmarkBorder
-                        else -> Icons.Outlined.GridView
-                    }, contentDescription = item, tint = if (profileTab == item) profileAccent else RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(23.dp))
-                    Text(item, color = if (profileTab == item) profileAccent else RemoteAppearance.screenTextColor, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                        "Vídeos" -> if (tabOn) Icons.Default.PlayCircle else Icons.Outlined.PlayCircleOutline
+                        "Fotos" -> if (tabOn) Icons.Default.Image else Icons.Outlined.Image
+                        "Salvos" -> if (tabOn) Icons.Default.Bookmark else Icons.Default.BookmarkBorder
+                        else -> if (tabOn) Icons.Default.GridView else Icons.Outlined.GridView
+                    }, contentDescription = item, tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(23.dp))
+                    Text(item, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.labelSmall, maxLines = 1)
                     Spacer(Modifier.height(5.dp))
-                    Box(Modifier.fillMaxWidth(0.8f).height(2.dp).background(if (profileTab == item) profileAccent else Color.Transparent))
                 }
             }
         }
@@ -10780,16 +10781,16 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
             listOf("Publicações", "Vídeos", "Fotos").forEach { section ->
                 Column(Modifier.weight(1f).clickable { selectedTab = section }.padding(vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    val sectionOn = selectedTab == section
                     Icon(imageVector = when (section) {
-                        "Vídeos" -> Icons.Default.PlayCircle
-                        "Fotos" -> Icons.Default.Image
+                        "Vídeos" -> if (sectionOn) Icons.Default.PlayCircle else Icons.Outlined.PlayCircleOutline
+                        "Fotos" -> if (sectionOn) Icons.Default.Image else Icons.Outlined.Image
                         "Republicações" -> Icons.Default.Repeat
                         "Curtidas" -> Icons.Default.FavoriteBorder
-                        "Salvos" -> Icons.Default.BookmarkBorder
-                        else -> Icons.Default.GridView
-                    }, contentDescription = section, tint = if (selectedTab == section) QinblyBrand.Accent else RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(25.dp))
-                    Text(section, color = if (selectedTab == section) QinblyBrand.Accent else RemoteAppearance.screenTextColor, fontWeight = if (selectedTab == section) FontWeight.SemiBold else FontWeight.Normal, style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                    Box(Modifier.fillMaxWidth().height(3.dp).background(if (selectedTab == section) Brush.horizontalGradient(listOf(QinblyBrand.Accent, QinblyBrand.Accent)) else Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))))
+                        "Salvos" -> if (sectionOn) Icons.Default.Bookmark else Icons.Default.BookmarkBorder
+                        else -> if (sectionOn) Icons.Default.GridView else Icons.Outlined.GridView
+                    }, contentDescription = section, tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(25.dp))
+                    Text(section, color = RemoteAppearance.screenTextColor, fontWeight = if (selectedTab == section) FontWeight.SemiBold else FontWeight.Normal, style = MaterialTheme.typography.labelSmall, maxLines = 1)
                 }
             }
         }
@@ -11252,7 +11253,7 @@ private fun QinblyCameraSheetRow(icon: androidx.compose.ui.graphics.vector.Image
         }
         Column(Modifier.weight(1f)) {
             Text(title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-            Text(subtitle, color = Color(0xFFBAC4D4), fontSize = 11.sp)
+            Text(subtitle, color = Color(0xFFF2F4F8), fontSize = 11.sp)
         }
     }
 }
@@ -12778,9 +12779,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 valueRange = low.toFloat()..high.toFloat(), steps = (high - low - 1).coerceAtLeast(0),
                                 colors = SliderDefaults.colors(thumbColor = Color.White, activeTrackColor = QinblyBrand.Accent, inactiveTrackColor = Color(0xFF3A4458))
                             )
-                            Text("Escuro  ←  →  Claro", color = Color(0xFFBAC4D4), fontSize = 11.sp)
+                            Text("Escuro  ←  →  Claro", color = Color(0xFFF2F4F8), fontSize = 11.sp)
                         } else {
-                            Text("Este aparelho não permite ajustar o brilho aqui.", color = Color(0xFFBAC4D4), fontSize = 12.sp)
+                            Text("Este aparelho não permite ajustar o brilho aqui.", color = Color(0xFFF2F4F8), fontSize = 12.sp)
                         }
                     }
                     Spacer(Modifier.height(6.dp))

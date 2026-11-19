@@ -378,7 +378,7 @@ internal fun QinblyMoodDialog(onDismiss: () -> Unit, onNotice: (String) -> Unit,
                         Box(Modifier.size(120.dp).clip(CircleShape).background(chosen).border(4.dp, Color.White, CircleShape), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 62.sp) }
                         Spacer(Modifier.size(16.dp))
                         Text("Como você está hoje?", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
-                        Text("Aparece no seu cartão de story por 24 horas.", color = Color(0xFFBAC4D4), fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
+                        Text("Aparece no seu cartão de story por 24 horas.", color = Color(0xFFF2F4F8), fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
                         Spacer(Modifier.size(24.dp))
                         (moodEmojis + "＋").chunked(5).forEach { row ->
                             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -463,19 +463,19 @@ internal fun QinblyStickerPacksDialog(accent: Color, onDismiss: () -> Unit, onNo
         }.start()
     }
     QinblyBottomPanel("Pacotes de figurinhas", onDismiss) {
-        Text("Publique as suas figurinhas como um pacote e adicione as da comunidade.", color = Color(0xFFBAC4D4), fontSize = 16.sp)
+        Text("Publique as suas figurinhas como um pacote e adicione as da comunidade.", color = Color(0xFFF2F4F8), fontSize = 16.sp)
         QinblyPillField(name, { name = it.take(40) }, "Nome do meu pacote", Modifier.fillMaxWidth())
         BigButton("Publicar meu pacote", accent, Modifier.fillMaxWidth()) { publish() }
         Text("Publicar usa todas as suas figurinhas atuais.", color = Color(0xFF8E87A8), fontSize = 13.sp)
         val list = packs
-        if (list == null) Text("Carregando…", color = Color(0xFFBAC4D4), fontSize = 16.sp)
-        else if (list.isEmpty()) Text("Nenhum pacote ainda. Seja o primeiro!", color = Color(0xFFBAC4D4), fontSize = 16.sp)
+        if (list == null) Text("Carregando…", color = Color(0xFFF2F4F8), fontSize = 16.sp)
+        else if (list.isEmpty()) Text("Nenhum pacote ainda. Seja o primeiro!", color = Color(0xFFF2F4F8), fontSize = 16.sp)
         else list.forEach { p ->
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(FieldBg).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(p.name, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
-                        Text("por @${p.owner} • ${p.paths.size} figurinhas", color = Color(0xFFBAC4D4), fontSize = 14.sp)
+                        Text("por @${p.owner} • ${p.paths.size} figurinhas", color = Color(0xFFF2F4F8), fontSize = 14.sp)
                     }
                     Text("Adicionar", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(accent).clickable { add(p) }.padding(horizontal = 16.dp, vertical = 10.dp))
                 }

@@ -371,7 +371,7 @@ internal fun QinblyNearbyHub(
                         }
                         Column(Modifier.padding(start = 14.dp)) {
                             Text(myName, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text((if (city.isNotBlank()) city else "Escolher cidade") + " ▾", color = Color(0xFFBAC4D4), fontSize = 13.sp,
+                            Text((if (city.isNotBlank()) city else "Escolher cidade") + " ▾", color = Color(0xFFF2F4F8), fontSize = 13.sp,
                                 modifier = Modifier.clickable { showDrawer = false; mine = null; showCityPicker = true }.padding(top = 2.dp))
                         }
                     }
@@ -383,7 +383,7 @@ internal fun QinblyNearbyHub(
                                 Modifier.weight(1f).clip(RoundedCornerShape(18.dp)).background(Color(0xFF262628)).clickable { showDrawer = false; mine = target }.padding(vertical = 14.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Box(Modifier.size(36.dp).clip(CircleShape).background(Color(0xFF343437)), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 19.dp, Color(0xFFBAC4D4)) }
+                                Box(Modifier.size(36.dp).clip(CircleShape).background(Color(0xFF343437)), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 19.dp, Color(0xFFF2F4F8)) }
                                 Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
                             }
                         }
@@ -399,9 +399,9 @@ internal fun QinblyNearbyHub(
                             }.padding(horizontal = 6.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(Modifier.size(34.dp).clip(CircleShape).background(Color(0xFF343437)), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 18.dp, Color(0xFFBAC4D4)) }
+                            Box(Modifier.size(34.dp).clip(CircleShape).background(Color(0xFF343437)), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 18.dp, Color(0xFFF2F4F8)) }
                             Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(start = 14.dp).weight(1f))
-                            QinblyIconOf(QinblyIcon.KeyboardArrowRight, Color(0xFFBAC4D4), 26.dp)
+                            QinblyIconOf(QinblyIcon.KeyboardArrowRight, Color(0xFFF2F4F8), 26.dp)
                         }
                     }
                     if (mine != null) Row(
@@ -491,9 +491,9 @@ internal fun QinblyNearbyHub(
                     Box(Modifier.size(36.dp).clip(CircleShape).background(kindColor(key)))
                     Column(Modifier.padding(start = 12.dp).weight(1f)) {
                         Text(title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                        Text(sub2, color = Color(0xFFBAC4D4), fontSize = 12.sp)
+                        Text(sub2, color = Color(0xFFF2F4F8), fontSize = 12.sp)
                     }
-                    QinblyIconOf(QinblyIcon.KeyboardArrowRight, Color(0xFFBAC4D4), 26.dp)
+                    QinblyIconOf(QinblyIcon.KeyboardArrowRight, Color(0xFFF2F4F8), 26.dp)
                 }
             }
         }
@@ -756,16 +756,16 @@ private fun CityPicker(current: String, deviceCity: String, prefs: android.conte
         ) {
             Column(Modifier.weight(1f)) {
                 Text("Usar minha localização", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                Text(deviceCity, color = Color(0xFFBAC4D4), fontSize = 12.sp)
+                Text(deviceCity, color = Color(0xFFF2F4F8), fontSize = 12.sp)
             }
             if (current == deviceCity) QinblyCheckIcon(MarketBlue, 21.dp)
         }
         if (query.trim().length >= 3) {
-            if (searching) Text("Buscando…", color = Color(0xFFBAC4D4), fontSize = 13.sp)
-            else if (results.isEmpty()) Text("Nenhuma cidade encontrada.", color = Color(0xFFBAC4D4), fontSize = 13.sp)
+            if (searching) Text("Buscando…", color = Color(0xFFF2F4F8), fontSize = 13.sp)
+            else if (results.isEmpty()) Text("Nenhuma cidade encontrada.", color = Color(0xFFF2F4F8), fontSize = 13.sp)
             for (c in results) CityRow(c, c == current) { choose(c) }
         } else if (recents.isNotEmpty()) {
-            Text("Cidades recentes", color = Color(0xFFBAC4D4), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            Text("Cidades recentes", color = Color(0xFFF2F4F8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             for (c in recents) CityRow(c, c == current) { choose(c) }
         }
     }

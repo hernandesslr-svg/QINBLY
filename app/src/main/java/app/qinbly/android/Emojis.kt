@@ -85,7 +85,7 @@ internal fun QinblyEmojiPanel(modifier: Modifier = Modifier, background: Color =
                 }
             }
         }
-        Text(emojiCategories[sel].name, color = Color(0xFFBAC4D4), fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 2.dp))
+        Text(emojiCategories[sel].name, color = Color(0xFFF2F4F8), fontSize = 12.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 2.dp))
         LazyVerticalGrid(GridCells.Fixed(8), state = gridState, modifier = Modifier.fillMaxWidth().height(gridHeight).padding(horizontal = 6.dp)) {
             items(list) { e ->
                 Box(Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)).clickable { onPick(e) }, contentAlignment = Alignment.Center) { Text(e, fontSize = 24.sp) }
