@@ -37,7 +37,7 @@ internal fun QinblyLegalScreen(kind: String, onDismiss: () -> Unit) {
     QinblyFullScreen(if (terms) "Termos de uso" else "Política de privacidade", onDismiss, background = QiblyTheme.background, contentColor = QiblyTheme.text) {
         blocks.forEach { (title, body) ->
             Column(Modifier.padding(bottom = 14.dp)) {
-                Text(title, color = QiblyTheme.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(title, color = QiblyTheme.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 Text(body, color = QiblyTheme.text, fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 4.dp))
             }
         }

@@ -89,7 +89,7 @@ internal fun AlertDialog(
                 }
                 if (title != null) {
                     CompositionLocalProvider(LocalContentColor provides titleContentColor) {
-                        ProvideTextStyle(MaterialTheme.typography.titleLarge.copy(fontSize = 21.sp, fontWeight = FontWeight.Bold)) { title() }
+                        ProvideTextStyle(MaterialTheme.typography.titleLarge.copy(fontSize = 21.sp, fontWeight = FontWeight.SemiBold)) { title() }
                     }
                     Spacer(Modifier.size(10.dp))
                 }

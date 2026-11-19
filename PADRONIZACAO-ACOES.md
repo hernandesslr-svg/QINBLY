@@ -855,3 +855,9 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Em Android 12+ pede instalação sem confirmação extra quando o sistema permitir (`USER_ACTION_NOT_REQUIRED`); caso contrário aparece a confirmação normal "Atualizar".
 - Se a permissão "Instalar apps desconhecidos" estiver desligada, abre a tela de permissão e continua a atualização sozinha ao voltar (`pending_update_apk_url`).
 - Se o instalador interno falhar por qualquer motivo, cai no caminho antigo (DownloadManager + instalador do Android).
+
+## Tipografia refinada (opção A, leve) no app inteiro
+- Escala geral das letras: `QINBLY_TEXT_SCALE = 0.9f` (MainActivity.kt), aplicada no `LocalDensity` raiz junto do "Texto grande" (que continua multiplicando por cima). Vale para todas as telas, diálogos e abas; o workflow continua somando +3sp nos `fontSize` explícitos e a escala reduz o resultado em ~10%.
+- Pesos: `FontWeight.Bold` virou `SemiBold` em todo o app (nomes, números, títulos). `ExtraBold`/`Black` (logo) ficaram como estavam; o peso "negrito" escolhido pelo usuário nos stories de texto (`qinblyFontWeight`) continua Bold.
+- Cinza secundário (modo escuro): `#A9B5C8` -> `#BAC4D4` em todos os pontos (QiblyTheme.secondary, Muted e usos diretos) para as letras ficarem menos apagadas.
+- Para ajustar o tamanho geral depois, basta mudar `QINBLY_TEXT_SCALE` (ex.: 0.85f menor, 0.95f maior).

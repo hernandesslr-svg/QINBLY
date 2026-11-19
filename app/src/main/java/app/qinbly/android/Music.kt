@@ -167,7 +167,7 @@ private fun QinblyMusicRow(m: QinblyMusic, playing: String, onToggle: () -> Unit
         Box(Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF3A3260)), contentAlignment = Alignment.Center) { QinblyIconOf(QinblyIcon.MusicNote, Color(0xFF7FA6F2), 22.dp) }
         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
             Text(m.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(m.artist, color = Color(0xFFA9B5C8), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(m.artist, color = Color(0xFFBAC4D4), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF262628)).clickable { onToggle() }, contentAlignment = Alignment.Center) {
             QinblyIconOf(if (playing == m.url) QinblyIcon.Pause else QinblyIcon.PlayArrow, Color.White, 20.dp)
@@ -205,20 +205,20 @@ internal fun QinblyMusicPicker(onPick: (QinblyMusic) -> Unit, onDismiss: () -> U
         val listModifier = Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp, start = 16.dp, end = 16.dp)
         if (q.isBlank()) {
             LazyColumn(listModifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                item { Text("Músicas livres do Qinbly. Toque no play pra ouvir e na linha pra escolher.", color = Color(0xFFA9B5C8), fontSize = 13.sp, modifier = Modifier.padding(vertical = 8.dp)) }
+                item { Text("Músicas livres do Qinbly. Toque no play pra ouvir e na linha pra escolher.", color = Color(0xFFBAC4D4), fontSize = 13.sp, modifier = Modifier.padding(vertical = 8.dp)) }
                 qinblyFreeTracks.forEach { (group, tracks) ->
-                    item(key = "h-$group") { Text(group, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)) }
+                    item(key = "h-$group") { Text(group, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)) }
                     items(tracks, key = { it.url }) { m -> QinblyMusicRow(m, playing, { playing = if (playing == m.url) "" else m.url }) { playing = ""; onPick(m) } }
                 }
             }
         } else if (freeOnly) {
-            if (freeMatches.isEmpty()) Text("Nenhuma música encontrada.", color = Color(0xFFA9B5C8), modifier = Modifier.padding(16.dp))
+            if (freeMatches.isEmpty()) Text("Nenhuma música encontrada.", color = Color(0xFFBAC4D4), modifier = Modifier.padding(16.dp))
             else LazyColumn(listModifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 items(freeMatches, key = { it.url }) { m -> QinblyMusicRow(m, playing, { playing = if (playing == m.url) "" else m.url }) { playing = ""; onPick(m) } }
             }
-        } else if (loading && freeMatches.isEmpty()) Text("Buscando…", color = Color(0xFFA9B5C8), modifier = Modifier.padding(16.dp))
-        else if (error.isNotBlank() && freeMatches.isEmpty()) Text(error, color = Color(0xFFA9B5C8), modifier = Modifier.padding(16.dp))
-        else if (results.isEmpty() && freeMatches.isEmpty()) Text("Nenhuma música encontrada.", color = Color(0xFFA9B5C8), modifier = Modifier.padding(16.dp))
+        } else if (loading && freeMatches.isEmpty()) Text("Buscando…", color = Color(0xFFBAC4D4), modifier = Modifier.padding(16.dp))
+        else if (error.isNotBlank() && freeMatches.isEmpty()) Text(error, color = Color(0xFFBAC4D4), modifier = Modifier.padding(16.dp))
+        else if (results.isEmpty() && freeMatches.isEmpty()) Text("Nenhuma música encontrada.", color = Color(0xFFBAC4D4), modifier = Modifier.padding(16.dp))
         else LazyColumn(listModifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             items(freeMatches + results, key = { it.url }) { m -> QinblyMusicRow(m, playing, { playing = if (playing == m.url) "" else m.url }) { playing = ""; onPick(m) } }
         }

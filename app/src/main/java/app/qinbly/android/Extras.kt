@@ -270,7 +270,7 @@ internal fun QinblyFullScreen(
                         drawPath(path, contentColor, style = androidx.compose.ui.graphics.drawscope.Stroke(w * 0.1f, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
                     }
                 }
-                Text(title, color = contentColor, fontSize = 19.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(start = 4.dp))
+                Text(title, color = contentColor, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(start = 4.dp))
             }
             val body = Modifier.weight(1f).fillMaxWidth()
             val bottom = if (imeOpen) 0.dp else nav
@@ -291,7 +291,7 @@ internal fun QinblyBottomPanel(title: String, onDismiss: () -> Unit, content: @C
 @Composable
 private fun BigButton(text: String, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(modifier.clip(RoundedCornerShape(28.dp)).background(color).clickable { onClick() }.padding(vertical = 17.dp), contentAlignment = Alignment.Center) {
-        Text(text, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Text(text, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -377,8 +377,8 @@ internal fun QinblyMoodDialog(onDismiss: () -> Unit, onNotice: (String) -> Unit,
                         Spacer(Modifier.size(18.dp))
                         Box(Modifier.size(120.dp).clip(CircleShape).background(chosen).border(4.dp, Color.White, CircleShape), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 62.sp) }
                         Spacer(Modifier.size(16.dp))
-                        Text("Como você está hoje?", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                        Text("Aparece no seu cartão de story por 24 horas.", color = Color(0xFFA9B5C8), fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
+                        Text("Como você está hoje?", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Aparece no seu cartão de story por 24 horas.", color = Color(0xFFBAC4D4), fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
                         Spacer(Modifier.size(24.dp))
                         (moodEmojis + "＋").chunked(5).forEach { row ->
                             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -399,7 +399,7 @@ internal fun QinblyMoodDialog(onDismiss: () -> Unit, onNotice: (String) -> Unit,
                         Spacer(Modifier.size(24.dp))
                     }
                     Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, bottom = 14.dp + qinblyNavBarPadding()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Publicar clima", color = Color(0xFF26215C), fontWeight = FontWeight.Bold, fontSize = 17.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        Text("Publicar clima", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 17.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Color.White).clickable { save(false) }.padding(vertical = 16.dp))
                         Text("Limpar meu clima", color = Color(0xFF7FA6F2), fontSize = 15.sp, modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable { save(true) }.padding(horizontal = 16.dp, vertical = 8.dp))
                     }
@@ -463,19 +463,19 @@ internal fun QinblyStickerPacksDialog(accent: Color, onDismiss: () -> Unit, onNo
         }.start()
     }
     QinblyBottomPanel("Pacotes de figurinhas", onDismiss) {
-        Text("Publique as suas figurinhas como um pacote e adicione as da comunidade.", color = Color(0xFFA9B5C8), fontSize = 16.sp)
+        Text("Publique as suas figurinhas como um pacote e adicione as da comunidade.", color = Color(0xFFBAC4D4), fontSize = 16.sp)
         QinblyPillField(name, { name = it.take(40) }, "Nome do meu pacote", Modifier.fillMaxWidth())
         BigButton("Publicar meu pacote", accent, Modifier.fillMaxWidth()) { publish() }
         Text("Publicar usa todas as suas figurinhas atuais.", color = Color(0xFF8E87A8), fontSize = 13.sp)
         val list = packs
-        if (list == null) Text("Carregando…", color = Color(0xFFA9B5C8), fontSize = 16.sp)
-        else if (list.isEmpty()) Text("Nenhum pacote ainda. Seja o primeiro!", color = Color(0xFFA9B5C8), fontSize = 16.sp)
+        if (list == null) Text("Carregando…", color = Color(0xFFBAC4D4), fontSize = 16.sp)
+        else if (list.isEmpty()) Text("Nenhum pacote ainda. Seja o primeiro!", color = Color(0xFFBAC4D4), fontSize = 16.sp)
         else list.forEach { p ->
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(FieldBg).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(p.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text("por @${p.owner} • ${p.paths.size} figurinhas", color = Color(0xFFA9B5C8), fontSize = 14.sp)
+                        Text(p.name, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                        Text("por @${p.owner} • ${p.paths.size} figurinhas", color = Color(0xFFBAC4D4), fontSize = 14.sp)
                     }
                     Text("Adicionar", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(accent).clickable { add(p) }.padding(horizontal = 16.dp, vertical = 10.dp))
                 }
@@ -529,7 +529,7 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
     Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Mural de avisos", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = textColor)
+                Text("Mural de avisos", fontWeight = FontWeight.SemiBold, fontSize = 20.sp, color = textColor)
                 Text(if (place.isNotBlank()) "Perto de $place • avisos somem em 48 h" else "Avisos de até ~5 km • somem em 48 h", color = secondary, fontSize = 12.sp)
             }
         }
@@ -542,7 +542,7 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
                 Text("${draft.length}/500", color = Color(0xFF8E87A8), fontSize = 11.sp, modifier = Modifier.padding(start = 6.dp))
                 Spacer(Modifier.weight(1f))
                 val ready = draft.isNotBlank() && !posting
-                Text(if (posting) "Enviando…" else "Publicar", color = if (ready) Color.White else Color(0xFF8E87A8), fontWeight = FontWeight.Bold, fontSize = 14.sp,
+                Text(if (posting) "Enviando…" else "Publicar", color = if (ready) Color.White else Color(0xFF8E87A8), fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
                     modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (ready) Color(0xFF2F68E0) else Color(0xFF2E2E30)).clickable(enabled = ready) { post() }.padding(horizontal = 20.dp, vertical = 9.dp))
             }
         }
@@ -585,7 +585,7 @@ private fun mentionText(body: String, color: Color): androidx.compose.ui.text.An
     val end = if (body.startsWith("@")) body.indexOfFirst { it.isWhitespace() }.let { if (it < 0) body.length else it } else 0
     return androidx.compose.ui.text.buildAnnotatedString {
         append(body)
-        if (end > 1) addStyle(androidx.compose.ui.text.SpanStyle(color = color, fontWeight = FontWeight.Bold), 0, end)
+        if (end > 1) addStyle(androidx.compose.ui.text.SpanStyle(color = color, fontWeight = FontWeight.SemiBold), 0, end)
     }
 }
 
@@ -670,11 +670,11 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                 Text(n.optString("body"), color = Color.White, fontSize = 16.sp)
                 val all = comments
                 val tops = all?.filter { it.optString("parent_id").let { x -> x.isBlank() || x == "null" } }.orEmpty()
-                Text(if (all == null) "Carregando comentários…" else if (all.isEmpty()) "Nenhum comentário ainda. Seja o primeiro." else "${all.size} comentário" + (if (all.size > 1) "s" else ""), color = Color(0xFFB4B4BC), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(if (all == null) "Carregando comentários…" else if (all.isEmpty()) "Nenhum comentário ainda. Seja o primeiro." else "${all.size} comentário" + (if (all.size > 1) "s" else ""), color = Color(0xFFB4B4BC), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 @Composable fun Bubble(c: JSONObject, small: Boolean) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.size(if (small) 24.dp else 30.dp).clip(CircleShape).background(Color(0xFF3A3A3E)), contentAlignment = Alignment.Center) {
-                            Text(nameOf(c).take(1).uppercase(), color = Color.White, fontSize = if (small) 11.sp else 13.sp, fontWeight = FontWeight.Bold)
+                            Text(nameOf(c).take(1).uppercase(), color = Color.White, fontSize = if (small) 11.sp else 13.sp, fontWeight = FontWeight.SemiBold)
                         }
                         Column(Modifier.weight(1f)) {
                             val mine = c.optString("user_id") == myId
@@ -685,7 +685,7 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                                 .padding(horizontal = 12.dp, vertical = 8.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(nameOf(c), color = Color(0xFF7FA6F2), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                                    if (c.optString("user_id") == noticeOwner) Text("autor", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF2F68E0)).padding(horizontal = 6.dp, vertical = 1.dp))
+                                    if (c.optString("user_id") == noticeOwner) Text("autor", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 6.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF2F68E0)).padding(horizontal = 6.dp, vertical = 1.dp))
                                     Text(" • " + qinblyAgo(c.optString("created_at")), color = Color(0xFF8E87A8), fontSize = 11.sp)
                                 }
                                 Text(mentionText(c.optString("body"), Color(0xFF7FA6F2)), color = Color.White, fontSize = 14.sp)
@@ -701,7 +701,7 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                             }
                             }
                             Row(Modifier.padding(start = 8.dp, top = 2.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                                Text("Responder", color = Color(0xFF8E87A8), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { startReply(c) }.padding(vertical = 4.dp))
+                                Text("Responder", color = Color(0xFF8E87A8), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable { startReply(c) }.padding(vertical = 4.dp))
                             }
                         }
                     }
@@ -711,14 +711,14 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                     val replies = all.orEmpty().filter { it.optString("parent_id") == c.optString("id") }
                     if (replies.isNotEmpty()) {
                         val open = c.optString("id") in expanded
-                        Text(if (open) "Ocultar respostas ▴" else "Ver ${replies.size} resposta" + (if (replies.size > 1) "s" else "") + " ▾", color = Color(0xFF8E87A8), fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                        Text(if (open) "Ocultar respostas ▴" else "Ver ${replies.size} resposta" + (if (replies.size > 1) "s" else "") + " ▾", color = Color(0xFF8E87A8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(start = 38.dp).clickable { expanded = if (open) expanded - c.optString("id") else expanded + c.optString("id") }.padding(vertical = 4.dp))
                         if (open) Column(Modifier.padding(start = 38.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { for (r in replies) Bubble(r, true) }
                     }
                 }
             }
             if (editing != null) Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Editando comentário", color = Color(0xFF7FA6F2), fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text("Editando comentário", color = Color(0xFF7FA6F2), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 QinblyCloseIcon(Color(0xFFB4B4BC), 18.dp, Modifier.clickable { editing = null; input = androidx.compose.ui.text.input.TextFieldValue("") })
             }
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

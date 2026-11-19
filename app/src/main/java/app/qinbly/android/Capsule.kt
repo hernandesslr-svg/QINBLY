@@ -77,7 +77,7 @@ private val CapBg = Color(0xFF171719)
 private val CapCard = Color(0xFF232325)
 private val CapField = Color(0xFF262628)
 private val CapAccent = Color(0xFF2F68E0)
-private val CapMuted = Color(0xFFA9B5C8)
+private val CapMuted = Color(0xFFBAC4D4)
 private val CapMonths = listOf("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro")
 
 private fun capSess(c: Context) = c.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
@@ -140,7 +140,7 @@ internal fun QinblyCapsuleInbox() {
     ) {
         QinblyIconOf(QinblyIcon.Mail, Color.White, 28.dp)
         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-            Text("Sua cápsula abriu", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text("Sua cápsula abriu", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
             Text((if (c.fromId == c.toId) "Guardada por você" else "De @${c.fromName}") + " em ${capShort(c.createdAt)}", color = Color(0xCCFFFFFF), fontSize = 12.sp)
         }
         Text("Abrir", color = Color(0xFF26215C), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(Color.White).padding(horizontal = 16.dp, vertical = 8.dp))
@@ -215,13 +215,13 @@ internal fun QinblyCapsuleHub(accent: Color, onDismiss: () -> Unit, onNotice: (S
         Column(Modifier.fillMaxSize().background(CapBg).statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable { onDismiss() }, contentAlignment = Alignment.Center) { QinblyCloseIcon(Color.White, 22.dp) }
-                Text("Cápsula do tempo", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(start = 14.dp))
+                Text("Cápsula do tempo", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, modifier = Modifier.padding(start = 14.dp))
             }
             Text("Guarde uma lembrança agora. Ela só abre na data que você escolher.", color = CapMuted, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 18.dp))
             Box(
                 Modifier.fillMaxWidth().padding(16.dp).clip(RoundedCornerShape(28.dp)).background(CapAccent).clickable { creating = true }.padding(vertical = 15.dp),
                 contentAlignment = Alignment.Center
-            ) { Text("＋  Nova cápsula", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
+            ) { Text("＋  Nova cápsula", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp) }
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("Fechadas (${closed.size})", "Abertas (${open.size})").forEachIndexed { i, label ->
                     Box(Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(if (tab == i) Color.White else CapField).clickable { tab = i }.padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
@@ -372,12 +372,12 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
             @Composable fun TopBar(title: String, closeIcon: String = "←") {
                 Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable(enabled = !saving) { back() }, contentAlignment = Alignment.Center) { if (closeIcon == "✕") QinblyCloseIcon(Color.White, 22.dp) else QinblyBackIcon(Color.White, 22.dp) }
-                    Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(start = 14.dp))
+                    Text(title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, modifier = Modifier.padding(start = 14.dp))
                 }
             }
             @Composable fun Primary(label: String, enabled: Boolean = true, modifier: Modifier = Modifier, onClick: () -> Unit) {
                 Box(modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(if (enabled) CapAccent else Color(0xFF2E2E30)).clickable(enabled = enabled) { onClick() }.padding(vertical = 15.dp), contentAlignment = Alignment.Center) {
-                    Text(label, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 }
             }
             when (step) {
@@ -472,7 +472,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                             val canBack = ym.isAfter(minYm); val canNext = ym.isBefore(maxYm)
                             Box(Modifier.size(42.dp).clip(CircleShape).background(CapField).clickable(enabled = canBack) { goTo(ym.minusMonths(1)) }, contentAlignment = Alignment.Center) { QinblyIconOf(QinblyIcon.KeyboardArrowLeft, if (canBack) Color.White else Color(0xFF5C5575), 28.dp) }
                             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(CapMonths[month - 1].replaceFirstChar { it.uppercase() }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                                Text(CapMonths[month - 1].replaceFirstChar { it.uppercase() }, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 22.sp)
                                 Row(Modifier.clip(RoundedCornerShape(14.dp)).clickable { yearOpen = !yearOpen }.padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Text("$year", color = Color(0xFF7FA6F2), fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
                                     Text(if (yearOpen) "  ▴" else "  ▾", color = Color(0xFF7FA6F2), fontSize = 15.sp)
@@ -495,7 +495,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                                         val ok = !d.isBefore(minDate)
                                         val sel = date == d
                                         Box(Modifier.weight(1f).aspectRatio(1f).padding(3.dp).clip(CircleShape).background(if (sel) CapAccent else Color.Transparent).clickable(enabled = ok) { date = d; yearOpen = false }, contentAlignment = Alignment.Center) {
-                                            Text("$dayNum", color = if (ok) Color.White else Color(0xFF5C5575), fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal, fontSize = 16.sp)
+                                            Text("$dayNum", color = if (ok) Color.White else Color(0xFF5C5575), fontWeight = if (sel) FontWeight.SemiBold else FontWeight.Normal, fontSize = 16.sp)
                                         }
                                     }
                                 }
@@ -504,7 +504,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                             if (yearOpen) {
                                 Column(Modifier.align(Alignment.TopCenter).width(130.dp).heightIn(max = 260.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF262628)).verticalScroll(rememberScrollState()).padding(vertical = 6.dp)) {
                                     for (y in minDate.year..minDate.year + 60) {
-                                        Text("$y", color = if (year == y) Color(0xFF26215C) else Color.White, fontWeight = if (year == y) FontWeight.Bold else FontWeight.Normal, fontSize = 17.sp, textAlign = TextAlign.Center,
+                                        Text("$y", color = if (year == y) Color(0xFF26215C) else Color.White, fontWeight = if (year == y) FontWeight.SemiBold else FontWeight.Normal, fontSize = 17.sp, textAlign = TextAlign.Center,
                                             modifier = Modifier.fillMaxWidth().background(if (year == y) Color.White else Color.Transparent)
                                                 .clickable { goTo(YearMonth.of(y, month)); yearOpen = false }.padding(vertical = 10.dp))
                                     }
@@ -521,7 +521,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                     Column(Modifier.weight(1f).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         @Composable fun Person(label: String, sub: String, selected: Boolean, initial: String, onClick: () -> Unit) {
                             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(if (selected) Color(0xFF3A2D6B) else CapCard).clickable { onClick() }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(42.dp).clip(CircleShape).background(CapField), contentAlignment = Alignment.Center) { if (initial == "🙂") QinblyIconOf(QinblyIcon.Person, Color.White, 22.dp) else Text(initial, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp) }
+                                Box(Modifier.size(42.dp).clip(CircleShape).background(CapField), contentAlignment = Alignment.Center) { if (initial == "🙂") QinblyIconOf(QinblyIcon.Person, Color.White, 22.dp) else Text(initial, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 17.sp) }
                                 Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                                     Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                                     if (sub.isNotBlank()) Text(sub, color = CapMuted, fontSize = 12.sp)
@@ -543,7 +543,7 @@ internal fun QinblyCapsuleCreate(onNotice: (String) -> Unit, onFinished: (viewLi
                 }
                 else -> Column(Modifier.fillMaxSize().statusBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Box(Modifier.size(96.dp).clip(CircleShape).background(Color(0xFF1D9E75)), contentAlignment = Alignment.Center) { QinblyCheckIcon(Color.White, 51.dp) }
-                    Text("Cápsula fechada", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 26.sp, modifier = Modifier.padding(top = 22.dp))
+                    Text("Cápsula fechada", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 26.sp, modifier = Modifier.padding(top = 22.dp))
                     Text("Ela só abre em ${date?.let { capLong(it) } ?: ""}.", color = CapMuted, fontSize = 16.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp, start = 32.dp, end = 32.dp))
                     Text(if (target == null) "Para você" else "Para @${target?.username}", color = CapMuted, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
                     Spacer(Modifier.height(32.dp))

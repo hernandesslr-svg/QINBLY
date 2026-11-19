@@ -118,7 +118,7 @@ internal fun QinblyStoryMenu(
                 Column(modifier.clip(RoundedCornerShape(18.dp)).background(card).clickable { onClick() }.padding(horizontal = 6.dp, vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
                     Text(title, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    Text(sub, color = Color(0xFFA9B5C8), fontSize = 10.sp, lineHeight = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Text(sub, color = Color(0xFFBAC4D4), fontSize = 10.sp, lineHeight = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
             @Composable fun Short(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, sub: String, tint: Color = Color.White, onClick: () -> Unit) {
@@ -127,9 +127,9 @@ internal fun QinblyStoryMenu(
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
                         Text(title, color = tint, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        Text(sub, color = Color(0xFFA9B5C8), fontSize = 10.sp)
+                        Text(sub, color = Color(0xFFBAC4D4), fontSize = 10.sp)
                     }
-                    Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = Color(0xFFA9B5C8), modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = Color(0xFFBAC4D4), modifier = Modifier.size(18.dp))
                 }
             }
             Column(Modifier.fillMaxSize().background(Color(0xFF171719)).statusBarsPadding().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 24.dp)) {
@@ -200,7 +200,7 @@ internal fun QinblyStoryMenu(
                         try { QinblyApi.saveNote(token, noteText); main.post { busy = false; onNotice("Nota compartilhada."); onChanged(); onDismiss() } }
                         catch (e: Exception) { main.post { busy = false; onNotice(e.message ?: "Não foi possível salvar a nota.") } }
                     }.start()
-                }) { Text("Compartilhar", color = accent, fontWeight = FontWeight.Bold) }
+                }) { Text("Compartilhar", color = accent, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = { TextButton(onClick = { step = "menu" }) { Text("Voltar") } }
         )
@@ -542,7 +542,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                                     Modifier.size(34.dp).clip(CircleShape).border(1.5.dp, Color.White, CircleShape).background(Color(0xFF2B3544)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text((v.displayName.ifBlank { v.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text((v.displayName.ifBlank { v.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                     if (v.avatarUrl.isNotBlank()) AsyncImage(model = v.avatarUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                                 }
                             }
@@ -592,7 +592,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                             }
                         }.start()
                     }.padding(vertical = 8.dp)) {
-                        Text(title, fontWeight = FontWeight.Bold)
+                        Text(title, fontWeight = FontWeight.SemiBold)
                         Text(sub, fontSize = 12.sp, color = Color(0xFF8E87A8))
                     }
                 }
@@ -753,7 +753,7 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
         @Composable fun Person(v: QinblyApi.StoryViewer, sub: String) {
             Row(Modifier.fillMaxWidth().clickable { onOpenProfile(v.username) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(46.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
-                    Text((v.displayName.ifBlank { v.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text((v.displayName.ifBlank { v.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
                     if (v.avatarUrl.isNotBlank()) AsyncImage(model = v.avatarUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 }
                 Spacer(Modifier.width(14.dp))
@@ -770,13 +770,13 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
             item {
                 Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(list.size.toString(), color = Color.White, fontSize = 52.sp, fontWeight = FontWeight.Bold, letterSpacing = (-2).sp)
+                        Text(list.size.toString(), color = Color.White, fontSize = 52.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-2).sp)
                         Text("viram", color = Color(0xFF8E87A8), fontSize = 14.sp)
                     }
                     Box(Modifier.width(1.dp).height(72.dp).background(line))
                     Column(Modifier.weight(1f).padding(start = 28.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(likedBy.size.toString(), color = Color.White, fontSize = 52.sp, fontWeight = FontWeight.Bold, letterSpacing = (-2).sp)
+                            Text(likedBy.size.toString(), color = Color.White, fontSize = 52.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-2).sp)
                             Spacer(Modifier.width(8.dp))
                             QinblyIconOf(QinblyIcon.Favorite, Color(0xFFE5484D), 24.dp)
                         }
@@ -787,7 +787,7 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
             }
             if (list.isNotEmpty()) item {
                 Column(Modifier.fillMaxWidth().padding(top = 18.dp)) {
-                    Text("Quando viram", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text("Quando viram", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                     Row(Modifier.fillMaxWidth().height(90.dp).padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
                         for (i in 0 until 12) {
                             val h = (4 + 76f * buckets[i] / maxB).dp
@@ -802,10 +802,10 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
                 }
                 androidx.compose.material3.HorizontalDivider(Modifier.padding(top = 14.dp), color = line)
             }
-            if (list.isEmpty()) item { Text("Ninguém viu ainda.", color = Color(0xFFA9B5C8), fontSize = 15.sp, modifier = Modifier.padding(vertical = 24.dp)) }
+            if (list.isEmpty()) item { Text("Ninguém viu ainda.", color = Color(0xFFBAC4D4), fontSize = 15.sp, modifier = Modifier.padding(vertical = 24.dp)) }
             else {
                 item { Row(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 4.dp)) {
-                    Text("Quem viu", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                    Text("Quem viu", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f))
                     Text("${list.size} pessoa" + if (list.size > 1) "s" else "", color = Color(0xFF6E6E78), fontSize = 13.sp)
                 } }
                 items(list, key = { it.username }) { v ->
@@ -835,7 +835,7 @@ internal fun QinblyHighlightsRow(username: String, prefs: android.content.Shared
             Column(Modifier.width(68.dp).clickable { openIndex = i }, horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(Modifier.size(64.dp).clip(CircleShape).background(Color(0xFF2A2438)).border(2.dp, QiblyTheme.border, CircleShape), contentAlignment = Alignment.Center) {
                     if (h.mediaType == "text" || h.mediaUrl.isBlank()) {
-                        Text("Aa", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("Aa", color = Color.White, fontWeight = FontWeight.SemiBold)
                     } else {
                         val request = remember(h.mediaUrl) {
                             coil.request.ImageRequest.Builder(context).data(h.mediaUrl).apply {
@@ -857,12 +857,12 @@ internal fun QinblyHighlightsRow(username: String, prefs: android.content.Shared
                 when {
                     current.mediaType == "video" && current.mediaUrl.isNotBlank() -> StoryVideo(current.mediaUrl, paused = confirmRemove, onEnded = { })
                     current.mediaType == "text" || current.mediaUrl.isBlank() -> Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-                        Text(qinblyDisplayCaption(current.caption).ifBlank { current.title }, color = Color.White, fontSize = 24.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold)
+                        Text(qinblyDisplayCaption(current.caption).ifBlank { current.title }, color = Color.White, fontSize = 24.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.SemiBold)
                     }
                     else -> AsyncImage(model = current.mediaUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
                 }
                 Row(Modifier.fillMaxWidth().statusBarsPadding().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(current.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f).padding(start = 8.dp))
+                    Text(current.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.weight(1f).padding(start = 8.dp))
                     if (mine) androidx.compose.material3.IconButton(onClick = { confirmRemove = true }) { Icon(Icons.Outlined.Delete, contentDescription = "Remover destaque", tint = Color.White) }
                     androidx.compose.material3.IconButton(onClick = { openIndex = -1 }) { Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.White) }
                 }

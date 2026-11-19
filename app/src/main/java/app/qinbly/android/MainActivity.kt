@@ -306,7 +306,7 @@ private val Night: Color get() = QiblyTheme.background
 private val Panel: Color get() = QiblyTheme.card
 private val Violet = QinblyBrand.Accent
 private val Pink = QinblyBrand.Accent
-private val Muted: Color get() = if (QiblyTheme.dark) Color(0xFFA9B5C8) else Color(0xFF333333)
+private val Muted: Color get() = if (QiblyTheme.dark) Color(0xFFBAC4D4) else Color(0xFF333333)
 
 
 
@@ -478,7 +478,7 @@ private fun QinblyVerificationCard(token: String, onNotice: (String) -> Unit) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             QinblyVerifiedBadge(20.dp)
-            Text("Selo de verificado", color = QiblyTheme.text, fontWeight = FontWeight.Bold)
+            Text("Selo de verificado", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold)
         }
         when {
             verified -> Text("Sua conta é verificada.", color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall)
@@ -750,7 +750,7 @@ private val QinblyTagTransformation = androidx.compose.ui.text.input.VisualTrans
     val styled = androidx.compose.ui.text.buildAnnotatedString {
         append(t.text)
         for (m in Regex("[#@][\\p{L}\\p{N}_.]{1,30}").findAll(t.text)) {
-            addStyle(androidx.compose.ui.text.SpanStyle(color = QinblyBrand.Mention, fontWeight = FontWeight.Bold), m.range.first, m.range.last + 1)
+            addStyle(androidx.compose.ui.text.SpanStyle(color = QinblyBrand.Mention, fontWeight = FontWeight.SemiBold), m.range.first, m.range.last + 1)
         }
     }
     androidx.compose.ui.text.input.TransformedText(styled, androidx.compose.ui.text.input.OffsetMapping.Identity)
@@ -858,7 +858,7 @@ private fun QinblyHashtagField(state: QinblyCaptionState, onChange: (String) -> 
                             .padding(start = 11.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(tag, color = QinblyBrand.Accent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text(tag, color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                         Icon(Icons.Default.Close, contentDescription = "Remover $tag", tint = Color.Gray,
                             modifier = Modifier.padding(start = 4.dp).size(16.dp).clickable { state.tags.remove(tag); onChange(state.full()) })
                     }
@@ -867,7 +867,7 @@ private fun QinblyHashtagField(state: QinblyCaptionState, onChange: (String) -> 
                     value = draft,
                     onValueChange = { v -> if (v.endsWith(" ") || v.endsWith(",") || v.endsWith("\n")) { add(v); draft = "" } else draft = v.take(31) },
                     singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(color = QinblyBrand.Accent, fontSize = 14.sp, fontWeight = FontWeight.Bold),
+                    textStyle = androidx.compose.ui.text.TextStyle(color = QinblyBrand.Accent, fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
                     cursorBrush = androidx.compose.ui.graphics.SolidColor(QinblyBrand.Accent),
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Done),
                     keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { add(draft); draft = "" }),
@@ -965,7 +965,7 @@ private fun QinblyRichText(
                 if (token.length < 3) continue
                 append(text.substring(last, match.range.first))
                 pushStringAnnotation(tag = token.take(1), annotation = token.drop(1))
-                pushStyle(androidx.compose.ui.text.SpanStyle(color = link, fontWeight = FontWeight.Bold))
+                pushStyle(androidx.compose.ui.text.SpanStyle(color = link, fontWeight = FontWeight.SemiBold))
                 append(token)
                 pop()
                 pop()
@@ -1034,7 +1034,7 @@ private fun QinblyTagHost(prefs: android.content.SharedPreferences, currentUsern
                 Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { QinblyTagNav.tag = null }) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.screenTextColor) }
                     Column(Modifier.weight(1f)) {
-                        Text("#$tag", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = QinblyBrand.Accent)
+                        Text("#$tag", fontWeight = FontWeight.SemiBold, fontSize = 22.sp, color = QinblyBrand.Accent)
                         if (!loading) Text(qinblyPostsLabel(posts.size), color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
                     }
                 }
@@ -1548,7 +1548,7 @@ private fun AccountSwitcherDialog(
     Row(verticalAlignment = Alignment.CenterVertically) {
      IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, "Voltar", tint = QiblyTheme.text) }
      Column(Modifier.weight(1f)) {
-      Text("Trocar de conta", fontSize = 25.sp, fontWeight = FontWeight.Bold, color = QiblyTheme.text)
+      Text("Trocar de conta", fontSize = 25.sp, fontWeight = FontWeight.SemiBold, color = QiblyTheme.text)
       Text("Selecione o perfil que deseja usar", fontSize = 14.sp, color = Color(0xFF667085))
      }
     }
@@ -1568,7 +1568,7 @@ private fun AccountSwitcherDialog(
         QiblyAccountAvatar(account.username, "", 66.dp) { if (!active) onSelect(account) }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-         Text(account.displayName.ifBlank { account.username }, color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 18.sp, maxLines = 1)
+         Text(account.displayName.ifBlank { account.username }, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, maxLines = 1)
          Text("@"+account.username.removePrefix("@"), color = Color(0xFF667085), fontSize = 14.sp)
          if (active) Text("● Conta atual", color = blue, fontSize = 12.sp, modifier = Modifier.padding(top = 5.dp))
         }
@@ -1621,6 +1621,9 @@ private fun AccountSwitcherDialog(
  }
 }
 
+/** Escala geral das letras do app (tipografia refinada: ~10% menor que o tamanho base). */
+internal const val QINBLY_TEXT_SCALE = 0.9f
+
 internal object QiblyTheme {
     var dark by androidx.compose.runtime.mutableStateOf(true)
     var largeText by androidx.compose.runtime.mutableStateOf(false)
@@ -1630,7 +1633,7 @@ internal object QiblyTheme {
     val card: Color get() = if (dark) Color(0xFF171719) else Color(0xFFF6F6F7)
     val soft: Color get() = if (dark) Color(0xFF262628) else Color(0xFFE4E6EB)
     val text: Color get() = if (dark) Color(0xFFF2F4F8) else Color.Black
-    val secondary: Color get() = if (dark) Color(0xFFA9B5C8) else Color(0xFF555555)
+    val secondary: Color get() = if (dark) Color(0xFFBAC4D4) else Color(0xFF555555)
     val border: Color get() = if (dark) Color(0xFF2E2E30) else Color(0xFFDADADD)
 }
 
@@ -2044,7 +2047,7 @@ private fun QinblyApp() {
     ) {
         val baseDensity = androidx.compose.ui.platform.LocalDensity.current
         androidx.compose.runtime.CompositionLocalProvider(
-            androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(baseDensity.density, baseDensity.fontScale * (if (QiblyTheme.largeText) 1.18f else 1f))
+            androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(baseDensity.density, baseDensity.fontScale * QINBLY_TEXT_SCALE * (if (QiblyTheme.largeText) 1.18f else 1f))
         ) {
         val keyboardOpen = WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
         LaunchedEffect(QinblyStoryRequest.pending) {
@@ -2117,7 +2120,7 @@ private fun QinblyApp() {
                                             if (unreadMessages > 99) "99+" else unreadMessages.toString(),
                                             color = Color.White,
                                             fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
+                                            fontWeight = FontWeight.SemiBold,
                                             maxLines = 1
                                         )
                                     }
@@ -2142,13 +2145,13 @@ private fun QinblyApp() {
                 } else if (!showSettings && !showEditProfile && !showEditProfilePhoto && !showNotifications && !showAuth) when (tab) {
                     0 -> Unit
                     1 -> if (messageRecipient.isBlank()) Box(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp).heightIn(min = 44.dp)) {
-                        Text("Mensagens", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Center))
+                        Text("Mensagens", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.align(Alignment.Center))
                         IconButton(onClick = { showSearchDialog = true }, modifier = Modifier.align(Alignment.CenterEnd)) {
                             Icon(Icons.Default.Search, contentDescription = "Pesquisar pessoas", tint = QiblyTheme.text)
                         }
                     }
                     3 -> Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Comunidades", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Text("Comunidades", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                         IconButton(onClick = { showSearchDialog = true }) { Icon(Icons.Default.Search, contentDescription = "Pesquisar lives e pessoas", tint = QiblyTheme.text) }
                         IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Menu, contentDescription = "Abrir menu e configurações", tint = QiblyTheme.text) }
                     }
@@ -2433,7 +2436,7 @@ private fun QinblyApp() {
                                 Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text)
                             }
                             Column(Modifier.weight(1f)) {
-                                Text(profileStat, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = QiblyTheme.text)
+                                Text(profileStat, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold, color = QiblyTheme.text)
                                 Text(
                                     if (profileStat == "Seguidores") "Pessoas que seguem você" else if (profileStat == "Seguindo") "Pessoas que você segue" else "Atividade do perfil",
                                     color = Muted,
@@ -2561,7 +2564,7 @@ private fun NotificationsPage(
     Column(Modifier.fillMaxSize().background(QiblyTheme.background).padding(horizontal = 16.dp, vertical = 10.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
-            Text("Notificações", color = QiblyTheme.text, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("Notificações", color = QiblyTheme.text, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
             if (unreadCount > 0) {
                 Text(
                     "Marcar como lidas", color = QinblyBrand.Accent, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold,
@@ -2615,10 +2618,10 @@ private fun NotificationsPage(
             ) {
                 Box(Modifier.size(52.dp).clip(CircleShape).background(QinblyBrand.Accent.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) { Icon(Icons.Default.PersonAdd, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(26.dp)) }
                 Column(Modifier.weight(1f)) {
-                    Text("Pedidos de seguir", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text("Pedidos de seguir", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                     Text(followRequests.first().let { it.displayName.ifBlank { it.username } } + if (followRequests.size > 1) " e mais ${followRequests.size - 1}" else "", color = QiblyTheme.secondary, fontSize = 13.sp, maxLines = 1)
                 }
-                Box(Modifier.clip(CircleShape).background(QinblyBrand.Accent).padding(horizontal = 9.dp, vertical = 3.dp)) { Text("${followRequests.size}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                Box(Modifier.clip(CircleShape).background(QinblyBrand.Accent).padding(horizontal = 9.dp, vertical = 3.dp)) { Text("${followRequests.size}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
             }
         }
         when {
@@ -2629,7 +2632,7 @@ private fun NotificationsPage(
                     Box(Modifier.size(84.dp).clip(CircleShape).background(QinblyBrand.Accent.copy(alpha = 0.10f)), contentAlignment = Alignment.Center) {
                         Icon(androidx.compose.material.icons.Icons.Outlined.NotificationsNone, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(42.dp))
                     }
-                    Text("Você está em dia!", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = QiblyTheme.text)
+                    Text("Você está em dia!", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = QiblyTheme.text)
                     Text("Novos seguidores, curtidas e comentários aparecerão aqui.", color = QiblyTheme.secondary, style = MaterialTheme.typography.bodyMedium)
                 }
             }
@@ -2666,7 +2669,7 @@ private fun NotificationsPage(
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                             Text(
                                 androidx.compose.ui.text.buildAnnotatedString {
-                                    pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold)); append(actor); pop()
+                                    pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.SemiBold)); append(actor); pop()
                                     append(" $description")
                                 },
                                 color = QiblyTheme.text, style = MaterialTheme.typography.bodyMedium, maxLines = 3
@@ -2686,18 +2689,18 @@ private fun NotificationsPage(
                 val olderShown = older
                 LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 20.dp)) {
                     if (freshShown.isNotEmpty()) {
-                        item(key = "h_new") { Text("Novas", color = QiblyTheme.text, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 4.dp, bottom = 6.dp)) }
+                        item(key = "h_new") { Text("Novas", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 4.dp, bottom = 6.dp)) }
                         items(freshShown, key = { it.id }) { NotificationRow(it) }
                     }
                     if (olderShown.isNotEmpty()) {
-                        item(key = "h_old") { Text(if (fresh.isEmpty()) "Recentes" else "Anteriores", color = QiblyTheme.text, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp, bottom = 6.dp)) }
+                        item(key = "h_old") { Text(if (fresh.isEmpty()) "Recentes" else "Anteriores", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp, bottom = 6.dp)) }
                         items(olderShown, key = { it.id }) { NotificationRow(it) }
                     }
                     if (selectedFilter == "Todas" && followBackList.isNotEmpty()) {
                         item(key = "fb_header") {
                             Column(Modifier.fillMaxWidth().padding(top = 16.dp)) {
                                 Box(Modifier.fillMaxWidth().padding(top = 6.dp).height(1.dp).background(RemoteAppearance.feedDividerColor.copy(alpha = 0.45f)))
-                                Text("Seguir de volta", color = QiblyTheme.text, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp))
+                                Text("Seguir de volta", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp))
                                 Text("Pessoas que seguem você e que você não segue ainda.", color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 2.dp, bottom = 4.dp))
                             }
                         }
@@ -2705,7 +2708,7 @@ private fun NotificationsPage(
                             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 QiblyAccountAvatar(person.username, person.avatarUrl, 46.dp) { onOpenProfile(person.username) }
                                 Column(Modifier.weight(1f).clickable { onOpenProfile(person.username) }) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) { Text(person.displayName.ifBlank { person.username }, color = QiblyTheme.text, fontWeight = FontWeight.Bold, maxLines = 1); if (person.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) } }
+                                    Row(verticalAlignment = Alignment.CenterVertically) { Text(person.displayName.ifBlank { person.username }, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, maxLines = 1); if (person.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) } }
                                     Text("@" + person.username, color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall, maxLines = 1)
                                 }
                                 QinblyFollowButton(
@@ -2746,7 +2749,7 @@ private fun QinblyUserRow(user: QinblyApi.UserSummary, prefs: android.content.Sh
                                     if (user.avatarUrl.isNotBlank()) {
                                         AsyncImage(model = user.avatarUrl, contentDescription = "Foto de perfil", modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                                     } else {
-                                        Text(user.displayName.ifBlank { user.username }.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
+                                        Text(user.displayName.ifBlank { user.username }.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.SemiBold)
                                     }
                                 }
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -2918,7 +2921,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                             else -> "Buscar pessoas"
                         },
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -2986,7 +2989,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Box(Modifier.size(48.dp).clip(CircleShape).background(QinblyBrand.AccentSoft), contentAlignment = Alignment.Center) {
-                                    Text("#", color = QinblyBrand.Accent, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                                    Text("#", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 22.sp)
                                 }
                                 Text("Ver publicações de #${typedTag.lowercase()}", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold)
                             }
@@ -3008,7 +3011,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                         if (history.isNotEmpty() && (filter == "Tudo" || filter == "Pessoas" || filter == "Publicações")) {
                             item {
                                 Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Recentes", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.weight(1f))
+                                    Text("Recentes", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.weight(1f))
                                     Text("Limpar tudo", color = QiblyTheme.text, fontSize = 13.sp,
                                         modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { history = emptyList(); prefs.edit().remove(historyKey).apply() }.padding(6.dp))
                                 }
@@ -3030,7 +3033,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                         if (filter == "Tudo") {
                             item { QinblyTopLives(topLives, liveSort, { liveSort = it }, prefs) }
                             if (hotTerms.isNotEmpty()) {
-                                item { Text("Pesquisas em alta", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.padding(top = 14.dp, bottom = 4.dp)) }
+                                item { Text("Pesquisas em alta", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.padding(top = 14.dp, bottom = 4.dp)) }
                                 items(hotTerms.size) { i ->
                                     val term = hotTerms[i]
                                     Row(
@@ -3043,7 +3046,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                                 }
                             }
                             item {
-                                Text("Explorar por assunto", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
+                                Text("Explorar por assunto", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
                                 androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     listOf("Música", "Comida", "Viagem", "Esportes", "Humor", "Moda").forEach { topic ->
                                         Text(topic, color = QiblyTheme.text, fontSize = 14.sp,
@@ -3055,13 +3058,13 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                         }
                         if ((filter == "Tudo" || filter == "Hashtags") && hotTags.isNotEmpty()) {
                             item { QinblySplit {
-                                Text("Hashtags mais usadas", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
+                                Text("Hashtags mais usadas", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
                                 hotTags.take(5).forEachIndexed { i, (tag, count) ->
                                     Row(
                                         Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { openTag(tag) }.padding(vertical = 9.dp),
                                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
-                                        Text("${i + 1}", modifier = Modifier.width(22.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 15.sp,
+                                        Text("${i + 1}", modifier = Modifier.width(22.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
                                             color = when (i) { 0 -> Color(0xFFF5B800); 1 -> Color(0xFFA8B0BC); 2 -> Color(0xFFC98A4B); else -> Muted })
                                         Text("#$tag", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f))
                                         Text(qinblyPostsLabel(count), color = Muted, fontSize = 13.sp)
@@ -3072,7 +3075,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                         if ((filter == "Tudo" || filter == "Hashtags") && myTags.isNotEmpty()) {
                             item { QinblySplit {
                                 Row(Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Suas hashtags", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.weight(1f))
+                                    Text("Suas hashtags", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.weight(1f))
                                     Text("Limpar", color = QiblyTheme.text, fontSize = 14.sp, modifier = Modifier.clickable { QinblyHashtagStore.clear(context); myTags = emptyList() }.padding(4.dp))
                                 }
                                 androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(0.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -3103,7 +3106,7 @@ private fun SearchUsersDialog(searchContext: String, onDismiss: () -> Unit, onOp
                             QinblyUserRow(user, prefs, openUser, onError)
                         }
                         if (filter != "Pessoas" && postResults.isNotEmpty()) {
-                            if (filter == "Tudo") item { Text("Publicações", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.padding(top = 14.dp, bottom = 6.dp)) }
+                            if (filter == "Tudo") item { Text("Publicações", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.padding(top = 14.dp, bottom = 6.dp)) }
                             items(postResults, key = { "p-" + it.id }) { post ->
                                 QinblySearchPostRow(post) { saveHistory(query); postOpen = post }
                             }
@@ -3156,7 +3159,7 @@ private fun QinblySearchPostRow(post: QinblyApi.PostSummary, onClick: () -> Unit
                 bg != null -> Text(post.caption, color = Color.White, fontSize = 10.sp, maxLines = 4, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(5.dp))
                 post.mediaType == "video" && post.mediaUrl.isNotBlank() -> QinblyVideoPoster(post.mediaUrl, Modifier.fillMaxSize(), ContentScale.Crop)
                 post.mediaUrl.isNotBlank() -> AsyncImage(model = post.mediaUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                else -> Text("Aa", color = Muted, fontWeight = FontWeight.Bold)
+                else -> Text("Aa", color = Muted, fontWeight = FontWeight.SemiBold)
             }
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -3970,7 +3973,7 @@ private fun QinblyFollowButton(
             Icon(if (following) Icons.Default.CheckCircle else Icons.Default.PersonAddAlt1, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
         }
-        Text(if (busy) "Aguarde..." else if (following) "Seguindo" else idleLabel, fontSize = if (large) 15.sp else 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        Text(if (busy) "Aguarde..." else if (following) "Seguindo" else idleLabel, fontSize = if (large) 15.sp else 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
     if (following) {
         OutlinedButton(
@@ -4162,7 +4165,7 @@ private fun QinblyPostViewer(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             QiblyAccountAvatar(post.username, post.avatarUrl, 52.dp, storyRing = true) { onOpenProfile(post.username) }
-                            Text("@" + post.username, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, fontSize = 17.sp)
+                            Text("@" + post.username, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1, fontSize = 17.sp)
                             if (post.username.isNotBlank() && !post.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
                                 QinblyFollowButton(
                                     following = QinblyEngagement.isFollowing(prefs, post.username, post.isFollowing),
@@ -4342,7 +4345,7 @@ private fun QinblyCommentsDialog(
                             "Comentários",
                             color = RemoteAppearance.commentTextColor,
                             fontSize = 25.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.clickable(enabled = showCommentEmojis) { showCommentEmojis = false }
                         )
                         Text("  ${comments.size}", color = RemoteAppearance.commentSecondaryTextColor, fontSize = 14.sp, modifier = Modifier.weight(1f))
@@ -4374,7 +4377,7 @@ private fun QinblyCommentsDialog(
                                     .heightIn(min = 110.dp).padding(horizontal = 18.dp, vertical = 18.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(qinblySplitCaption(post.caption).first.ifBlank { post.caption }, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 6,
+                                Text(qinblySplitCaption(post.caption).first.ifBlank { post.caption }, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 6,
                                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                             }
                         }
@@ -4391,7 +4394,7 @@ private fun QinblyCommentsDialog(
                                     Text(
                                         comment.displayName.ifBlank { comment.username }.ifBlank { "U" }.take(1).uppercase(),
                                         color = RemoteAppearance.commentTextColor,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.SemiBold,
                                         fontSize = 18.sp
                                     )
                                 }
@@ -4730,7 +4733,7 @@ private fun QinblyPostCard(
                     QiblyAccountAvatar(post.username, avatarUrl, 52.dp, storyRing = true) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }) {
-                        Row(verticalAlignment = Alignment.CenterVertically) { Text(post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name }, color = RemoteAppearance.feedTextColor, fontSize = 17.sp, fontWeight = if (nameFontStyle == "Elegante") FontWeight.Medium else FontWeight.Bold, fontFamily = nameFontFamily(nameFontStyle)); if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(16.dp) } }
+                        Row(verticalAlignment = Alignment.CenterVertically) { Text(post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name }, color = RemoteAppearance.feedTextColor, fontSize = 17.sp, fontWeight = if (nameFontStyle == "Elegante") FontWeight.Medium else FontWeight.SemiBold, fontFamily = nameFontFamily(nameFontStyle)); if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(16.dp) } }
                         LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor, suffix = if (post.authorCity.isNotBlank()) " · " + qinblyFullPlace(post.authorCity) else "")
                     }
                     QinblyCardFollow(post, prefs, onNotice)
@@ -4749,7 +4752,7 @@ private fun QinblyPostCard(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name },
-                                color = RemoteAppearance.feedTextColor, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                                color = RemoteAppearance.feedTextColor, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }
                             )
                             if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) }
@@ -4814,7 +4817,7 @@ private fun QinblyPostCard(
                         shape = RoundedCornerShape(18.dp)
                     ) {
                         Text(badge.orEmpty(), color = Color.White,
-                            fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp))
                     }
                     if (android.os.Build.VERSION.SDK_INT >= 31) {
@@ -4886,7 +4889,7 @@ private fun QinblyPostCard(
                         shape = RoundedCornerShape(18.dp)
                     ) {
                         Text(badge.orEmpty(), color = Color.White,
-                            fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp))
                     }
                     var videoBurst by remember(post.id) { mutableIntStateOf(0) }
@@ -4912,7 +4915,7 @@ private fun QinblyPostCard(
                     Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(9.dp)
                 ) {
-                    Text(post.caption, color = RemoteAppearance.feedTextColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(post.caption, color = RemoteAppearance.feedTextColor, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                     val totalVotes = post.pollVotes.sum()
                     val hasVoted = post.myPollVote >= 0
                     post.pollOptions.forEachIndexed { optionIndex, option ->
@@ -4970,7 +4973,7 @@ private fun QinblyPostCard(
                                 }
                             }
                             if (hasVoted) {
-                                Text("$percent%", color = Color(0xFF14233B), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text("$percent%", color = Color(0xFF14233B), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                                 if (selected) {
                                     Box(
                                         Modifier.size(28.dp).background(QinblyBrand.Accent, CircleShape),
@@ -4995,7 +4998,7 @@ private fun QinblyPostCard(
                             .heightIn(min = 200.dp).padding(horizontal = 22.dp, vertical = 26.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        QinblyRichText(cardText, Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold,
+                        QinblyRichText(cardText, Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.fillMaxWidth(), maxLines = 8,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center, linkColor = Color.White)
                     }
@@ -5253,7 +5256,7 @@ private fun QinblyPostStatsDialog(post: QinblyApi.PostSummary, prefs: android.co
                     listOf("Visualizações" to st.views, "Pessoas alcançadas" to st.viewers, "Curtidas" to st.likes, "Comentários" to st.comments, "Compartilhamentos" to st.reposts).forEach { (name, value) ->
                         Row(Modifier.fillMaxWidth()) {
                             Text(name, modifier = Modifier.weight(1f), color = QiblyTheme.text)
-                            Text(value.toString(), fontWeight = FontWeight.Bold, color = QiblyTheme.text)
+                            Text(value.toString(), fontWeight = FontWeight.SemiBold, color = QiblyTheme.text)
                         }
                     }
                     Text("Últimos 7 dias", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
@@ -5348,8 +5351,8 @@ private fun QinblyEditCaptionDialog(
                 IconButton(onClick = { if (!busy) onDismiss() }) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text)
                 }
-                Text("Editar publicação", color = QiblyTheme.text, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                Text(if (busy) "Salvando…" else "Salvar", color = QinblyBrand.Accent, fontWeight = FontWeight.Bold, fontSize = 15.sp,
+                Text("Editar publicação", color = QiblyTheme.text, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Text(if (busy) "Salvando…" else "Salvar", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
                     modifier = Modifier.clickable(enabled = !busy) { save() }.padding(horizontal = 14.dp, vertical = 8.dp))
             }
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -5383,7 +5386,7 @@ private fun QinblyEditCaptionDialog(
                     modifier = Modifier.fillMaxWidth().height(54.dp),
                     shape = RoundedCornerShape(28.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
-                ) { Text(if (busy) "Salvando…" else "Salvar alterações", fontWeight = FontWeight.Bold, color = Color.White) }
+                ) { Text(if (busy) "Salvando…" else "Salvar alterações", fontWeight = FontWeight.SemiBold, color = Color.White) }
                 Spacer(Modifier.height(34.dp))
                 Row(
                     Modifier.clip(RoundedCornerShape(12.dp)).clickable(enabled = !busy) { confirmDelete = true }.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -5470,7 +5473,7 @@ private fun QiblyShareDialog(
         ) {
             Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
-                Text("Enviar para", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = QiblyTheme.text)
+                Text("Enviar para", modifier = Modifier.weight(1f), fontWeight = FontWeight.SemiBold, fontSize = 20.sp, color = QiblyTheme.text)
             }
             Spacer(Modifier.height(6.dp))
             OutlinedTextField(
@@ -5662,7 +5665,7 @@ private fun QiblyShareCommunityDialog(
         ) {
             Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
-                Text("Comunidades", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = QiblyTheme.text)
+                Text("Comunidades", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = QiblyTheme.text)
             }
             Spacer(Modifier.height(6.dp))
             OutlinedTextField(
@@ -5767,8 +5770,8 @@ private fun QinblyHomeHeader(
                         .clickable { onCreateWith("text", "#perguntadodia ") }.padding(horizontal = 14.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text("PERGUNTA DO DIA", color = QinblyBrand.Lavender, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
-                    Text(question, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 17.sp, maxLines = 2,
+                    Text("PERGUNTA DO DIA", color = QinblyBrand.Lavender, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.8.sp)
+                    Text(question, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, maxLines = 2,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
                     Text("Responder com uma publicação  →", color = Color(0xFFB4B4BC), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
                 }
@@ -5780,11 +5783,11 @@ private fun QinblyHomeHeader(
                 ) {
                     Icon(androidx.compose.material.icons.Icons.Default.PhotoCamera, contentDescription = null, tint = QinblyBrand.Lavender, modifier = Modifier.size(26.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("DESAFIO DA SEMANA", color = QinblyBrand.Lavender, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, maxLines = 1)
-                        Text(challenge.second, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 2)
+                        Text("DESAFIO DA SEMANA", color = QinblyBrand.Lavender, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.8.sp, maxLines = 1)
+                        Text(challenge.second, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 2)
                         if (participants > 0) Text(if (participants == 1) "1 participante" else "$participants participantes", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp, maxLines = 1)
                     }
-                    Text("Participar", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp,
+                    Text("Participar", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp,
                         modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(QinblyBrand.Lavender)
                             .clickable { onCreateWith("camera", "#" + challenge.first + " ") }.padding(horizontal = 14.dp, vertical = 7.dp))
                 }
@@ -5829,7 +5832,7 @@ private fun QinblyLiveRow(position: Int, live: QinblyLive, sort: String, showPos
         }
         Box(Modifier.size(42.dp).border(2.dp, Color(0xFFE24B4A), CircleShape).padding(3.dp).clip(CircleShape).background(Color(0x1A808080)), contentAlignment = Alignment.Center) {
             if (live.avatarUrl.startsWith("http")) AsyncImage(model = live.avatarUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-            else Text((live.displayName.ifBlank { live.host }).take(2).uppercase(), color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            else Text((live.displayName.ifBlank { live.host }).take(2).uppercase(), color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
         }
         Column(Modifier.weight(1f)) {
             Text(qinblyHighlight(live.displayName.ifBlank { live.host }, highlight), color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, maxLines = 1)
@@ -5840,7 +5843,7 @@ private fun QinblyLiveRow(position: Int, live: QinblyLive, sort: String, showPos
                 Icon(if (sort == "Curtidas") Icons.Default.Favorite else QinblyCameraIcons.eye, contentDescription = null, tint = QiblyTheme.text, modifier = Modifier.size(15.dp))
                 Text(if (sort == "Curtidas") "${live.likes}" else "${live.viewers}", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
             }
-            Text("AO VIVO", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+            Text("AO VIVO", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0xFFE24B4A)).padding(horizontal = 6.dp, vertical = 1.dp))
         }
     }
@@ -5867,7 +5870,7 @@ private fun QinblyTopLives(
     val ranked = (if (sort == "Curtidas") lives.sortedByDescending { it.likes } else lives.sortedByDescending { it.viewers }).take(5)
     Column(Modifier.fillMaxWidth().padding(top = 14.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(title, color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.weight(1f))
+            Text(title, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.weight(1f))
             QinblySortChips(listOf("Telespectadores", "Curtidas"), sort, onSort)
         }
         if (ranked.isEmpty()) {
@@ -5896,7 +5899,7 @@ private fun QinblyAllLives(lives: List<QinblyLive>, onBack: () -> Unit, onOpen: 
     Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
         Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.feedTextColor) }
-            Text("Todas as lives ao vivo", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RemoteAppearance.feedTextColor)
+            Text("Todas as lives ao vivo", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = RemoteAppearance.feedTextColor)
         }
         Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             QinblySortChips(listOf("Telespectadores", "Curtidas", "Mais recentes"), sort) { sort = it }
@@ -5915,7 +5918,7 @@ private fun qinblyHighlight(text: String, query: String): androidx.compose.ui.te
     val at = if (q.isBlank()) -1 else text.indexOf(q, ignoreCase = true)
     return androidx.compose.ui.text.buildAnnotatedString {
         append(text)
-        if (at >= 0) addStyle(androidx.compose.ui.text.SpanStyle(color = QinblyBrand.Accent, fontWeight = FontWeight.Bold), at, at + q.length)
+        if (at >= 0) addStyle(androidx.compose.ui.text.SpanStyle(color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold), at, at + q.length)
     }
 }
 
@@ -6028,7 +6031,7 @@ private fun QinblyNearbyFeed(
             if (!loading && posts.isEmpty()) item(key = "nearby-empty") {
                 Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 36.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = RemoteAppearance.feedSecondaryTextColor, modifier = Modifier.size(36.dp))
-                    Text(if (failed) "Não foi possível carregar" else "Ainda não há publicações perto de você", color = RemoteAppearance.feedTextColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Text(if (failed) "Não foi possível carregar" else "Ainda não há publicações perto de você", color = RemoteAppearance.feedTextColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     Text(if (failed) "Puxe a tela para baixo para tentar de novo." else "Quando alguém da sua cidade ou das cidades próximas publicar, aparece aqui.", color = RemoteAppearance.feedSecondaryTextColor, style = MaterialTheme.typography.bodyMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
@@ -6048,9 +6051,9 @@ private fun QinblyNearbyPage(onNotice: (String) -> Unit, content: @Composable (D
         Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = QiblyTheme.secondary, modifier = Modifier.size(44.dp))
             Spacer(Modifier.height(12.dp))
-            Text("A localização está desligada", color = QiblyTheme.text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text("A localização está desligada", color = QiblyTheme.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             Text("Perto de mim, Mural e Mercado precisam saber onde você está. Você pode religar quando quiser (também em Configurações > Localização).", color = QiblyTheme.secondary, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(top = 8.dp, bottom = 18.dp))
-            Button(onClick = { locPrefs.edit().putBoolean("setting_location_enabled", true).apply(); locEnabled = true }, colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White), shape = RoundedCornerShape(24.dp)) { Text("Ligar a localização", fontWeight = FontWeight.Bold) }
+            Button(onClick = { locPrefs.edit().putBoolean("setting_location_enabled", true).apply(); locEnabled = true }, colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White), shape = RoundedCornerShape(24.dp)) { Text("Ligar a localização", fontWeight = FontWeight.SemiBold) }
         }
         return
     }
@@ -6120,7 +6123,7 @@ private fun QinblyNearbyPage(onNotice: (String) -> Unit, content: @Composable (D
         Spacer(Modifier.height(12.dp))
         when {
             !allowed -> {
-                Text("Veja o que está perto de você", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RemoteAppearance.feedTextColor)
+                Text("Veja o que está perto de você", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = RemoteAppearance.feedTextColor)
                 Spacer(Modifier.height(6.dp))
                 Text("Permita a localização para o ${QinblyBrand.Name} mostrar publicações e pessoas da sua região.", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 Spacer(Modifier.height(16.dp))
@@ -6135,14 +6138,14 @@ private fun QinblyNearbyPage(onNotice: (String) -> Unit, content: @Composable (D
                 Text("Procurando sua localização…", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
             }
             failed -> {
-                Text("Não foi possível obter sua localização", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = RemoteAppearance.feedTextColor)
+                Text("Não foi possível obter sua localização", fontWeight = FontWeight.SemiBold, fontSize = 17.sp, color = RemoteAppearance.feedTextColor)
                 Spacer(Modifier.height(6.dp))
                 Text("Ligue o GPS do aparelho e tente de novo.", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
                 Spacer(Modifier.height(16.dp))
                 OutlinedButton(onClick = { attempt++ }) { Text("Tentar de novo") }
             }
             else -> {
-                Text(if (place.isNotBlank()) "Você está em $place" else "Localização encontrada", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RemoteAppearance.feedTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Text(if (place.isNotBlank()) "Você está em $place" else "Localização encontrada", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = RemoteAppearance.feedTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 Spacer(Modifier.height(6.dp))
                 Text("Ainda não há publicações com localização por perto. Elas aparecerão aqui.", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 Spacer(Modifier.height(16.dp))
@@ -6180,7 +6183,7 @@ private fun QinblyLivesPage(lives: List<QinblyLive>, onNotice: (String) -> Unit)
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Lives", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = RemoteAppearance.feedTextColor, modifier = Modifier.weight(1f))
+                Text("Lives", fontWeight = FontWeight.SemiBold, fontSize = 20.sp, color = RemoteAppearance.feedTextColor, modifier = Modifier.weight(1f))
                 IconButton(onClick = { searchOpen = true }) { Icon(Icons.Default.Search, contentDescription = "Pesquisar lives", tint = RemoteAppearance.feedTextColor) }
             }
         }
@@ -6302,7 +6305,7 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
                     }
                 }
             }
-            "count" -> Text(if (count > 0) "$count" else "", color = Color.White, fontSize = 96.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Center))
+            "count" -> Text(if (count > 0) "$count" else "", color = Color.White, fontSize = 96.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.align(Alignment.Center))
             else -> {
                 if (paused) Column(Modifier.align(Alignment.Center).fillMaxWidth().background(Color(0xB30B0E14)).padding(vertical = 28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Live pausada", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 16.sp)
@@ -6435,7 +6438,7 @@ private fun QinblyLiveRoom(live: QinblyLive, onClose: () -> Unit, onNotice: (Str
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(QinblyIcon.Favorite, null, tint = Color(0xFFFF2D3F), modifier = Modifier.size(15.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("$likes", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text("$likes", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 }
             }
             Icon(QinblyIcon.Visibility, null, tint = Color.White, modifier = Modifier.size(15.dp))
@@ -6515,7 +6518,7 @@ private fun QinblyEmAltaHeader(period: String, onPeriod: (String) -> Unit, tags:
             }
         }
         if (tags.isNotEmpty()) {
-            Text("Assuntos em alta", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text("Assuntos em alta", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 tags.forEach { tag ->
                     Text("#$tag", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
@@ -6524,7 +6527,7 @@ private fun QinblyEmAltaHeader(period: String, onPeriod: (String) -> Unit, tags:
                 }
             }
         }
-        Text(if (empty) "Nada em alta neste período" else "Mais curtidas", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        Text(if (empty) "Nada em alta neste período" else "Mais curtidas", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
     }
 }
 
@@ -6540,7 +6543,7 @@ private fun QinblyRankRow(rank: Int, post: QinblyApi.PostSummary, onClick: () ->
             }
         }
         Column(Modifier.weight(1f)) {
-            Text(post.displayName.ifBlank { post.username }, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
+            Text(post.displayName.ifBlank { post.username }, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1)
             if (post.caption.isNotBlank()) Text(post.caption, color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically) { QinblyIconOf(QinblyIcon.Favorite, RemoteAppearance.feedSecondaryTextColor, 15.dp); Text(" ${QinblyEngagement.likeCount(post)}   ", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 13.sp); QinblyIconOf(QinblyIcon.ChatBubble, RemoteAppearance.feedSecondaryTextColor, 15.dp); Text(" ${post.comments}", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 13.sp) }
         }
@@ -6765,7 +6768,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                             .clip(CircleShape).background(QinblyBrand.Accent).padding(horizontal = if (unreadNotifications > 9) 5.dp else 0.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(if (unreadNotifications > 99) "99+" else unreadNotifications.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                        Text(if (unreadNotifications > 99) "99+" else unreadNotifications.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     }
                 }
             }
@@ -6802,7 +6805,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     }
                     // A última aba mostra o lugar de cada pessoa ("Vilhena, RO"); sem localização continua "Perto de mim".
                     val tabLabel = if (feedTab == "Perto de mim") qinblyShortPlace(prefs.getString("device_place", null).orEmpty().ifBlank { QinblyApi.myCity(prefs) }).ifBlank { feedTab } else feedTab
-                    Text(tabLabel, color = labelTint, fontSize = 10.sp, maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.padding(top = 2.dp))
+                    Text(tabLabel, color = labelTint, fontSize = 10.sp, maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, modifier = Modifier.padding(top = 2.dp))
                     Spacer(Modifier.height(5.dp))
                     Box(Modifier.fillMaxWidth().height(3.dp).background(if (selected) QinblyBrand.TextAccent else Color.Transparent))
                 }
@@ -6872,7 +6875,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Text("Ainda não há publicações", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("Ainda não há publicações", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
                             Text("Quando as pessoas publicarem, elas aparecerão aqui.", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
                             OutlinedButton(onClick = { refreshKey++ }) {
                                 Text("Atualizar feed")
@@ -6960,7 +6963,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                         Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
                     }
                     Spacer(Modifier.width(8.dp))
-                    Text("Áudio", color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.Bold)
+                    Text("Áudio", color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.SemiBold)
                 }
                 Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(
@@ -6977,14 +6980,14 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     Spacer(Modifier.width(16.dp))
                     Column {
                         Text(if (originalSound) "Som original" else sourcePost.audioTitle.ifBlank { "Áudio" },
-                            color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                            color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
                         Text(if (originalSound) "@${sourcePost.username}" else sourcePost.audioArtist.ifBlank { "@${sourcePost.username}" },
                             color = Color.LightGray, fontSize = 15.sp)
                         Text("${matchingPosts.size} publicação(ões) carregada(s) com este áudio",
                             color = Color.LightGray, fontSize = 12.sp)
                     }
                 }
-                Text("Publicações com este áudio", color = Color.White, fontWeight = FontWeight.Bold,
+                Text("Publicações com este áudio", color = Color.White, fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(start = 18.dp, top = 12.dp, bottom = 10.dp))
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -7010,7 +7013,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                             )
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("@${post.username}", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text("@${post.username}", color = Color.White, fontWeight = FontWeight.SemiBold)
                                 Text(post.caption, color = Color.LightGray, maxLines = 3)
                             }
                             Icon(Icons.Default.PlayCircle, contentDescription = "Assistir", tint = Color.White)
@@ -7027,7 +7030,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 AsyncImage(model = story.second.replace("w=240", "w=1200"), contentDescription = "Story de @" + story.first, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
                 Row(Modifier.align(Alignment.TopStart).fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                     AsyncImage(model = story.second, contentDescription = null, modifier = Modifier.size(42.dp).clip(CircleShape), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-                    Text("@" + story.first, modifier = Modifier.padding(start = 10.dp).weight(1f), color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("@" + story.first, modifier = Modifier.padding(start = 10.dp).weight(1f), color = Color.White, fontWeight = FontWeight.SemiBold)
                     IconButton(onClick = { selectedStory = null }) { Icon(Icons.Default.Close, contentDescription = "Fechar story", tint = Color.White) }
                 }
             }
@@ -7215,7 +7218,7 @@ private fun QinblyCreateCommunityDialog(onDismiss: () -> Unit, onCreate: (String
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().padding(horizontal = 16.dp)) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { if (!sending) onDismiss() }) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
-                    Text("Nova comunidade", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Text("Nova comunidade", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
                 }
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
                     Spacer(Modifier.height(14.dp))
@@ -7230,14 +7233,14 @@ private fun QinblyCreateCommunityDialog(onDismiss: () -> Unit, onCreate: (String
                         }
                     }
                     Text(if (photoBitmap == null) "Adicionar foto (opcional)" else "Trocar foto", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp, bottom = 14.dp))
-                    Text("NOME", color = QiblyTheme.secondary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp))
+                    Text("NOME", color = QiblyTheme.secondary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp))
                     OutlinedTextField(
                         value = name, onValueChange = { name = it.take(40) }, singleLine = true,
                         placeholder = { Text("Ex.: Amantes de Música", color = QiblyTheme.secondary) },
                         supportingText = { Text("${name.length}/40", modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.End) },
                         shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()
                     )
-                    Text("DESCRIÇÃO", color = QiblyTheme.secondary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp))
+                    Text("DESCRIÇÃO", color = QiblyTheme.secondary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp))
                     OutlinedTextField(
                         value = description, onValueChange = { description = it.take(300) }, minLines = 3, maxLines = 5,
                         placeholder = { Text("Sobre o que é a comunidade?", color = QiblyTheme.secondary) },
@@ -7257,7 +7260,7 @@ private fun QinblyCreateCommunityDialog(onDismiss: () -> Unit, onCreate: (String
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent),
                     modifier = Modifier.fillMaxWidth().height(52.dp).padding(bottom = 0.dp)
-                ) { Text(if (sending) "Criando..." else "Criar comunidade", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
+                ) { Text(if (sending) "Criando..." else "Criar comunidade", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp) }
                 Spacer(Modifier.height(12.dp))
             }
         }
@@ -7286,7 +7289,7 @@ private fun qinblyNameColor(username: String): Color {
 @Composable
 private fun QinblyCommunityAvatar(name: String, diameter: Dp) {
     Box(Modifier.size(diameter).clip(CircleShape).background(QinblyBrand.Accent), contentAlignment = Alignment.Center) {
-        Text(name.trim().take(1).uppercase().ifBlank { "Q" }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = (diameter.value * 0.42f).sp)
+        Text(name.trim().take(1).uppercase().ifBlank { "Q" }, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = (diameter.value * 0.42f).sp)
     }
 }
 
@@ -7482,13 +7485,13 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                 Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = { showInfo = false }) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
-                        Text("Dados da comunidade", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text("Dados da comunidade", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
                     }
                     androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
                         item {
                             Column(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 QinblyCommunityAvatar(c.name, 96.dp)
-                                Text(c.name, color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.padding(top = 10.dp))
+                                Text(c.name, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, modifier = Modifier.padding(top = 10.dp))
                                 Text("Comunidade · " + (if (c.members == 1) "1 membro" else "${c.members} membros"), color = QiblyTheme.secondary, fontSize = 13.sp)
                                 Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
                                     listOf(
@@ -7512,11 +7515,11 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                             }
                         }
                         if (c.description.isNotBlank()) item {
-                            Text("DESCRIÇÃO", color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 4.dp))
+                            Text("DESCRIÇÃO", color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 4.dp))
                             Text(c.description, color = QiblyTheme.text, modifier = Modifier.padding(horizontal = 16.dp))
                         }
                         item {
-                            Text((if (c.members == 1) "1 MEMBRO" else "${c.members} MEMBROS"), color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 16.dp, top = 18.dp, bottom = 4.dp))
+                            Text((if (c.members == 1) "1 MEMBRO" else "${c.members} MEMBROS"), color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 16.dp, top = 18.dp, bottom = 4.dp))
                         }
                         val ownerFirst = (if (c.ownerUsername.isNotBlank()) listOf(c.ownerUsername) else emptyList()) +
                             posts.map { it.username }.filter { it != c.ownerUsername }.distinct()
@@ -7525,7 +7528,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                             Row(Modifier.fillMaxWidth().clickable { QinblyTagNav.profile = u }.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                 QiblyAccountAvatar(u, p?.avatarUrl ?: "", 40.dp) { QinblyTagNav.profile = u }
                                 Text(p?.displayName?.ifBlank { u } ?: "@$u", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp).weight(1f))
-                                if (u == c.ownerUsername) Text("Dono", color = QinblyBrand.Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.border(1.dp, QinblyBrand.Accent, RoundedCornerShape(8.dp)).padding(horizontal = 7.dp, vertical = 2.dp))
+                                if (u == c.ownerUsername) Text("Dono", color = QinblyBrand.Accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.border(1.dp, QinblyBrand.Accent, RoundedCornerShape(8.dp)).padding(horizontal = 7.dp, vertical = 2.dp))
                             }
                         }
                         item {
@@ -7551,7 +7554,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                         Row(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable { showInfo = true }.padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                             QinblyCommunityAvatar(c.name, 40.dp)
                             Column(Modifier.padding(start = 10.dp)) {
-                                Text(c.name, color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                Text(c.name, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                                 Text(if (c.members == 1) "1 membro" else "${c.members} membros", color = QiblyTheme.secondary, fontSize = 12.sp)
                             }
                         }
@@ -7596,7 +7599,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                                                 .background(if (p.stickerUrl.isNotBlank() || QinblyStickers.idOf(p.body) != null) Color.Transparent else if (mine) QinblyBrand.Accent.copy(alpha = if (QiblyTheme.dark) 0.35f else 0.22f) else QiblyTheme.card)
                                                 .padding(horizontal = 10.dp, vertical = 6.dp)
                                         ) {
-                                            if (!mine) Text(p.displayName.ifBlank { p.username } + if (p.username == c.ownerUsername) " · dono" else "", color = qinblyNameColor(p.username), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                            if (!mine) Text(p.displayName.ifBlank { p.username } + if (p.username == c.ownerUsername) " · dono" else "", color = qinblyNameColor(p.username), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                                             val stickerId = QinblyStickers.idOf(p.body)
                                             if (p.poll != null) QinblyChatPollBubble(p.poll, QinblyBrand.Accent, QiblyTheme.text) { index -> voteC(p.poll, index) }
                                             else if (p.stickerUrl.isNotBlank()) AsyncImage(model = p.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.size(120.dp))
@@ -7704,7 +7707,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                         }
                     } else {
                         Button(onClick = { toggleJoin(c) }, shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent), modifier = Modifier.fillMaxWidth().padding(12.dp).height(50.dp)) {
-                            Text("Entrar na comunidade", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text("Entrar na comunidade", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                         }
                     }
                 }
@@ -8100,7 +8103,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             Column(Modifier.fillMaxWidth().padding(top = 10.dp)) {
                 Box(Modifier.fillMaxWidth().padding(top = 6.dp).height(1.dp).background(RemoteAppearance.feedDividerColor.copy(alpha = 0.45f)))
                 Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Pessoas para seguir", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, fontSize = 17.sp, modifier = Modifier.weight(1f))
+                    Text("Pessoas para seguir", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.weight(1f))
                     if (suggestedPeople.size > 5) Text(if (moreSuggestions) "Ver menos" else "Ver mais", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable { moreSuggestions = !moreSuggestions }.padding(6.dp))
                 }
             }
@@ -8109,7 +8112,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 QiblyAccountAvatar(person.username, person.avatarUrl, 46.dp) { onOpenProfile(person.username) }
                 Column(Modifier.weight(1f).clickable { onOpenProfile(person.username) }) {
-                    Row(verticalAlignment = Alignment.CenterVertically) { Text(person.displayName.ifBlank { person.username }, color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, maxLines = 1); if (person.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) } }
+                    Row(verticalAlignment = Alignment.CenterVertically) { Text(person.displayName.ifBlank { person.username }, color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold, maxLines = 1); if (person.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) } }
                     Text("@" + person.username, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall, maxLines = 1)
                 }
                 QinblyFollowButton(
@@ -8218,7 +8221,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                             if (unreadTotal > 0) {
                                 Spacer(Modifier.width(6.dp))
                                 Box(Modifier.size(20.dp).clip(CircleShape).background(if (selected) Color.White else QinblyBrand.Accent), contentAlignment = Alignment.Center) {
-                                    Text(if (unreadTotal > 9) "9+" else unreadTotal.toString(), color = if (selected) QinblyBrand.Accent else Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text(if (unreadTotal > 9) "9+" else unreadTotal.toString(), color = if (selected) QinblyBrand.Accent else Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
@@ -8253,10 +8256,10 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                     Box(Modifier.weight(1f)) {
-                                        Text(conversation.displayName.ifBlank { conversation.username }, color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
+                                        Text(conversation.displayName.ifBlank { conversation.username }, color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
                                     }
                                     Spacer(Modifier.width(8.dp))
-                                    Text(if (conversation.createdAt.isBlank()) "Agora" else postRelativeTime(conversation.createdAt, System.currentTimeMillis()), color = if (unread) QinblyBrand.Accent else RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall, fontWeight = if (unread) FontWeight.Bold else FontWeight.Normal)
+                                    Text(if (conversation.createdAt.isBlank()) "Agora" else postRelativeTime(conversation.createdAt, System.currentTimeMillis()), color = if (unread) QinblyBrand.Accent else RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall, fontWeight = if (unread) FontWeight.SemiBold else FontWeight.Normal)
                                 }
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                     Box(Modifier.weight(1f)) {
@@ -8271,7 +8274,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                                             .padding(horizontal = 6.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(if (conversation.unreadCount > 99) "99+" else conversation.unreadCount.toString(), color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+                                        Text(if (conversation.unreadCount > 99) "99+" else conversation.unreadCount.toString(), color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
                                     }
                                 }
                             }
@@ -8284,7 +8287,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         Box(Modifier.size(74.dp).clip(CircleShape).background(QinblyBrand.Accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
                             Icon(Icons.Default.ChatBubbleOutline, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(34.dp))
                         }
-                        Text(if (selectedFilter == "Não lidas") "Tudo em dia!" else "Suas conversas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(if (selectedFilter == "Não lidas") "Tudo em dia!" else "Suas conversas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                         Text(if (selectedFilter == "Não lidas") "Você não tem mensagens não lidas." else "Pesquise pessoas e descubra contas para iniciar uma conversa.", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         if (selectedFilter != "Não lidas") Button(onClick = onSearch, colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent), shape = RoundedCornerShape(14.dp)) {
                             Icon(Icons.Default.Search, contentDescription = null)
@@ -8315,13 +8318,13 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                             )
                         } else {
                             Box(Modifier.fillMaxSize().clip(CircleShape).background(RemoteAppearance.screenBackgroundColor), contentAlignment = Alignment.Center) {
-                                Text(recipientUsername.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
+                                Text(recipientUsername.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
                 }
                 Column(Modifier.weight(1f).clickable { showSharedMedia = true }) {
-                    Text(recipientUsername.removePrefix("@"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(recipientUsername.removePrefix("@"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     Text("Mídia, links e documentos", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall)
                 }
                 IconButton(onClick = { conversationSearch = !conversationSearch; if (!conversationSearch) messageSearch = "" }) {
@@ -8482,7 +8485,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                                             Row(Modifier.padding(top = 8.dp, start = 4.dp).clickable(onClick = openShared), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                                                 Box(Modifier.size(26.dp).clip(CircleShape).background(QiblyTheme.soft), contentAlignment = Alignment.Center) {
                                                     if (sp.avatarUrl.isNotBlank()) AsyncImage(model = sp.avatarUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-                                                    else Text(sp.displayName.ifBlank { sp.username }.take(1).uppercase(), color = QiblyTheme.text, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                                    else Text(sp.displayName.ifBlank { sp.username }.take(1).uppercase(), color = QiblyTheme.text, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
                                                 }
                                                 Text(sp.displayName.ifBlank { sp.username }, color = QiblyTheme.text, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                                                 if (sp.verified) QinblyVerifiedBadge(14.dp)
@@ -9050,8 +9053,8 @@ private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolea
                 else Icon(Icons.Default.Person, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(20.dp))
             }
             Spacer(Modifier.width(8.dp))
-            Text(label, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-        } else Text(label, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            Text(label, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        } else Text(label, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             modifier = Modifier.align(Alignment.BottomCenter).padding(start = 4.dp, end = 4.dp, bottom = 12.dp))
     }
 }
@@ -9277,7 +9280,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
         Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+            Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             if (profileVerified) QinblyVerifiedBadge(22.dp)
         }
         Text(if (username.isBlank()) "Entre ou crie sua conta" else "@${username.removePrefix("@")}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 24.dp))
@@ -9355,7 +9358,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Box(Modifier.fillMaxWidth().padding(22.dp), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(Icons.Default.BookmarkBorder, contentDescription = null, tint = Violet, modifier = Modifier.size(38.dp))
-                        Text("Nenhuma publicação salva", fontWeight = FontWeight.Bold, color = RemoteAppearance.screenTextColor)
+                        Text("Nenhuma publicação salva", fontWeight = FontWeight.SemiBold, color = RemoteAppearance.screenTextColor)
                         Text("Toque no marcador de uma publicação para guardá-la aqui. Só você vê os seus salvos.", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
                     }
                 }
@@ -9386,7 +9389,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             Box(Modifier.fillMaxWidth().padding(22.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Default.GridView, contentDescription = null, tint = Violet, modifier = Modifier.size(38.dp))
-                    Text("Você ainda não publicou nada", fontWeight = FontWeight.Bold, color = RemoteAppearance.screenTextColor)
+                    Text("Você ainda não publicou nada", fontWeight = FontWeight.SemiBold, color = RemoteAppearance.screenTextColor)
                     Text("Compartilhe sua primeira publicação com a comunidade.", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
                 }
             }
@@ -9426,7 +9429,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             else {
                                 val tileBg = if (post.mediaType == "text") qinblyTextBgBrush(post.textBg) else null
                                 if (tileBg != null) Box(Modifier.fillMaxSize().background(tileBg), contentAlignment = Alignment.Center) {
-                                    Text(qinblySplitCaption(post.caption).first.ifBlank { post.caption }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(8.dp), maxLines = 5, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                    Text(qinblySplitCaption(post.caption).first.ifBlank { post.caption }, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(8.dp), maxLines = 5, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                                 }
                                 else Text(post.caption.ifBlank { QinblyBrand.Name }, color = RemoteAppearance.screenTextColor, modifier = Modifier.align(Alignment.Center).padding(8.dp), maxLines = 4)
                             }
@@ -9809,7 +9812,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     Column(Modifier.fillMaxSize().background(Night).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack, enabled = !loading) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
-            Text("Editar perfil", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = QiblyTheme.text)
+            Text("Editar perfil", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = QiblyTheme.text)
             Button(
                 onClick = saveProfile,
                 enabled = !loading,
@@ -9817,7 +9820,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                 colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 9.dp)
             ) {
-                if (loading) CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp) else Text("Salvar", color = Color.White, fontWeight = FontWeight.Bold)
+                if (loading) CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp) else Text("Salvar", color = Color.White, fontWeight = FontWeight.SemiBold)
             }
         }
 
@@ -9837,7 +9840,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
             Text("Alterar foto", color = QinblyBrand.Accent, fontWeight = FontWeight.Medium, fontSize = 14.sp,
                 modifier = Modifier.fillMaxWidth().clickable { QinblyKeep.state("editphoto.flag", false).value = true; onEditProfilePhoto() }, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
 
-            Text("SOBRE VOCÊ", color = Muted, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            Text("SOBRE VOCÊ", color = Muted, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
 
             @Composable
             fun editCard(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String, hint: String, onValue: (String) -> Unit, singleLine: Boolean = true, max: Int = 80, centered: Boolean = false, sanitize: (String) -> String = { it }) {
@@ -9894,7 +9897,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                 if (countryMenuExpanded) QinblyCountrySheet(countryOptions, selectedCountry, { selectedCountry = it; countryMenuExpanded = false }, { countryMenuExpanded = false })
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("CATEGORIAS", color = Muted, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
+                Text("CATEGORIAS", color = Muted, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
                 Text("${selectedCategories.size} de 5", color = QinblyBrand.Accent, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.labelMedium)
             }
             Text("Escolha até 5 categorias para aparecerem abaixo do seu nome.", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
@@ -10140,7 +10143,7 @@ private fun EditProfilePhotoPage(onBack: () -> Unit, onSaved: () -> Unit, onNoti
                 colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
             ) {
                 if (loading) CircularProgressIndicator(Modifier.size(18.dp), color = QiblyTheme.text, strokeWidth = 2.dp)
-                else Text("Salvar", fontWeight = FontWeight.Bold)
+                else Text("Salvar", fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -10292,7 +10295,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                 Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.screenTextColor)
             }
             Column(Modifier.weight(1f)) {
-                Text(title, fontSize = 19.sp, fontWeight = FontWeight.Bold, color = RemoteAppearance.screenTextColor)
+                Text(title, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, color = RemoteAppearance.screenTextColor)
                 Text(if (section == "home") "Gerencie sua conta e sua experiência" else "Personalize sua experiência no ${QinblyBrand.Name}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
             }
         }
@@ -10312,7 +10315,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
         }
         LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(2.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
             if (section == "home") {
-                item { Text("CONFIGURAÇÕES", color = Color(0xFF8A9BAB), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold) }
+                item { Text("CONFIGURAÇÕES", color = Color(0xFF8A9BAB), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold) }
                 val categories = listOf(
                     Triple("market", "Mercado e avisos", "Vendas, doações, achados e avisos do bairro"),
                     Triple("account", "Conta", "Senha, e-mail, aparelhos e exclusão"),
@@ -10367,10 +10370,10 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                         Surface(color = Panel, shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Icon(Icons.Default.Person, contentDescription = null, tint = Violet, modifier = Modifier.size(42.dp))
-                                Text("Faça login para acessar mais opções", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold)
+                                Text("Faça login para acessar mais opções", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold)
                                 Text("Entre na sua conta para personalizar sua experiência e salvar suas preferências.", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
                                 Button(onClick = onAuth, colors = ButtonDefaults.buttonColors(containerColor = Pink), modifier = Modifier.fillMaxWidth()) {
-                                    Text("Login", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold)
+                                    Text("Login", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
@@ -10684,7 +10687,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.screenTextColor) }
             Spacer(Modifier.weight(1f))
-            Text("@$publicUsername", color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text("@$publicUsername", color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
             Spacer(Modifier.weight(1f))
             IconButton(onClick = { showMoreOptions = true }) { Icon(Icons.Default.MoreHoriz, contentDescription = "Opções deste perfil", tint = RemoteAppearance.screenTextColor) }
         }
@@ -10700,7 +10703,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Text(displayName, textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(displayName, textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenTextColor, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
             if (user.optBoolean("verified")) { Spacer(Modifier.width(6.dp)); QinblyVerifiedBadge(22.dp) }
         }
         Text("@$publicUsername", modifier = Modifier.fillMaxWidth().padding(top = 2.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
@@ -10729,7 +10732,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
         QinblyDialog(onDismissRequest = { connectionListType = "" }) {
             Surface(shape = RoundedCornerShape(20.dp), color = QiblyTheme.card) {
                 Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                    Text(if (connectionListType == "following") "Seguindo" else "Seguidores", fontWeight = FontWeight.Bold, color = QiblyTheme.text)
+                    Text(if (connectionListType == "following") "Seguindo" else "Seguidores", fontWeight = FontWeight.SemiBold, color = QiblyTheme.text)
                     Spacer(Modifier.height(12.dp))
                     if (connectionListLoading) androidx.compose.material3.CircularProgressIndicator()
                     else if (connectionListUsers.isEmpty()) Text("Nenhuma pessoa encontrada.", color = Color.Gray)
@@ -10785,7 +10788,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                         "Salvos" -> Icons.Default.BookmarkBorder
                         else -> Icons.Default.GridView
                     }, contentDescription = section, tint = if (selectedTab == section) QinblyBrand.Accent else RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(25.dp))
-                    Text(section, color = if (selectedTab == section) QinblyBrand.Accent else RemoteAppearance.screenTextColor, fontWeight = if (selectedTab == section) FontWeight.Bold else FontWeight.Normal, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                    Text(section, color = if (selectedTab == section) QinblyBrand.Accent else RemoteAppearance.screenTextColor, fontWeight = if (selectedTab == section) FontWeight.SemiBold else FontWeight.Normal, style = MaterialTheme.typography.labelSmall, maxLines = 1)
                     Box(Modifier.fillMaxWidth().height(3.dp).background(if (selectedTab == section) Brush.horizontalGradient(listOf(QinblyBrand.Accent, QinblyBrand.Accent)) else Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))))
                 }
             }
@@ -10809,7 +10812,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Outlined.Lock, contentDescription = null, tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(38.dp))
                     Spacer(Modifier.height(8.dp))
-                    Text("Publicações privadas", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    Text("Publicações privadas", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(4.dp))
                     Text("Siga esta conta para ver as publicações e stories.", color = RemoteAppearance.screenSecondaryTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
                 }
@@ -10819,7 +10822,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.GridView, contentDescription = null, tint = Violet, modifier = Modifier.size(34.dp))
                     Spacer(Modifier.height(8.dp))
-                    Text("Nenhuma publicação pública encontrada nesta conta", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.Bold)
+                    Text("Nenhuma publicação pública encontrada nesta conta", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold)
                 }
             }
         } else {
@@ -10901,7 +10904,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
         shape = RoundedCornerShape(28.dp),
         containerColor = QiblyTheme.card,
             onDismissRequest = { showMoreOptions = false },
-            title = { Text(displayName, fontWeight = FontWeight.Bold) },
+            title = { Text(displayName, fontWeight = FontWeight.SemiBold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     TextButton(onClick = {
@@ -10959,7 +10962,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
 @Composable
 private fun ProfileStat(label: String, count: String, icon: ImageVector, onClick: () -> Unit) {
     Column(Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(count, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = RemoteAppearance.screenTextColor)
+        Text(count, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = RemoteAppearance.screenTextColor)
         Text(label, style = MaterialTheme.typography.labelMedium, color = RemoteAppearance.screenSecondaryTextColor)
     }
 }
@@ -11231,7 +11234,7 @@ private fun QinblyFilterBubble(label: String, selected: Boolean, onClick: () -> 
             content = content
         )
         Text(label, color = Color.White, fontSize = 9.sp, maxLines = 1,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.SemiBold,
             style = MaterialTheme.typography.labelSmall.copy(shadow = androidx.compose.ui.graphics.Shadow(Color(0xCC000000), blurRadius = 4f)))
     }
 }
@@ -11248,8 +11251,8 @@ private fun QinblyCameraSheetRow(icon: androidx.compose.ui.graphics.vector.Image
             Icon(icon, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(24.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text(subtitle, color = Color(0xFFA9B5C8), fontSize = 11.sp)
+            Text(title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+            Text(subtitle, color = Color(0xFFBAC4D4), fontSize = 11.sp)
         }
     }
 }
@@ -11571,7 +11574,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         modifier = Modifier.fillMaxWidth().focusRequester(focus),
                         decorationBox = { inner ->
                             Box(contentAlignment = Alignment.Center) {
-                                if (editorText.isEmpty()) Text("Digite aqui", color = Color(0x99FFFFFF), fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                                if (editorText.isEmpty()) Text("Digite aqui", color = Color(0x99FFFFFF), fontSize = 28.sp, fontWeight = FontWeight.SemiBold)
                                 inner()
                             }
                         }
@@ -11583,7 +11586,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     qinblyTextWords(editorText), editorWordColors, editorSelWord, { editorSelWord = it }
                 )
             }
-            Text("Pronto", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp,
+            Text("Pronto", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 17.sp,
                 modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(16.dp).clickable { keyboard?.hide(); onDone() })
         }
     }
@@ -12086,7 +12089,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     IconButton(onClick = onCameraCancelled, modifier = Modifier.align(Alignment.CenterStart)) {
                         Icon(Icons.Default.Close, contentDescription = "Fechar", tint = QiblyTheme.text)
                     }
-                    Text("Nova publicação", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.align(Alignment.Center))
+                    Text("Nova publicação", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, modifier = Modifier.align(Alignment.Center))
                 }
                 Column(
                     Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
@@ -12107,7 +12110,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         if (ownUsername.isNotBlank()) QiblyAccountAvatar(ownUsername, "", 44.dp) { }
                         else Icon(Icons.Default.Person, contentDescription = null, tint = Color.DarkGray, modifier = Modifier.size(44.dp))
                         Column {
-                            Text(if (ownUsername.isBlank()) "Meu perfil" else "@$ownUsername", fontWeight = FontWeight.Bold, color = QiblyTheme.text)
+                            Text(if (ownUsername.isBlank()) "Meu perfil" else "@$ownUsername", fontWeight = FontWeight.SemiBold, color = QiblyTheme.text)
                             Text(if (postVisibility == "Só eu") "Só eu" else "Todos podem ver", color = Muted, style = MaterialTheme.typography.labelMedium)
                         }
                     }
@@ -12133,7 +12136,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 .border(if (textBg == 0) 3.dp else 1.dp, if (textBg == 0) QinblyBrand.Accent else QiblyTheme.border, CircleShape)
                                 .clickable { textBg = 0 },
                             contentAlignment = Alignment.Center
-                        ) { Text("Aa", color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                        ) { Text("Aa", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
                         for (i in 1..QinblyTextBgPairs.size) {
                             Box(
                                 Modifier.size(40.dp).clip(CircleShape).background(qinblyTextBgBrush(i)!!)
@@ -12196,7 +12199,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(28.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
-                    ) { Text(if (publishing) "Publicando…" else if (scheduledAtMs > 0L) "Agendar" else "Publicar", fontWeight = FontWeight.Bold) }
+                    ) { Text(if (publishing) "Publicando…" else if (scheduledAtMs > 0L) "Agendar" else "Publicar", fontWeight = FontWeight.SemiBold) }
                 }
             }
             return@QinblySplit
@@ -12209,13 +12212,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onCameraCancelled) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
                 Text(if (initialMode == "poll") "Criar enquete" else "Nova publicação",
-                    color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.weight(1f))
+                    color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, modifier = Modifier.weight(1f))
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (ownUsername.isNotBlank()) QiblyAccountAvatar(ownUsername, "", 46.dp) { }
                 else Icon(Icons.Default.Person, contentDescription = null, tint = Color.DarkGray, modifier = Modifier.size(46.dp))
                 Column {
-                    Text(if (ownUsername.isBlank()) "Meu perfil" else "@$ownUsername", fontWeight = FontWeight.Bold, color = QiblyTheme.text)
+                    Text(if (ownUsername.isBlank()) "Meu perfil" else "@$ownUsername", fontWeight = FontWeight.SemiBold, color = QiblyTheme.text)
                     Text("Todos podem ver", color = Color.DarkGray, style = MaterialTheme.typography.labelMedium)
                 }
             }
@@ -12231,11 +12234,11 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             QinblyHashtagField(capState) { caption = it }
             if (initialMode == "poll") {
  QinblySplit {
-                Text("Opções", color = QiblyTheme.text, fontWeight = FontWeight.Bold)
+                Text("Opções", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold)
                 pollOptions.forEachIndexed { index, option ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Box(Modifier.size(28.dp).clip(CircleShape).background(QinblyBrand.Accent.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
-                            Text("${index + 1}", color = QinblyBrand.Accent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("${index + 1}", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                         }
                         OutlinedTextField(value = option,
                             onValueChange = { value -> pollOptions = pollOptions.toMutableList().also { it[index] = value.take(60) } },
@@ -12253,7 +12256,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     Icon(Icons.Default.Add, contentDescription = null, tint = QinblyBrand.Accent)
                     Text("Adicionar opção", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold)
                 }
-                Text("Duração", color = QiblyTheme.text, fontWeight = FontWeight.Bold)
+                Text("Duração", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold)
                 val pollDurations = listOf(1 to "1 h", 6 to "6 h", 24 to "24 h", 72 to "3 dias", 168 to "7 dias")
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     pollDurations.forEach { (hours, label) ->
@@ -12311,7 +12314,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 modifier = Modifier.fillMaxWidth().height(54.dp),
                 shape = RoundedCornerShape(28.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
-            ) { Text(if (publishing) "Publicando…" else "Publicar", fontWeight = FontWeight.Bold) }
+            ) { Text(if (publishing) "Publicando…" else "Publicar", fontWeight = FontWeight.SemiBold) }
          }
 }
         return@QinblySplit
@@ -12328,7 +12331,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     if (initialMode == "camera" && !cameraGranted && !showComposer) {
         Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(60.dp))
-            Text("Câmera ${QinblyBrand.Name}", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+            Text("Câmera ${QinblyBrand.Name}", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
             Text("Câmera integrada ao aplicativo, com prévia e filtros.", color = Muted)
             Button(onClick = { cameraPermission.launch(android.Manifest.permission.CAMERA) }) { Text("Permitir câmera") }
             OutlinedButton(onClick = { imagePicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) { Text("Escolher foto da galeria") }
@@ -12440,7 +12443,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 modifier = Modifier.fillMaxWidth().focusRequester(textFocus),
                                 decorationBox = { inner ->
                                     Box(contentAlignment = Alignment.Center) {
-                                        if (editorText.isEmpty()) Text("Digite aqui", color = Color(0x99FFFFFF), fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                                        if (editorText.isEmpty()) Text("Digite aqui", color = Color(0x99FFFFFF), fontSize = 28.sp, fontWeight = FontWeight.SemiBold)
                                         inner()
                                     }
                                 }
@@ -12474,13 +12477,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(QinblyCameraIcons.music, contentDescription = null, tint = Color.White, modifier = Modifier.size(19.dp))
-                        Text(if (soundName.isNotBlank()) soundName else storyMusic?.title ?: "Adicionar som", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                        Text(if (soundName.isNotBlank()) soundName else storyMusic?.title ?: "Adicionar som", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
                             maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 130.dp))
                     }
                     // Mesma folha de músicas do editor (padrão do app): as músicas livres do Qinbly.
                     if (showMusicPicker && onCaptured == null) QinblyMusicPicker(onPick = { storyMusic = it; soundName = ""; soundUri = null; showMusicPicker = false }, onDismiss = { showMusicPicker = false }, freeOnly = !QinblyComposeSeed.story)
                 } else {
-                    Text("%d:%02d".format(recElapsed / 60, recElapsed % 60), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp,
+                    Text("%d:%02d".format(recElapsed / 60, recElapsed % 60), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp,
                         modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp).clip(RoundedCornerShape(14.dp))
                             .background(Color(0x73000000)).padding(horizontal = 12.dp, vertical = 4.dp))
                 }
@@ -12563,17 +12566,17 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
 }
 
                 if (flashLabel.isNotBlank()) {
-                    Text(flashLabel, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold,
+                    Text(flashLabel, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.titleMedium.copy(shadow = androidx.compose.ui.graphics.Shadow(Color(0x99000000), blurRadius = 8f)),
                         modifier = Modifier.align(Alignment.TopCenter).padding(top = 64.dp))
                 }
                 if (countdown > 0) {
-                    Text(countdown.toString(), color = Color.White, fontSize = 96.sp, fontWeight = FontWeight.Bold,
+                    Text(countdown.toString(), color = Color.White, fontSize = 96.sp, fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.displayLarge.copy(shadow = androidx.compose.ui.graphics.Shadow(Color(0x99000000), blurRadius = 16f)),
                         modifier = Modifier.align(Alignment.Center))
                 }
                 if (showZoomBadge) {
-                    Text("${(zoomRatio * 10).toInt() / 10f}x", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    Text("${(zoomRatio * 10).toInt() / 10f}x", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 250.dp).clip(RoundedCornerShape(16.dp))
                             .background(Color(0x80000000)).padding(horizontal = 12.dp, vertical = 5.dp))
                 }
@@ -12593,7 +12596,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                             listOf("10 min", "60 s", "15 s", "FOTO", "TEXTO").forEach { chip ->
                                 val chosen = (chip == "FOTO" && captureMode == "Foto" && !camTextMode) || (chip == "TEXTO" && camTextMode) || (chip == selectedDuration && captureMode == "Vídeo" && !camTextMode)
-                                Text(chip, color = if (chosen) Color.Black else Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp,
+                                Text(chip, color = if (chosen) Color.Black else Color.White, fontWeight = FontWeight.SemiBold, fontSize = 11.sp,
                                     modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(if (chosen) Color.White else Color.Transparent)
                                         .clickable {
                                             when (chip) {
@@ -12753,7 +12756,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     Box(Modifier.align(Alignment.CenterHorizontally).width(36.dp).height(4.dp).clip(CircleShape).background(Color(0xFF3A4458)))
                     Spacer(Modifier.height(10.dp))
                     if (cameraSheet == "Som") {
-                        Text("Escolher som", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("Escolher som", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                         QinblyCameraSheetRow(QinblyCameraIcons.headphones, "Do seu celular", "Escolha uma música ou áudio seu") { soundPicker.launch("audio/*") }
                         QinblyCameraSheetRow(QinblyCameraIcons.mic, "Gravar narração", "Grave sua voz agora; ela entra no vídeo que você gravar") {
                             cameraSheet = ""
@@ -12766,7 +12769,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         }
                     } else if (cameraSheet == "Exposição") {
                         val state = cameraControl?.cameraInfo?.exposureState
-                        Text("Exposição", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("Exposição", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                         if (state != null && state.isExposureCompensationSupported) {
                             val low = state.exposureCompensationRange.lower
                             val high = state.exposureCompensationRange.upper
@@ -12775,9 +12778,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 valueRange = low.toFloat()..high.toFloat(), steps = (high - low - 1).coerceAtLeast(0),
                                 colors = SliderDefaults.colors(thumbColor = Color.White, activeTrackColor = QinblyBrand.Accent, inactiveTrackColor = Color(0xFF3A4458))
                             )
-                            Text("Escuro  ←  →  Claro", color = Color(0xFFA9B5C8), fontSize = 11.sp)
+                            Text("Escuro  ←  →  Claro", color = Color(0xFFBAC4D4), fontSize = 11.sp)
                         } else {
-                            Text("Este aparelho não permite ajustar o brilho aqui.", color = Color(0xFFA9B5C8), fontSize = 12.sp)
+                            Text("Este aparelho não permite ajustar o brilho aqui.", color = Color(0xFFBAC4D4), fontSize = 12.sp)
                         }
                     }
                     Spacer(Modifier.height(6.dp))
@@ -12803,7 +12806,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     Icon(Icons.Default.Close, contentDescription = "Fechar galeria", tint = Color.White)
                 }
                 Column(Modifier.weight(1f)) {
-                    Text("Recentes", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("Recentes", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Text("Escolha uma foto ou vídeo", color = Color.LightGray, style = MaterialTheme.typography.bodySmall)
                 }
                 TextButton(onClick = { galleryFilter = "Todos" }) { Text("▾", color = Color.White) }
@@ -12889,7 +12892,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).height(52.dp),
                 shape = RoundedCornerShape(28.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)
-            ) { Text(if (gallerySelection.isEmpty()) "Avançar" else "Avançar (${gallerySelection.size}/10)", fontWeight = FontWeight.Bold) }
+            ) { Text(if (gallerySelection.isEmpty()) "Avançar" else "Avançar (${gallerySelection.size}/10)", fontWeight = FontWeight.SemiBold) }
          }
 }
         return@QinblySplit
@@ -12964,7 +12967,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 IconButton(onClick = { cropOpen = false }) {
                     Icon(QinblyCameraIcons.close, contentDescription = "Fechar", tint = Color.White, modifier = Modifier.size(28.dp))
                 }
-                Text("Recortar", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Recortar", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             }
             Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
  QinblySplit {
@@ -13042,7 +13045,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     modifier = Modifier.fillMaxWidth().height(54.dp),
                     shape = RoundedCornerShape(28.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
-                ) { Text("Usar recorte", fontWeight = FontWeight.Bold, color = Color.White) }
+                ) { Text("Usar recorte", fontWeight = FontWeight.SemiBold, color = Color.White) }
             }
          }
 }
@@ -13350,10 +13353,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
             }
             if (swipeFilterLabel.isNotBlank()) {
                 Text(swipeFilterLabel, modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(16.dp)).background(Color(0x99000000)).padding(horizontal = 16.dp, vertical = 8.dp),
-                    color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             }
             if (editorText.isBlank() && editorTool == "Texto" && !editorTextEditing) {
-                Text("Toque para escrever", color = Color(0xB3FFFFFF), fontSize = 28.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                Text("Toque para escrever", color = Color(0xB3FFFFFF), fontSize = 28.sp, fontWeight = FontWeight.SemiBold, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(12.dp)).clickable { editorTextEditing = true }.padding(horizontal = 28.dp, vertical = 16.dp))
             }
             if (editorTool == "Texto" && editorTextEditing) EditorTextOverlay { editorTextEditing = false }
@@ -13434,7 +13437,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(QinblyCameraIcons.music, contentDescription = null, tint = Color.White, modifier = Modifier.size(19.dp))
-                    Text(sm0?.title ?: "Adicionar som", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                    Text(sm0?.title ?: "Adicionar som", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
                         maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 130.dp))
                     if (sm0 != null) QinblyCloseIcon(Color.White, 16.dp, modifier = Modifier.clickable { storyMusic = null })
                 }
@@ -13857,7 +13860,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         colors = ButtonDefaults.buttonColors(containerColor = if (newEditorChrome) QinblyBrand.Accent else Color.White, contentColor = if (newEditorChrome) Color.White else Color.Black)
                     ) {
                         val advanceTint = if (newEditorChrome) Color.White else Color.Black
-                        Text(if (editorBusy) "Aplicando…" else if (onCaptured != null) "Pronto" else "Avançar", fontWeight = FontWeight.Bold, color = advanceTint)
+                        Text(if (editorBusy) "Aplicando…" else if (onCaptured != null) "Pronto" else "Avançar", fontWeight = FontWeight.SemiBold, color = advanceTint)
                         Spacer(Modifier.width(8.dp))
                         Icon(Icons.Default.ChevronRight, contentDescription = null, tint = advanceTint)
                     }
@@ -13875,7 +13878,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 IconButton(onClick = { coverPicker = false }) {
                     Icon(QinblyCameraIcons.close, contentDescription = "Fechar", tint = QiblyTheme.text, modifier = Modifier.size(26.dp))
                 }
-                Text("Escolher capa", color = QiblyTheme.text, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Escolher capa", color = QiblyTheme.text, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             }
             Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                 Box(
@@ -13885,7 +13888,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     val shown = frames.getOrNull(coverIndex)
                     if (shown != null) AsyncImage(model = shown, contentDescription = "Capa", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                     else QinblyLoadingSpinner(Modifier.fillMaxSize())
-                    Text("Capa", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 10.sp,
+                    Text("Capa", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 10.sp,
                         modifier = Modifier.align(Alignment.TopStart).padding(10.dp).clip(RoundedCornerShape(10.dp)).background(Color(0x8C000000)).padding(horizontal = 9.dp, vertical = 3.dp))
                 }
             }
@@ -13919,7 +13922,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     modifier = Modifier.fillMaxWidth().height(54.dp),
                     shape = RoundedCornerShape(28.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
-                ) { Text("Usar esta capa", fontWeight = FontWeight.Bold, color = Color.White) }
+                ) { Text("Usar esta capa", fontWeight = FontWeight.SemiBold, color = Color.White) }
             }
         }
     } else {
@@ -13934,7 +13937,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 IconButton(onClick = { publishSettings = false }) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text)
                 }
-                Text("Nova publicação", color = QiblyTheme.text, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Nova publicação", color = QiblyTheme.text, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Box(Modifier.width(96.dp).height(140.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF14181F)), contentAlignment = Alignment.Center) {
@@ -13952,7 +13955,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         if (cover != null) AsyncImage(model = cover, contentDescription = "Capa do vídeo", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                         Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White,
                             modifier = Modifier.align(Alignment.TopStart).padding(6.dp).size(24.dp).clip(CircleShape).background(Color(0x80000000)).padding(4.dp))
-                        if (videoDurationLabel.isNotBlank()) Text(videoDurationLabel, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 10.sp,
+                        if (videoDurationLabel.isNotBlank()) Text(videoDurationLabel, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 10.sp,
                             modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp).clip(RoundedCornerShape(8.dp)).background(Color(0x8C000000)).padding(horizontal = 6.dp, vertical = 2.dp))
                     }
                 }
@@ -13976,7 +13979,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 ) {
                     Icon(QinblyCreateIcons.gallery, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Escolher capa", color = QinblyBrand.Accent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text("Escolher capa", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 }
             }
             QinblyHashtagField(capState) { caption = it; captionCursor = it.length }
@@ -14018,7 +14021,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 if (publishing) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp, color = Color.White)
                 else Icon(Icons.Default.Send, contentDescription = null, tint = Color.White)
                 Spacer(Modifier.width(8.dp))
-                Text(if (publishing) "Publicando…" else if (mediaScheduledMs > 0L && !QinblyComposeSeed.story) "Agendar" else "Publicar", fontWeight = FontWeight.Bold, color = Color.White)
+                Text(if (publishing) "Publicando…" else if (mediaScheduledMs > 0L && !QinblyComposeSeed.story) "Agendar" else "Publicar", fontWeight = FontWeight.SemiBold, color = Color.White)
             }
           }
         }
@@ -14055,7 +14058,7 @@ private fun LivePage(scrollToTopRequest: Int, onNotice: (String) -> Unit) {
                     Box(Modifier.size(58.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Pink, Violet))), contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.Radio, contentDescription = null, tint = Color.White, modifier = Modifier.size(31.dp))
                     }
-                    Text("Entre no universo das Lives", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Entre no universo das Lives", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Color.White)
                     Text("Descubra criadores, jogos, música e conversas ao vivo.", color = Muted, style = MaterialTheme.typography.bodyMedium)
                     Button(onClick = { onNotice("As transmissões e a reprodução ao vivo ainda precisam ser conectadas ao servidor de mídia.") }, colors = ButtonDefaults.buttonColors(containerColor = Pink), shape = RoundedCornerShape(14.dp)) {
                         Text("Explorar transmissões")
@@ -14064,8 +14067,8 @@ private fun LivePage(scrollToTopRequest: Int, onNotice: (String) -> Unit) {
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Lives recomendadas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            Text("${QinblyBrand.Name} LIVE", color = Pink, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            Text("Lives recomendadas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text("${QinblyBrand.Name} LIVE", color = Pink, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
         }
         Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -14081,7 +14084,7 @@ private fun SimplePage(title: String, description: String, action: String, onAct
         Surface(color = Panel, shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Box(Modifier.size(54.dp).clip(RoundedCornerShape(18.dp)).background(Brush.linearGradient(listOf(Violet, Pink))), contentAlignment = Alignment.Center) { Text("V", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black) }
-                Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
                 Text(description, color = Muted)
                 Button(onClick = onAction, modifier = Modifier.fillMaxWidth()) { Text(action) }
             }
@@ -14121,7 +14124,7 @@ private fun QinblyStoryPublishBar(
                             .border(1.5.dp, if (on) Color(0xFF7FA6F2) else chipLine, CircleShape)
                             .clickable { onHours(h) },
                         contentAlignment = Alignment.Center
-                    ) { Text("${h}h", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+                    ) { Text("${h}h", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
                 }
             }
             Spacer(Modifier.height(6.dp))
@@ -14132,7 +14135,7 @@ private fun QinblyStoryPublishBar(
                         .clickable { sheetOpen = true }.padding(start = 14.dp, end = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(audienceLabel, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(audienceLabel, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     Icon(Icons.Default.ExpandMore, contentDescription = "Quem vê", tint = Color.White, modifier = Modifier.size(18.dp))
                 }
                 Box(Modifier.align(Alignment.Center).size(84.dp).clickable(enabled = !busy, onClick = onPublish), contentAlignment = Alignment.Center) {
@@ -14146,7 +14149,7 @@ private fun QinblyStoryPublishBar(
                     }
                     Box(Modifier.size(68.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
                         if (busy) CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.5.dp, color = Color.White)
-                        else Text("Story", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                        else Text("Story", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
                 Box(
@@ -14154,7 +14157,7 @@ private fun QinblyStoryPublishBar(
                         .background(if (alsoFeed) accent else chipBg).border(1.5.dp, if (alsoFeed) Color(0xFF7FA6F2) else chipLine, RoundedCornerShape(21.dp))
                         .clickable { onAlsoFeed(!alsoFeed) }.padding(horizontal = 14.dp),
                     contentAlignment = Alignment.Center
-                ) { Text(if (alsoFeed) "✓ Feed" else "+ Feed", color = if (alsoFeed) Color.White else Color(0xFFB4B4BC), fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
+                ) { Text(if (alsoFeed) "✓ Feed" else "+ Feed", color = if (alsoFeed) Color.White else Color(0xFFB4B4BC), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1) }
             }
         }
         if (sheetOpen) {
@@ -14169,7 +14172,7 @@ private fun QinblyStoryPublishBar(
                     Modifier.width(250.dp).clip(RoundedCornerShape(22.dp)).background(chipBg)
                         .border(1.5.dp, Color(0xFF7FA6F2), RoundedCornerShape(22.dp)).padding(vertical = 12.dp, horizontal = 8.dp)
                 ) {
-                    Text("QUEM PODE VER", color = Color(0xFF8E87A8), fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp, bottom = 6.dp))
+                    Text("QUEM PODE VER", color = Color(0xFF8E87A8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp, bottom = 6.dp))
                     options.forEach { (key, title, sub) ->
                         val on = key == audience
                         Row(
@@ -14183,7 +14186,7 @@ private fun QinblyStoryPublishBar(
                             }
                             Spacer(Modifier.width(12.dp))
                             Column {
-                                Text(title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                                Text(title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                                 Text(sub, color = Color(0xFF8E87A8), fontSize = 11.sp)
                             }
                         }
@@ -14270,7 +14273,7 @@ private fun QinblyCredentialScreen(kind: String, prefs: android.content.SharedPr
             },
             modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(26.dp),
             colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
-        ) { if (busy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White) else Text("Salvar", fontWeight = FontWeight.Bold) }
+        ) { if (busy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White) else Text("Salvar", fontWeight = FontWeight.SemiBold) }
     }
 }
 
@@ -14279,7 +14282,7 @@ private fun QinblyCredentialScreen(kind: String, prefs: android.content.SharedPr
 private fun QinblyClearLocationScreen(prefs: android.content.SharedPreferences, onDismiss: () -> Unit, onNotice: (String) -> Unit) {
     var busy by remember { mutableStateOf(false) }
     QinblyFullScreen("Apagar dados de localização", { if (!busy) onDismiss() }, background = QiblyTheme.background, contentColor = QiblyTheme.text) {
-        Text("Isto apaga:", color = QiblyTheme.text, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        Text("Isto apaga:", color = QiblyTheme.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
         Text("• todos os avisos que você publicou no Mural, porque cada um guarda a posição onde foi feito;\n• a cidade guardada no seu perfil e a cidade escolhida neste aparelho.", color = QiblyTheme.secondary, fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 6.dp, bottom = 10.dp))
         Text("Não dá para desfazer. Suas publicações, stories e mensagens não são apagados.", color = QiblyTheme.secondary, fontSize = 14.sp, modifier = Modifier.padding(bottom = 20.dp))
         Button(
@@ -14303,7 +14306,7 @@ private fun QinblyClearLocationScreen(prefs: android.content.SharedPreferences, 
             },
             modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(26.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD93025), contentColor = Color.White)
-        ) { if (busy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White) else Text("Apagar tudo", fontWeight = FontWeight.Bold) }
+        ) { if (busy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White) else Text("Apagar tudo", fontWeight = FontWeight.SemiBold) }
     }
 }
 
@@ -14335,7 +14338,7 @@ private fun QinblyFollowRequestsScreen(token: String, requests: List<QinblyApi.F
             Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 QiblyAccountAvatar(r.username, r.avatarUrl, 48.dp) { }
                 Column(Modifier.weight(1f)) {
-                    Text(r.displayName.ifBlank { r.username }, color = QiblyTheme.text, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
+                    Text(r.displayName.ifBlank { r.username }, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1)
                     if (r.username.isNotBlank()) Text("@" + r.username.removePrefix("@"), color = QiblyTheme.secondary, fontSize = 13.sp, maxLines = 1)
                 }
                 val busy = busyId == r.userId
@@ -14353,7 +14356,7 @@ private fun QinblyFollowRequestsScreen(token: String, requests: List<QinblyApi.F
                     },
                     shape = RoundedCornerShape(20.dp), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
-                ) { if (busy) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White) else Text("Aprovar", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+                ) { if (busy) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White) else Text("Aprovar", fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
                 OutlinedButton(
                     enabled = busyId.isBlank(),
                     onClick = {

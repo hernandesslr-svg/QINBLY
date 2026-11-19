@@ -61,7 +61,7 @@ internal fun QinblyChatSharedMedia(
             Row(Modifier.fillMaxWidth().padding(top = 28.dp, start = 4.dp, end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = textColor) }
                 Column {
-                    Text("Mídia, links e documentos", color = textColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("Mídia, links e documentos", color = textColor, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                     Text("Conversa com @${name.removePrefix("@")}", color = secondary, fontSize = 13.sp)
                 }
             }

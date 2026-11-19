@@ -51,7 +51,7 @@ internal fun QinblyLiveCommentsList(host: String, refreshKey: Int, modifier: Mod
         comments.takeLast(7).forEach { c ->
             Text(
                 buildAnnotatedString {
-                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(c.displayName.ifBlank { c.username } + "  ") }
+                    withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(c.displayName.ifBlank { c.username } + "  ") }
                     append(c.body)
                 },
                 color = Color.White, fontSize = 13.sp,
