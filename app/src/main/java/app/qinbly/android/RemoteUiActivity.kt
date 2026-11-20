@@ -221,6 +221,7 @@ class RemoteUiActivity : ComponentActivity() {
                             session.fsync(out)
                         }
                         notifyWeb("Preparando instalação…", false)
+                        qinblyMarkRelaunchAfterUpdate(this@RemoteUiActivity)
                         val callback = Intent(ACTION_INSTALL_STATUS).setPackage(packageName)
                         val flags = PendingIntent.FLAG_UPDATE_CURRENT or
                             (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0)
@@ -250,6 +251,7 @@ class RemoteUiActivity : ComponentActivity() {
                 .setAllowedOverRoaming(false)
                 .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "QINBLY-update-" + System.currentTimeMillis() + ".apk")
             val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+            qinblyMarkRelaunchAfterUpdate(this)
             pendingDownloadId = manager.enqueue(request)
             prefs.edit().putLong("pending_update_download_id", pendingDownloadId).apply()
             notifyWeb("Download iniciado. Acompanhando o progresso…", false)

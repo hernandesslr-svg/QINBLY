@@ -889,3 +889,8 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - "Seu story": primeiro da faixa, com + branco no canto. Tocar na bolinha abre o seu story (ou o menu de criar, se você não tiver); tocar no + sempre abre o menu (Story, Texto, Música, Story coletivo, Clima do dia, Cápsula do tempo).
 - O emoji do "Clima do dia" aparece num selinho no canto superior da bolinha. O selo "Coletivo" e as fotos de quem participa deixaram de aparecer na faixa (continuam no visualizador).
 - Para mudar o tamanho: 76.dp (anel), 64.dp (foto) e 84.dp (largura do item) em `QinblyStoryBubble`.
+
+## App reabre sozinho depois de atualizar
+- O Android fecha o app quando termina de instalar uma atualização. Agora `UpdateRelaunchReceiver` (novo, declarado no AndroidManifest para `MY_PACKAGE_REPLACED`) reabre o `MainActivity` logo após a instalação.
+- Só age se a atualização foi iniciada por dentro do app: `RemoteUiActivity` grava a marca (`qinblyMarkRelaunchAfterUpdate`, prefs `qinbly_update_relaunch`) ao confirmar o download/instalação, e ela vale por 60 minutos. Atualização feita por fora (Downloads, outro instalador) não reabre.
+- Limite do Android 10+: o sistema pode bloquear abrir telas a partir do segundo plano. Se bloquear, o app mostra a notificação "QINBLY atualizado - toque para abrir" (some em 30 s). Não usa permissão de sobreposição de tela.
