@@ -11914,26 +11914,35 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         val provider = future.get()
                         cameraProvider = provider
                         val view = previewView ?: return@addListener
-                        val preview = androidx.camera.core.Preview.Builder().build().also { it.setSurfaceProvider(view.surfaceProvider) }
-                        val capture = androidx.camera.core.ImageCapture.Builder().setCaptureMode(androidx.camera.core.ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY).build()
-                        val quality = when (qualityChoice) { "UHD" -> androidx.camera.video.Quality.UHD; "FHD" -> androidx.camera.video.Quality.FHD; else -> androidx.camera.video.Quality.HD }
-                        val recorder = androidx.camera.video.Recorder.Builder()
-                            .setQualitySelector(androidx.camera.video.QualitySelector.from(quality, androidx.camera.video.FallbackStrategy.lowerQualityOrHigherThan(androidx.camera.video.Quality.SD)))
-                            .build()
-                        stabilizeSupported = try { androidx.camera.video.Recorder.getVideoCapabilities(provider.getCameraInfo(androidx.camera.core.CameraSelector.Builder().requireLensFacing(lensFacing).build())).isStabilizationSupported } catch (_: Exception) { false }
-                        val video = androidx.camera.video.VideoCapture.Builder(recorder).setVideoStabilizationEnabled(stabilizeOn && stabilizeSupported).build()
-                        val selector = androidx.camera.core.CameraSelector.Builder().requireLensFacing(lensFacing).build()
-                        val frame = when (selectedCameraFormat) { "1:1" -> android.util.Rational(1, 1); "4:3" -> android.util.Rational(3, 4); else -> if (cameraBoxW > 0 && cameraBoxH > 0) android.util.Rational(cameraBoxW, cameraBoxH) else android.util.Rational(9, 16) }
-                        val viewPort = androidx.camera.core.ViewPort.Builder(frame, view.display?.rotation ?: android.view.Surface.ROTATION_0).build()
-                        val group = androidx.camera.core.UseCaseGroup.Builder().setViewPort(viewPort)
-                            .addUseCase(preview).addUseCase(capture).addUseCase(video).build()
-                        provider.unbindAll()
-                        val boundCamera = provider.bindToLifecycle(lifecycleOwner, selector, group)
-                        cameraControl = boundCamera
-                        zoomRatio = 1f
-                        capture.flashMode = if (flashEnabled) androidx.camera.core.ImageCapture.FLASH_MODE_ON else androidx.camera.core.ImageCapture.FLASH_MODE_OFF
-                        imageCapture = capture
-                        videoCapture = video
+                        // Foto na melhor qualidade que o aparelho aguentar; se a combinação (prévia + foto + vídeo) não for aceita, volta ao modo simples.
+                        fun bindUseCases(hq: Boolean) {
+                            val preview = androidx.camera.core.Preview.Builder().build().also { it.setSurfaceProvider(view.surfaceProvider) }
+                            val capture = (if (hq) androidx.camera.core.ImageCapture.Builder()
+                                .setCaptureMode(androidx.camera.core.ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                                .setJpegQuality(100)
+                                .setResolutionSelector(androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
+                                    .setResolutionStrategy(androidx.camera.core.resolutionselector.ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY).build())
+                            else androidx.camera.core.ImageCapture.Builder().setCaptureMode(androidx.camera.core.ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)).build()
+                            val quality = when (qualityChoice) { "UHD" -> androidx.camera.video.Quality.UHD; "FHD" -> androidx.camera.video.Quality.FHD; else -> androidx.camera.video.Quality.HD }
+                            val recorder = androidx.camera.video.Recorder.Builder()
+                                .setQualitySelector(androidx.camera.video.QualitySelector.from(quality, androidx.camera.video.FallbackStrategy.lowerQualityOrHigherThan(androidx.camera.video.Quality.SD)))
+                                .build()
+                            stabilizeSupported = try { androidx.camera.video.Recorder.getVideoCapabilities(provider.getCameraInfo(androidx.camera.core.CameraSelector.Builder().requireLensFacing(lensFacing).build())).isStabilizationSupported } catch (_: Exception) { false }
+                            val video = androidx.camera.video.VideoCapture.Builder(recorder).setVideoStabilizationEnabled(stabilizeOn && stabilizeSupported).build()
+                            val selector = androidx.camera.core.CameraSelector.Builder().requireLensFacing(lensFacing).build()
+                            val frame = when (selectedCameraFormat) { "1:1" -> android.util.Rational(1, 1); "4:3" -> android.util.Rational(3, 4); else -> if (cameraBoxW > 0 && cameraBoxH > 0) android.util.Rational(cameraBoxW, cameraBoxH) else android.util.Rational(9, 16) }
+                            val viewPort = androidx.camera.core.ViewPort.Builder(frame, view.display?.rotation ?: android.view.Surface.ROTATION_0).build()
+                            val group = androidx.camera.core.UseCaseGroup.Builder().setViewPort(viewPort)
+                                .addUseCase(preview).addUseCase(capture).addUseCase(video).build()
+                            provider.unbindAll()
+                            val boundCamera = provider.bindToLifecycle(lifecycleOwner, selector, group)
+                            cameraControl = boundCamera
+                            zoomRatio = 1f
+                            capture.flashMode = if (flashEnabled) androidx.camera.core.ImageCapture.FLASH_MODE_ON else androidx.camera.core.ImageCapture.FLASH_MODE_OFF
+                            imageCapture = capture
+                            videoCapture = video
+                        }
+                        try { bindUseCases(true) } catch (e: Exception) { provider.unbindAll(); bindUseCases(false) }
                         cameraError = ""
                     } catch (e: Exception) {
                         cameraError = "Não foi possível iniciar a câmera: " + (e.localizedMessage ?: "dispositivo indisponível")

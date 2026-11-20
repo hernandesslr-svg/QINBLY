@@ -898,3 +898,8 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 ## Foto da câmera abria pequena no meio de um quadro largo
 - Causa: o CameraX grava o JPEG "deitado" com aviso de rotação (EXIF) e o editor lê só largura x altura do arquivo (`BitmapFactory` com `inJustDecodeBounds`), que ignora o aviso. A proporção "Original" saía larga (~2:1) e a foto em pé aparecia pequena, com fundo desfocado dos lados.
 - Correção: `qinblyMakeUpright(file)` (FaceFilters.kt) regrava a foto já em pé logo após `takePicture`, fora da thread principal, antes de abrir o editor (`takePhoto` em MainActivity.kt). Também cobre o espelhamento da câmera da frente. Se falhar, mantém o arquivo original.
+
+## Foto da câmera com mais qualidade
+- A foto saía com ~960x1920 px (baixa para o celular) porque a câmera usava o modo "menos demora" e a resolução padrão do CameraX.
+- Agora `ImageCapture` usa `CAPTURE_MODE_MAXIMIZE_QUALITY`, `setJpegQuality(100)` e `ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY`. Se o aparelho não aceitar essa combinação (prévia + foto + vídeo juntos), o app tenta de novo no modo simples antigo (`bindUseCases(false)`), então a câmera não deixa de abrir.
+- Efeito colateral: tirar a foto pode demorar uns instantes a mais.
