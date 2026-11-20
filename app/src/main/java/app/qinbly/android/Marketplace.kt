@@ -364,7 +364,7 @@ internal fun QinblyNearbyHub(
                 Column(
                     Modifier.align(Alignment.CenterStart).fillMaxSize().padding(end = 64.dp).background(Color(0xFF1F1F21))
                         .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { }
-                        .statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 16.dp),
+                        .statusBarsPadding().verticalScroll(rememberScrollState()).padding(start = 14.dp, end = 14.dp, top = 16.dp, bottom = 16.dp + qinblyNavBarPadding()),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     val outl = androidx.compose.material.icons.Icons.Outlined

@@ -9105,7 +9105,7 @@ private fun QinblyShortcutsScreen(username: String, onDismiss: () -> Unit, onIte
     @Composable fun Label(text: String, tint: Color) = Text(text, color = tint, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp, modifier = Modifier.padding(start = 20.dp, top = 22.dp, bottom = 4.dp))
     val outlined = androidx.compose.material.icons.Icons.Outlined
     QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
+        Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding().verticalScroll(rememberScrollState()).padding(bottom = 24.dp + qinblyNavBarPadding())) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.screenTextColor) }
                 Text("Atalhos", color = RemoteAppearance.screenTextColor, fontSize = 20.sp, fontWeight = FontWeight.Medium)

@@ -153,7 +153,7 @@ internal fun QinblyStoryMenu(
                 }
                 Text("Galeria", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 8.dp))
                 androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
-                    androidx.compose.foundation.lazy.grid.GridCells.Fixed(3), modifier = Modifier.weight(1f).fillMaxWidth().navigationBarsPadding(),
+                    androidx.compose.foundation.lazy.grid.GridCells.Fixed(3), modifier = Modifier.weight(1f).fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = qinblyNavBarPadding()),
                     horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     // Primeiro quadradinho: a câmera do app.

@@ -966,3 +966,8 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Menu lateral do Mercado agora é uma lista sem cartões: CATEGORIAS (Mercado, Doações, Achados, Eventos, Serviços, Avisos), SEU MERCADO (Meus anúncios, Salvos) e AJUDA (Dicas de segurança, Regras do Mercado).
 - Ícones e letras brancos, títulos de grupo em cinza. Removidos "Trocar cidade", "Novo anúncio", "Voltar" e os cartões do topo.
 - Tocar numa categoria troca a tela para aquela categoria.
+
+## Padrão: tudo fica ACIMA dos botões do celular
+- Toda tela cheia, menu lateral ou lista dentro de QinblyDialog (decorFitsSystemWindows = false) usa `qinblyNavBarPadding()` como espaço no fim da tela/lista. `navigationBarsPadding()` sozinho não funcionou nesses diálogos.
+- Aplicado em: Atalhos do Início, menu lateral do Mercado e grade da galeria do "Novo story".
+- Telas novas já nascem assim; ao mexer em tela antiga que use só `navigationBarsPadding()` dentro de diálogo, trocar.
