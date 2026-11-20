@@ -6042,12 +6042,12 @@ private fun QinblyLiveSearch(lives: List<QinblyLive>, onBack: () -> Unit, onOpen
 
 /** Mercado e avisos em tela cheia (aberto pelo mercadinho no topo do Início e pelo Menu). */
 @Composable
-private fun QinblyMarketDialog(onNotice: (String) -> Unit, onOpenConversation: (String) -> Unit, initialCategory: String = "Tudo", onDismiss: () -> Unit) {
+private fun QinblyMarketDialog(onNotice: (String) -> Unit, onOpenConversation: (String) -> Unit, initialCategory: String = "Tudo", single: Boolean = false, onDismiss: () -> Unit) {
     QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding().navigationBarsPadding()) {
             QinblyNearbyPage(onNotice) { lat, lng, place, refresh ->
                 QinblyNearbyHub(lat, lng, place, RemoteAppearance.feedTextColor, RemoteAppearance.feedSecondaryTextColor, onRefreshLocation = refresh,
-                    onOpenConversation = { onDismiss(); onOpenConversation(it) }, onNotice = onNotice, onClose = onDismiss, initialCategory = initialCategory)
+                    onOpenConversation = { onDismiss(); onOpenConversation(it) }, onNotice = onNotice, onClose = onDismiss, initialCategory = initialCategory, single = single)
             }
         }
     }
@@ -6714,8 +6714,8 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     }
     var nearbyPosts by remember { mutableStateOf<List<QinblyApi.PostSummary>>(emptyList()) }
     var showMarket by remember { mutableStateOf(false) }
-    var marketCategory by remember { mutableStateOf("Tudo") }
-    if (showMarket) QinblyMarketDialog(onNotice, onOpenConversation, marketCategory) { showMarket = false }
+    var marketCategory by remember { mutableStateOf("Vendas") }
+    if (showMarket) QinblyMarketDialog(onNotice, onOpenConversation, marketCategory, single = true) { showMarket = false }
     var showShortcuts by remember { mutableStateOf(false) }
     var showCapsule by remember { mutableStateOf(false) }
     val shortcutsContext = androidx.compose.ui.platform.LocalContext.current
@@ -6835,7 +6835,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             IconButton(onClick = onSearch, modifier = Modifier.size(42.dp)) {
                 Icon(Icons.Default.Search, contentDescription = "Buscar", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(26.dp))
             }
-            IconButton(onClick = { marketCategory = "Tudo"; showMarket = true }, modifier = Modifier.size(42.dp)) {
+            IconButton(onClick = { marketCategory = "Vendas"; showMarket = true }, modifier = Modifier.size(42.dp)) {
                 Icon(androidx.compose.material.icons.Icons.Outlined.ShoppingBasket, contentDescription = "Mercado e avisos", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(26.dp))
             }
             Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {

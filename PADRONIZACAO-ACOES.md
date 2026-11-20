@@ -958,3 +958,6 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 
 - Atualização: o "Achados" voltou ao Mercado (chip, subfiltro Achei/Perdi, publicar achado, anúncios antigos) e entrou na lista NA SUA CIDADE dos atalhos, entre Doações e Eventos (ícone de lupa, abre o Mercado em Achados).
 - Na lista de atalhos, o item "Vendas" passou a se chamar "Mercado" (continua abrindo o Mercado na aba Vendas).
+
+## Cada atalho do mercado abre só a sua tela
+- `QinblyNearbyHub(single = true)`: sem a fileira de abas (Tudo, Vendas, Doações...); o título vira o nome da categoria (Mercado, Doações, Achados, Eventos, Serviços, Avisos). Achados mantém o filtro Achei/Perdi. A cestinha do topo do Início agora abre só o Mercado (Vendas). A tela "Mercado e avisos" de Configurações continua completa, com todas as abas.

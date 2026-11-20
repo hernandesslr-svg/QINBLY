@@ -153,7 +153,7 @@ internal fun uploadMarketPhoto(context: Context, token: String, userId: String, 
 internal fun QinblyNearbyHub(
     lat: Double, lng: Double, place: String, textColor: Color, secondary: Color,
     onRefreshLocation: () -> Unit, onOpenConversation: (String) -> Unit, onNotice: (String) -> Unit,
-    onClose: (() -> Unit)? = null, initialCategory: String = "Tudo"
+    onClose: (() -> Unit)? = null, initialCategory: String = "Tudo", single: Boolean = false
 ) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
@@ -223,7 +223,7 @@ internal fun QinblyNearbyHub(
                     Text(if (mine == "doacao") "Minhas doações" else if (mine == "saved") "Anúncios salvos" else "Meus anúncios", color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
                     Text("Toque nos três tracinhos para voltar", color = secondary, fontSize = 12.sp)
                 } else {
-                    Text("Mercado e avisos", color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                    Text(if (single) (if (cat == "Vendas") "Mercado" else cat) else "Mercado e avisos", color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
                     Row(Modifier.clip(RoundedCornerShape(10.dp)).clickable { showCityPicker = true }.padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(if (city.isNotBlank()) city else "Escolher cidade", color = secondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                         Text(" ▾", color = secondary, fontSize = 11.sp)
@@ -253,7 +253,7 @@ internal fun QinblyNearbyHub(
                 cursorBrush = androidx.compose.ui.graphics.SolidColor(textColor), modifier = Modifier.fillMaxWidth()
             )
         }
-        if (mine == null) LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(vertical = 6.dp)) {
+        if (mine == null && !single) LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(vertical = 6.dp)) {
             items(marketCategories) { name ->
                 val selected = name == cat
                 val (emoji, tone) = chipStyle(name)
