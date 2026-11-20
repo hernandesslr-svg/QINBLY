@@ -961,3 +961,8 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 
 ## Cada atalho do mercado abre só a sua tela
 - `QinblyNearbyHub(single = true)`: sem a fileira de abas (Tudo, Vendas, Doações...); o título vira o nome da categoria (Mercado, Doações, Achados, Eventos, Serviços, Avisos). Achados mantém o filtro Achei/Perdi. A cestinha do topo do Início agora abre só o Mercado (Vendas). A tela "Mercado e avisos" de Configurações continua completa, com todas as abas.
+
+## Mercado: menu de três tracinhos (lista simples)
+- Menu lateral do Mercado agora é uma lista sem cartões: CATEGORIAS (Mercado, Doações, Achados, Eventos, Serviços, Avisos), SEU MERCADO (Meus anúncios, Salvos) e AJUDA (Dicas de segurança, Regras do Mercado).
+- Ícones e letras brancos, títulos de grupo em cinza. Removidos "Trocar cidade", "Novo anúncio" e os cartões do topo.
+- Tocar numa categoria troca a tela para aquela categoria.

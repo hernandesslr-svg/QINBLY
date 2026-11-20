@@ -40,7 +40,10 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.CardGiftcard
+import androidx.compose.material.icons.outlined.Campaign
 import androidx.compose.material.icons.outlined.Celebration
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.ShoppingBasket
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocalOffer
@@ -364,50 +367,35 @@ internal fun QinblyNearbyHub(
                         .statusBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    val myName = (prefs.getString("display_name", "")?.takeIf { it.isNotBlank() } ?: prefs.getString("username", "").orEmpty().removePrefix("@")).ifBlank { "Você" }
-                    Row(Modifier.padding(start = 4.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(52.dp).clip(CircleShape).background(Color(0xFF3C3C3E)), contentAlignment = Alignment.Center) {
-                            Text(myName.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 22.sp)
-                        }
-                        Column(Modifier.padding(start = 14.dp)) {
-                            Text(myName, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text((if (city.isNotBlank()) city else "Escolher cidade") + " ▾", color = Color(0xFFF2F4F8), fontSize = 13.sp,
-                                modifier = Modifier.clickable { showDrawer = false; mine = null; showCityPicker = true }.padding(top = 2.dp))
-                        }
+                    val outl = androidx.compose.material.icons.Icons.Outlined
+                    val gray = Color(0xFF8A8A93)
+                    Row(Modifier.padding(start = 4.dp, top = 6.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(36.dp).clip(CircleShape).clickable { showDrawer = false }, contentAlignment = Alignment.Center) { QinblyCloseIcon(Color.White, 20.dp) }
+                        Text("Mercado", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 19.sp, modifier = Modifier.padding(start = 10.dp))
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        for ((label, emoji, color, target) in listOf(
-                            listOf("Anúncios", "\uD83C\uDFF7\uFE0F", 0xFF3A5BA5, "all"), listOf("Salvos", "\uD83D\uDD16", 0xFFE0A800, "saved"), listOf("Doações", "\uD83C\uDF81", 0xFF1D9E75, "doacao")
-                        ).map { Quad(it[0] as String, it[1] as String, it[2] as Long, it[3] as String) }) {
-                            Column(
-                                Modifier.weight(1f).clip(RoundedCornerShape(18.dp)).background(Color(0xFF262628)).clickable { showDrawer = false; mine = target }.padding(vertical = 14.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Box(Modifier.size(36.dp).clip(CircleShape).background(Color(0xFF343437)), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 19.dp, Color(0xFFF2F4F8)) }
-                                Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
-                            }
-                        }
-                    }
-                    Box(Modifier.fillMaxWidth().padding(vertical = 6.dp).height(1.dp).background(Color(0xFF2E2E30)))
-                    for ((label, emoji, color) in listOf(
-                        Triple("Trocar cidade", "\uD83D\uDCCD", 0xFF2F68E0L), Triple("Dicas de segurança", "\uD83D\uDEE1\uFE0F", 0xFF7C4DFFL), Triple("Regras da comunidade", "\uD83D\uDCCB", 0xFF6B7280L)
-                    )) {
+                    @Composable fun DrawerLabel(t: String) = Text(t, color = gray, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 6.dp, top = 8.dp))
+                    @Composable fun DrawerItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
                         Row(
-                            Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable {
-                                showDrawer = false
-                                if (label == "Trocar cidade") { mine = null; showCityPicker = true } else info = label
-                            }.padding(horizontal = 6.dp, vertical = 10.dp),
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { showDrawer = false; onClick() }.padding(horizontal = 6.dp, vertical = 11.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(Modifier.size(34.dp).clip(CircleShape).background(Color(0xFF343437)), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 18.dp, Color(0xFFF2F4F8)) }
-                            Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(start = 14.dp).weight(1f))
-                            QinblyIconOf(QinblyIcon.KeyboardArrowRight, Color(0xFFF2F4F8), 26.dp)
+                            QinblyIconOf(icon, Color.White, 24.dp)
+                            Text(label, color = Color.White, fontSize = 15.sp, modifier = Modifier.padding(start = 16.dp))
                         }
                     }
-                    if (mine != null) Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF262628)).clickable { showDrawer = false; mine = null }.padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) { QinblyBackIcon(Color.White, 20.dp); Text("  Voltar para o Mercado", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp) }
+                    DrawerLabel("CATEGORIAS")
+                    DrawerItem(outl.ShoppingBasket, "Mercado") { mine = null; cat = "Vendas" }
+                    DrawerItem(outl.CardGiftcard, "Doações") { mine = null; cat = "Doações" }
+                    DrawerItem(outl.Search, "Achados") { mine = null; cat = "Achados" }
+                    DrawerItem(outl.Event, "Eventos") { mine = null; cat = "Eventos" }
+                    DrawerItem(outl.Build, "Serviços") { mine = null; cat = "Serviços" }
+                    DrawerItem(outl.Campaign, "Avisos") { mine = null; cat = "Avisos" }
+                    DrawerLabel("SEU MERCADO")
+                    DrawerItem(outl.Assignment, "Meus anúncios") { mine = "all" }
+                    DrawerItem(outl.BookmarkBorder, "Salvos") { mine = "saved" }
+                    DrawerLabel("AJUDA")
+                    DrawerItem(outl.Shield, "Dicas de segurança") { info = "Dicas de segurança" }
+                    DrawerItem(outl.Info, "Regras do Mercado") { info = "Regras do Mercado" }
                     Spacer(Modifier.height(6.dp))
                     Row(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(MarketBlue).clickable { showDrawer = false; showMenu = true }.padding(vertical = 14.dp),
