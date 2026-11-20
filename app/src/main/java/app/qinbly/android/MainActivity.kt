@@ -599,6 +599,8 @@ internal fun qinblyNotify(context: android.content.Context, title: String, text:
 /** Pedido vindo de "Seu story" (tela Enviar para): abre a tela de criar story com a mídia da publicação já carregada. */
 private object QinblyStoryRequest { var pending by androidx.compose.runtime.mutableStateOf(false) }
 private object QinblyComposeSeed { var origin: String = ""; var text: String = ""; var story: Boolean = false; var contribTo: String = ""; var collabNew: Boolean = false; var pickedUri: Uri? = null; var pickedVideo: Boolean = false; var fromGallery: Boolean = false }
+/** Pedido para o Perfil abrir já numa aba (ex.: "Salvos", vindo da tela de atalhos); é lido uma vez. */
+internal object QinblyProfileJump { var tab: String? = null }
 /** Chamado antes de abrir a câmera do app: a foto/vídeo tirado vira resposta do story coletivo [storyId] em vez de story novo. */
 internal fun qinblyStartContribution(storyId: String) { QinblyComposeSeed.contribTo = storyId }
 /** Chamado antes de abrir a câmera do app: a foto/vídeo tirado vira um story coletivo novo. */
@@ -2298,7 +2300,7 @@ private fun QinblyApp() {
                     )
                     }
                 } else androidx.compose.runtime.key(accountSessionVersion) { QinblyPullRefresh(enabled = tab != 0 && tab != 2) { when (tab) {
-                    0 -> FeedPage(scrollToTopRequest = navTopRequest, onlineUsers = onlineUsers, currentUsername = loggedInUser, photoRefreshKey = profilePhotoRefreshKey, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { QinblyComposeSeed.story = true; createEntryMode = "camera"; tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true }, onCreateWith = { mode, seed -> QinblyComposeSeed.text = seed; createEntryMode = mode; tab = 2 }, onOpenConversation = { u -> messageRecipient = u; tab = 1 }, onMenu = { showSettings = true })
+                    0 -> FeedPage(scrollToTopRequest = navTopRequest, onlineUsers = onlineUsers, currentUsername = loggedInUser, photoRefreshKey = profilePhotoRefreshKey, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { QinblyComposeSeed.story = true; createEntryMode = "camera"; tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true }, onCreateWith = { mode, seed -> QinblyComposeSeed.text = seed; createEntryMode = mode; tab = 2 }, onOpenConversation = { u -> messageRecipient = u; tab = 1 }, onGoTab = { tab = it }, onSettings = { showSettings = true })
                     1 -> MessagesPage(scrollToTopRequest = navTopRequest, recipientUsername = messageRecipient, onSearch = { showSearchDialog = true }, onOpenConversation = { messageRecipient = it }, onConversationRead = { n -> unreadMessages = (unreadMessages - n).coerceAtLeast(0) }, onOpenProfile = { publicProfileUsername = it }, onNotice = { notice = it }, onAddStory = { QinblyComposeSeed.story = true; createEntryMode = "camera"; tab = 2 })
                     2 -> PostPage(onNotice = { notice = it }, onCameraCancelled = { tab = 0 }, initialMode = createEntryMode, onSwitchMode = { createEntryMode = it })
                     3 -> CommunitiesPage(onNotice = { notice = it })
@@ -6599,7 +6601,7 @@ private fun QinblyRankRow(rank: Int, post: QinblyApi.PostSummary, onClick: () ->
 
 @Composable
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername: String, photoRefreshKey: Int, nameFontStyle: String, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onAddStory: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit, onCreateWith: (String, String) -> Unit = { _, _ -> }, onOpenConversation: (String) -> Unit = {}, onMenu: () -> Unit = {}) {
+private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername: String, photoRefreshKey: Int, nameFontStyle: String, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onAddStory: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit, onCreateWith: (String, String) -> Unit = { _, _ -> }, onOpenConversation: (String) -> Unit = {}, onGoTab: (Int) -> Unit = {}, onSettings: () -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var posts by remember { mutableStateOf(QinblyCache.feed.ifEmpty { QinblyApi.getCachedPosts(context) }) }
@@ -6704,6 +6706,26 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     var nearbyPosts by remember { mutableStateOf<List<QinblyApi.PostSummary>>(emptyList()) }
     var showMarket by remember { mutableStateOf(false) }
     if (showMarket) QinblyMarketDialog(onNotice, onOpenConversation) { showMarket = false }
+    var showShortcuts by remember { mutableStateOf(false) }
+    var showCapsule by remember { mutableStateOf(false) }
+    val shortcutsContext = androidx.compose.ui.platform.LocalContext.current
+    if (showCapsule) QinblyCapsuleHub(QinblyBrand.Accent, { showCapsule = false }, onNotice)
+    if (showShortcuts) QinblyShortcutsScreen(currentUsername, onDismiss = { showShortcuts = false }) { id ->
+        showShortcuts = false
+        when (id) {
+            "profile" -> onGoTab(4)
+            "Vídeos", "Em alta", "Lives", "Perto de mim" -> selectedFeedTab = id
+            "market" -> showMarket = true
+            "communities" -> onGoTab(3)
+            "saved" -> { QinblyProfileJump.tab = "Salvos"; onGoTab(4) }
+            "capsule" -> showCapsule = true
+            "invite" -> try {
+                val share = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Venha para o ${QinblyBrand.Name}! Baixe o app e me siga: @${currentUsername}") }
+                shortcutsContext.startActivity(Intent.createChooser(share, "Convidar amigos"))
+            } catch (_: Exception) { onNotice("Não foi possível abrir o compartilhamento.") }
+            "settings" -> onSettings()
+        }
+    }
     val displayedPosts = when (selectedFeedTab) {
         "Perto de mim" -> nearbyPosts
         "Vídeos" -> allFeedPosts.filter { it.mediaType.equals("video", ignoreCase = true) }
@@ -6795,7 +6817,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 }
         ) {
         Box(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 6.dp).heightIn(min = 42.dp)) {
-            IconButton(onClick = onMenu, modifier = Modifier.align(Alignment.CenterStart).size(44.dp).offset(x = (-8).dp)) {
+            IconButton(onClick = { showShortcuts = true }, modifier = Modifier.align(Alignment.CenterStart).size(44.dp).offset(x = (-8).dp)) {
                 Icon(Icons.Default.Menu, contentDescription = "Menu e configurações", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(30.dp))
             }
             Text(QinblyBrand.Name, style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(QinblyBrand.Logo, QinblyBrand.Pink))), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, modifier = Modifier.align(Alignment.Center))
@@ -9057,6 +9079,52 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
     }
 }
 
+/** Tela de atalhos (menu de três tracinhos do Início): lista simples, sem cartões, para ir direto às partes do app. */
+@Composable
+private fun QinblyShortcutsScreen(username: String, onDismiss: () -> Unit, onItem: (String) -> Unit) {
+    @Composable fun Item(icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color, id: String, title: String, sub: String = "") {
+        Row(Modifier.fillMaxWidth().clickable { onItem(id) }.padding(horizontal = 20.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(26.dp))
+            Spacer(Modifier.width(18.dp))
+            Column {
+                Text(title, color = RemoteAppearance.screenTextColor, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                if (sub.isNotBlank()) Text(sub, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 11.sp)
+            }
+        }
+    }
+    @Composable fun Label(text: String, tint: Color) = Text(text, color = tint, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp, modifier = Modifier.padding(start = 20.dp, top = 22.dp, bottom = 4.dp))
+    val outlined = androidx.compose.material.icons.Icons.Outlined
+    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+        Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.screenTextColor) }
+                Text("Atalhos", color = RemoteAppearance.screenTextColor, fontSize = 20.sp, fontWeight = FontWeight.Medium)
+            }
+            Row(Modifier.fillMaxWidth().clickable { onItem("profile") }.padding(horizontal = 20.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                QiblyAccountAvatar(username, "", 56.dp) { onItem("profile") }
+                Spacer(Modifier.width(16.dp))
+                Column {
+                    Text(if (username.isBlank()) QinblyBrand.Name else username, color = RemoteAppearance.screenTextColor, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text("Ver meu perfil", color = RemoteAppearance.screenSecondaryTextColor, fontSize = 11.sp)
+                }
+            }
+            Label("EXPLORAR", QinblyBrand.Accent)
+            Item(outlined.PlayCircle, QinblyBrand.Accent, "Vídeos", "Vídeos", "Curtos e longos")
+            Item(outlined.LocalFireDepartment, QinblyBrand.Accent, "Em alta", "Em alta", "O que está bombando")
+            Item(outlined.Sensors, QinblyBrand.Accent, "Lives", "Lives", "Transmissões ao vivo")
+            Item(outlined.LocationOn, QinblyBrand.Accent, "Perto de mim", "Perto de mim", "Gente da sua cidade")
+            Item(outlined.ShoppingBasket, QinblyBrand.Accent, "market", "Mercado e avisos", "Vendas, doações e avisos")
+            Label("SEUS ESPAÇOS", QinblyBrand.Logo)
+            Item(outlined.Groups, QinblyBrand.Logo, "communities", "Comunidades", "Seus grupos")
+            Item(outlined.BookmarkBorder, QinblyBrand.Logo, "saved", "Salvos", "Publicações que você guardou")
+            Item(outlined.HourglassEmpty, QinblyBrand.Logo, "capsule", "Cápsula do tempo", "Lembranças para o futuro")
+            Item(outlined.PersonAddAlt1, QinblyBrand.Logo, "invite", "Convidar amigos", "Compartilhe o ${QinblyBrand.Name}")
+            Spacer(Modifier.height(18.dp))
+            Item(outlined.Settings, RemoteAppearance.screenSecondaryTextColor, "settings", "Configurações", "Conta, privacidade, tela e mais")
+        }
+    }
+}
+
 /** Story em bolinha: foto de perfil com anel (azul = não visto), nome embaixo e + no próprio. */
 @Composable
 private fun QinblyStoryBubble(username: String, avatarUrl: String, label: String, ring: Color, plus: Boolean, onPlus: () -> Unit = {}, onClick: () -> Unit) {
@@ -9201,7 +9269,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
     var savedPosts by remember { mutableStateOf<List<QinblyApi.PostSummary>>(emptyList()) }
     var loadingSaved by remember { mutableStateOf(false) }
     var reloadKey by remember { mutableIntStateOf(0) }
-    var profileTab by remember { mutableStateOf("Publicações") }
+    var profileTab by remember { mutableStateOf(QinblyProfileJump.tab.also { QinblyProfileJump.tab = null } ?: "Publicações") }
     var loadingPosts by remember { mutableStateOf(snap == null || snap.posts.isEmpty()) }
     var avatarUrl by remember { mutableStateOf(snap?.avatarUrl ?: "") }
     var profilePhotoUrl by remember { mutableStateOf(snap?.profilePhotoUrl ?: "") }

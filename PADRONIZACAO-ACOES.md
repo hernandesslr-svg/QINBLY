@@ -947,3 +947,7 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Título "Criar" + versão viraram "Novo story" centralizado (sem número de versão); "Galeria" também centralizada.
 - Cartões: largura = (largura da tela - 32 - 24) / 4, para quatro ocupando a tela, altura +12 dp, ícone 30 dp.
 - A grade da galeria usa `navigationBarsPadding()` para terminar acima dos botões do celular.
+
+## Tela de atalhos (menu de três tracinhos do Início)
+- O menu de três tracinhos agora abre `QinblyShortcutsScreen` (tela cheia, em lista, SEM cartões ou caixas em volta de nada; preferência do usuário para telas de configuração/atalhos). Antes abria as Configurações.
+- Perfil no topo (foto + "Ver meu perfil"); EXPLORAR: Vídeos, Em alta, Lives, Perto de mim (trocam a aba do Início) e Mercado e avisos; SEUS ESPAÇOS: Comunidades, Salvos (abre o Perfil já na aba Salvos via `QinblyProfileJump`), Cápsula do tempo, Convidar amigos (compartilhar). No fim, Configurações (abre a tela de configurações de sempre; Ajuda, alternar de conta e sair continuam lá).
