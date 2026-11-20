@@ -6716,7 +6716,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         when (id) {
             "profile" -> onGoTab(4)
             "Vídeos", "Em alta", "Lives", "Perto de mim" -> selectedFeedTab = id
-            "m:Vendas", "m:Doações", "m:Eventos", "m:Serviços", "m:Avisos" -> { marketCategory = id.removePrefix("m:"); showMarket = true }
+            "m:Vendas", "m:Doações", "m:Achados", "m:Eventos", "m:Serviços", "m:Avisos" -> { marketCategory = id.removePrefix("m:"); showMarket = true }
             "communities" -> onGoTab(3)
             "saved" -> { QinblyProfileJump.tab = "Salvos"; onGoTab(4) }
             "capsule" -> showCapsule = true
@@ -9117,6 +9117,7 @@ private fun QinblyShortcutsScreen(username: String, onDismiss: () -> Unit, onIte
             Label("NA SUA CIDADE", QinblyBrand.Pink)
             Item(outlined.ShoppingBasket, QinblyBrand.Pink, "m:Vendas", "Vendas", "Compre e venda perto de você")
             Item(outlined.CardGiftcard, QinblyBrand.Pink, "m:Doações", "Doações", "Dê e ganhe coisas")
+            Item(outlined.Search, QinblyBrand.Pink, "m:Achados", "Achados", "Achei algo, perdi algo")
             Item(outlined.Event, QinblyBrand.Pink, "m:Eventos", "Eventos", "O que vai rolar na cidade")
             Item(outlined.Build, QinblyBrand.Pink, "m:Serviços", "Serviços", "Quem faz o quê")
             Item(outlined.Campaign, QinblyBrand.Pink, "m:Avisos", "Avisos", "Recados do bairro")
@@ -10458,7 +10459,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
             if (section == "home") {
                 item { Text("CONFIGURAÇÕES", color = Color(0xFF8A9BAB), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold) }
                 val categories = listOf(
-                    Triple("market", "Mercado e avisos", "Vendas, doações, eventos, serviços e avisos do bairro"),
+                    Triple("market", "Mercado e avisos", "Vendas, doações, achados e avisos do bairro"),
                     Triple("account", "Conta", "Senha, e-mail, aparelhos e exclusão"),
                     Triple("privacy", "Privacidade", "Quem vê, quem fala com você e bloqueios"),
                     Triple("location", "Localização", "Usar a localização e apagar o que foi guardado"),

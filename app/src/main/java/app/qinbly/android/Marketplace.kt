@@ -74,7 +74,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-// ───────── Perto de mim: anúncios do bairro (vendas, doações, eventos, serviços) ─────────
+// ───────── Perto de mim: anúncios do bairro (vendas, doações, achados, eventos, serviços) ─────────
 
 private val MarketBlue = Color(0xFF2F68E0)
 private const val MARKET_STORAGE = "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/"
@@ -86,7 +86,7 @@ private data class QinblyListing(
     val photos: List<String>, val city: String, val createdAt: String
 )
 
-private val marketCategories = listOf("Tudo", "Vendas", "Doações", "Eventos", "Serviços", "Avisos")
+private val marketCategories = listOf("Tudo", "Vendas", "Doações", "Achados", "Eventos", "Serviços", "Avisos")
 
 private fun kindLabel(kind: String) = when (kind) {
     "venda" -> "Venda"; "doacao" -> "Doação"; "achado" -> "Achado"; "perdido" -> "Perdido"; "evento" -> "Evento"; "servico" -> "Serviço"; else -> "Aviso"
@@ -164,6 +164,7 @@ internal fun QinblyNearbyHub(
     var showCityPicker by remember { mutableStateOf(false) }
     var savedIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     var cat by remember { mutableStateOf(initialCategory) }
+    var sub by remember { mutableStateOf("achado") }
     var listings by remember { mutableStateOf<List<QinblyListing>?>(null) }
     var failed by remember { mutableStateOf(false) }
     var refresh by remember { mutableIntStateOf(0) }
@@ -185,7 +186,7 @@ internal fun QinblyNearbyHub(
             }
         } catch (_: Exception) { }
     }
-    LaunchedEffect(cat, refresh, city, mine) {
+    LaunchedEffect(cat, sub, refresh, city, mine) {
         if (cat == "Avisos" && mine == null) return@LaunchedEffect
         val token = prefs.getString("token", null)
         if (token.isNullOrBlank()) { listings = emptyList(); return@LaunchedEffect }
@@ -193,8 +194,8 @@ internal fun QinblyNearbyHub(
         listings = try {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 val kindFilter = when (cat) {
-                    "Vendas" -> "&kind=eq.venda"; "Doações" -> "&kind=eq.doacao"
-                    "Eventos" -> "&kind=eq.evento"; "Serviços" -> "&kind=eq.servico"; else -> "&kind=not.in.(achado,perdido)"
+                    "Vendas" -> "&kind=eq.venda"; "Doações" -> "&kind=eq.doacao"; "Achados" -> "&kind=eq.$sub"
+                    "Eventos" -> "&kind=eq.evento"; "Serviços" -> "&kind=eq.servico"; else -> ""
                 }
                 val cols = "id,user_id,kind,title,description,price,extra,photos,city,created_at,profiles!marketplace_listings_user_id_fkey(username,display_name)"
                 if (mine == "saved") {
@@ -265,6 +266,18 @@ internal fun QinblyNearbyHub(
                 }
             }
         }
+        if (cat == "Achados" && mine == null) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for ((key, label) in listOf("achado" to "Achados", "perdido" to "Perdidos")) {
+                    val selected = sub == key
+                    Text(
+                        label, color = if (selected) QiblyTheme.background else secondary, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f).clip(RoundedCornerShape(18.dp)).background(if (selected) QiblyTheme.text else QiblyTheme.soft)
+                            .clickable { sub = key }.padding(vertical = 8.dp)
+                    )
+                }
+            }
+        }
         Box(Modifier.fillMaxWidth().weight(1f)) {
             if (cat == "Avisos" && mine == null) {
                 QinblyNeighborhoodBoard(lat, lng, place, textColor, secondary, onRefreshLocation = onRefreshLocation, onNotice = onNotice, onOpenConversation = onOpenConversation)
@@ -304,7 +317,7 @@ internal fun QinblyNearbyHub(
                             Row(Modifier.padding(top = 26.dp), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
                                 for ((label, emoji, tone, key) in listOf(
                                     listOf("Vender", "\uD83D\uDCB2", 0xFF3A5BA5, "venda"), listOf("Doar", "\uD83C\uDF81", 0xFF1D9E75, "doacao"),
-                                    listOf("Serviços", "\uD83D\uDEE0\uFE0F", 0xFF2F6FDB, "servico"), listOf("Eventos", "\uD83C\uDF89", 0xFFFF4F9A, "evento")
+                                    listOf("Achados", "\uD83D\uDD0E", 0xFFE0457B, "achado"), listOf("Eventos", "\uD83C\uDF89", 0xFFFF4F9A, "evento")
                                 ).map { Quad(it[0] as String, it[1] as String, it[2] as Long, it[3] as String) }) {
                                     Column(Modifier.clickable { createKind = key }, horizontalAlignment = Alignment.CenterHorizontally) {
                                         Box(Modifier.size(46.dp).clip(CircleShape).background(QiblyTheme.soft), contentAlignment = Alignment.Center) { EmojiIcon(emoji, 22.dp, secondary) }
@@ -464,7 +477,7 @@ internal fun QinblyNearbyHub(
         QinblyBottomPanel("O que você quer publicar?", onDismiss = { showMenu = false }) {
             val options = listOf(
                 Triple("venda", "Vender", "Usados e desapegos"), Triple("doacao", "Doar", "Dê de graça para quem precisa"),
-                Triple("evento", "Evento", "Feiras, encontros"),
+                Triple("achado", "Achado ou perdido", "Chaves, pets, documentos"), Triple("evento", "Evento", "Feiras, encontros"),
                 Triple("servico", "Serviço", "Ofereça ou peça um serviço"), Triple("aviso", "Aviso", "Recado que some em 48 h")
             )
             for ((key, title, sub2) in options) {
@@ -488,7 +501,8 @@ internal fun QinblyNearbyHub(
     createKind?.let { k ->
         ListingForm(k, city, onDismiss = { createKind = null }, onPosted = { posted ->
             createKind = null
-            cat = when (posted) { "venda" -> "Vendas"; "doacao" -> "Doações"; "evento" -> "Eventos"; else -> "Serviços" }
+            cat = when (posted) { "venda" -> "Vendas"; "doacao" -> "Doações"; "achado", "perdido" -> "Achados"; "evento" -> "Eventos"; else -> "Serviços" }
+            if (posted == "achado" || posted == "perdido") sub = posted
             refresh++
         }, onNotice = onNotice)
     }
@@ -607,7 +621,7 @@ private fun ListingDetail(
 private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPosted: (String) -> Unit, onNotice: (String) -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
-    var subKind by remember { mutableStateOf(kind) }
+    var subKind by remember { mutableStateOf(if (kind == "achado") "achado" else kind) }
     var title by remember { mutableStateOf("") }
     var desc by remember { mutableStateOf("") }
     var priceTxt by remember { mutableStateOf("") }
@@ -671,6 +685,15 @@ private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPos
                     }
                 }
                 Text(if (needsPhoto) "Até 6 fotos (pelo menos 1)" else "Até 6 fotos (opcional)", color = QiblyTheme.secondary, fontSize = 12.sp)
+                if (kind == "achado") {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        for ((key, label) in listOf("achado" to "Achei algo", "perdido" to "Perdi algo")) {
+                            val selected = subKind == key
+                            Text(label, color = if (selected) QiblyTheme.background else QiblyTheme.secondary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, textAlign = TextAlign.Center,
+                                modifier = Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(if (selected) QiblyTheme.text else QiblyTheme.soft).clickable { subKind = key }.padding(vertical = 10.dp))
+                        }
+                    }
+                }
                 QinblyPillField(title, { title = it.take(120) }, when (kind) { "venda" -> "O que você está vendendo?"; "doacao" -> "O que você está doando?"; "achado" -> "O que foi?"; "evento" -> "Nome do evento"; else -> "Qual serviço?" }, Modifier.fillMaxWidth())
                 QinblyPillField(desc, { desc = it.take(2000) }, "Descrição", Modifier.fillMaxWidth(), maxLines = 5)
                 if (hasPrice) QinblyPillField(priceTxt, { priceTxt = it.filter { c -> c.isDigit() || c == ',' || c == '.' }.take(10) }, if (kind == "venda") "Preço (R$)" else "Preço (R$, opcional)", Modifier.fillMaxWidth())
@@ -783,6 +806,7 @@ private fun chipStyle(name: String): Pair<String, Color> = when (name) {
     "Tudo" -> "\u2728" to Color(0xFF7C4DFF)
     "Vendas" -> "\uD83D\uDCB2" to Color(0xFF3A5BA5)
     "Doações" -> "\uD83C\uDF81" to Color(0xFF1D9E75)
+    "Achados" -> "\uD83D\uDD0E" to Color(0xFFE0457B)
     "Eventos" -> "\uD83C\uDF89" to Color(0xFFFF4F9A)
     "Serviços" -> "\uD83D\uDEE0\uFE0F" to Color(0xFF2F6FDB)
     else -> "\uD83D\uDCAC" to Color(0xFF6B7280)

@@ -955,3 +955,5 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 ## Atalhos do mercado e "Achados" removido
 - Tela de atalhos: o item "Mercado e avisos" saiu de EXPLORAR e virou o grupo NA SUA CIDADE com Vendas (a mesma cestinha do topo do Início), Doações, Eventos, Serviços e Avisos. Cada um abre o Mercado já na categoria (`QinblyMarketDialog(initialCategory)` / `QinblyNearbyHub(initialCategory)`). A cestinha do topo continua abrindo em "Tudo".
 - "Achados" removido do Mercado: chip, subfiltro Achados/Perdidos, atalho de publicar e opção "Achado ou perdido". Anúncios antigos de achados/perdidos deixam de aparecer em "Tudo" (filtro `kind=not.in.(achado,perdido)`); nada foi apagado no servidor.
+
+- Atualização: o "Achados" voltou ao Mercado (chip, subfiltro Achei/Perdi, publicar achado, anúncios antigos) e entrou na lista NA SUA CIDADE dos atalhos, entre Doações e Eventos (ícone de lupa, abre o Mercado em Achados).
