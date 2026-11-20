@@ -148,7 +148,6 @@ internal fun QinblyStoryMenu(
                     item { Square(Icons.Outlined.TextFields, "Texto") { step = "text" } }
                     item { Square(Icons.Outlined.MusicNote, "Música") { step = "music" } }
                     item { Square(Icons.Outlined.Groups, "Story coletivo") { step = "collab" } }
-                    item { Square(Icons.Outlined.EmojiEmotions, "Clima do dia") { step = "mood" } }
                     item { Square(Icons.Outlined.HourglassEmpty, "Cápsula do tempo") { step = "capsule" } }
                 }
                 Text("Galeria", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 16.dp, top = 18.dp, bottom = 8.dp))
