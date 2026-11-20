@@ -1893,6 +1893,16 @@ private fun QinblyApp() {
 
     var liked by remember { mutableStateOf(setOf<String>()) }
     var notice by remember { mutableStateOf("") }
+    // O aviso do app nunca era desenhado em lugar nenhum: agora aparece como aviso do sistema, por cima de qualquer tela.
+    val noticeContext = androidx.compose.ui.platform.LocalContext.current
+    val lastNoticeAt = remember { longArrayOf(0L) }
+    LaunchedEffect(notice) {
+        if (notice.isNotBlank()) {
+            val now = System.currentTimeMillis()
+            if (now - lastNoticeAt[0] > 1500L) { lastNoticeAt[0] = now; qinblyToastNow(noticeContext, notice) }
+            notice = ""
+        }
+    }
     var showCreateOptions by remember { mutableStateOf(false) }
     var createEntryMode by remember { mutableStateOf("camera") }
     var profileStat by remember { mutableStateOf("") }

@@ -978,3 +978,8 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 
 ## Editor da câmera: aviso ao salvar
 - Ao tocar em "Salvar" no editor, o aviso ("Foto salva na galeria…" / "Vídeo salvo…" / erro) agora é um aviso do sistema, que aparece por cima da tela cheia. Antes usava o aviso do app, que ficava escondido atrás do editor.
+
+## Avisos: agora aparecem em todo o app
+- O aviso central do app (usado por salvar perfil, trocar foto, sair da conta, erros de rede, etc.) era guardado mas nunca desenhado. Agora cada aviso aparece como aviso do sistema, por cima de qualquer tela.
+- Avisos iguais em menos de 1,5 s não se repetem.
+- Telas que já tinham o próprio aviso (Stories, texto, coletivo, editor) continuam como estavam.
