@@ -108,7 +108,7 @@ internal fun QinblyStoryMenu(
 ) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
-    var step by remember { mutableStateOf("menu") } // menu, text, collab, capsule, note
+    var step by remember { mutableStateOf("menu") } // menu, text, collab, note
     var noteText by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
 
@@ -149,7 +149,6 @@ internal fun QinblyStoryMenu(
                     item { Square(Icons.Outlined.TextFields, "Texto") { step = "text" } }
                     item { Square(Icons.Outlined.MusicNote, "Música") { step = "music" } }
                     item { Square(Icons.Outlined.Groups, "Story coletivo") { step = "collab" } }
-                    item { Square(Icons.Outlined.HourglassEmpty, "Cápsula do tempo") { step = "capsule" } }
                 }
                 Text("Galeria", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 8.dp))
                 androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
@@ -208,7 +207,6 @@ internal fun QinblyStoryMenu(
             },
             onDismiss = { step = "menu" }
         )
-        "capsule" -> QinblyCapsuleHub(accent, { step = "menu" }, onNotice)
         "packs" -> QinblyStickerPacksDialog(accent, { step = "menu" }, onNotice)
         "text" -> QinblyTextStoryComposer(onDismiss = { step = "menu" }, onPublished = { onChanged(); onDismiss() }, onNotice = onNotice)
         else -> AlertDialog(

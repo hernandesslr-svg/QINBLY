@@ -971,3 +971,7 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Toda tela cheia, menu lateral ou lista dentro de QinblyDialog (decorFitsSystemWindows = false) usa `qinblyNavBarPadding()` como espaço no fim da tela/lista. `navigationBarsPadding()` sozinho não funcionou nesses diálogos.
 - Aplicado em: Atalhos do Início, menu lateral do Mercado e grade da galeria do "Novo story".
 - Telas novas já nascem assim; ao mexer em tela antiga que use só `navigationBarsPadding()` dentro de diálogo, trocar.
+
+## Cápsula do tempo removida
+- Removida do app: botão no "Novo story", item nos Atalhos do Início, aviso de cápsula que chegava na tela inicial e o arquivo Capsule.kt inteiro.
+- Os dados antigos no banco não foram mexidos.

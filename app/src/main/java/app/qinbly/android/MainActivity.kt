@@ -6717,9 +6717,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     var marketCategory by remember { mutableStateOf("Vendas") }
     if (showMarket) QinblyMarketDialog(onNotice, onOpenConversation, marketCategory, single = true) { showMarket = false }
     var showShortcuts by remember { mutableStateOf(false) }
-    var showCapsule by remember { mutableStateOf(false) }
     val shortcutsContext = androidx.compose.ui.platform.LocalContext.current
-    if (showCapsule) QinblyCapsuleHub(QinblyBrand.Accent, { showCapsule = false }, onNotice)
     if (showShortcuts) QinblyShortcutsScreen(currentUsername, onDismiss = { showShortcuts = false }) { id ->
         showShortcuts = false
         when (id) {
@@ -6728,7 +6726,6 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             "m:Vendas", "m:Doações", "m:Achados", "m:Eventos", "m:Serviços", "m:Avisos" -> { marketCategory = id.removePrefix("m:"); showMarket = true }
             "communities" -> onGoTab(3)
             "saved" -> { QinblyProfileJump.tab = "Salvos"; onGoTab(4) }
-            "capsule" -> showCapsule = true
             "invite" -> try {
                 val share = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Venha para o ${QinblyBrand.Name}! Baixe o app e me siga: @${currentUsername}") }
                 shortcutsContext.startActivity(Intent.createChooser(share, "Convidar amigos"))
@@ -9022,7 +9019,6 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
         }
     }
     LaunchedEffect(Unit) { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyStoryMute.sync(prefs) } }
-    if (!hostOnly) QinblyCapsuleInbox()
     val myStoryEntry = storyTray.firstOrNull { it.mine }
     val trayOthers = storyTray.filter { !it.mine && it.stories.isNotEmpty() }.sortedBy { QinblyStoryMute.isMuted(prefs, it.username) }
     if (!hostOnly) androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp)) {
@@ -9133,7 +9129,6 @@ private fun QinblyShortcutsScreen(username: String, onDismiss: () -> Unit, onIte
             Label("SEUS ESPAÇOS", QinblyBrand.Logo)
             Item(outlined.Groups, QinblyBrand.Logo, "communities", "Comunidades", "Seus grupos")
             Item(outlined.BookmarkBorder, QinblyBrand.Logo, "saved", "Salvos", "Publicações que você guardou")
-            Item(outlined.HourglassEmpty, QinblyBrand.Logo, "capsule", "Cápsula do tempo", "Lembranças para o futuro")
             Item(outlined.PersonAddAlt1, QinblyBrand.Logo, "invite", "Convidar amigos", "Compartilhe o ${QinblyBrand.Name}")
             Spacer(Modifier.height(18.dp))
             Item(outlined.Settings, RemoteAppearance.screenSecondaryTextColor, "settings", "Configurações", "Conta, privacidade, tela e mais")
