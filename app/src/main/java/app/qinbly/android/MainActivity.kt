@@ -9154,7 +9154,8 @@ private fun QiblyAccountAvatar(username: String, fallbackUrl: String, diameter: 
         }
     }
     val ringOn = storyRing && QinblyStoryRings.hasUnseen(key)
-    Box(Modifier.size(diameter).clickable {
+    // clip(CircleShape) antes do clickable: o brilho do toque fica redondo, sem o quadrado transparente em volta da foto.
+    Box(Modifier.size(diameter).clip(CircleShape).clickable {
         // Com anel (story novo) a foto abre o story; o nome ao lado continua abrindo o perfil.
         val tray = if (ringOn) QinblyStoryRings.entries[key] else null
         if (tray != null) QinblyStoryRings.openRequest = tray else onClick()

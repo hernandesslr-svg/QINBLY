@@ -907,3 +907,6 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 ## Teclas de volume tiram a foto na câmera
 - Enquanto a câmera do app está aberta (sem o editor por cima), as teclas de aumentar e diminuir volume funcionam como o botão de tirar foto (ou começam/param a gravação, no modo vídeo). O volume do celular não muda nessa hora.
 - Implementação: `QinblyCameraKeys` (MainActivity.kt) + `dispatchKeyEvent` consome a tecla só quando `active`; `PostPage` liga/desliga `active` e chama `onShutterTap()`. Fora da câmera, as teclas continuam só ligando o som dos vídeos mudos.
+
+## Toque na foto de perfil sem quadrado transparente
+- `QiblyAccountAvatar` (usada na faixa de stories e em todo o app) tinha o brilho de toque do Android num quadrado do tamanho da foto, que aparecia em volta da bolinha. Agora o toque é cortado em círculo (`clip(CircleShape)` antes do `clickable`), então o efeito fica redondo, igual à foto.
