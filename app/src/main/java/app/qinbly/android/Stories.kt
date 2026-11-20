@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,6 +39,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -113,44 +115,73 @@ internal fun QinblyStoryMenu(
     when (step) {
         "menu" -> QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
             val card = Color(0xFF232325)
-            val red = Color(0xFFE5484D)
-            @Composable fun Big(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, sub: String, modifier: Modifier, onClick: () -> Unit) {
-                Column(modifier.clip(RoundedCornerShape(18.dp)).background(card).clickable { onClick() }.padding(horizontal = 6.dp, vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
-                    Text(title, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    Text(sub, color = Color(0xFFF2F4F8), fontSize = 10.sp, lineHeight = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            // Cartão quadrado de atalho (rola para o lado): ícone em cima e nome embaixo.
+            @Composable fun Square(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, onClick: () -> Unit) {
+                Column(
+                    Modifier.size(82.dp).clip(RoundedCornerShape(16.dp)).background(card).clickable { onClick() }.padding(horizontal = 4.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.height(6.dp))
+                    Text(title, color = Color.White, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Medium, maxLines = 2,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
-            @Composable fun Short(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, sub: String, tint: Color = Color.White, onClick: () -> Unit) {
-                Row(Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF2C2C2E)), contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp)) }
-                    Spacer(Modifier.width(10.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(title, color = tint, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        Text(sub, color = Color(0xFFF2F4F8), fontSize = 10.sp)
-                    }
-                    Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = Color(0xFFF2F4F8), modifier = Modifier.size(18.dp))
-                }
+            var galleryGranted by remember { mutableStateOf(hasGalleryPermission(context)) }
+            var galleryItems by remember { mutableStateOf<List<GalleryItem>>(emptyList()) }
+            val galleryPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { galleryGranted = hasGalleryPermission(context) }
+            val systemPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+                if (uri != null) { qinblySetPickedMedia(uri, (context.contentResolver.getType(uri) ?: "").startsWith("video/")); onDismiss(); onAddStory() }
             }
-            Column(Modifier.fillMaxSize().background(Color(0xFF171719)).statusBarsPadding().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 24.dp)) {
-                Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            LaunchedEffect(galleryGranted) {
+                if (galleryGranted) galleryItems = withContext(Dispatchers.IO) { loadRecentMedia(context) }
+            }
+            Column(Modifier.fillMaxSize().background(Color(0xFF171719)).statusBarsPadding()) {
+                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 6.dp).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("Criar", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium)
                     Text("  v" + BuildConfig.VERSION_NAME, color = Color(0x88FFFFFF), fontSize = 12.sp, modifier = Modifier.weight(1f))
                     Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable { onDismiss() }, contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.White, modifier = Modifier.size(22.dp))
                     }
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Big(Icons.Outlined.AddBox, "Story", "Compartilhe fotos e vídeos", Modifier.weight(1f)) { onDismiss(); onAddStory() }
-                    Big(Icons.Outlined.TextFields, "Texto", "Escreva e deixe comentarem", Modifier.weight(1f)) { step = "text" }
-                    Big(Icons.Outlined.MusicNote, "Música", "Compartilhe uma música no seu perfil", Modifier.weight(1f)) { step = "music" }
+                androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)) {
+                    item { Square(Icons.Outlined.TextFields, "Texto") { step = "text" } }
+                    item { Square(Icons.Outlined.MusicNote, "Música") { step = "music" } }
+                    item { Square(Icons.Outlined.Groups, "Story coletivo") { step = "collab" } }
+                    item { Square(Icons.Outlined.EmojiEmotions, "Clima do dia") { step = "mood" } }
+                    item { Square(Icons.Outlined.HourglassEmpty, "Cápsula do tempo") { step = "capsule" } }
                 }
-                Text("Mais", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 22.dp, bottom = 8.dp))
-                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF232325)).padding(vertical = 6.dp)) {
-                    if (hasStory) Short(Icons.Outlined.Visibility, "Ver meu story", "Abrir o story que está no ar") { onDismiss(); onViewMine() }
-                    Short(Icons.Outlined.Groups, "Story coletivo", "Lance um tema e os amigos participam") { step = "collab" }
-                    Short(Icons.Outlined.EmojiEmotions, "Clima do dia", "Mostre seu humor com emoji e cor") { step = "mood" }
-                    Short(Icons.Outlined.HourglassEmpty, "Cápsula do tempo", "Guarde uma lembrança para abrir no futuro") { step = "capsule" }
+                Text("Galeria", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 16.dp, top = 18.dp, bottom = 8.dp))
+                androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+                    androidx.compose.foundation.lazy.grid.GridCells.Fixed(3), modifier = Modifier.weight(1f).fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    // Primeiro quadradinho: a câmera do app.
+                    item(key = "camera-tile") {
+                        Column(
+                            Modifier.aspectRatio(0.75f).background(Color(0xFF2A2A30)).clickable { onDismiss(); onAddStory() },
+                            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = Color.White, modifier = Modifier.size(30.dp))
+                            Spacer(Modifier.height(6.dp))
+                            Text("Câmera", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
+                    if (!galleryGranted) item(key = "gallery-permission", span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
+                        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Permita o acesso às suas fotos para escolher daqui.", color = Color(0xFFF2F4F8), fontSize = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            Text("Permitir acesso", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFF2F68E0))
+                                .clickable { galleryPermission.launch(if (android.os.Build.VERSION.SDK_INT >= 33) arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES, android.Manifest.permission.READ_MEDIA_VIDEO) else arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)) }
+                                .padding(horizontal = 18.dp, vertical = 9.dp))
+                            Text("Escolher pela galeria do celular", color = Color(0xFF7FA6F2), fontSize = 11.sp, modifier = Modifier.clickable { systemPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }.padding(6.dp))
+                        }
+                    }
+                    gridItems(galleryItems, key = { it.uri.toString() }) { g ->
+                        Box(Modifier.aspectRatio(0.75f).clickable { qinblySetPickedMedia(g.uri, g.video); onDismiss(); onAddStory() }) {
+                            MediaThumb(g.uri, g.video, Modifier.fillMaxSize(), size = 400)
+                            if (g.video) QinblyIconOf(QinblyIcon.PlayArrow, Color.White, 20.dp, Modifier.align(Alignment.BottomStart).padding(6.dp))
+                        }
+                    }
                 }
             }
         }
