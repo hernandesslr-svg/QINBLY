@@ -6033,12 +6033,12 @@ private fun QinblyLiveSearch(lives: List<QinblyLive>, onBack: () -> Unit, onOpen
 
 /** Mercado e avisos em tela cheia (aberto pelo mercadinho no topo do Início e pelo Menu). */
 @Composable
-private fun QinblyMarketDialog(onNotice: (String) -> Unit, onOpenConversation: (String) -> Unit, onDismiss: () -> Unit) {
+private fun QinblyMarketDialog(onNotice: (String) -> Unit, onOpenConversation: (String) -> Unit, initialCategory: String = "Tudo", onDismiss: () -> Unit) {
     QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding().navigationBarsPadding()) {
             QinblyNearbyPage(onNotice) { lat, lng, place, refresh ->
                 QinblyNearbyHub(lat, lng, place, RemoteAppearance.feedTextColor, RemoteAppearance.feedSecondaryTextColor, onRefreshLocation = refresh,
-                    onOpenConversation = { onDismiss(); onOpenConversation(it) }, onNotice = onNotice, onClose = onDismiss)
+                    onOpenConversation = { onDismiss(); onOpenConversation(it) }, onNotice = onNotice, onClose = onDismiss, initialCategory = initialCategory)
             }
         }
     }
@@ -6705,7 +6705,8 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     }
     var nearbyPosts by remember { mutableStateOf<List<QinblyApi.PostSummary>>(emptyList()) }
     var showMarket by remember { mutableStateOf(false) }
-    if (showMarket) QinblyMarketDialog(onNotice, onOpenConversation) { showMarket = false }
+    var marketCategory by remember { mutableStateOf("Tudo") }
+    if (showMarket) QinblyMarketDialog(onNotice, onOpenConversation, marketCategory) { showMarket = false }
     var showShortcuts by remember { mutableStateOf(false) }
     var showCapsule by remember { mutableStateOf(false) }
     val shortcutsContext = androidx.compose.ui.platform.LocalContext.current
@@ -6715,7 +6716,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         when (id) {
             "profile" -> onGoTab(4)
             "Vídeos", "Em alta", "Lives", "Perto de mim" -> selectedFeedTab = id
-            "market" -> showMarket = true
+            "m:Vendas", "m:Doações", "m:Eventos", "m:Serviços", "m:Avisos" -> { marketCategory = id.removePrefix("m:"); showMarket = true }
             "communities" -> onGoTab(3)
             "saved" -> { QinblyProfileJump.tab = "Salvos"; onGoTab(4) }
             "capsule" -> showCapsule = true
@@ -6825,7 +6826,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             IconButton(onClick = onSearch, modifier = Modifier.size(42.dp)) {
                 Icon(Icons.Default.Search, contentDescription = "Buscar", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(26.dp))
             }
-            IconButton(onClick = { showMarket = true }, modifier = Modifier.size(42.dp)) {
+            IconButton(onClick = { marketCategory = "Tudo"; showMarket = true }, modifier = Modifier.size(42.dp)) {
                 Icon(androidx.compose.material.icons.Icons.Outlined.ShoppingBasket, contentDescription = "Mercado e avisos", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(26.dp))
             }
             Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
@@ -9113,7 +9114,12 @@ private fun QinblyShortcutsScreen(username: String, onDismiss: () -> Unit, onIte
             Item(outlined.LocalFireDepartment, QinblyBrand.Accent, "Em alta", "Em alta", "O que está bombando")
             Item(outlined.Sensors, QinblyBrand.Accent, "Lives", "Lives", "Transmissões ao vivo")
             Item(outlined.LocationOn, QinblyBrand.Accent, "Perto de mim", "Perto de mim", "Gente da sua cidade")
-            Item(outlined.ShoppingBasket, QinblyBrand.Accent, "market", "Mercado e avisos", "Vendas, doações e avisos")
+            Label("NA SUA CIDADE", QinblyBrand.Pink)
+            Item(outlined.ShoppingBasket, QinblyBrand.Pink, "m:Vendas", "Vendas", "Compre e venda perto de você")
+            Item(outlined.CardGiftcard, QinblyBrand.Pink, "m:Doações", "Doações", "Dê e ganhe coisas")
+            Item(outlined.Event, QinblyBrand.Pink, "m:Eventos", "Eventos", "O que vai rolar na cidade")
+            Item(outlined.Build, QinblyBrand.Pink, "m:Serviços", "Serviços", "Quem faz o quê")
+            Item(outlined.Campaign, QinblyBrand.Pink, "m:Avisos", "Avisos", "Recados do bairro")
             Label("SEUS ESPAÇOS", QinblyBrand.Logo)
             Item(outlined.Groups, QinblyBrand.Logo, "communities", "Comunidades", "Seus grupos")
             Item(outlined.BookmarkBorder, QinblyBrand.Logo, "saved", "Salvos", "Publicações que você guardou")
