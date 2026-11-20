@@ -939,3 +939,6 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Saíram o cartão "Story", a lista "Mais" e a opção "Ver meu story". Os atalhos viraram cartões quadrados (82 dp, só ícone e nome) numa `LazyRow`: Texto, Música, Story coletivo, Clima do dia, Cápsula do tempo (cabem uns 4 na tela; o 5º aparece pela metade).
 - Abaixo, "Galeria": grade de 3 colunas (fotos 3:4) com `loadRecentMedia` e `MediaThumb` (os mesmos do story coletivo). O primeiro quadradinho é a câmera do app. Tocar numa foto usa `qinblySetPickedMedia` e abre direto o editor padrão. Sem permissão de fotos, mostra "Permitir acesso" e a opção de escolher pelo seletor do sistema.
 - Cartão "Clima do dia" removido do menu Criar (a tela do clima continua no código, sem atalho).
+
+## Clima do dia removido do app
+- Removidos: tela/seleção do clima (`QinblyMoodDialog`, `qinblyFetchMoods`, `QinblyMood` em Extras.kt), o passo "mood" do menu Criar e o emoji de clima nas bolinhas e nos cartões de story. As colunas `mood_*` da tabela `profiles` ficam no Supabase sem uso (nada foi alterado no servidor).

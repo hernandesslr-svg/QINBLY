@@ -8990,11 +8990,6 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
         }
     }
     LaunchedEffect(Unit) { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyStoryMute.sync(prefs) } }
-    var moods by remember { mutableStateOf<Map<String, QinblyMood>>(emptyMap()) }
-    LaunchedEffect(storyTray) {
-        val token = prefs.getString("token", null)
-        if (!token.isNullOrBlank()) moods = try { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { qinblyFetchMoods(token, storyTray.map { it.username } + listOf(prefs.getString("username", "").orEmpty())) } } catch (_: Exception) { moods }
-    }
     if (!hostOnly) QinblyCapsuleInbox()
     val myStoryEntry = storyTray.firstOrNull { it.mine }
     val trayOthers = storyTray.filter { !it.mine && it.stories.isNotEmpty() }.sortedBy { QinblyStoryMute.isMuted(prefs, it.username) }
@@ -9006,7 +9001,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
                 username = myName, avatarUrl = mine?.avatarUrl.orEmpty(), label = "Seu story",
                 // Igual aos outros: azul enquanto há story seu que você ainda não viu; apaga depois que você abre; cinza se não tem story.
                 ring = if (mine?.stories?.isNotEmpty() != true) Color(0xFF55555C) else if (QinblyStoryRings.entryUnseen(prefs, mine)) QinblyBrand.Accent else Color(0xFF4A4066), plus = true,
-                mood = moods[myName], onPlus = { showStoryMenu = true },
+                onPlus = { showStoryMenu = true },
                 onClick = { if (mine?.stories?.isNotEmpty() == true) viewingStory = mine else showStoryMenu = true }
             )
         }
@@ -9014,7 +9009,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
             QinblyStoryBubble(
                 username = person.username, avatarUrl = person.avatarUrl, label = person.displayName.ifBlank { person.username },
                 ring = if (QinblyStoryMute.isMuted(prefs, person.username)) Color(0xFF55555C) else if (person.stories.isEmpty() || QinblyStoryRings.entryUnseen(prefs, person)) QinblyBrand.Accent else Color(0xFF4A4066),
-                plus = false, mood = moods[person.username], onClick = { viewingStory = person }
+                plus = false, onClick = { viewingStory = person }
             )
         }
     }
@@ -9062,9 +9057,9 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
     }
 }
 
-/** Story em bolinha: foto de perfil com anel (azul = não visto), nome embaixo, + no próprio e emoji do clima do dia. */
+/** Story em bolinha: foto de perfil com anel (azul = não visto), nome embaixo e + no próprio. */
 @Composable
-private fun QinblyStoryBubble(username: String, avatarUrl: String, label: String, ring: Color, plus: Boolean, mood: QinblyMood?, onPlus: () -> Unit = {}, onClick: () -> Unit) {
+private fun QinblyStoryBubble(username: String, avatarUrl: String, label: String, ring: Color, plus: Boolean, onPlus: () -> Unit = {}, onClick: () -> Unit) {
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Column(Modifier.width(96.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.size(88.dp), contentAlignment = Alignment.Center) {
@@ -9074,10 +9069,6 @@ private fun QinblyStoryBubble(username: String, avatarUrl: String, label: String
                 Modifier.align(Alignment.BottomCenter).offset(y = 9.dp).size(28.dp).clip(CircleShape).background(Color.White).border(2.dp, QiblyTheme.background, CircleShape).clickable { onPlus() },
                 contentAlignment = Alignment.Center
             ) { Icon(Icons.Default.Add, contentDescription = "Criar story", tint = Color.Black, modifier = Modifier.size(19.dp)) }
-            if (mood != null) Box(
-                Modifier.align(Alignment.TopEnd).size(28.dp).clip(CircleShape).background(mood.color).border(2.dp, QiblyTheme.background, CircleShape),
-                contentAlignment = Alignment.Center
-            ) { Text(mood.emoji, fontSize = 13.sp) }
         }
         Text(label, color = RemoteAppearance.feedTextColor, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(top = if (plus) 13.dp else 5.dp))
@@ -9085,7 +9076,7 @@ private fun QinblyStoryBubble(username: String, avatarUrl: String, label: String
 }
 
 @Composable
-private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, textStory: QinblyTextStory?, ring: Color, plus: Boolean, collabAvatars: List<String> = emptyList(), mood: QinblyMood? = null, onPlus: () -> Unit = {}, showAvatar: Boolean = false, avatarUrl: String = "", onClick: () -> Unit) {
+private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolean, label: String, textStory: QinblyTextStory?, ring: Color, plus: Boolean, collabAvatars: List<String> = emptyList(), onPlus: () -> Unit = {}, showAvatar: Boolean = false, avatarUrl: String = "", onClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Box(Modifier.width(168.dp).height(306.dp).clip(shape).background(QiblyTheme.soft).clickable(indication = null, interactionSource = ms) { onClick() }) {
@@ -9121,7 +9112,6 @@ private fun QinblyStoryCard(imageUrl: String, isAvatar: Boolean, isVideo: Boolea
                 }
             }
         }
-        if (mood != null) Box(Modifier.align(Alignment.TopStart).padding(8.dp).size(36.dp).clip(CircleShape).background(mood.color).border(2.dp, Color.White, CircleShape), contentAlignment = Alignment.Center) { Text(mood.emoji, fontSize = 18.sp) }
         if (showAvatar) Row(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(start = 10.dp, end = 10.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(34.dp).clip(CircleShape).background(QiblyTheme.soft).border(2.dp, QinblyBrand.Accent, CircleShape), contentAlignment = Alignment.Center) {
                 if (avatarUrl.isNotBlank()) AsyncImage(model = avatarUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)

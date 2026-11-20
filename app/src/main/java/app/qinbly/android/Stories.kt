@@ -108,7 +108,7 @@ internal fun QinblyStoryMenu(
 ) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount() }
-    var step by remember { mutableStateOf("menu") } // menu, text, collab, mood, capsule, note
+    var step by remember { mutableStateOf("menu") } // menu, text, collab, capsule, note
     var noteText by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
 
@@ -207,7 +207,6 @@ internal fun QinblyStoryMenu(
             },
             onDismiss = { step = "menu" }
         )
-        "mood" -> QinblyMoodDialog(onDismiss = { step = "menu" }, onNotice = onNotice, onChanged = onChanged)
         "capsule" -> QinblyCapsuleHub(accent, { step = "menu" }, onNotice)
         "packs" -> QinblyStickerPacksDialog(accent, { step = "menu" }, onNotice)
         "text" -> QinblyTextStoryComposer(onDismiss = { step = "menu" }, onPublished = { onChanged(); onDismiss() }, onNotice = onNotice)
