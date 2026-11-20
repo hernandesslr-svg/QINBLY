@@ -942,3 +942,8 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 
 ## Clima do dia removido do app
 - Removidos: tela/seleção do clima (`QinblyMoodDialog`, `qinblyFetchMoods`, `QinblyMood` em Extras.kt), o passo "mood" do menu Criar e o emoji de clima nas bolinhas e nos cartões de story. As colunas `mood_*` da tabela `profiles` ficam no Supabase sem uso (nada foi alterado no servidor).
+
+## Tela Criar: ajustes (título, cartões maiores, galeria acima dos botões)
+- Título "Criar" + versão viraram "Novo story" centralizado (sem número de versão); "Galeria" também centralizada.
+- Cartões: largura = (largura da tela - 32 - 24) / 4, para quatro ocupando a tela, altura +12 dp, ícone 30 dp.
+- A grade da galeria usa `navigationBarsPadding()` para terminar acima dos botões do celular.

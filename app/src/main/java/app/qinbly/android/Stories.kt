@@ -116,14 +116,16 @@ internal fun QinblyStoryMenu(
         "menu" -> QinblyDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
             val card = Color(0xFF232325)
             // Cartão quadrado de atalho (rola para o lado): ícone em cima e nome embaixo.
+            // Quatro cartões ocupam a largura da tela (16 dp de margem e 8 dp entre eles).
+            val cardWidth = ((androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp - 32 - 24) / 4f).dp
             @Composable fun Square(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, onClick: () -> Unit) {
                 Column(
-                    Modifier.size(82.dp).clip(RoundedCornerShape(16.dp)).background(card).clickable { onClick() }.padding(horizontal = 4.dp, vertical = 8.dp),
+                    Modifier.width(cardWidth).height(cardWidth + 12.dp).clip(RoundedCornerShape(16.dp)).background(card).clickable { onClick() }.padding(horizontal = 4.dp, vertical = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
                 ) {
-                    Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(24.dp))
-                    Spacer(Modifier.height(6.dp))
-                    Text(title, color = Color.White, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Medium, maxLines = 2,
+                    Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(30.dp))
+                    Spacer(Modifier.height(8.dp))
+                    Text(title, color = Color.White, fontSize = 11.sp, lineHeight = 13.sp, fontWeight = FontWeight.Medium, maxLines = 2,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
@@ -137,10 +139,9 @@ internal fun QinblyStoryMenu(
                 if (galleryGranted) galleryItems = withContext(Dispatchers.IO) { loadRecentMedia(context) }
             }
             Column(Modifier.fillMaxSize().background(Color(0xFF171719)).statusBarsPadding()) {
-                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 6.dp).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Criar", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium)
-                    Text("  v" + BuildConfig.VERSION_NAME, color = Color(0x88FFFFFF), fontSize = 12.sp, modifier = Modifier.weight(1f))
-                    Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable { onDismiss() }, contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 6.dp).padding(vertical = 12.dp).heightIn(min = 40.dp), contentAlignment = Alignment.Center) {
+                    Text("Novo story", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+                    Box(Modifier.align(Alignment.CenterEnd).size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable { onDismiss() }, contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.White, modifier = Modifier.size(22.dp))
                     }
                 }
@@ -150,9 +151,9 @@ internal fun QinblyStoryMenu(
                     item { Square(Icons.Outlined.Groups, "Story coletivo") { step = "collab" } }
                     item { Square(Icons.Outlined.HourglassEmpty, "Cápsula do tempo") { step = "capsule" } }
                 }
-                Text("Galeria", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 16.dp, top = 18.dp, bottom = 8.dp))
+                Text("Galeria", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 8.dp))
                 androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
-                    androidx.compose.foundation.lazy.grid.GridCells.Fixed(3), modifier = Modifier.weight(1f).fillMaxWidth(),
+                    androidx.compose.foundation.lazy.grid.GridCells.Fixed(3), modifier = Modifier.weight(1f).fillMaxWidth().navigationBarsPadding(),
                     horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     // Primeiro quadradinho: a câmera do app.
