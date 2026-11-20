@@ -9105,7 +9105,7 @@ private fun QinblyShortcutsScreen(username: String, onDismiss: () -> Unit, onIte
     @Composable fun Label(text: String, tint: Color) = Text(text, color = tint, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp, modifier = Modifier.padding(start = 20.dp, top = 22.dp, bottom = 4.dp))
     val outlined = androidx.compose.material.icons.Icons.Outlined
     QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding().verticalScroll(rememberScrollState()).padding(bottom = 24.dp + qinblyNavBarPadding())) {
+        Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.screenTextColor) }
                 Text("Atalhos", color = RemoteAppearance.screenTextColor, fontSize = 20.sp, fontWeight = FontWeight.Medium)
@@ -9118,23 +9118,23 @@ private fun QinblyShortcutsScreen(username: String, onDismiss: () -> Unit, onIte
                     Text("Ver meu perfil", color = RemoteAppearance.screenSecondaryTextColor, fontSize = 11.sp)
                 }
             }
-            Label("EXPLORAR", Color(0xFF9A9AA5))
-            Item(outlined.PlayCircle, Color(0xFFE5484D), "Vídeos", "Vídeos", "Curtos e longos")
-            Item(outlined.LocalFireDepartment, Color(0xFFF07B27), "Em alta", "Em alta", "O que está bombando")
-            Item(outlined.Sensors, Color(0xFFE0457B), "Lives", "Lives", "Transmissões ao vivo")
-            Item(outlined.LocationOn, Color(0xFF2BB8C9), "Perto de mim", "Perto de mim", "Gente da sua cidade")
-            Label("NA SUA CIDADE", Color(0xFF9A9AA5))
-            Item(outlined.ShoppingBasket, Color(0xFF3A7BFF), "m:Vendas", "Mercado", "Compre e venda perto de você")
-            Item(outlined.CardGiftcard, Color(0xFF1D9E75), "m:Doações", "Doações", "Dê e ganhe coisas")
-            Item(outlined.Search, Color(0xFFE0457B), "m:Achados", "Achados", "Achei algo, perdi algo")
-            Item(outlined.Event, Color(0xFFA24DFF), "m:Eventos", "Eventos", "O que vai rolar na cidade")
-            Item(outlined.Build, Color(0xFFEF9F27), "m:Serviços", "Serviços", "Quem faz o quê")
-            Item(outlined.Campaign, Color(0xFF2BB8C9), "m:Avisos", "Avisos", "Recados do bairro")
-            Label("SEUS ESPAÇOS", Color(0xFF9A9AA5))
-            Item(outlined.Groups, Color(0xFF3A7BFF), "communities", "Comunidades", "Seus grupos")
-            Item(outlined.BookmarkBorder, Color(0xFFEF9F27), "saved", "Salvos", "Publicações que você guardou")
-            Item(outlined.HourglassEmpty, Color(0xFFA24DFF), "capsule", "Cápsula do tempo", "Lembranças para o futuro")
-            Item(outlined.PersonAddAlt1, Color(0xFF1D9E75), "invite", "Convidar amigos", "Compartilhe o ${QinblyBrand.Name}")
+            Label("EXPLORAR", QinblyBrand.Accent)
+            Item(outlined.PlayCircle, QinblyBrand.Accent, "Vídeos", "Vídeos", "Curtos e longos")
+            Item(outlined.LocalFireDepartment, QinblyBrand.Accent, "Em alta", "Em alta", "O que está bombando")
+            Item(outlined.Sensors, QinblyBrand.Accent, "Lives", "Lives", "Transmissões ao vivo")
+            Item(outlined.LocationOn, QinblyBrand.Accent, "Perto de mim", "Perto de mim", "Gente da sua cidade")
+            Label("NA SUA CIDADE", QinblyBrand.Pink)
+            Item(outlined.ShoppingBasket, QinblyBrand.Pink, "m:Vendas", "Mercado", "Compre e venda perto de você")
+            Item(outlined.CardGiftcard, QinblyBrand.Pink, "m:Doações", "Doações", "Dê e ganhe coisas")
+            Item(outlined.Search, QinblyBrand.Pink, "m:Achados", "Achados", "Achei algo, perdi algo")
+            Item(outlined.Event, QinblyBrand.Pink, "m:Eventos", "Eventos", "O que vai rolar na cidade")
+            Item(outlined.Build, QinblyBrand.Pink, "m:Serviços", "Serviços", "Quem faz o quê")
+            Item(outlined.Campaign, QinblyBrand.Pink, "m:Avisos", "Avisos", "Recados do bairro")
+            Label("SEUS ESPAÇOS", QinblyBrand.Logo)
+            Item(outlined.Groups, QinblyBrand.Logo, "communities", "Comunidades", "Seus grupos")
+            Item(outlined.BookmarkBorder, QinblyBrand.Logo, "saved", "Salvos", "Publicações que você guardou")
+            Item(outlined.HourglassEmpty, QinblyBrand.Logo, "capsule", "Cápsula do tempo", "Lembranças para o futuro")
+            Item(outlined.PersonAddAlt1, QinblyBrand.Logo, "invite", "Convidar amigos", "Compartilhe o ${QinblyBrand.Name}")
             Spacer(Modifier.height(18.dp))
             Item(outlined.Settings, RemoteAppearance.screenSecondaryTextColor, "settings", "Configurações", "Conta, privacidade, tela e mais")
         }
