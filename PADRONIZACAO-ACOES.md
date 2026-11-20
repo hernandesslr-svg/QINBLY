@@ -916,3 +916,11 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Efeito colateral: os botões não "acendem" ao toque; a resposta visual fica só na ação em si (abrir tela, trocar ícone etc.).
 - Telas web do app (atualização, `RemoteUiActivity`): `-webkit-tap-highlight-color:transparent`.
 - Para voltar o brilho em algum ponto específico, basta dar `indication = ripple()` naquele `clickable`.
+
+## Filtros "de verdade" (estilo Instagram) e foto mais nítida
+- Pesquisa: os filtros de foto do Instagram misturam contraste, saturação, tom quente/frio, fade (preto levantado), vinheta (bordas escuras), granulado e nitidez; não são só troca de cor.
+- Novo arquivo `LookFinish.kt`: `QinblyFinish(vignette, grain, sharpen)` por filtro (`qinblyFinishOf`, reduzido pela intensidade), `qinblySharpen` (máscara de desfoque com desfoque de caixa), `qinblyApplyFinish` (nitidez, granulado e vinheta).
+- 10 filtros novos no começo da lista (depois de "Original"): Nítido, Vintage suave, Quente vibrante, Luminoso, Retrô dourado, Dramático Pro, Lo-Fi, Poeirento, Lua, Tinta. Os filtros antigos (Filme, Vintage, Cinema, Noir, Polaroid, Kodak, Lomo, VHS, Dramático, Alto contraste, Prata, Sépia...) também ganharam vinheta/granulado/nitidez; os demais ganham só um pouco de nitidez.
+- Foto final (`qinblyRenderEditedPhoto`): o acabamento é aplicado depois do recorte/cor e antes de texto, stickers e desenho. Prévia do editor: mostra a vinheta (nitidez e granulado só aparecem na foto final).
+- Prévia de vídeo: `QinblyOriginalFilterNames` (11 nomes antigos) substitui o antigo `drop(12)`, porque a ordem da lista mudou.
+- Foto da câmera: depois de tirar, além de regravar em pé, recebe nitidez (`qinblySharpenFile`, 0,55; limita a ~6 megapixels para não faltar memória).

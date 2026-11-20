@@ -419,17 +419,43 @@ private fun qinblyExifMatrix(path: String): Matrix {
 /**
  * A câmera (CameraX) salva o JPEG "deitado" com um aviso de rotação (EXIF). Várias telas do editor leem só a largura e a
  * altura do arquivo e ignoram esse aviso, o que deixava a foto pequena no meio de um quadro largo. Aqui a foto é regravada
- * já em pé (sem depender do aviso). Roda fora da tela principal; se algo falhar, mantém o arquivo como está.
+ * já em pé (sem depender do aviso) e depois recebe um pouco de nitidez, porque as câmeras de celular (principalmente a da
+ * frente) suavizam os detalhes. Roda fora da tela principal; se algo falhar, mantém o arquivo como está.
  */
 internal fun qinblyMakeUpright(file: java.io.File) {
     try {
         val m = qinblyExifMatrix(file.absolutePath)
-        if (m.isIdentity) return
-        val src = android.graphics.BitmapFactory.decodeFile(file.absolutePath) ?: return
-        val out = android.graphics.Bitmap.createBitmap(src, 0, 0, src.width, src.height, m, true)
-        java.io.FileOutputStream(file).use { out.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, it) }
-        if (out !== src) src.recycle()
-        out.recycle()
+        if (!m.isIdentity) {
+            val src = BitmapFactory.decodeFile(file.absolutePath) ?: return
+            val out = Bitmap.createBitmap(src, 0, 0, src.width, src.height, m, true)
+            java.io.FileOutputStream(file).use { out.compress(Bitmap.CompressFormat.JPEG, 95, it) }
+            if (out !== src) src.recycle()
+            out.recycle()
+        }
+    } catch (_: Throwable) { return }
+    qinblySharpenFile(file, 0.55f)
+}
+
+/** Dá nitidez numa foto salva (limita a ~6 megapixels para não faltar memória). Em qualquer erro, deixa o arquivo como está. */
+internal fun qinblySharpenFile(file: java.io.File, amount: Float) {
+    try {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return
+        var sample = 1
+        while ((bounds.outWidth.toLong() / sample) * (bounds.outHeight.toLong() / sample) > 16_000_000L) sample *= 2
+        val decoded = BitmapFactory.decodeFile(file.absolutePath, BitmapFactory.Options().apply { inSampleSize = sample }) ?: return
+        val pixels = decoded.width.toLong() * decoded.height
+        var work = decoded
+        if (pixels > 6_000_000L) {
+            val f = Math.sqrt(6_000_000.0 / pixels).toFloat()
+            work = Bitmap.createScaledBitmap(decoded, (decoded.width * f).toInt().coerceAtLeast(8), (decoded.height * f).toInt().coerceAtLeast(8), true)
+            decoded.recycle()
+        }
+        val mutable = if (work.isMutable) work else work.copy(Bitmap.Config.ARGB_8888, true).also { work.recycle() }
+        qinblySharpen(mutable, amount, 2)
+        java.io.FileOutputStream(file).use { mutable.compress(Bitmap.CompressFormat.JPEG, 95, it) }
+        mutable.recycle()
     } catch (_: Throwable) { }
 }
 

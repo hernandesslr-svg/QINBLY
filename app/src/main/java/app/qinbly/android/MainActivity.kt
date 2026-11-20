@@ -1404,7 +1404,7 @@ internal fun qinblyPvBake(context: android.content.Context, source: Uri, filter:
 /** Gera a foto final: recorte (proporção, zoom e posição), filtro, brilho/contraste e depois texto, sticker e desenho. */
 private fun qinblyRenderEditedPhoto(
     context: android.content.Context, source: Uri, ratio: String, zoom: Float, panX: Float, panY: Float,
-    matrix: ColorMatrix, text: String, stickers: List<QinblyStickerSpec>, strokes: List<List<Offset>>, textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f, blurFill: Boolean = true, textScale: Float = 1f, strokeStyles: List<Pair<Int, Float>> = emptyList()
+    matrix: ColorMatrix, text: String, stickers: List<QinblyStickerSpec>, strokes: List<List<Offset>>, textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f, blurFill: Boolean = true, textScale: Float = 1f, strokeStyles: List<Pair<Int, Float>> = emptyList(), finish: QinblyFinish? = null
 ): Uri {
     val decoded = context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it) }
         ?: throw IllegalArgumentException("Não foi possível abrir a imagem para aplicar as edições.")
@@ -1434,6 +1434,8 @@ private fun qinblyRenderEditedPhoto(
     }
     canvas.drawBitmap(decoded, null, android.graphics.RectF(left, top, left + drawW, top + drawH), paint)
     decoded.recycle()
+    // Acabamento do filtro (nitidez, granulado, vinheta), antes de texto, stickers e desenho.
+    if (finish != null) qinblyApplyFinish(output, finish)
     val file = File(context.cacheDir, "qinbly-final-${System.currentTimeMillis()}.jpg")
     FileOutputStream(file).use { output.compress(Bitmap.CompressFormat.JPEG, 93, it) }
     output.recycle()
@@ -11059,9 +11061,12 @@ private fun extractQinblyVideoFrames(context: android.content.Context, uri: Uri)
 /** Intensidade (0–1) do filtro de cor escolhido na câmera; usada na prévia e na exportação. */
 private object QinblyFilterIntensity { var value: Float = 1f }
 
-// Os 12 primeiros são os originais, na ordem de sempre (o drop(12) abaixo depende disso). Os novos vêm depois, agrupados por tipo.
+// "Original" fica sempre primeiro. QinblyOriginalFilterNames guarda os 11 filtros mais antigos (têm cobertura própria na prévia de vídeo).
 private val QinblyColorFilterNames = listOf(
-    "Original", "Aurora", "Pôr do sol", "Neon", "Filme", "Pastel", "Noir", "Oceano", "Vintage", "Sonho", "Dourado", "Cinema",
+    "Original",
+    // Estilo dos filtros clássicos do Instagram: cor + contraste + vinheta, granulado e nitidez (ver LookFinish.kt)
+    "Nítido", "Vintage suave", "Quente vibrante", "Luminoso", "Retrô dourado", "Dramático Pro", "Lo-Fi", "Poeirento", "Lua", "Tinta",
+    "Aurora", "Pôr do sol", "Neon", "Filme", "Pastel", "Noir", "Oceano", "Vintage", "Sonho", "Dourado", "Cinema",
     // Quentes e frios
     "Quente", "Frio", "Verão", "Inverno", "Outono", "Luz do dia", "Laranja e azul",
     // Rosados e doces
@@ -11078,6 +11083,9 @@ private val QinblyColorFilterNames = listOf(
     "Vívido", "Brilhante", "Glow", "Instantâneo", "Suave"
 )
 
+private val QinblyOriginalFilterNames = setOf("Aurora", "Pôr do sol", "Neon", "Filme", "Pastel", "Noir", "Oceano", "Vintage", "Sonho", "Dourado", "Cinema")
+private val QinblyNewFilterNames: Set<String> = QinblyColorFilterNames.filter { it != "Original" && it !in QinblyOriginalFilterNames }.toSet()
+
 /** Monta um "look" de cor: saturação, contraste ao redor do cinza médio, ganho por canal (R,G,B) e deslocamento por canal. */
 private fun qinblyLook(sat: Float, con: Float, rm: Float, gm: Float, bm: Float, ro: Float, go: Float, bo: Float): ColorMatrix {
     val m = ColorMatrix()
@@ -11091,6 +11099,17 @@ private fun qinblyLook(sat: Float, con: Float, rm: Float, gm: Float, bm: Float, 
 private fun qinblyFilterMatrix(name: String, intensity: Float = QinblyFilterIntensity.value): ColorMatrix {
     val matrix = ColorMatrix()
     when (name) {
+        // Estilo Instagram: contraste e saturação fortes, sombras e luzes com tons diferentes (ganho x deslocamento por canal).
+        "Nítido" -> matrix.set(qinblyLook(1.25f, 1.20f, 0.97f, 1.02f, 1.08f, -2f, 0f, 6f).array)
+        "Vintage suave" -> matrix.set(qinblyLook(0.80f, 0.90f, 1.02f, 1.00f, 0.98f, 16f, 14f, 10f).array)
+        "Quente vibrante" -> matrix.set(qinblyLook(1.30f, 1.15f, 1.08f, 1.02f, 0.92f, 6f, 2f, -6f).array)
+        "Luminoso" -> matrix.set(qinblyLook(0.90f, 1.02f, 1.00f, 1.04f, 1.06f, 14f, 14f, 14f).array)
+        "Retrô dourado" -> matrix.set(qinblyLook(1.05f, 0.95f, 1.10f, 1.02f, 0.88f, 14f, 8f, -6f).array)
+        "Dramático Pro" -> matrix.set(qinblyLook(1.25f, 1.32f, 1.05f, 1.06f, 0.88f, 4f, 6f, -4f).array)
+        "Lo-Fi" -> matrix.set(qinblyLook(1.50f, 1.30f, 1.04f, 1.00f, 0.96f, -4f, -4f, 0f).array)
+        "Poeirento" -> matrix.set(qinblyLook(0.70f, 0.85f, 1.04f, 1.00f, 0.96f, 22f, 18f, 12f).array)
+        "Lua" -> matrix.set(qinblyLook(0f, 1.30f, 1f, 1f, 1f, -8f, -8f, -8f).array)
+        "Tinta" -> matrix.set(qinblyLook(0f, 1.45f, 1f, 1f, 1f, -10f, -10f, -10f).array)
         "Aurora" -> matrix.set(qinblyLook(1.15f, 1.05f, 0.96f, 1.04f, 1.10f, 4f, 6f, 14f).array)
         "Pôr do sol" -> matrix.set(qinblyLook(1.30f, 1.08f, 1.15f, 0.98f, 0.82f, 14f, 0f, -6f).array)
         "Neon" -> matrix.set(qinblyLook(1.70f, 1.18f, 1.05f, 0.95f, 1.15f, 0f, -4f, 8f).array)
@@ -13294,11 +13313,11 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                     editorBusy = true
                                     val src = selectedUri!!
                                     val ratioNow = editorRatio; val z = editorZoom; val px = editorPanX; val py = editorPanY
-                                    val matrixNow = qinblyEditMatrix(selectedFilter, filterIntensity, editorBrightness, editorContrast)
+                                    val matrixNow = qinblyEditMatrix(selectedFilter, filterIntensity, editorBrightness, editorContrast); val finishNow = qinblyFinishOf(selectedFilter, filterIntensity)
                                     val blurNow = editorBlur; val dxNow = if (editorFrame.w > 0f) editorTextDx / editorFrame.w else 0f; val dyNow = if (editorFrame.h > 0f) editorTextDy / editorFrame.h else 0f; val fontNow = editorTextFont; val colorNow = editorTextColor; val wordsNow = editorWordColors.toMap(); val textNow = editorText; val stickerNow = editorStickers.map { QinblyStickerSpec(it.emoji, it.nx, it.ny, it.scale, it.rot) }; val strokesNow = editorStrokes.toList(); val strokeMetaNow = editorStrokeMeta.toList()
                                     Thread {
                                         try {
-                                            val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow, blurNow, editorTextScale, strokeMetaNow)
+                                            val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow, blurNow, editorTextScale, strokeMetaNow, finishNow)
                                             android.os.Handler(android.os.Looper.getMainLooper()).post { bakedUri = done; editorBusy = false; afterEdit() }
                                         } catch (e: Exception) {
                                             // Se não der para aplicar as edições, publica a foto original em vez de travar.
@@ -13336,6 +13355,14 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         onChange = { z, x, y -> editorZoom = z; editorPanX = x; editorPanY = y },
                         modifier = Modifier.fillMaxSize()
                     )
+                    // Vinheta do filtro também na prévia (nitidez e granulado só aparecem na foto final).
+                    val previewFinish = qinblyFinishOf(selectedFilter, filterIntensity)
+                    if (previewFinish.vignette > 0.001f) androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+                        val r = kotlin.math.hypot(size.width / 2f, size.height / 2f)
+                        drawRect(Brush.radialGradient(
+                            0f to Color.Transparent, 0.5f to Color.Transparent, 1f to Color.Black.copy(alpha = (previewFinish.vignette * 0.8f).coerceIn(0f, 1f)),
+                            center = Offset(size.width / 2f, size.height / 2f), radius = r))
+                    }
                  }
 }
              }
@@ -13345,7 +13372,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 QinblyFullscreenVideo(url = uri.toString(), modifier = Modifier.fillMaxSize(), showProgress = false)
             }
             val editorFilterTint = when (selectedFilter) {
-                in QinblyColorFilterNames.drop(12) -> qinblyAutoTint(selectedFilter)
+                in QinblyNewFilterNames -> qinblyAutoTint(selectedFilter)
                 "Aurora" -> Color(0x22B9A6F0)
                 "Pôr do sol" -> Color(0x33F4A261)
                 "Neon" -> Color(0x22FF4FD8)
@@ -13579,13 +13606,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     else {
                         editorBusy = true
                         val ratioNow = editorRatio; val z = editorZoom; val px = editorPanX; val py = editorPanY
-                        val matrixNow = qinblyEditMatrix(selectedFilter, filterIntensity, editorBrightness, editorContrast)
+                        val matrixNow = qinblyEditMatrix(selectedFilter, filterIntensity, editorBrightness, editorContrast); val finishNow = qinblyFinishOf(selectedFilter, filterIntensity)
                         val blurNow = editorBlur; val dxNow = if (editorFrame.w > 0f) editorTextDx / editorFrame.w else 0f; val dyNow = if (editorFrame.h > 0f) editorTextDy / editorFrame.h else 0f
                         val fontNow = editorTextFont; val colorNow = editorTextColor; val wordsNow = editorWordColors.toMap(); val textNow = editorText
                         val stickerNow = editorStickers.map { QinblyStickerSpec(it.emoji, it.nx, it.ny, it.scale, it.rot) }; val strokesNow = editorStrokes.toList(); val strokeMetaNow = editorStrokeMeta.toList()
                         Thread {
                             val ok = try {
-                                val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow, blurNow, editorTextScale, strokeMetaNow)
+                                val done = qinblyRenderEditedPhoto(context, src, ratioNow, z, px, py, matrixNow, textNow, stickerNow, strokesNow, fontNow, colorNow, wordsNow, dxNow, dyNow, blurNow, editorTextScale, strokeMetaNow, finishNow)
                                 qinblySaveMediaCopy(context, done, false)
                             } catch (_: Exception) { false }
                             android.os.Handler(android.os.Looper.getMainLooper()).post {
