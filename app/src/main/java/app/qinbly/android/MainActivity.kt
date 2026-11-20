@@ -2298,7 +2298,7 @@ private fun QinblyApp() {
                     )
                     }
                 } else androidx.compose.runtime.key(accountSessionVersion) { QinblyPullRefresh(enabled = tab != 0 && tab != 2) { when (tab) {
-                    0 -> FeedPage(scrollToTopRequest = navTopRequest, onlineUsers = onlineUsers, currentUsername = loggedInUser, photoRefreshKey = profilePhotoRefreshKey, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { QinblyComposeSeed.story = true; createEntryMode = "camera"; tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true }, onCreateWith = { mode, seed -> QinblyComposeSeed.text = seed; createEntryMode = mode; tab = 2 }, onOpenConversation = { u -> messageRecipient = u; tab = 1 })
+                    0 -> FeedPage(scrollToTopRequest = navTopRequest, onlineUsers = onlineUsers, currentUsername = loggedInUser, photoRefreshKey = profilePhotoRefreshKey, nameFontStyle = nameFontStyle, onNotice = { notice = it }, onOpenProfile = { publicProfileUsername = it }, onAddStory = { QinblyComposeSeed.story = true; createEntryMode = "camera"; tab = 2 }, onSearch = { showSearchDialog = true }, onNotifications = { showNotifications = true }, onCreateWith = { mode, seed -> QinblyComposeSeed.text = seed; createEntryMode = mode; tab = 2 }, onOpenConversation = { u -> messageRecipient = u; tab = 1 }, onMenu = { showSettings = true })
                     1 -> MessagesPage(scrollToTopRequest = navTopRequest, recipientUsername = messageRecipient, onSearch = { showSearchDialog = true }, onOpenConversation = { messageRecipient = it }, onConversationRead = { n -> unreadMessages = (unreadMessages - n).coerceAtLeast(0) }, onOpenProfile = { publicProfileUsername = it }, onNotice = { notice = it }, onAddStory = { QinblyComposeSeed.story = true; createEntryMode = "camera"; tab = 2 })
                     2 -> PostPage(onNotice = { notice = it }, onCameraCancelled = { tab = 0 }, initialMode = createEntryMode, onSwitchMode = { createEntryMode = it })
                     3 -> CommunitiesPage(onNotice = { notice = it })
@@ -6599,7 +6599,7 @@ private fun QinblyRankRow(rank: Int, post: QinblyApi.PostSummary, onClick: () ->
 
 @Composable
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername: String, photoRefreshKey: Int, nameFontStyle: String, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onAddStory: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit, onCreateWith: (String, String) -> Unit = { _, _ -> }, onOpenConversation: (String) -> Unit = {}) {
+private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername: String, photoRefreshKey: Int, nameFontStyle: String, onNotice: (String) -> Unit, onOpenProfile: (String) -> Unit, onAddStory: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit, onCreateWith: (String, String) -> Unit = { _, _ -> }, onOpenConversation: (String) -> Unit = {}, onMenu: () -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var posts by remember { mutableStateOf(QinblyCache.feed.ifEmpty { QinblyApi.getCachedPosts(context) }) }
@@ -6795,13 +6795,16 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 }
         ) {
         Box(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 6.dp).heightIn(min = 42.dp)) {
-            IconButton(onClick = { showMarket = true }, modifier = Modifier.align(Alignment.CenterStart).size(44.dp).offset(x = (-8).dp)) {
-                Icon(androidx.compose.material.icons.Icons.Outlined.ShoppingBasket, contentDescription = "Mercado e avisos", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(30.dp))
+            IconButton(onClick = onMenu, modifier = Modifier.align(Alignment.CenterStart).size(44.dp).offset(x = (-8).dp)) {
+                Icon(Icons.Default.Menu, contentDescription = "Menu e configurações", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(30.dp))
             }
             Text(QinblyBrand.Name, style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(QinblyBrand.Logo, QinblyBrand.Pink))), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, modifier = Modifier.align(Alignment.Center))
             Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onSearch, modifier = Modifier.size(42.dp)) {
                 Icon(Icons.Default.Search, contentDescription = "Buscar", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(26.dp))
+            }
+            IconButton(onClick = { showMarket = true }, modifier = Modifier.size(42.dp)) {
+                Icon(androidx.compose.material.icons.Icons.Outlined.ShoppingBasket, contentDescription = "Mercado e avisos", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(26.dp))
             }
             Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                 IconButton(onClick = onNotifications, modifier = Modifier.size(48.dp)) {
@@ -9065,19 +9068,19 @@ private fun QinblyStoryBubble(username: String, avatarUrl: String, label: String
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Column(Modifier.width(96.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.size(88.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.fillMaxSize().clip(CircleShape).border(3.dp, if (ring == QinblyBrand.Accent) QinblyBrand.RingBrush else androidx.compose.ui.graphics.SolidColor(ring), CircleShape).clickable(indication = null, interactionSource = ms) { onClick() })
-            QiblyAccountAvatar(username, avatarUrl, 76.dp) { onClick() }
+            Box(Modifier.fillMaxSize().clip(CircleShape).border(2.dp, if (ring == QinblyBrand.Accent) QinblyBrand.RingBrush else androidx.compose.ui.graphics.SolidColor(ring), CircleShape).clickable(indication = null, interactionSource = ms) { onClick() })
+            QiblyAccountAvatar(username, avatarUrl, 80.dp) { onClick() }
             if (plus) Box(
-                Modifier.align(Alignment.BottomEnd).size(30.dp).clip(CircleShape).background(Color.White).border(2.dp, QiblyTheme.background, CircleShape).clickable { onPlus() },
+                Modifier.align(Alignment.BottomCenter).offset(y = 9.dp).size(28.dp).clip(CircleShape).background(Color.White).border(2.dp, QiblyTheme.background, CircleShape).clickable { onPlus() },
                 contentAlignment = Alignment.Center
-            ) { Icon(Icons.Default.Add, contentDescription = "Criar story", tint = Color.Black, modifier = Modifier.size(20.dp)) }
+            ) { Icon(Icons.Default.Add, contentDescription = "Criar story", tint = Color.Black, modifier = Modifier.size(19.dp)) }
             if (mood != null) Box(
                 Modifier.align(Alignment.TopEnd).size(28.dp).clip(CircleShape).background(mood.color).border(2.dp, QiblyTheme.background, CircleShape),
                 contentAlignment = Alignment.Center
             ) { Text(mood.emoji, fontSize = 13.sp) }
         }
         Text(label, color = RemoteAppearance.feedTextColor, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(top = if (plus) 13.dp else 5.dp))
     }
 }
 
@@ -9177,7 +9180,7 @@ private fun QiblyAccountAvatar(username: String, fallbackUrl: String, diameter: 
         val tray = if (ringOn) QinblyStoryRings.entries[key] else null
         if (tray != null) QinblyStoryRings.openRequest = tray else onClick()
     }, contentAlignment = Alignment.Center) {
-        if (ringOn) Box(Modifier.size(diameter).border(2.5.dp, QinblyBrand.RingBrush, CircleShape))
+        if (ringOn) Box(Modifier.size(diameter).border(2.dp, QinblyBrand.RingBrush, CircleShape))
         Box(Modifier.size(if (ringOn) diameter - 8.dp else diameter).clip(CircleShape).background(QiblyTheme.card)) {
             if (resolvedUrl.isNotBlank()) AsyncImage(model = coil.request.ImageRequest.Builder(avatarContext).data(resolvedUrl).memoryCacheKey("avatar:$username:$avatarVersion:$resolvedUrl").diskCacheKey("avatar:$username:$avatarVersion:$resolvedUrl").build(), contentDescription = "Foto de @$username", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             else Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.fillMaxSize().padding(8.dp))

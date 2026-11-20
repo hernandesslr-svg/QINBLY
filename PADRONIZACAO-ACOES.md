@@ -930,3 +930,7 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 
 ## Anel de story na cor do logotipo
 - `QinblyBrand.RingBrush`: degradê roxo (`Logo`) para rosa (`Pink`), o mesmo do nome QINBLY no topo. Usado no anel de story não visto: bolinhas do Início (`QinblyStoryBubble`), foto de perfil nas publicações (`QiblyAccountAvatar`) e capa do perfil (próprio e público). Visto continua roxo apagado e silenciado cinza.
+
+## Barra do topo (menu), "+" do story centralizado e anel mais fino
+- Início: o ícone de menu (três tracinhos) ocupa o lugar da cestinha e abre o mesmo menu/Configurações do restante do app (`onMenu` = `showSettings = true`). A cestinha (Mercado e avisos) passou para a direita, entre a lupa e o sino.
+- Bolinha de story: o anel passou de 3 dp para 2 dp (avatar 80 dp) e o botão "+" saiu do canto inferior direito para o centro da borda de baixo; o nome "Seu story" desce um pouco (`padding top 13 dp` só quando há "+"). Anel da foto nas publicações: 2,5 dp para 2 dp.
