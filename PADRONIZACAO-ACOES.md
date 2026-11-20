@@ -986,3 +986,7 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 
 ## Atalhos: sem coloração
 - Na tela de Atalhos do Início, ícones e títulos de grupo (Explorar, Na sua cidade, Seus espaços) perderam as cores. Ícones usam a cor do texto e os títulos de grupo ficam em cinza.
+
+## Atualização: nunca baixa APK para o celular
+- Removido o caminho antigo (DownloadManager, "Download concluído" na barra de notificações e arquivo na pasta Downloads). Antes, qualquer falha no instalador interno caía nele.
+- Agora a atualização é só dentro do app: baixa direto para o instalador do Android. Se a conexão falhar, tenta de novo sozinho até 3 vezes; se ainda falhar, mostra o motivo e pede para tocar em Atualizar de novo.

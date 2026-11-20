@@ -181,8 +181,11 @@ class RemoteUiActivity : ComponentActivity() {
         }
         notifyWeb("Baixando atualização…", false)
         Thread {
-            var sessionId = -1
             val installer = packageManager.packageInstaller
+            var lastError = ""
+            // Nunca baixa o APK para a pasta Downloads: se falhar, tenta de novo aqui dentro (até 3 vezes).
+            for (attempt in 1..3) {
+            var sessionId = -1
             try {
                 val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -231,35 +234,15 @@ class RemoteUiActivity : ComponentActivity() {
                 } finally {
                     connection.disconnect()
                 }
+                return@Thread
             } catch (e: Exception) {
                 if (sessionId >= 0) try { installer.abandonSession(sessionId) } catch (_: Exception) { }
-                // Se o instalador interno falhar, usa o caminho antigo (download + instalador do Android).
-                runOnUiThread { downloadViaManager(apkUrl) }
+                lastError = e.message.orEmpty().take(60)
+                if (attempt < 3) { notifyWeb("A conexão falhou. Tentando de novo…", false); try { Thread.sleep(1500L) } catch (_: Exception) { } }
             }
+            }
+            notifyWeb("Não foi possível baixar a atualização" + (if (lastError.isNotBlank()) " ($lastError)" else "") + ". Toque em Atualizar para tentar de novo.", true)
         }.start()
-    }
-
-    private fun downloadViaManager(apkUrl: String) {
-        try {
-            val uri = Uri.parse(apkUrl)
-            val request = DownloadManager.Request(uri)
-                .setTitle("Atualização do QINBLY")
-                .setDescription("Baixando a versão mais recente")
-                .setMimeType("application/vnd.android.package-archive")
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                .setAllowedOverMetered(true)
-                .setAllowedOverRoaming(false)
-                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "QINBLY-update-" + System.currentTimeMillis() + ".apk")
-            val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
-            qinblyMarkRelaunchAfterUpdate(this)
-            pendingDownloadId = manager.enqueue(request)
-            prefs.edit().putLong("pending_update_download_id", pendingDownloadId).apply()
-            notifyWeb("Download iniciado. Acompanhando o progresso…", false)
-            handler.removeCallbacks(monitor)
-            handler.postDelayed(monitor, 700L)
-        } catch (_: Exception) {
-            notifyWeb("Não foi possível iniciar o download. Verifique a conexão e tente novamente.", true)
-        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
