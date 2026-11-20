@@ -975,3 +975,6 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 ## Cápsula do tempo removida
 - Removida do app: botão no "Novo story", item nos Atalhos do Início, aviso de cápsula que chegava na tela inicial e o arquivo Capsule.kt inteiro.
 - Os dados antigos no banco não foram mexidos.
+
+## Editor da câmera: aviso ao salvar
+- Ao tocar em "Salvar" no editor, o aviso ("Foto salva na galeria…" / "Vídeo salvo…" / erro) agora é um aviso do sistema, que aparece por cima da tela cheia. Antes usava o aviso do app, que ficava escondido atrás do editor.

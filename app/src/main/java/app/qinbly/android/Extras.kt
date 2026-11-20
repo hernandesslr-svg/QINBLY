@@ -749,3 +749,8 @@ internal fun qinblyShortPlace(place: String, max: Int = 18): String {
     if ((city + tail).length > max) city = city.take((max - tail.length - 1).coerceAtLeast(3)).trimEnd() + "…"
     return city + tail
 }
+
+/** Aviso curto do sistema, que aparece por cima de qualquer tela (o aviso do app fica escondido atrás de telas cheias, como o editor). */
+internal fun qinblyToastNow(context: Context, message: String) {
+    android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
+}

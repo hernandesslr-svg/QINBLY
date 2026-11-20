@@ -13675,9 +13675,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 // Só quer a câmera para tirar a foto? Salva na galeria (pasta Qinbly) com o que foi editado, sem publicar.
                 QinblyCameraSideItem(QinblyCameraIcons.download, "Salvar") {
                     val src = selectedUri
-                    if (src == null) onNotice("Escolha uma foto ou vídeo primeiro.")
-                    else if (editorBusy) onNotice("Aguarde, aplicando as edições…")
-                    else if (selectedType != "foto") onNotice(if (qinblySaveMediaCopy(context, src, true)) "Vídeo salvo na galeria (pasta Qinbly)." else "Não foi possível salvar o vídeo.")
+                    if (src == null) qinblyToastNow(context, "Escolha uma foto ou vídeo primeiro.")
+                    else if (editorBusy) qinblyToastNow(context, "Aguarde, aplicando as edições…")
+                    else if (selectedType != "foto") qinblyToastNow(context, if (qinblySaveMediaCopy(context, src, true)) "Vídeo salvo na galeria (pasta Qinbly)." else "Não foi possível salvar o vídeo.")
                     else {
                         editorBusy = true
                         val ratioNow = editorRatio; val z = editorZoom; val px = editorPanX; val py = editorPanY
@@ -13692,7 +13692,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                             } catch (_: Exception) { false }
                             android.os.Handler(android.os.Looper.getMainLooper()).post {
                                 editorBusy = false
-                                onNotice(if (ok) "Foto salva na galeria (pasta Qinbly)." else "Não foi possível salvar a foto.")
+                                qinblyToastNow(context, if (ok) "Foto salva na galeria (pasta Qinbly)." else "Não foi possível salvar a foto.")
                             }
                         }.start()
                     }
