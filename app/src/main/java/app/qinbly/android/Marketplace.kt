@@ -396,11 +396,6 @@ internal fun QinblyNearbyHub(
                     DrawerLabel("AJUDA")
                     DrawerItem(outl.Shield, "Dicas de segurança") { info = "Dicas de segurança" }
                     DrawerItem(outl.Info, "Regras do Mercado") { info = "Regras do Mercado" }
-                    Spacer(Modifier.height(6.dp))
-                    Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(MarketBlue).clickable { showDrawer = false; showMenu = true }.padding(vertical = 14.dp),
-                        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
-                    ) { QinblyIconOf(QinblyIcon.Add, Color.White, 20.dp); Text(" Novo anúncio", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp) }
                 }
             }
         }

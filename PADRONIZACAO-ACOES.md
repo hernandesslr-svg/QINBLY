@@ -964,5 +964,5 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 
 ## Mercado: menu de três tracinhos (lista simples)
 - Menu lateral do Mercado agora é uma lista sem cartões: CATEGORIAS (Mercado, Doações, Achados, Eventos, Serviços, Avisos), SEU MERCADO (Meus anúncios, Salvos) e AJUDA (Dicas de segurança, Regras do Mercado).
-- Ícones e letras brancos, títulos de grupo em cinza. Removidos "Trocar cidade", "Novo anúncio" e os cartões do topo.
+- Ícones e letras brancos, títulos de grupo em cinza. Removidos "Trocar cidade", "Novo anúncio", "Voltar" e os cartões do topo.
 - Tocar numa categoria troca a tela para aquela categoria.
