@@ -884,11 +884,11 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Esboços aprovados guardados em `/home/claude/esbocos/` (sessão), fora do repositório.
 
 ## Stories em bolinha (faixa do início)
-- `QinblyStoryBubble` (MainActivity.kt) substitui os cartões grandes (168x306) da faixa de stories: bolinha de 76 dp com a foto de perfil (64 dp), anel de 3 dp e nome embaixo (`QinblyStoryCard` ficou sem uso).
+- `QinblyStoryBubble` (MainActivity.kt) substitui os cartões grandes (168x306) da faixa de stories: bolinha de 88 dp com a foto de perfil (76 dp), anel de 3 dp e nome embaixo (`QinblyStoryCard` ficou sem uso).
 - Anel azul = story ainda não visto; cinza escuro = silenciado; roxo apagado = já visto. Sem story: sem anel colorido.
 - "Seu story": primeiro da faixa, com + branco no canto. Tocar na bolinha abre o seu story (ou o menu de criar, se você não tiver); tocar no + sempre abre o menu (Story, Texto, Música, Story coletivo, Clima do dia, Cápsula do tempo).
 - O emoji do "Clima do dia" aparece num selinho no canto superior da bolinha. O selo "Coletivo" e as fotos de quem participa deixaram de aparecer na faixa (continuam no visualizador).
-- Para mudar o tamanho: 76.dp (anel), 64.dp (foto) e 84.dp (largura do item) em `QinblyStoryBubble`.
+- Para mudar o tamanho: 88.dp (anel), 76.dp (foto) e 96.dp (largura do item) em `QinblyStoryBubble`.
 
 ## App reabre sozinho depois de atualizar
 - O Android fecha o app quando termina de instalar uma atualização. Agora `UpdateRelaunchReceiver` (novo, declarado no AndroidManifest para `MY_PACKAGE_REPLACED`) reabre o `MainActivity` logo após a instalação.

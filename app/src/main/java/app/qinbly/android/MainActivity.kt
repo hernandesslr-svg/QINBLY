@@ -9040,20 +9040,20 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
 @Composable
 private fun QinblyStoryBubble(username: String, avatarUrl: String, label: String, ring: Color, plus: Boolean, mood: QinblyMood?, onPlus: () -> Unit = {}, onClick: () -> Unit) {
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    Column(Modifier.width(84.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.size(76.dp), contentAlignment = Alignment.Center) {
+    Column(Modifier.width(96.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.size(88.dp), contentAlignment = Alignment.Center) {
             Box(Modifier.fillMaxSize().clip(CircleShape).border(3.dp, ring, CircleShape).clickable(indication = null, interactionSource = ms) { onClick() })
-            QiblyAccountAvatar(username, avatarUrl, 64.dp) { onClick() }
+            QiblyAccountAvatar(username, avatarUrl, 76.dp) { onClick() }
             if (plus) Box(
-                Modifier.align(Alignment.BottomEnd).size(26.dp).clip(CircleShape).background(Color.White).border(2.dp, QiblyTheme.background, CircleShape).clickable { onPlus() },
+                Modifier.align(Alignment.BottomEnd).size(30.dp).clip(CircleShape).background(Color.White).border(2.dp, QiblyTheme.background, CircleShape).clickable { onPlus() },
                 contentAlignment = Alignment.Center
-            ) { Icon(Icons.Default.Add, contentDescription = "Criar story", tint = Color.Black, modifier = Modifier.size(18.dp)) }
+            ) { Icon(Icons.Default.Add, contentDescription = "Criar story", tint = Color.Black, modifier = Modifier.size(20.dp)) }
             if (mood != null) Box(
-                Modifier.align(Alignment.TopEnd).size(24.dp).clip(CircleShape).background(mood.color).border(2.dp, QiblyTheme.background, CircleShape),
+                Modifier.align(Alignment.TopEnd).size(28.dp).clip(CircleShape).background(mood.color).border(2.dp, QiblyTheme.background, CircleShape),
                 contentAlignment = Alignment.Center
-            ) { Text(mood.emoji, fontSize = 11.sp) }
+            ) { Text(mood.emoji, fontSize = 13.sp) }
         }
-        Text(label, color = RemoteAppearance.feedTextColor, fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1,
+        Text(label, color = RemoteAppearance.feedTextColor, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
     }
 }
