@@ -5884,7 +5884,7 @@ private fun qinblyTopHashtags(posts: List<QinblyApi.PostSummary>): List<String> 
         .groupingBy { it }.eachCount().entries.sortedByDescending { it.value }.take(8).map { it.key }
 
 /** Uma live no ar. A lista vem do servidor (ainda não existe): enquanto vazia, a tela mostra o estado "ninguém ao vivo". */
-private data class QinblyLive(val id: String, val host: String, val viewers: Int, val likes: Int, val displayName: String = "", val avatarUrl: String = "")
+internal data class QinblyLive(val id: String, val host: String, val viewers: Int, val likes: Int, val displayName: String = "", val avatarUrl: String = "")
 
 /** Uma linha de live: posição (coroa/medalha nos 5 primeiros, número depois), foto com aro vermelho, nome, @, números e AO VIVO. */
 @Composable
@@ -6225,7 +6225,17 @@ private fun QinblyNearbyPage(onNotice: (String) -> Unit, content: @Composable (D
 
 /** Aba Lives: barra fina "Começar uma live", "Ao vivo agora" e "Agendadas". */
 @Composable
-private fun QinblyLivesPage(lives: List<QinblyLive>, onNotice: (String) -> Unit) {
+private fun QinblyLivesPage(initialLives: List<QinblyLive>, onNotice: (String) -> Unit) {
+    val listContext = androidx.compose.ui.platform.LocalContext.current
+    var lives by remember { mutableStateOf(initialLives) }
+    LaunchedEffect(Unit) {
+        // Atualiza quem está ao vivo a cada poucos segundos enquanto a aba está aberta.
+        while (true) {
+            val token = QinblyLiveNet.userToken(listContext)
+            if (token.isNotBlank()) QinblyLiveNet.list(token)?.let { lives = it }
+            kotlinx.coroutines.delay(8000)
+        }
+    }
     var openLive by remember { mutableStateOf<QinblyLive?>(null) }
     var hostOpen by remember { mutableStateOf(false) }
     if (hostOpen) {
@@ -6276,7 +6286,7 @@ private fun QinblyLivesPage(lives: List<QinblyLive>, onNotice: (String) -> Unit)
 /** Quem transmite: "Antes de começar" (título, quem assiste, comentários, presentes) → contagem 3-2-1 → "No ar".
  *  Na barra de baixo: comentário, virar câmera, microfone, pausa e X vermelho (encerrar, com confirmação).
  *  A bolinha vermelha fica acesa só enquanto transmite: some (cinza) ao pausar e acende ao retomar.
- *  OBS: ainda é só a interface — a câmera e a transmissão de verdade dependem do serviço de vídeo no servidor. */
+ *  A transmissão usa o LiveKit (veja Live.kt e functions/api/live.js). Efeitos de rosto e cor valem só na prévia. */
 @Composable
 private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
     var stage by remember { mutableStateOf("setup") } // setup, count, live
@@ -6296,6 +6306,11 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
     val hostHandle = remember { liveContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount().getString("username", "").orEmpty().removePrefix("@") }
     var liveCamOk by remember { mutableStateOf(androidx.core.content.ContextCompat.checkSelfPermission(liveContext, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) }
     val liveCamPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { liveCamOk = it }
+    var liveMicOk by remember { mutableStateOf(androidx.core.content.ContextCompat.checkSelfPermission(liveContext, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) }
+    val liveMicPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { liveMicOk = it; if (it && liveCamOk) stage = "count" else if (!it) onNotice("Sem o microfone não dá para transmitir.") }
+    var viewersNow by remember { mutableIntStateOf(0) }
+    var viewersPeak by remember { mutableIntStateOf(0) }
+    var streamError by remember { mutableStateOf<String?>(null) }
     var liveFront by remember { mutableStateOf(true) }
     var liveFace by remember { mutableStateOf("Nenhum") }
     var liveColor by remember { mutableStateOf("Original") }
@@ -6305,8 +6320,7 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
         if (stage == "count") {
             count = 3
             while (count > 0) { kotlinx.coroutines.delay(1000); count-- }
-            seconds = 0; paused = false; stage = "live"
-            onNotice("Prévia: a transmissão de verdade ainda não está disponível.")
+            seconds = 0; paused = false; viewersNow = 0; viewersPeak = 0; streamError = null; stage = "live"
         }
     }
     LaunchedEffect(stage, paused) {
@@ -6314,7 +6328,13 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
     }
     val glass = Color(0x24FFFFFF)
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF4A586D), Color(0xFF222B3A), Color(0xFF12161E))))) {
-        if (liveCamOk) {
+        if (liveCamOk && stage == "live") {
+            QinblyLiveHostStream(
+                paused = paused, front = liveFront, micOn = micOn, username = hostHandle, modifier = Modifier.fillMaxSize(),
+                onViewers = { viewersNow = it; if (it > viewersPeak) viewersPeak = it },
+                onError = { streamError = it }
+            )
+        } else if (liveCamOk) {
             QinblyFaceCameraPreview(liveFace, if (liveColor == "Original") null else qinblyFilterMatrix(liveColor, 1f).array, liveFront, Modifier.fillMaxSize())
         } else {
             Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -6364,7 +6384,11 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
                         Switch(checked = giftsOn, onCheckedChange = { giftsOn = it })
                     }
                     Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(QinblyBrand.Accent).clickable { stage = "count" }.padding(vertical = 13.dp),
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(QinblyBrand.Accent).clickable {
+                            if (!liveCamOk) liveCamPermission.launch(android.Manifest.permission.CAMERA)
+                            else if (!liveMicOk) liveMicPermission.launch(android.Manifest.permission.RECORD_AUDIO)
+                            else stage = "count"
+                        }.padding(vertical = 13.dp),
                         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(Modifier.size(9.dp).clip(CircleShape).background(Color.White))
@@ -6400,7 +6424,7 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
                         // Bolinha: vermelha enquanto transmite; cinza se estiver pausada.
                         Box(Modifier.size(8.dp).clip(CircleShape).background(if (paused) Color(0xFF9AA1AD) else Color(0xFFE24B4A)))
                         Spacer(Modifier.width(6.dp))
-                        Text("0 · %02d:%02d".format(seconds / 60, seconds % 60), color = Color.White, fontSize = 12.sp)
+                        Text("%d · %02d:%02d".format(viewersNow, seconds / 60, seconds % 60), color = Color.White, fontSize = 12.sp)
                     }
                 }
                 if (commentsOn && hostHandle.isNotBlank()) QinblyLiveCommentsList(hostHandle, hostCommentRefresh,
@@ -6439,7 +6463,7 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
                 }
             }
         }
-        if (stage != "count") {
+        if (stage == "setup") {
             Box(
                 Modifier.align(Alignment.CenterEnd).padding(end = 10.dp).size(40.dp).clip(CircleShape)
                     .background(if (fxOpen) QinblyBrand.Accent else glass).clickable { fxOpen = !fxOpen },
@@ -6463,6 +6487,15 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
             }
         }
     }
+    streamError?.let { why ->
+        AlertDialog(
+            onDismissRequest = { streamError = null; onClose() },
+            shape = RoundedCornerShape(28.dp),
+            title = { Text("Live não iniciada") },
+            text = { Text(why) },
+            confirmButton = { TextButton(onClick = { streamError = null; onClose() }) { Text("Fechar") } }
+        )
+    }
     if (confirmEnd) {
         AlertDialog(
             onDismissRequest = { confirmEnd = false },
@@ -6478,7 +6511,7 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
             onDismissRequest = { summary = false; onClose() },
             shape = RoundedCornerShape(28.dp),
             title = { Text("Live encerrada") },
-            text = { Text("Tempo no ar: %02d:%02d\nEspectadores: 0\nCurtidas: 0".format(seconds / 60, seconds % 60)) },
+            text = { Text("Tempo no ar: %02d:%02d\nMáximo de espectadores: %d\nCurtidas: 0".format(seconds / 60, seconds % 60, viewersPeak)) },
             confirmButton = { TextButton(onClick = { summary = false; onClose() }) { Text("Concluir") } }
         )
     }
@@ -6494,11 +6527,18 @@ private fun QinblyLiveRoom(live: QinblyLive, onClose: () -> Unit, onNotice: (Str
     var heartBurst by remember { mutableStateOf(0) }
     var panel by remember { mutableStateOf("") } // "", "pin" ou "poll"
     var comment by remember { mutableStateOf("") }
+    var viewersLive by remember { mutableIntStateOf(live.viewers) }
+    val viewerHandle = remember { shareContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount().getString("username", "").orEmpty().removePrefix("@") }
     BackHandler { onClose() }
     Box(
         Modifier.fillMaxSize().background(Color(0xFF14181F))
             .pointerInput(Unit) { detectTapGestures(onDoubleTap = { likes++; heartBurst++ }) }
     ) {
+        QinblyLiveViewerStream(
+            roomName = live.id, username = viewerHandle, modifier = Modifier.fillMaxSize(),
+            onViewers = { viewersLive = it },
+            onEnded = { onNotice(it); onClose() }
+        )
         Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.size(34.dp).clip(CircleShape).background(Color(0xFF2B3544)))
             Column(Modifier.weight(1f)) {
@@ -6510,7 +6550,7 @@ private fun QinblyLiveRoom(live: QinblyLive, onClose: () -> Unit, onNotice: (Str
                 }
             }
             Icon(QinblyIcon.Visibility, null, tint = Color.White, modifier = Modifier.size(15.dp))
-            Text("${live.viewers}", color = Color.White, fontSize = 13.sp)
+            Text("$viewersLive", color = Color.White, fontSize = 13.sp)
             IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
                 Icon(QinblyIcon.Close, "Sair da live", tint = Color.White)
             }

@@ -990,3 +990,8 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 ## Atualização: nunca baixa APK para o celular
 - Removido o caminho antigo (DownloadManager, "Download concluído" na barra de notificações e arquivo na pasta Downloads). Antes, qualquer falha no instalador interno caía nele.
 - Agora a atualização é só dentro do app: baixa direto para o instalador do Android. Se a conexão falhar, tenta de novo sozinho até 3 vezes; se ainda falhar, mostra o motivo e pede para tocar em Atualizar de novo.
+
+## Lives de verdade (LiveKit)
+- Aba Lives: lista de quem está no ar atualiza a cada 8 s; "Começar uma live" transmite câmera e microfone; tocar numa live abre o vídeo.
+- Pede câmera e microfone ao iniciar. Pausar desliga câmera e microfone sem sair da sala. Virar câmera e silenciar funcionam durante a live.
+- Efeitos de rosto e cor só na prévia (antes de iniciar). Detalhes e configuração em LIVES-LIVEKIT.md.
