@@ -961,3 +961,6 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 
 ## Cada atalho do mercado abre só a sua tela
 - `QinblyNearbyHub(single = true)`: sem a fileira de abas (Tudo, Vendas, Doações...); o título vira o nome da categoria (Mercado, Doações, Achados, Eventos, Serviços, Avisos). Achados mantém o filtro Achei/Perdi. A cestinha do topo do Início agora abre só o Mercado (Vendas). A tela "Mercado e avisos" de Configurações continua completa, com todas as abas.
+
+## Atalhos: cada ícone de uma cor
+- Letras brancas e títulos das seções em cinza (sem pintar); só os ícones têm cor, uma diferente em cada opção (Vídeos vermelho, Em alta laranja, Lives rosa, Perto de mim turquesa, Mercado azul, Doações verde, Achados rosa, Eventos roxo, Serviços âmbar, Avisos turquesa, Comunidades azul, Salvos âmbar, Cápsula roxo, Convidar verde). O fim da lista agora respeita a barra de botões do celular (`qinblyNavBarPadding`).
