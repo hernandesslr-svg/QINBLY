@@ -957,3 +957,4 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - "Achados" removido do Mercado: chip, subfiltro Achados/Perdidos, atalho de publicar e opção "Achado ou perdido". Anúncios antigos de achados/perdidos deixam de aparecer em "Tudo" (filtro `kind=not.in.(achado,perdido)`); nada foi apagado no servidor.
 
 - Atualização: o "Achados" voltou ao Mercado (chip, subfiltro Achei/Perdi, publicar achado, anúncios antigos) e entrou na lista NA SUA CIDADE dos atalhos, entre Doações e Eventos (ícone de lupa, abre o Mercado em Achados).
+- Na lista de atalhos, o item "Vendas" passou a se chamar "Mercado" (continua abrindo o Mercado na aba Vendas).

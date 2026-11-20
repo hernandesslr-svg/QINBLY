@@ -9115,7 +9115,7 @@ private fun QinblyShortcutsScreen(username: String, onDismiss: () -> Unit, onIte
             Item(outlined.Sensors, QinblyBrand.Accent, "Lives", "Lives", "Transmissões ao vivo")
             Item(outlined.LocationOn, QinblyBrand.Accent, "Perto de mim", "Perto de mim", "Gente da sua cidade")
             Label("NA SUA CIDADE", QinblyBrand.Pink)
-            Item(outlined.ShoppingBasket, QinblyBrand.Pink, "m:Vendas", "Vendas", "Compre e venda perto de você")
+            Item(outlined.ShoppingBasket, QinblyBrand.Pink, "m:Vendas", "Mercado", "Compre e venda perto de você")
             Item(outlined.CardGiftcard, QinblyBrand.Pink, "m:Doações", "Doações", "Dê e ganhe coisas")
             Item(outlined.Search, QinblyBrand.Pink, "m:Achados", "Achados", "Achei algo, perdi algo")
             Item(outlined.Event, QinblyBrand.Pink, "m:Eventos", "Eventos", "O que vai rolar na cidade")
