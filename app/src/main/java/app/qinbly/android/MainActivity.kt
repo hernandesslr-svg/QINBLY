@@ -9100,7 +9100,7 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
 private fun QinblyShortcutsScreen(username: String, onDismiss: () -> Unit, onItem: (String) -> Unit) {
     @Composable fun Item(icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color, id: String, title: String, sub: String = "") {
         Row(Modifier.fillMaxWidth().clickable { onItem(id) }.padding(horizontal = 20.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(26.dp))
+            Icon(icon, contentDescription = null, tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(26.dp))
             Spacer(Modifier.width(18.dp))
             Column {
                 Text(title, color = RemoteAppearance.screenTextColor, fontSize = 15.sp, fontWeight = FontWeight.Medium)
@@ -9108,7 +9108,7 @@ private fun QinblyShortcutsScreen(username: String, onDismiss: () -> Unit, onIte
             }
         }
     }
-    @Composable fun Label(text: String, tint: Color) = Text(text, color = tint, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp, modifier = Modifier.padding(start = 20.dp, top = 22.dp, bottom = 4.dp))
+    @Composable fun Label(text: String, tint: Color) = Text(text, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp, modifier = Modifier.padding(start = 20.dp, top = 22.dp, bottom = 4.dp))
     val outlined = androidx.compose.material.icons.Icons.Outlined
     QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding().verticalScroll(rememberScrollState()).padding(bottom = 24.dp + qinblyNavBarPadding())) {

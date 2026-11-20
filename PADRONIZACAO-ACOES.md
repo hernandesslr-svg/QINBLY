@@ -983,3 +983,6 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - O aviso central do app (usado por salvar perfil, trocar foto, sair da conta, erros de rede, etc.) era guardado mas nunca desenhado. Agora cada aviso aparece como aviso do sistema, por cima de qualquer tela.
 - Avisos iguais em menos de 1,5 s não se repetem.
 - Telas que já tinham o próprio aviso (Stories, texto, coletivo, editor) continuam como estavam.
+
+## Atalhos: sem coloração
+- Na tela de Atalhos do Início, ícones e títulos de grupo (Explorar, Na sua cidade, Seus espaços) perderam as cores. Ícones usam a cor do texto e os títulos de grupo ficam em cinza.
