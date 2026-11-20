@@ -297,6 +297,8 @@ internal object QinblyBrand {
     val AccentSoft: Color get() = if (QiblyTheme.dark) Color(0xFF162447) else Color(0xFFE8F0FF)
     val Highlight = Color(0xFFFFB020)
     val Pink = Color(0xFFFF4F9A)
+    /** Anel de story não visto: degradê roxo para rosa, as cores do logotipo (como o anel do Instagram, mas na cara do QINBLY). */
+    val RingBrush: Brush get() = Brush.linearGradient(listOf(Logo, Pink))
     /** Vermelho clássico do coração de curtida (preenchido). */
     val Liked = Color(0xFFE53935)
     val Ink = Color(0xFF0B1F2A)
@@ -9063,7 +9065,7 @@ private fun QinblyStoryBubble(username: String, avatarUrl: String, label: String
     val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Column(Modifier.width(96.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.size(88.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.fillMaxSize().clip(CircleShape).border(3.dp, ring, CircleShape).clickable(indication = null, interactionSource = ms) { onClick() })
+            Box(Modifier.fillMaxSize().clip(CircleShape).border(3.dp, if (ring == QinblyBrand.Accent) QinblyBrand.RingBrush else androidx.compose.ui.graphics.SolidColor(ring), CircleShape).clickable(indication = null, interactionSource = ms) { onClick() })
             QiblyAccountAvatar(username, avatarUrl, 76.dp) { onClick() }
             if (plus) Box(
                 Modifier.align(Alignment.BottomEnd).size(30.dp).clip(CircleShape).background(Color.White).border(2.dp, QiblyTheme.background, CircleShape).clickable { onPlus() },
@@ -9175,7 +9177,7 @@ private fun QiblyAccountAvatar(username: String, fallbackUrl: String, diameter: 
         val tray = if (ringOn) QinblyStoryRings.entries[key] else null
         if (tray != null) QinblyStoryRings.openRequest = tray else onClick()
     }, contentAlignment = Alignment.Center) {
-        if (ringOn) Box(Modifier.size(diameter).border(2.5.dp, QinblyBrand.Accent, CircleShape))
+        if (ringOn) Box(Modifier.size(diameter).border(2.5.dp, QinblyBrand.RingBrush, CircleShape))
         Box(Modifier.size(if (ringOn) diameter - 8.dp else diameter).clip(CircleShape).background(QiblyTheme.card)) {
             if (resolvedUrl.isNotBlank()) AsyncImage(model = coil.request.ImageRequest.Builder(avatarContext).data(resolvedUrl).memoryCacheKey("avatar:$username:$avatarVersion:$resolvedUrl").diskCacheKey("avatar:$username:$avatarVersion:$resolvedUrl").build(), contentDescription = "Foto de @$username", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             else Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.fillMaxSize().padding(8.dp))
@@ -9333,7 +9335,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             }
             // Retrato centralizado na capa.
             Box(Modifier.align(Alignment.BottomCenter).size(225.dp), contentAlignment = Alignment.Center) {
-                if (QinblyStoryRings.hasUnseen(username)) Box(Modifier.size(219.dp).border(3.dp, QinblyBrand.Accent, CircleShape))
+                if (QinblyStoryRings.hasUnseen(username)) Box(Modifier.size(219.dp).border(3.dp, QinblyBrand.RingBrush, CircleShape))
                 Box(Modifier.size(205.dp).zIndex(0f).clip(CircleShape).background(QiblyTheme.card).clickable {
                     val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
                     if (image.isNotBlank()) { expandedImage = image } else if (username.isBlank()) onAuth() else onEditProfilePhoto()
@@ -10765,7 +10767,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
         }
         Box(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
             Box(Modifier.size(225.dp), contentAlignment = Alignment.Center) {
-                if (QinblyStoryRings.hasUnseen(publicUsername)) Box(Modifier.size(219.dp).border(3.dp, QinblyBrand.Accent, CircleShape))
+                if (QinblyStoryRings.hasUnseen(publicUsername)) Box(Modifier.size(219.dp).border(3.dp, QinblyBrand.RingBrush, CircleShape))
                 Box(Modifier.size(205.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
                     if (profilePhotoUrl.isNotBlank()) { expandedImage = profilePhotoUrl }
                 }) {

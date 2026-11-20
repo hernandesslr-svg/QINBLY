@@ -927,3 +927,6 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 
 ## Anel do "Seu story" apaga depois de visto
 - Antes o anel do próprio story ficava sempre azul. Agora usa a mesma regra dos outros (`QinblyStoryRings.entryUnseen`): azul enquanto há story seu não visto (um story novo acende de novo), roxo apagado depois que você abre, cinza se não há story.
+
+## Anel de story na cor do logotipo
+- `QinblyBrand.RingBrush`: degradê roxo (`Logo`) para rosa (`Pink`), o mesmo do nome QINBLY no topo. Usado no anel de story não visto: bolinhas do Início (`QinblyStoryBubble`), foto de perfil nas publicações (`QiblyAccountAvatar`) e capa do perfil (próprio e público). Visto continua roxo apagado e silenciado cinza.
