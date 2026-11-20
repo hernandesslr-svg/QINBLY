@@ -894,3 +894,7 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - O Android fecha o app quando termina de instalar uma atualização. Agora `UpdateRelaunchReceiver` (novo, declarado no AndroidManifest para `MY_PACKAGE_REPLACED`) reabre o `MainActivity` logo após a instalação.
 - Só age se a atualização foi iniciada por dentro do app: `RemoteUiActivity` grava a marca (`qinblyMarkRelaunchAfterUpdate`, prefs `qinbly_update_relaunch`) ao confirmar o download/instalação, e ela vale por 60 minutos. Atualização feita por fora (Downloads, outro instalador) não reabre.
 - Limite do Android 10+: o sistema pode bloquear abrir telas a partir do segundo plano. Se bloquear, o app mostra a notificação "QINBLY atualizado - toque para abrir" (some em 30 s). Não usa permissão de sobreposição de tela.
+
+## Foto da câmera abria pequena no meio de um quadro largo
+- Causa: o CameraX grava o JPEG "deitado" com aviso de rotação (EXIF) e o editor lê só largura x altura do arquivo (`BitmapFactory` com `inJustDecodeBounds`), que ignora o aviso. A proporção "Original" saía larga (~2:1) e a foto em pé aparecia pequena, com fundo desfocado dos lados.
+- Correção: `qinblyMakeUpright(file)` (FaceFilters.kt) regrava a foto já em pé logo após `takePicture`, fora da thread principal, antes de abrir o editor (`takePhoto` em MainActivity.kt). Também cobre o espelhamento da câmera da frente. Se falhar, mantém o arquivo original.

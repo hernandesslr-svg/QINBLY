@@ -12060,7 +12060,11 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         }
                     } else finishPhoto(uri)
                 }
-                withEffects(Uri.fromFile(file))
+                // Deixa a foto em pé antes de abrir o editor (ver qinblyMakeUpright), fora da thread principal.
+                Thread {
+                    qinblyMakeUpright(file)
+                    android.os.Handler(android.os.Looper.getMainLooper()).post { withEffects(Uri.fromFile(file)) }
+                }.start()
             }
             override fun onError(exception: androidx.camera.core.ImageCaptureException) { cameraError = "Falha ao tirar foto: " + (exception.message ?: "tente novamente") }
         })

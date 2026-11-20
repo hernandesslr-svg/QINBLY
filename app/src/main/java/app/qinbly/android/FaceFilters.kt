@@ -417,6 +417,23 @@ private fun qinblyExifMatrix(path: String): Matrix {
 }
 
 /**
+ * A câmera (CameraX) salva o JPEG "deitado" com um aviso de rotação (EXIF). Várias telas do editor leem só a largura e a
+ * altura do arquivo e ignoram esse aviso, o que deixava a foto pequena no meio de um quadro largo. Aqui a foto é regravada
+ * já em pé (sem depender do aviso). Roda fora da tela principal; se algo falhar, mantém o arquivo como está.
+ */
+internal fun qinblyMakeUpright(file: java.io.File) {
+    try {
+        val m = qinblyExifMatrix(file.absolutePath)
+        if (m.isIdentity) return
+        val src = android.graphics.BitmapFactory.decodeFile(file.absolutePath) ?: return
+        val out = android.graphics.Bitmap.createBitmap(src, 0, 0, src.width, src.height, m, true)
+        java.io.FileOutputStream(file).use { out.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, it) }
+        if (out !== src) src.recycle()
+        out.recycle()
+    } catch (_: Throwable) { }
+}
+
+/**
  * Pega a foto salva pela câmera, acha os rostos, desenha o filtro e entrega o arquivo novo em [onDone] (thread principal).
  * Se não achar rosto ou der erro, entrega a foto original.
  */
