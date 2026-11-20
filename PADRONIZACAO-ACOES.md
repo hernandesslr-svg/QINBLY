@@ -924,3 +924,6 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Foto final (`qinblyRenderEditedPhoto`): o acabamento é aplicado depois do recorte/cor e antes de texto, stickers e desenho. Prévia do editor: mostra a vinheta (nitidez e granulado só aparecem na foto final).
 - Prévia de vídeo: `QinblyOriginalFilterNames` (11 nomes antigos) substitui o antigo `drop(12)`, porque a ordem da lista mudou.
 - Foto da câmera: depois de tirar, além de regravar em pé, recebe nitidez (`qinblySharpenFile`, 0,55; limita a ~6 megapixels para não faltar memória).
+
+## Anel do "Seu story" apaga depois de visto
+- Antes o anel do próprio story ficava sempre azul. Agora usa a mesma regra dos outros (`QinblyStoryRings.entryUnseen`): azul enquanto há story seu não visto (um story novo acende de novo), roxo apagado depois que você abre, cinza se não há story.

@@ -8999,7 +8999,8 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
             val myName = prefs.getString("username", "").orEmpty()
             QinblyStoryBubble(
                 username = myName, avatarUrl = mine?.avatarUrl.orEmpty(), label = "Seu story",
-                ring = if (mine?.stories?.isNotEmpty() == true) QinblyBrand.Accent else Color(0xFF55555C), plus = true,
+                // Igual aos outros: azul enquanto há story seu que você ainda não viu; apaga depois que você abre; cinza se não tem story.
+                ring = if (mine?.stories?.isNotEmpty() != true) Color(0xFF55555C) else if (QinblyStoryRings.entryUnseen(prefs, mine)) QinblyBrand.Accent else Color(0xFF4A4066), plus = true,
                 mood = moods[myName], onPlus = { showStoryMenu = true },
                 onClick = { if (mine?.stories?.isNotEmpty() == true) viewingStory = mine else showStoryMenu = true }
             )
