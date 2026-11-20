@@ -327,7 +327,7 @@ class RemoteUiActivity : ComponentActivity() {
         <!doctype html><html lang="pt-BR"><meta name="viewport" content="width=device-width,initial-scale=1">
         <meta charset="utf-8"><title>Atualizações do QINBLY</title>
         <style>
-        *{box-sizing:border-box}
+        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
         body{margin:0;padding:34px 18px 28px;background:#171719;color:#f2f4f8;font:15px/1.5 sans-serif}
         .brand{text-align:center;margin:10px 0 22px}
         .logo{display:inline-flex;width:64px;height:64px;align-items:center;justify-content:center;border-radius:20px;background:#7C4DFF;color:#fff;font-size:32px;font-weight:600}

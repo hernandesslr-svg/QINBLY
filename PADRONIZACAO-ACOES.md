@@ -910,3 +910,9 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 
 ## Toque na foto de perfil sem quadrado transparente
 - `QiblyAccountAvatar` (usada na faixa de stories e em todo o app) tinha o brilho de toque do Android num quadrado do tamanho da foto, que aparecia em volta da bolinha. Agora o toque é cortado em círculo (`clip(CircleShape)` antes do `clickable`), então o efeito fica redondo, igual à foto.
+
+## Sem fundo/brilho transparente ao tocar, em todo o app
+- Raiz do app (`QinblyApp`): `LocalIndication` = `QinblyNoIndication` (indicação vazia) e `LocalRippleConfiguration` = `null`. Assim nenhum `clickable`, botão, linha de lista, aba ou ícone desenha o brilho/quadrado transparente ao ser tocado. Vale também para diálogos e menus (herdam os locais).
+- Efeito colateral: os botões não "acendem" ao toque; a resposta visual fica só na ação em si (abrir tela, trocar ícone etc.).
+- Telas web do app (atualização, `RemoteUiActivity`): `-webkit-tap-highlight-color:transparent`.
+- Para voltar o brilho em algum ponto específico, basta dar `indication = ripple()` naquele `clickable`.

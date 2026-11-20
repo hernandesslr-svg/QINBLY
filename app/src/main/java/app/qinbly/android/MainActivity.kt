@@ -682,6 +682,14 @@ private fun QinblyStickerView(id: String, size: Dp = 104.dp) {
 
 /** Contador de toques na tecla "aumentar volume" do celular; vídeos mudos observam e ligam o som. */
 private object QinblyVolumeKey { var upTicks by mutableIntStateOf(0) }
+/** Indicação de toque vazia: quem usa `clickable` sem indicação própria não desenha nenhum brilho ao ser tocado. */
+private object QinblyNoIndication : androidx.compose.foundation.IndicationNodeFactory {
+    override fun create(interactionSource: androidx.compose.foundation.interaction.InteractionSource): androidx.compose.ui.node.DelegatableNode =
+        object : androidx.compose.ui.Modifier.Node() {}
+    override fun hashCode(): Int = -1
+    override fun equals(other: Any?): Boolean = other === this
+}
+
 /** Teclas de volume como botão de tirar foto: só valem enquanto a tela da câmera está aberta (sem o editor por cima). */
 private object QinblyCameraKeys { var active by mutableStateOf(false); var shutterTicks by mutableIntStateOf(0) }
 
@@ -1734,6 +1742,7 @@ private object RemoteUiRefreshSignal {
     var value by androidx.compose.runtime.mutableIntStateOf(0)
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun QinblyApp() {
     var tab by remember { mutableIntStateOf(0) }
@@ -2053,7 +2062,10 @@ private fun QinblyApp() {
     ) {
         val baseDensity = androidx.compose.ui.platform.LocalDensity.current
         androidx.compose.runtime.CompositionLocalProvider(
-            androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(baseDensity.density, baseDensity.fontScale * QINBLY_TEXT_SCALE * (if (QiblyTheme.largeText) 1.18f else 1f))
+            androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(baseDensity.density, baseDensity.fontScale * QINBLY_TEXT_SCALE * (if (QiblyTheme.largeText) 1.18f else 1f)),
+            // Sem o brilho/fundo transparente que aparece ao tocar (quadrado em volta de fotos, botões e linhas) em nenhum lugar do app.
+            androidx.compose.foundation.LocalIndication provides QinblyNoIndication,
+            androidx.compose.material3.LocalRippleConfiguration provides null
         ) {
         val keyboardOpen = WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
         LaunchedEffect(QinblyStoryRequest.pending) {
