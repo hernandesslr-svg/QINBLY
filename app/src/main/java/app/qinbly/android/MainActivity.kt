@@ -385,6 +385,10 @@ class MainActivity : ComponentActivity() {
     override fun onStart() { super.onStart(); QinblyPlayback.resumeAll() }
     // Teclas de volume (aumentar ou diminuir): avisam os vídeos mudos para ligarem o som (o sistema continua tratando a tecla normalmente).
     override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        if (QinblyCameraKeys.active && (event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            if (event.action == android.view.KeyEvent.ACTION_DOWN && event.repeatCount == 0) QinblyCameraKeys.shutterTicks++
+            return true
+        }
         if ((event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN) && event.action == android.view.KeyEvent.ACTION_DOWN) QinblyVolumeKey.upTicks++
         return super.dispatchKeyEvent(event)
     }
@@ -678,6 +682,8 @@ private fun QinblyStickerView(id: String, size: Dp = 104.dp) {
 
 /** Contador de toques na tecla "aumentar volume" do celular; vídeos mudos observam e ligam o som. */
 private object QinblyVolumeKey { var upTicks by mutableIntStateOf(0) }
+/** Teclas de volume como botão de tirar foto: só valem enquanto a tela da câmera está aberta (sem o editor por cima). */
+private object QinblyCameraKeys { var active by mutableStateOf(false); var shutterTicks by mutableIntStateOf(0) }
 
 /**
  * Foco dos vídeos do feed: só o vídeo mais visível toca (e só ele recebe o som). Os que saem da tela pausam.
@@ -12089,6 +12095,18 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         val action = if (captureMode == "Vídeo" || handsFreeOn) "video" else "photo"
         if (timerSeconds > 0 || (handsFreeOn && action == "video")) pendingAction = action
         else if (action == "photo") takePhoto() else requestRecording()
+    }
+    // Teclas de volume (aumentar ou diminuir) tiram a foto, ou começam/param a gravação, enquanto a câmera está aberta.
+    var seenKeyTicks by remember { mutableIntStateOf(QinblyCameraKeys.shutterTicks) }
+    androidx.compose.runtime.DisposableEffect(initialMode, showComposer) {
+        QinblyCameraKeys.active = initialMode == "camera" && !showComposer
+        onDispose { QinblyCameraKeys.active = false }
+    }
+    LaunchedEffect(QinblyCameraKeys.shutterTicks) {
+        if (QinblyCameraKeys.shutterTicks > seenKeyTicks) {
+            seenKeyTicks = QinblyCameraKeys.shutterTicks
+            if (QinblyCameraKeys.active) onShutterTap()
+        }
     }
     LaunchedEffect(pendingAction) {
         if (pendingAction.isNotBlank()) {

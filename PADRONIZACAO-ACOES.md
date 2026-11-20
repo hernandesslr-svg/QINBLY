@@ -903,3 +903,7 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - A foto saía com ~960x1920 px (baixa para o celular) porque a câmera usava o modo "menos demora" e a resolução padrão do CameraX.
 - Agora `ImageCapture` usa `CAPTURE_MODE_MAXIMIZE_QUALITY`, `setJpegQuality(100)` e `ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY`. Se o aparelho não aceitar essa combinação (prévia + foto + vídeo juntos), o app tenta de novo no modo simples antigo (`bindUseCases(false)`), então a câmera não deixa de abrir.
 - Efeito colateral: tirar a foto pode demorar uns instantes a mais.
+
+## Teclas de volume tiram a foto na câmera
+- Enquanto a câmera do app está aberta (sem o editor por cima), as teclas de aumentar e diminuir volume funcionam como o botão de tirar foto (ou começam/param a gravação, no modo vídeo). O volume do celular não muda nessa hora.
+- Implementação: `QinblyCameraKeys` (MainActivity.kt) + `dispatchKeyEvent` consome a tecla só quando `active`; `PostPage` liga/desliga `active` e chama `onShutterTap()`. Fora da câmera, as teclas continuam só ligando o som dos vídeos mudos.
