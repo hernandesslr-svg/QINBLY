@@ -8973,23 +8973,22 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
     if (!hostOnly) QinblyCapsuleInbox()
     val myStoryEntry = storyTray.firstOrNull { it.mine }
     val trayOthers = storyTray.filter { !it.mine && it.stories.isNotEmpty() }.sortedBy { QinblyStoryMute.isMuted(prefs, it.username) }
-    if (!hostOnly) androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)) {
+    if (!hostOnly) androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp)) {
         item(key = "story-create") {
             val mine = myStoryEntry
-            val myCover = mine?.stories?.firstOrNull()
-            QinblyStoryCard(
-                imageUrl = if (myCover != null && myCover.mediaType != "video" && myCover.mediaType != "text") myCover.mediaUrl else mine?.avatarUrl.orEmpty(),
-                isAvatar = myCover == null || myCover.mediaType == "video" || myCover.mediaType == "text", isVideo = myCover != null && myCover.mediaType == "video", label = "Criar story", textStory = if (myCover?.mediaType == "text") qinblyParseTextStory(myCover.caption) else null,
-                ring = QinblyBrand.Accent.copy(alpha = 0.55f), plus = true, collabAvatars = myCover?.contribAvatars.orEmpty(), mood = moods[prefs.getString("username", "").orEmpty()], onPlus = { showStoryMenu = true }, onClick = { if (mine?.stories?.isNotEmpty() == true) viewingStory = mine else onNotice("Você ainda não tem story. Toque no + para criar.") }
+            val myName = prefs.getString("username", "").orEmpty()
+            QinblyStoryBubble(
+                username = myName, avatarUrl = mine?.avatarUrl.orEmpty(), label = "Seu story",
+                ring = if (mine?.stories?.isNotEmpty() == true) QinblyBrand.Accent else Color(0xFF55555C), plus = true,
+                mood = moods[myName], onPlus = { showStoryMenu = true },
+                onClick = { if (mine?.stories?.isNotEmpty() == true) viewingStory = mine else showStoryMenu = true }
             )
         }
         items(trayOthers, key = { "tray-" + it.username }) { person ->
-            val cover = person.stories.firstOrNull()
-            val open: () -> Unit = { viewingStory = person }
-            QinblyStoryCard(
-                imageUrl = if (cover != null && cover.mediaType != "video" && cover.mediaType != "text") cover.mediaUrl else person.avatarUrl,
-                isAvatar = cover == null || cover.mediaType == "video" || cover.mediaType == "text", isVideo = cover != null && cover.mediaType == "video", label = person.displayName.ifBlank { person.username }, textStory = if (cover?.mediaType == "text") qinblyParseTextStory(cover.caption) else null,
-                ring = if (QinblyStoryMute.isMuted(prefs, person.username)) Color(0xFF55555C) else if (person.stories.isEmpty() || QinblyStoryRings.entryUnseen(prefs, person)) QinblyBrand.Accent else Color(0xFF4A4066), plus = false, collabAvatars = cover?.contribAvatars.orEmpty(), mood = moods[person.username], showAvatar = true, avatarUrl = person.avatarUrl, onClick = open
+            QinblyStoryBubble(
+                username = person.username, avatarUrl = person.avatarUrl, label = person.displayName.ifBlank { person.username },
+                ring = if (QinblyStoryMute.isMuted(prefs, person.username)) Color(0xFF55555C) else if (person.stories.isEmpty() || QinblyStoryRings.entryUnseen(prefs, person)) QinblyBrand.Accent else Color(0xFF4A4066),
+                plus = false, mood = moods[person.username], onClick = { viewingStory = person }
             )
         }
     }
@@ -9034,6 +9033,28 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
                     QinblyDeepLink.postId = origin.postId
                 }
             })
+    }
+}
+
+/** Story em bolinha: foto de perfil com anel (azul = não visto), nome embaixo, + no próprio e emoji do clima do dia. */
+@Composable
+private fun QinblyStoryBubble(username: String, avatarUrl: String, label: String, ring: Color, plus: Boolean, mood: QinblyMood?, onPlus: () -> Unit = {}, onClick: () -> Unit) {
+    val ms = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    Column(Modifier.width(84.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.size(76.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxSize().clip(CircleShape).border(3.dp, ring, CircleShape).clickable(indication = null, interactionSource = ms) { onClick() })
+            QiblyAccountAvatar(username, avatarUrl, 64.dp) { onClick() }
+            if (plus) Box(
+                Modifier.align(Alignment.BottomEnd).size(26.dp).clip(CircleShape).background(Color.White).border(2.dp, QiblyTheme.background, CircleShape).clickable { onPlus() },
+                contentAlignment = Alignment.Center
+            ) { Icon(Icons.Default.Add, contentDescription = "Criar story", tint = Color.Black, modifier = Modifier.size(18.dp)) }
+            if (mood != null) Box(
+                Modifier.align(Alignment.TopEnd).size(24.dp).clip(CircleShape).background(mood.color).border(2.dp, QiblyTheme.background, CircleShape),
+                contentAlignment = Alignment.Center
+            ) { Text(mood.emoji, fontSize = 11.sp) }
+        }
+        Text(label, color = RemoteAppearance.feedTextColor, fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
     }
 }
 

@@ -882,3 +882,10 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Galeria: continua pela miniatura embaixo à esquerda da câmera (seletor do sistema).
 - Início (aba Descobrir): nova barra `QinblyHomeComposer` entre os Stories e a Pergunta do dia, com um lápis (no lugar da foto de perfil), "Escrever algo..." e o botão **Enquete**. Tocar na barra ou no lápis abre o texto longo; o botão Enquete abre a enquete (via `onCreateWith`).
 - Esboços aprovados guardados em `/home/claude/esbocos/` (sessão), fora do repositório.
+
+## Stories em bolinha (faixa do início)
+- `QinblyStoryBubble` (MainActivity.kt) substitui os cartões grandes (168x306) da faixa de stories: bolinha de 76 dp com a foto de perfil (64 dp), anel de 3 dp e nome embaixo (`QinblyStoryCard` ficou sem uso).
+- Anel azul = story ainda não visto; cinza escuro = silenciado; roxo apagado = já visto. Sem story: sem anel colorido.
+- "Seu story": primeiro da faixa, com + branco no canto. Tocar na bolinha abre o seu story (ou o menu de criar, se você não tiver); tocar no + sempre abre o menu (Story, Texto, Música, Story coletivo, Clima do dia, Cápsula do tempo).
+- O emoji do "Clima do dia" aparece num selinho no canto superior da bolinha. O selo "Coletivo" e as fotos de quem participa deixaram de aparecer na faixa (continuam no visualizador).
+- Para mudar o tamanho: 76.dp (anel), 64.dp (foto) e 84.dp (largura do item) em `QinblyStoryBubble`.
