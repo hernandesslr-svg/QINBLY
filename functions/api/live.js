@@ -90,7 +90,7 @@ export async function onRequest({ request, env }) {
       if (!/^live_[0-9a-fA-F-]{36}$/.test(room)) return json({ error: "Live inválida." }, 400);
       // Quem assiste entra com identidade única (a mesma pessoa pode abrir em dois aparelhos).
       const identity = uid + "~" + Math.random().toString(36).slice(2, 8);
-      const token = await livekitToken(env, identity, username, { room, roomJoin: true, canPublish: false, canSubscribe: true, canPublishData: false });
+      const token = await livekitToken(env, identity, username, { room, roomJoin: true, canPublish: false, canSubscribe: true, canPublishData: true });
       return json({ url: env.LIVEKIT_URL, token, room });
     }
 

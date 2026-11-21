@@ -6223,6 +6223,16 @@ private fun QinblyNearbyPage(onNotice: (String) -> Unit, content: @Composable (D
     }
 }
 
+/** Janela de tela cheia da live: cobre barra de cima, abas e menu de baixo. O botão voltar chama o que a tela registrar em [backHook]. */
+@Composable
+private fun QinblyLiveWindow(backHook: MutableState<(() -> Unit)?>, content: @Composable () -> Unit) {
+    QinblyDialog(
+        onDismissRequest = { backHook.value?.invoke() },
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnClickOutside = false),
+        lift = false
+    ) { Box(Modifier.fillMaxSize().background(Color.Black)) { content() } }
+}
+
 /** Aba Lives: barra fina "Começar uma live", "Ao vivo agora" e "Agendadas". */
 @Composable
 private fun QinblyLivesPage(initialLives: List<QinblyLive>, onNotice: (String) -> Unit) {
@@ -6239,11 +6249,13 @@ private fun QinblyLivesPage(initialLives: List<QinblyLive>, onNotice: (String) -
     var openLive by remember { mutableStateOf<QinblyLive?>(null) }
     var hostOpen by remember { mutableStateOf(false) }
     if (hostOpen) {
-        QinblyLiveHost(onClose = { hostOpen = false }, onNotice = onNotice)
+        val hostBack = remember { mutableStateOf<(() -> Unit)?>(null) }
+        QinblyLiveWindow(hostBack) { QinblyLiveHost(onClose = { hostOpen = false }, onNotice = onNotice, backHook = hostBack) }
         return
     }
     openLive?.let { live ->
-        QinblyLiveRoom(live, onClose = { openLive = null }, onNotice = onNotice)
+        val roomBack = remember { mutableStateOf<(() -> Unit)?>(null) }
+        QinblyLiveWindow(roomBack) { QinblyLiveRoom(live, onClose = { openLive = null }, onNotice = onNotice, backHook = roomBack) }
         return
     }
     var allOpen by remember { mutableStateOf(false) }
@@ -6288,7 +6300,7 @@ private fun QinblyLivesPage(initialLives: List<QinblyLive>, onNotice: (String) -
  *  A bolinha vermelha fica acesa só enquanto transmite: some (cinza) ao pausar e acende ao retomar.
  *  A transmissão usa o LiveKit (veja Live.kt e functions/api/live.js). Efeitos de rosto e cor valem só na prévia. */
 @Composable
-private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
+private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit, backHook: MutableState<(() -> Unit)?>) {
     var stage by remember { mutableStateOf("setup") } // setup, count, live
     var count by remember { mutableStateOf(3) }
     var seconds by remember { mutableStateOf(0) }
@@ -6315,23 +6327,35 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
     var liveFace by remember { mutableStateOf("Nenhum") }
     var liveColor by remember { mutableStateOf("Original") }
     var fxOpen by remember { mutableStateOf(false) }
-    BackHandler { if (stage == "live") confirmEnd = true else if (stage == "count") stage = "setup" else onClose() }
+    var hostLikes by remember { mutableIntStateOf(0) }
+    var hostViewerNames by remember { mutableStateOf<List<String>>(emptyList()) }
+    var hostJoin by remember { mutableStateOf("") }
+    val hostHearts = remember { QinblyLiveHearts() }
+    var hostBoxW by remember { mutableIntStateOf(0) }
+    var hostBoxH by remember { mutableIntStateOf(0) }
+    LaunchedEffect(hostJoin) { if (hostJoin.isNotBlank()) { kotlinx.coroutines.delay(4000); hostJoin = "" } }
+    val hostInputPad = qinblyInputBottomPadding()
+    androidx.compose.runtime.SideEffect { backHook.value = { if (stage == "live") confirmEnd = true else if (stage == "count") stage = "setup" else onClose() } }
     LaunchedEffect(stage) {
         if (stage == "count") {
             count = 3
             while (count > 0) { kotlinx.coroutines.delay(1000); count-- }
-            seconds = 0; paused = false; viewersNow = 0; viewersPeak = 0; streamError = null; stage = "live"
+            seconds = 0; paused = false; viewersNow = 0; viewersPeak = 0; hostLikes = 0; hostViewerNames = emptyList(); streamError = null; stage = "live"
         }
     }
     LaunchedEffect(stage, paused) {
         while (stage == "live" && !paused) { kotlinx.coroutines.delay(1000); seconds++ }
     }
     val glass = Color(0x24FFFFFF)
-    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF4A586D), Color(0xFF222B3A), Color(0xFF12161E))))) {
+    Box(Modifier.fillMaxSize().onSizeChanged { hostBoxW = it.width; hostBoxH = it.height }.background(Brush.verticalGradient(listOf(Color(0xFF4A586D), Color(0xFF222B3A), Color(0xFF12161E))))) {
         if (liveCamOk && stage == "live") {
             QinblyLiveHostStream(
                 paused = paused, front = liveFront, micOn = micOn, username = hostHandle, modifier = Modifier.fillMaxSize(),
                 onViewers = { viewersNow = it; if (it > viewersPeak) viewersPeak = it },
+                onViewerNames = { hostViewerNames = it.filter { n -> n.isNotBlank() } },
+                onLikes = { hostLikes = it },
+                onHeart = { n -> repeat(n.coerceAtMost(6)) { hostHearts.add(hostBoxW * (0.55f + 0.35f * Math.random().toFloat()), hostBoxH * 0.78f) } },
+                onJoin = { hostJoin = "$it entrou na live" },
                 onError = { streamError = it }
             )
         } else if (liveCamOk) {
@@ -6356,7 +6380,7 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
                     }
                 }
                 Column(
-                    Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(10.dp).navigationBarsPadding()
+                    Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().padding(bottom = hostInputPad).padding(10.dp)
                         .clip(RoundedCornerShape(22.dp)).background(Color(0xC70C1018)).padding(14.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -6407,37 +6431,34 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
                         Text("Retomar", color = Color.White, fontWeight = FontWeight.SemiBold)
                     }
                 }
-                Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(Modifier.clip(RoundedCornerShape(20.dp)).background(glass).padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                        Box(Modifier.size(28.dp).clip(CircleShape).background(Color(0xFF8A92A0)))
-                        Column {
-                            Text("Você", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 13.sp)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(QinblyIcon.Favorite, null, tint = Color(0xFFFF2D3F), modifier = Modifier.size(11.dp))
-                                Spacer(Modifier.width(3.dp))
-                                Text("0", color = Color.White, fontSize = 11.sp)
-                            }
-                        }
-                    }
+                Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    QinblyLiveCapsule("Você", "", hostLikes, null, {})
                     Spacer(Modifier.weight(1f))
-                    Row(Modifier.clip(RoundedCornerShape(14.dp)).background(glass).padding(horizontal = 10.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                        // Bolinha: vermelha enquanto transmite; cinza se estiver pausada.
-                        Box(Modifier.size(8.dp).clip(CircleShape).background(if (paused) Color(0xFF9AA1AD) else Color(0xFFE24B4A)))
-                        Spacer(Modifier.width(6.dp))
-                        Text("%d · %02d:%02d".format(viewersNow, seconds / 60, seconds % 60), color = Color.White, fontSize = 12.sp)
+                    QinblyLiveViewersPill(hostViewerNames, viewersNow)
+                    Spacer(Modifier.width(6.dp))
+                    Row(Modifier.clip(RoundedCornerShape(14.dp)).background(if (paused) Color(0xB3666B75) else Color(0xD9E24B4A)).padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(7.dp).clip(CircleShape).background(if (paused) Color(0xFFC9CDD4) else Color.White))
+                        Spacer(Modifier.width(5.dp))
+                        Text("%02d:%02d".format(seconds / 60, seconds % 60), color = Color.White, fontSize = 12.sp)
                     }
                 }
-                if (commentsOn && hostHandle.isNotBlank()) QinblyLiveCommentsList(hostHandle, hostCommentRefresh,
-                    Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(start = 10.dp, end = 70.dp, bottom = 74.dp))
+                QinblyHeartsLayer(hostHearts, Modifier.fillMaxSize())
+                Column(
+                    Modifier.align(Alignment.BottomStart).imePadding().padding(start = 10.dp, end = 60.dp, bottom = hostInputPad + 64.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    QinblyLiveJoinNotice(hostJoin, Modifier.padding(start = 4.dp))
+                    if (commentsOn && hostHandle.isNotBlank()) QinblyLiveCommentsList(hostHandle, hostCommentRefresh)
+                }
                 Row(
-                    Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding().padding(horizontal = 8.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = hostInputPad),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
                     TextField(
                         value = comment, onValueChange = { comment = it }, singleLine = true, visualTransformation = QinblyTagTransformation,
                         placeholder = { Text("Comente…", color = Color(0xB3FFFFFF)) },
-                        modifier = Modifier.weight(1f), shape = RoundedCornerShape(22.dp),
-                        colors = TextFieldDefaults.colors(focusedContainerColor = glass, unfocusedContainerColor = glass, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = Color.White, unfocusedTextColor = Color.White),
+                        modifier = Modifier.weight(1f), shape = RoundedCornerShape(24.dp),
+                        colors = TextFieldDefaults.colors(focusedContainerColor = Color(0x8C14141C), unfocusedContainerColor = Color(0x8C14141C), focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = Color.White, unfocusedTextColor = Color.White),
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Send),
                         keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSend = {
                             val text = comment.trim()
@@ -6448,18 +6469,10 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
                             }
                         })
                     )
-                    listOf(
-                        Triple(QinblyIcon.Cameraswitch, "Virar câmera", { liveFront = !liveFront }),
-                        Triple(if (micOn) Icons.Default.Mic else QinblyIcon.MicOff, if (micOn) "Silenciar" else "Ligar microfone", { micOn = !micOn }),
-                        Triple(Icons.Default.Pause, "Pausar", { paused = !paused })
-                    ).forEach { (icon, desc, action) ->
-                        Box(Modifier.size(38.dp).clip(CircleShape).background(glass).clickable { action() }, contentAlignment = Alignment.Center) {
-                            Icon(icon, desc, tint = Color.White, modifier = Modifier.size(19.dp))
-                        }
-                    }
-                    Box(Modifier.size(38.dp).clip(CircleShape).background(Color(0xFFE24B4A)).clickable { confirmEnd = true }, contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Close, "Encerrar", tint = Color.White, modifier = Modifier.size(19.dp))
-                    }
+                    QinblyLiveRoundButton(40.dp, onClick = { liveFront = !liveFront }) { Icon(QinblyIcon.Cameraswitch, "Virar câmera", tint = Color.White, modifier = Modifier.size(19.dp)) }
+                    QinblyLiveRoundButton(40.dp, onClick = { micOn = !micOn }) { Icon(if (micOn) Icons.Default.Mic else QinblyIcon.MicOff, if (micOn) "Silenciar" else "Ligar microfone", tint = Color.White, modifier = Modifier.size(19.dp)) }
+                    QinblyLiveRoundButton(40.dp, onClick = { paused = !paused }) { Icon(Icons.Default.Pause, "Pausar", tint = Color.White, modifier = Modifier.size(19.dp)) }
+                    QinblyLiveRoundButton(40.dp, Color(0xFFE24B4A), onClick = { confirmEnd = true }) { Icon(Icons.Default.Close, "Encerrar", tint = Color.White, modifier = Modifier.size(19.dp)) }
                 }
             }
         }
@@ -6511,85 +6524,105 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit) {
             onDismissRequest = { summary = false; onClose() },
             shape = RoundedCornerShape(28.dp),
             title = { Text("Live encerrada") },
-            text = { Text("Tempo no ar: %02d:%02d\nMáximo de espectadores: %d\nCurtidas: 0".format(seconds / 60, seconds % 60, viewersPeak)) },
+            text = { Text("Tempo no ar: %02d:%02d\nMáximo de espectadores: %d\nCurtidas: %d".format(seconds / 60, seconds % 60, viewersPeak, hostLikes)) },
             confirmButton = { TextButton(onClick = { summary = false; onClose() }) { Text("Concluir") } }
         )
     }
 }
 
-/** Sala ao vivo: nome + coração e número de curtidas, bolinha vermelha ao lado dos espectadores, duplo toque curte,
- *  botões 📌/📊 pequenos (abrem e fecham), campo de comentário + presente + compartilhar. */
+/** Sala ao vivo (quem assiste), em tela cheia: cápsula com foto, nome, curtidas e Seguir; fotinhas de quem assiste;
+ *  curtir é tocar na tela (cada toque solta um coração); comentários em balão, campo "Diga algo…" e compartilhar. */
 @Composable
-private fun QinblyLiveRoom(live: QinblyLive, onClose: () -> Unit, onNotice: (String) -> Unit) {
+private fun QinblyLiveRoom(live: QinblyLive, onClose: () -> Unit, onNotice: (String) -> Unit, backHook: MutableState<(() -> Unit)?>) {
     val shareContext = androidx.compose.ui.platform.LocalContext.current
     var commentRefresh by remember { mutableIntStateOf(0) }
-    var likes by remember { mutableStateOf(live.likes) }
-    var heartBurst by remember { mutableStateOf(0) }
-    var panel by remember { mutableStateOf("") } // "", "pin" ou "poll"
+    var likes by remember { mutableIntStateOf(live.likes) }
     var comment by remember { mutableStateOf("") }
     var viewersLive by remember { mutableIntStateOf(live.viewers) }
+    var viewerNames by remember { mutableStateOf<List<String>>(emptyList()) }
+    var joinNotice by remember { mutableStateOf("") }
+    var pending by remember { mutableIntStateOf(0) }
+    var boxW by remember { mutableIntStateOf(0) }
+    var boxH by remember { mutableIntStateOf(0) }
+    var hostId by remember { mutableStateOf("") }
+    var hostAvatar by remember { mutableStateOf("") }
+    var following by remember { mutableStateOf(false) }
+    val hearts = remember { QinblyLiveHearts() }
+    val outbox = remember { kotlinx.coroutines.channels.Channel<Int>(kotlinx.coroutines.channels.Channel.UNLIMITED) }
+    val scope = rememberCoroutineScope()
+    val inputPad = qinblyInputBottomPadding()
     val viewerHandle = remember { shareContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount().getString("username", "").orEmpty().removePrefix("@") }
-    BackHandler { onClose() }
+    androidx.compose.runtime.SideEffect { backHook.value = onClose }
+    DisposableEffect(Unit) { onDispose { outbox.close() } }
+    LaunchedEffect(live.host) {
+        try {
+            val u = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getPublicProfile(live.host) }.optJSONObject("user")
+            if (u != null) {
+                hostId = u.optString("id")
+                hostAvatar = u.optString("avatarUrl")
+                following = u.optBoolean("isFollowing")
+            }
+        } catch (_: Exception) { }
+    }
+    LaunchedEffect(joinNotice) { if (joinNotice.isNotBlank()) { kotlinx.coroutines.delay(4000); joinNotice = "" } }
+    LaunchedEffect(Unit) {
+        // Os toques viram um lote a cada 0,4 s para não encher a conexão.
+        while (true) {
+            kotlinx.coroutines.delay(400)
+            if (pending > 0) { outbox.trySend(pending); pending = 0 }
+        }
+    }
     Box(
-        Modifier.fillMaxSize().background(Color(0xFF14181F))
-            .pointerInput(Unit) { detectTapGestures(onDoubleTap = { likes++; heartBurst++ }) }
+        Modifier.fillMaxSize().background(Color(0xFF14181F)).onSizeChanged { boxW = it.width; boxH = it.height }
+            .pointerInput(Unit) { detectTapGestures(onTap = { off -> likes++; pending++; hearts.add(off.x, off.y) }) }
     ) {
         QinblyLiveViewerStream(
-            roomName = live.id, username = viewerHandle, modifier = Modifier.fillMaxSize(),
+            roomName = live.id, username = viewerHandle, modifier = Modifier.fillMaxSize(), outbox = outbox,
             onViewers = { viewersLive = it },
+            onViewerNames = { list -> viewerNames = list.filter { n -> n.isNotBlank() && !n.equals(live.host, true) } },
+            onLikes = { total -> if (total > likes) likes = total },
+            onHeart = { n -> repeat(n.coerceAtMost(5)) { hearts.add(boxW * (0.5f + 0.4f * Math.random().toFloat()), boxH * 0.8f) } },
+            onJoin = { joinNotice = "$it entrou na live" },
             onEnded = { onNotice(it); onClose() }
         )
-        Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(Modifier.size(34.dp).clip(CircleShape).background(Color(0xFF2B3544)))
-            Column(Modifier.weight(1f)) {
-                Text(live.host, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(QinblyIcon.Favorite, null, tint = Color(0xFFFF2D3F), modifier = Modifier.size(15.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("$likes", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+        Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            QinblyLiveCapsule(
+                live.host, hostAvatar, likes,
+                if (viewerHandle.equals(live.host, true)) null else if (following) "Seguindo" else "Seguir",
+                {
+                    if (hostId.isBlank()) onNotice("Aguarde um instante.")
+                    else scope.launch {
+                        try {
+                            val token = QinblyLiveNet.userToken(shareContext)
+                            following = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.toggleFollow(token, hostId) }
+                        } catch (e: QinblyApi.FollowRequestException) {
+                            onNotice(e.message ?: "Pedido enviado.")
+                        } catch (_: Exception) { onNotice("Não foi possível seguir agora.") }
+                    }
                 }
-            }
-            Icon(QinblyIcon.Visibility, null, tint = Color.White, modifier = Modifier.size(15.dp))
-            Text("$viewersLive", color = Color.White, fontSize = 13.sp)
-            IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
-                Icon(QinblyIcon.Close, "Sair da live", tint = Color.White)
-            }
+            )
+            Spacer(Modifier.weight(1f))
+            QinblyLiveViewersPill(viewerNames, viewersLive)
+            Spacer(Modifier.width(6.dp))
+            QinblyLiveRoundButton(30.dp, onClick = onClose) { Icon(QinblyIcon.Close, "Sair da live", tint = Color.White, modifier = Modifier.size(16.dp)) }
         }
-        if (heartBurst > 0) {
-            key(heartBurst) {
-                Icon(QinblyIcon.Favorite, null, tint = Color(0xFFFF2D3F), modifier = Modifier.align(Alignment.Center).size(88.dp).alpha(0.9f))
-            }
-            LaunchedEffect(heartBurst) { kotlinx.coroutines.delay(700); if (heartBurst > 0) heartBurst = 0 }
+        QinblyHeartsLayer(hearts, Modifier.fillMaxSize())
+        Column(
+            Modifier.align(Alignment.BottomStart).imePadding().padding(start = 10.dp, end = 60.dp, bottom = inputPad + 64.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            QinblyLiveJoinNotice(joinNotice, Modifier.padding(start = 4.dp))
+            QinblyLiveCommentsList(live.host, commentRefresh)
         }
-        Column(Modifier.align(Alignment.TopEnd).padding(top = 56.dp, end = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("pin" to QinblyIcon.PushPin, "poll" to QinblyIcon.Poll).forEach { (id, icon) ->
-                Box(
-                    Modifier.size(26.dp).clip(CircleShape).background(if (panel == id) QinblyBrand.Accent else Color(0x29FFFFFF))
-                        .clickable { panel = if (panel == id) "" else id },
-                    contentAlignment = Alignment.Center
-                ) { Icon(icon, null, tint = Color.White, modifier = Modifier.size(14.dp)) }
-            }
-        }
-        if (panel.isNotEmpty()) {
-            Column(
-                Modifier.align(Alignment.TopStart).padding(start = 10.dp, end = 48.dp, top = 56.dp).fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp)).background(Color(0xEB14181F)).padding(12.dp)
-            ) {
-                Text(if (panel == "pin") "Comentário fixado" else "Enquete", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 13.sp)
-                Spacer(Modifier.height(4.dp))
-                Text(if (panel == "pin") "Nada fixado por enquanto." else "Nenhuma enquete no momento.", color = Color(0xFFB8C0CC), fontSize = 12.sp)
-            }
-        }
-        QinblyLiveCommentsList(live.host, commentRefresh, Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(start = 10.dp, end = 70.dp, bottom = 70.dp))
         Row(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp),
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = inputPad),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             TextField(
                 value = comment, onValueChange = { comment = it }, visualTransformation = QinblyTagTransformation,
-                placeholder = { Text("Comente…", color = Color(0xB3FFFFFF)) },
-                modifier = Modifier.weight(1f), singleLine = true, shape = RoundedCornerShape(22.dp),
-                colors = TextFieldDefaults.colors(focusedContainerColor = Color(0x24FFFFFF), unfocusedContainerColor = Color(0x24FFFFFF), focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = Color.White, unfocusedTextColor = Color.White),
+                placeholder = { Text("Diga algo…", color = Color(0xB3FFFFFF)) },
+                modifier = Modifier.weight(1f), singleLine = true, shape = RoundedCornerShape(24.dp),
+                colors = TextFieldDefaults.colors(focusedContainerColor = Color(0x8C14141C), unfocusedContainerColor = Color(0x8C14141C), focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = Color.White, unfocusedTextColor = Color.White),
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Send),
                 keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSend = {
                     val text = comment.trim()
@@ -6597,18 +6630,13 @@ private fun QinblyLiveRoom(live: QinblyLive, onClose: () -> Unit, onNotice: (Str
                     if (text.isNotEmpty()) qinblySendLiveComment(shareContext, live.host, text, { commentRefresh++ }, onNotice)
                 })
             )
-            Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x24FFFFFF)).clickable { onNotice("Presentes: em breve.") }, contentAlignment = Alignment.Center) {
-                Icon(QinblyIcon.CardGiftcard, "Presente", tint = Color.White, modifier = Modifier.size(20.dp))
-            }
-            Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x24FFFFFF)).clickable {
+            QinblyLiveRoundButton(42.dp, onClick = {
                 try {
                     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
                         .putExtra(android.content.Intent.EXTRA_TEXT, "Assista à live de @${live.host} no QINBLY!")
                     shareContext.startActivity(android.content.Intent.createChooser(send, "Compartilhar live").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
                 } catch (_: Exception) { onNotice("Não foi possível abrir o compartilhamento.") }
-            }, contentAlignment = Alignment.Center) {
-                Icon(QinblyIcon.Share, "Compartilhar", tint = Color.White, modifier = Modifier.size(20.dp))
-            }
+            }) { Icon(QinblyIcon.Share, "Compartilhar", tint = Color.White, modifier = Modifier.size(20.dp)) }
         }
     }
 }

@@ -1010,3 +1010,11 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 ## Foto/vídeo salvo na galeria
 - No app, o aviso é só "Foto salva na galeria" / "Vídeo salvo na galeria" (sem nome do app).
 - O arquivo salvo na galeria do celular pode levar o nome do app: `qinbly-<número>.jpg`/`.mp4`, na pasta Qinbly.
+
+## Live em tela cheia (quem transmite e quem assiste)
+- Ao entrar numa live, a tela cobre tudo: some a barra QINBLY, as abas e o menu de baixo. Os botões e o campo de comentar ficam acima dos botões do celular e sobem com o teclado.
+- Cápsula de cima: foto, nome e curtidas (♥). Para quem assiste, tem o botão **Seguir** / **Seguindo**. Do outro lado, as fotinhas de quem assiste com o número.
+- Curtir é tocar na tela (um toque ou vários). Cada toque solta um coração que sobe e soma nas curtidas; quem transmite vê os corações dos outros. Não há mais botão de coração nem duplo toque.
+- Comentários em balões foscos, com o aviso "fulano entrou na live". Campo "Diga algo…" e botão de compartilhar para quem assiste; quem transmite mantém virar câmera, microfone, pausar e encerrar.
+- Sem cidade na tela. Resumo ao encerrar mostra as curtidas.
+- Curtidas e entradas trafegam pelo próprio LiveKit (mensagens de dados); quem assiste agora pode enviar dados (functions/api/live.js).

@@ -19,6 +19,8 @@ import io.livekit.android.room.track.LocalVideoTrack
 import io.livekit.android.room.track.Track
 import io.livekit.android.room.track.VideoTrack
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -80,6 +82,14 @@ internal object QinblyLiveNet {
         context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount().getString("token", "").orEmpty()
 }
 
+/** Mensagens curtas entre quem transmite e quem assiste (curtidas). */
+private fun liveData(bytes: ByteArray): Pair<String, Int>? = try {
+    val o = JSONObject(String(bytes))
+    o.optString("t") to o.optInt("n")
+} catch (_: Exception) { null }
+
+private fun liveDataBytes(type: String, n: Int): ByteArray = JSONObject().put("t", type).put("n", n).toString().toByteArray()
+
 private fun attachVideo(room: Room, renderer: TextureViewRenderer, track: VideoTrack?) {
     if (track == null) return
     try { track.addRenderer(renderer) } catch (_: Exception) { }
@@ -92,7 +102,8 @@ private fun attachVideo(room: Room, renderer: TextureViewRenderer, track: VideoT
 @Composable
 internal fun QinblyLiveHostStream(
     paused: Boolean, front: Boolean, micOn: Boolean, username: String, modifier: Modifier,
-    onViewers: (Int) -> Unit, onError: (String) -> Unit
+    onViewers: (Int) -> Unit, onViewerNames: (List<String>) -> Unit, onLikes: (Int) -> Unit,
+    onHeart: (Int) -> Unit, onJoin: (String) -> Unit, onError: (String) -> Unit
 ) {
     val context = LocalContext.current
     val room = remember { LiveKit.create(context.applicationContext) }
@@ -114,9 +125,32 @@ internal fun QinblyLiveHostStream(
             attachVideo(room, renderer, room.localParticipant.getTrackPublication(Track.Source.CAMERA)?.track as? VideoTrack)
             started = true
             onViewers(room.remoteParticipants.size)
+            var likesTotal = 0
             room.events.events.collect { e ->
-                if (e is RoomEvent.ParticipantConnected || e is RoomEvent.ParticipantDisconnected) onViewers(room.remoteParticipants.size)
-                if (e is RoomEvent.Disconnected) onError("A transmissão caiu. Verifique a conexão.")
+                when (e) {
+                    is RoomEvent.ParticipantConnected -> {
+                        onViewers(room.remoteParticipants.size)
+                        onViewerNames(room.remoteParticipants.values.map { it.name ?: "" })
+                        onJoin(e.participant.name ?: "Alguém")
+                        // Quem acabou de entrar recebe o total de curtidas de agora.
+                        try { room.localParticipant.publishData(liveDataBytes("total", likesTotal)) } catch (_: Exception) { }
+                    }
+                    is RoomEvent.ParticipantDisconnected -> {
+                        onViewers(room.remoteParticipants.size)
+                        onViewerNames(room.remoteParticipants.values.map { it.name ?: "" })
+                    }
+                    is RoomEvent.DataReceived -> {
+                        val msg = liveData(e.data)
+                        if (msg != null && msg.first == "like" && msg.second > 0) {
+                            likesTotal += msg.second
+                            onLikes(likesTotal)
+                            onHeart(msg.second)
+                            try { room.localParticipant.publishData(liveDataBytes("total", likesTotal)) } catch (_: Exception) { }
+                        }
+                    }
+                    is RoomEvent.Disconnected -> onError("A transmissão caiu. Verifique a conexão.")
+                    else -> {}
+                }
             }
         } catch (e: Exception) {
             onError("Não foi possível começar a live (" + (e.message ?: "erro").take(60) + ").")
@@ -141,8 +175,9 @@ internal fun QinblyLiveHostStream(
 /** Quem assiste: entra na sala do anfitrião e mostra o vídeo dele. [onEnded] quando a live acaba ou cai. */
 @Composable
 internal fun QinblyLiveViewerStream(
-    roomName: String, username: String, modifier: Modifier,
-    onViewers: (Int) -> Unit, onEnded: (String) -> Unit
+    roomName: String, username: String, modifier: Modifier, outbox: Channel<Int>,
+    onViewers: (Int) -> Unit, onViewerNames: (List<String>) -> Unit, onLikes: (Int) -> Unit,
+    onHeart: (Int) -> Unit, onJoin: (String) -> Unit, onEnded: (String) -> Unit
 ) {
     val context = LocalContext.current
     val room = remember { LiveKit.create(context.applicationContext) }
@@ -160,12 +195,31 @@ internal fun QinblyLiveViewerStream(
             room.remoteParticipants.values.forEach { p ->
                 attachVideo(room, renderer, p.getTrackPublication(Track.Source.CAMERA)?.track as? VideoTrack)
             }
+            // Curtidas por toque: o que vem da tela sai daqui em lotes.
+            launch {
+                for (n in outbox) {
+                    try { room.localParticipant.publishData(liveDataBytes("like", n)) } catch (_: Exception) { }
+                }
+            }
             room.events.events.collect { e ->
                 when (e) {
                     is RoomEvent.TrackSubscribed -> attachVideo(room, renderer, e.track as? VideoTrack)
-                    is RoomEvent.ParticipantConnected, is RoomEvent.ParticipantDisconnected -> {
+                    is RoomEvent.ParticipantConnected -> {
                         onViewers(room.remoteParticipants.size)
+                        onViewerNames(room.remoteParticipants.values.map { it.name ?: "" })
+                        onJoin(e.participant.name ?: "Alguém")
+                    }
+                    is RoomEvent.ParticipantDisconnected -> {
+                        onViewers(room.remoteParticipants.size)
+                        onViewerNames(room.remoteParticipants.values.map { it.name ?: "" })
                         if (room.remoteParticipants.isEmpty()) onEnded("A live terminou.")
+                    }
+                    is RoomEvent.DataReceived -> {
+                        val msg = liveData(e.data)
+                        if (msg != null) {
+                            if (msg.first == "total") onLikes(msg.second)
+                            else if (msg.first == "like" && msg.second > 0) onHeart(msg.second)
+                        }
                     }
                     is RoomEvent.Disconnected -> onEnded("A live terminou.")
                     else -> {}

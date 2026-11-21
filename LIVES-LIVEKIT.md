@@ -19,5 +19,4 @@
 Franquia mensal fixa. Ao acabar, as lives param até o mês seguinte.
 
 ## Ainda não faz
-- Comentários e curtidas da live (dependem do banco).
 - Efeitos de rosto e cor durante a live (só na prévia).

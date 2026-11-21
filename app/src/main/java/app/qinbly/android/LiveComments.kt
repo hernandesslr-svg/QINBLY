@@ -47,17 +47,8 @@ internal fun QinblyLiveCommentsList(host: String, refreshKey: Int, modifier: Mod
         }
     }
     if (comments.isEmpty()) return
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        comments.takeLast(7).forEach { c ->
-            Text(
-                buildAnnotatedString {
-                    withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(c.displayName.ifBlank { c.username } + "  ") }
-                    append(c.body)
-                },
-                color = Color.White, fontSize = 13.sp,
-                modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0x66000000)).padding(horizontal = 10.dp, vertical = 5.dp)
-            )
-        }
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        comments.takeLast(5).forEach { c -> QinblyLiveBubble(c.displayName.ifBlank { c.username }, c.body) }
     }
 }
 
