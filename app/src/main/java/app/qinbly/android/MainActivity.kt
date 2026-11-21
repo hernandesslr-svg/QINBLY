@@ -6378,7 +6378,7 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit, back
             }
             Column(Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding().padding(top = 110.dp, start = 36.dp, end = 36.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(Modifier.size(64.dp).clip(CircleShape).background(Color(0x408B5CF6)), contentAlignment = Alignment.Center) {
-                    Icon(androidx.compose.material.icons.Icons.Filled.SportsEsports, null, tint = Color(0xFFC9B8FF), modifier = Modifier.size(32.dp))
+                    Icon(androidx.compose.material.icons.Icons.Outlined.SportsEsports, null, tint = Color(0xFFC9B8FF), modifier = Modifier.size(32.dp))
                 }
                 Spacer(Modifier.height(10.dp))
                 Text(if (stage == "live") "Seu jogo está ao vivo" else "Seu jogo vai ao vivo", color = Color.White, fontSize = 14.sp)
@@ -6445,7 +6445,7 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit, back
                                     .clickable { mode = key }.padding(vertical = 7.dp),
                                 horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(if (key == "camera") androidx.compose.material.icons.Icons.Filled.CameraAlt else androidx.compose.material.icons.Icons.Filled.SportsEsports, null, tint = Color.White, modifier = Modifier.size(15.dp))
+                                Icon(if (key == "camera") androidx.compose.material.icons.Icons.Filled.CameraAlt else androidx.compose.material.icons.Icons.Outlined.SportsEsports, null, tint = Color.White, modifier = Modifier.size(15.dp))
                                 Spacer(Modifier.width(6.dp))
                                 Text(label, color = Color.White, fontWeight = if (mode == key) FontWeight.Medium else FontWeight.Normal, fontSize = 13.sp)
                             }
@@ -6459,7 +6459,7 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit, back
                                     .clickable { audienceAll = all }.padding(vertical = 7.dp),
                                 horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(if (all) androidx.compose.material.icons.Icons.Filled.Public else androidx.compose.material.icons.Icons.Filled.Group, null, tint = Color.White, modifier = Modifier.size(15.dp))
+                                Icon(if (all) androidx.compose.material.icons.Icons.Filled.Language else androidx.compose.material.icons.Icons.Filled.People, null, tint = Color.White, modifier = Modifier.size(15.dp))
                                 Spacer(Modifier.width(6.dp))
                                 Text(label, color = Color.White, fontWeight = if (audienceAll == all) FontWeight.Medium else FontWeight.Normal, fontSize = 13.sp)
                             }
