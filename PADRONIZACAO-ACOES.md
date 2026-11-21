@@ -1009,3 +1009,4 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 
 ## Foto/vídeo salvo na galeria: sem o nome do app
 - Ao salvar do editor da câmera, o arquivo vira `IMG_<número>.jpg` / `VID_<número>.mp4` e fica direto em Imagens/Filmes, sem a pasta "Qinbly".
+- O nome do app aparece só no aviso ao salvar: "Qinbly • Foto salva na galeria" / "Qinbly • Vídeo salvo na galeria".
