@@ -32,7 +32,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -163,8 +166,8 @@ internal fun QinblyLiveJoinNotice(text: String, modifier: Modifier = Modifier) {
 @Composable
 internal fun QinblyLiveBubble(name: String, body: String) {
     Text(
-        androidx.compose.ui.text.buildAnnotatedString {
-            androidx.compose.ui.text.withStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Medium, color = liveNameColor(name))) { append(name + "  ") }
+        buildAnnotatedString {
+            withStyle(SpanStyle(fontWeight = FontWeight.Medium, color = liveNameColor(name))) { append(name + "  ") }
             append(body)
         },
         color = Color.White, fontSize = 12.sp, lineHeight = 16.sp,
