@@ -995,3 +995,10 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Aba Lives: lista de quem está no ar atualiza a cada 8 s; "Começar uma live" transmite câmera e microfone; tocar numa live abre o vídeo.
 - Pede câmera e microfone ao iniciar. Pausar desliga câmera e microfone sem sair da sala. Virar câmera e silenciar funcionam durante a live.
 - Efeitos de rosto e cor só na prévia (antes de iniciar). Detalhes e configuração em LIVES-LIVEKIT.md.
+
+## Backend próprio no Cloudflare (saindo do Supabase)
+- Banco: Cloudflare D1 `qinbly` (51 tabelas espelhadas + `accounts`, `refresh_tokens`, `app_secrets`). Arquivos: R2 `qinbly-files`. Bindings `DB` e `FILES` no projeto Pages `qinbly`.
+- Código em `functions/`: `_lib/` (núcleo, emulação do PostgREST, gateway da API), e rotas `functions/v1/*` (gateway + verificação + login), `rest/v1/*`, `storage/v1/*`, `auth/v1/*`. Mantêm os mesmos caminhos de antes, então o app só precisa trocar o endereço do servidor.
+- Login: Google (verificado pelo token do Google) e e-mail/senha. Sessões novas: quem estava logado precisa entrar de novo uma vez.
+- Fotos/vídeos: URLs públicas no mesmo formato `/storage/v1/object/public/post-media/...`.
+- Limites conhecidos: não há serviço de e-mail ("esqueci a senha" não envia nada); a conta de e-mail/senha antiga não tem senha importada.

@@ -5,6 +5,8 @@
 //               { "username": "fulano", "host": false, "room": "live_xxx" } -> libera assistir
 //   GET  ?action=list   -> lives no ar agora
 //
+// O login (token) vem do proprio servidor QINBLY (D1), nao mais do Supabase.
+//
 // Variáveis no painel do Cloudflare (Settings > Variables and Secrets):
 //   LIVEKIT_URL         wss://seu-projeto.livekit.cloud
 //   LIVEKIT_API_KEY     chave pública do LiveKit
@@ -12,7 +14,8 @@
 //
 // A chave secreta fica só aqui, nunca dentro do app.
 
-const SUPABASE_URL = "https://jqomgrdlocdqaarfqkay.supabase.co";
+import { authUser, tokenOf } from "../_lib/core.js";
+
 const enc = new TextEncoder();
 
 const json = (data, status = 200) =>
@@ -40,28 +43,10 @@ async function signHs256(payload, secret) {
   return head + "." + body + "." + b64url(sig);
 }
 
-// Confere a assinatura do token do Supabase (ES256) usando as chaves públicas do projeto. Devolve o id do usuário.
-async function verifyUser(request) {
-  const auth = request.headers.get("authorization") || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-  const parts = token.split(".");
-  if (parts.length !== 3) return null;
-  try {
-    const header = JSON.parse(new TextDecoder().decode(fromB64url(parts[0])));
-    const claims = JSON.parse(new TextDecoder().decode(fromB64url(parts[1])));
-    if (header.alg !== "ES256") return null;
-    if (!claims.sub || (claims.exp && claims.exp * 1000 < Date.now())) return null;
-    if (claims.iss !== SUPABASE_URL + "/auth/v1") return null;
-    const res = await fetch(SUPABASE_URL + "/auth/v1/.well-known/jwks.json", { cf: { cacheTtl: 600, cacheEverything: true } });
-    const jwks = await res.json();
-    const jwk = (jwks.keys || []).find((k) => k.kid === header.kid);
-    if (!jwk) return null;
-    const key = await crypto.subtle.importKey("jwk", jwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]);
-    const ok = await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, fromB64url(parts[2]), enc.encode(parts[0] + "." + parts[1]));
-    return ok ? claims.sub : null;
-  } catch (_) {
-    return null;
-  }
+// Confere o token de sessao do app (emitido pelo proprio servidor QINBLY). Devolve o id do usuario.
+async function verifyUser(request, env) {
+  const user = await authUser(env, tokenOf(request));
+  return user ? user.id : null;
 }
 
 const cleanName = (s) => String(s || "").replace(/[^A-Za-z0-9_.-]/g, "").slice(0, 30);
@@ -89,7 +74,7 @@ export async function onRequest({ request, env }) {
   }
   const url = new URL(request.url);
   const action = url.searchParams.get("action");
-  const uid = await verifyUser(request);
+  const uid = await verifyUser(request, env);
   if (!uid) return json({ error: "Entre na sua conta de novo." }, 401);
 
   try {
