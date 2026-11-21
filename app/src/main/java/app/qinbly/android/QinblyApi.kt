@@ -488,7 +488,7 @@ object QinblyApi {
     private fun cacheable(status: Int) = status == 402 || status == 429 || status >= 500
 
     private fun restCall(token: String, method: String, pathAndQuery: String, body: String? = null, prefer: String? = null, allowRefresh: Boolean = true): String {
-        val c = (URL("https://jqomgrdlocdqaarfqkay.supabase.co/rest/v1/" + pathAndQuery).openConnection() as HttpURLConnection).apply {
+        val c = (URL("https://qinbly.pages.dev/rest/v1/" + pathAndQuery).openConnection() as HttpURLConnection).apply {
             requestMethod = method; connectTimeout = 20000; readTimeout = 30000
             setRequestProperty("apikey", BuildConfig.SUPABASE_PUBLISHABLE_KEY)
             setRequestProperty("Authorization", "Bearer $token")
@@ -541,7 +541,7 @@ object QinblyApi {
 
     /** Cancelar envio: apaga a mensagem de verdade (some para as duas pessoas). Só quem enviou consegue. */
     fun deleteMessage(token: String, id: String) {
-        val c = (URL("https://jqomgrdlocdqaarfqkay.supabase.co/rest/v1/messages?id=eq." + java.net.URLEncoder.encode(id, "UTF-8")).openConnection() as HttpURLConnection).apply {
+        val c = (URL("https://qinbly.pages.dev/rest/v1/messages?id=eq." + java.net.URLEncoder.encode(id, "UTF-8")).openConnection() as HttpURLConnection).apply {
             requestMethod = "DELETE"; connectTimeout = 20000; readTimeout = 30000
             setRequestProperty("apikey", BuildConfig.SUPABASE_PUBLISHABLE_KEY)
             setRequestProperty("Authorization", "Bearer $token")
@@ -765,7 +765,7 @@ object QinblyApi {
     data class StoryViewer(val username: String, val displayName: String, val avatarUrl: String, val viewedAt: String)
 
     /** Bandeja de stories e notas: você primeiro, depois quem você segue (com story novo antes). */
-    private const val STORAGE_PUBLIC = "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/"
+    private const val STORAGE_PUBLIC = "https://qinbly.pages.dev/storage/v1/object/public/post-media/"
     private fun pubUrl(path: String?): String = if (path.isNullOrBlank()) "" else if (path.startsWith("http")) path else STORAGE_PUBLIC + path
     internal fun publicMediaUrl(path: String?): String = pubUrl(path)
     internal fun isCollabCaption(caption: String) = caption.startsWith("qinbly:collab:")
@@ -937,7 +937,7 @@ object QinblyApi {
 
     /** Chamada ao login do Supabase (trocar senha/e-mail, sair de outros aparelhos). */
     private fun authCall(method: String, path: String, token: String, body: JSONObject? = null): String {
-        val c = (URL("https://jqomgrdlocdqaarfqkay.supabase.co/auth/v1/" + path).openConnection() as HttpURLConnection).apply {
+        val c = (URL("https://qinbly.pages.dev/auth/v1/" + path).openConnection() as HttpURLConnection).apply {
             requestMethod = method; connectTimeout = 20000; readTimeout = 30000
             setRequestProperty("apikey", BuildConfig.SUPABASE_PUBLISHABLE_KEY)
             setRequestProperty("Authorization", "Bearer $token")
@@ -1067,7 +1067,7 @@ object QinblyApi {
         val parentId: String = "", val likes: Int = 0, val likedByMe: Boolean = false, val createdAt: String = ""
     ) {
         /** Figurinha própria enviada como comentário: "qinbly:sticker:<caminho>". */
-        val stickerUrl: String get() = if (body.startsWith("qinbly:sticker:")) "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/" + body.removePrefix("qinbly:sticker:") else ""
+        val stickerUrl: String get() = if (body.startsWith("qinbly:sticker:")) "https://qinbly.pages.dev/storage/v1/object/public/post-media/" + body.removePrefix("qinbly:sticker:") else ""
     }
 
     fun getComments(postId: String): List<CommentSummary> {

@@ -9406,20 +9406,20 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                             val savedCover = cleanImageValue(user.optString("coverUrl"))
                                 .ifBlank { cleanImageValue(user.optString("cover_url")) }
                                 .ifBlank {
-                                    if (coverPath.startsWith("http")) coverPath else if (coverPath.isNotBlank()) "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/$coverPath" else ""
+                                    if (coverPath.startsWith("http")) coverPath else if (coverPath.isNotBlank()) "https://qinbly.pages.dev/storage/v1/object/public/post-media/$coverPath" else ""
                                 }
                             avatarUrl = cleanImageValue(user.optString("avatarUrl"))
                                 .ifBlank { cleanImageValue(user.optString("avatar_url")) }
                                 .ifBlank {
                                     val avatarPath = cleanImageValue(user.optString("avatar_path"))
-                                    if (avatarPath.startsWith("http")) avatarPath else if (avatarPath.isNotBlank()) "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/$avatarPath" else ""
+                                    if (avatarPath.startsWith("http")) avatarPath else if (avatarPath.isNotBlank()) "https://qinbly.pages.dev/storage/v1/object/public/post-media/$avatarPath" else ""
                                 }
                             profilePhotoUrl = savedCover.ifBlank {
                                 cleanImageValue(user.optString("profilePhotoUrl")).ifBlank { avatarUrl }
                             }
                             val originalPath = cleanImageValue(user.optString("cover_original_path"))
                             originalCoverUrl = cleanImageValue(user.optString("originalCoverUrl")).ifBlank {
-                                if (originalPath.startsWith("http")) originalPath else if (originalPath.isNotBlank()) "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/$originalPath" else ""
+                                if (originalPath.startsWith("http")) originalPath else if (originalPath.isNotBlank()) "https://qinbly.pages.dev/storage/v1/object/public/post-media/$originalPath" else ""
                             }
                         }
                         profilePosts = loadedPosts
@@ -9924,7 +9924,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                     fun clean(value: String): String = value.trim().takeUnless { it.isBlank() || it.equals("null", true) || it.equals("undefined", true) }.orEmpty()
                     fun resolve(value: String): String {
                         val v = clean(value)
-                        return if (v.startsWith("http")) v else if (v.isNotBlank()) "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/${v.removePrefix("post-media/")}" else ""
+                        return if (v.startsWith("http")) v else if (v.isNotBlank()) "https://qinbly.pages.dev/storage/v1/object/public/post-media/${v.removePrefix("post-media/")}" else ""
                     }
                     val photo = listOf(
                         clean(user.optString("coverUrl")), clean(user.optString("cover_url")),

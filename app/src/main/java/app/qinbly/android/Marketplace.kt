@@ -80,7 +80,7 @@ import java.net.URL
 // ───────── Perto de mim: anúncios do bairro (vendas, doações, achados, eventos, serviços) ─────────
 
 private val MarketBlue = Color(0xFF2F68E0)
-private const val MARKET_STORAGE = "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/"
+private const val MARKET_STORAGE = "https://qinbly.pages.dev/storage/v1/object/public/post-media/"
 private fun marketMain(block: () -> Unit) { Handler(Looper.getMainLooper()).post(block) }
 
 private data class QinblyListing(
@@ -135,7 +135,7 @@ internal fun uploadMarketPhoto(context: Context, token: String, userId: String, 
     require(bytes.isNotEmpty() && bytes.size <= 15 * 1024 * 1024) { "A foto passa de 15 MB." }
     val ext = when (type) { "image/png" -> "png"; "image/webp" -> "webp"; else -> "jpg" }
     val path = "$userId/market/${java.util.UUID.randomUUID()}-$index.$ext"
-    val c = (URL("https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/post-media/$path").openConnection() as HttpURLConnection).apply {
+    val c = (URL("https://qinbly.pages.dev/storage/v1/object/post-media/$path").openConnection() as HttpURLConnection).apply {
         requestMethod = "POST"; connectTimeout = 20000; readTimeout = 60000; doOutput = true
         setRequestProperty("apikey", BuildConfig.SUPABASE_PUBLISHABLE_KEY)
         setRequestProperty("Authorization", "Bearer $token")

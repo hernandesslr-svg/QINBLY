@@ -1002,4 +1002,7 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Login: Google (verificado pelo token do Google) e e-mail/senha. Sessões novas: quem estava logado precisa entrar de novo uma vez.
 - Fotos/vídeos: URLs públicas no mesmo formato `/storage/v1/object/public/post-media/...`.
 - Limites conhecidos: não há serviço de e-mail ("esqueci a senha" não envia nada); a conta de e-mail/senha antiga não tem senha importada.
-- Cópia dos arquivos antigos (138, ~235 MB) para o R2: página temporária `functions/migrar/arquivos.js`, protegida por chave guardada no banco. Deve ser apagada depois que a cópia terminar.
+- Fotos e vídeos antigos (138 arquivos) não foram copiados: o Supabase bloqueou o acesso aos arquivos (erro 402, limite do plano gratuito). Posts antigos com foto ficam sem a imagem; o conteúdo novo é salvo no Cloudflare.
+
+## App agora usa o Cloudflare
+- O app passou a falar com `https://qinbly.pages.dev` (API, login, fotos e vídeos) em vez do Supabase. Quem estava logado precisa entrar de novo com o Google uma vez.

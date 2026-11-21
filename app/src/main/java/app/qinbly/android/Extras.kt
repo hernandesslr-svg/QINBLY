@@ -96,7 +96,7 @@ import org.json.JSONObject
 
 private val Panel = Color(0xFF1F1F21)
 private val FieldBg = Color(0xFF262628)
-private const val STICKER_BASE = "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/"
+private const val STICKER_BASE = "https://qinbly.pages.dev/storage/v1/object/public/post-media/"
 
 private fun sess(c: Context) = c.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
 private fun main(block: () -> Unit) { Handler(Looper.getMainLooper()).post(block) }
