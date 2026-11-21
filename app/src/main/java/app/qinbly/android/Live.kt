@@ -1,6 +1,7 @@
 package app.qinbly.android
 
 import android.content.Context
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -18,6 +19,7 @@ import io.livekit.android.room.Room
 import io.livekit.android.room.track.LocalVideoTrack
 import io.livekit.android.room.track.Track
 import io.livekit.android.room.track.VideoTrack
+import io.livekit.android.room.track.screencapture.ScreenCaptureParams
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -98,16 +100,18 @@ private fun attachVideo(room: Room, renderer: TextureViewRenderer, track: VideoT
 /**
  * Quem transmite: liga câmera e microfone na sala do próprio usuário e mostra a imagem em tela cheia.
  * [paused] desliga câmera e microfone sem sair da sala. [front] vira a câmera. [onViewers] recebe quantas pessoas assistem.
+ * Com [screenData] (resultado da permissão de captura do Android) transmite a tela do celular no lugar da câmera (modo Jogos).
  */
 @Composable
 internal fun QinblyLiveHostStream(
-    paused: Boolean, front: Boolean, micOn: Boolean, username: String, modifier: Modifier,
+    paused: Boolean, front: Boolean, micOn: Boolean, username: String, modifier: Modifier, screenData: Intent?,
     onViewers: (Int) -> Unit, onViewerNames: (List<String>) -> Unit, onLikes: (Int) -> Unit,
     onHeart: (Int) -> Unit, onJoin: (String) -> Unit, onError: (String) -> Unit
 ) {
     val context = LocalContext.current
     val room = remember { LiveKit.create(context.applicationContext) }
     val renderer = remember { TextureViewRenderer(context) }
+    val screenMode = screenData != null
     var started by remember { mutableStateOf(false) }
     DisposableEffect(Unit) {
         room.initVideoRenderer(renderer)
@@ -121,8 +125,13 @@ internal fun QinblyLiveHostStream(
         try {
             room.connect(access.url, access.token)
             room.localParticipant.setMicrophoneEnabled(micOn)
-            room.localParticipant.setCameraEnabled(true)
-            attachVideo(room, renderer, room.localParticipant.getTrackPublication(Track.Source.CAMERA)?.track as? VideoTrack)
+            if (screenData != null) {
+                // O Android abre um aviso de gravação e mantém uma notificação enquanto a tela estiver sendo transmitida.
+                room.localParticipant.setScreenShareEnabled(true, ScreenCaptureParams(screenData))
+            } else {
+                room.localParticipant.setCameraEnabled(true)
+                attachVideo(room, renderer, room.localParticipant.getTrackPublication(Track.Source.CAMERA)?.track as? VideoTrack)
+            }
             started = true
             onViewers(room.remoteParticipants.size)
             var likesTotal = 0
@@ -159,14 +168,20 @@ internal fun QinblyLiveHostStream(
     LaunchedEffect(paused, micOn, started) {
         if (!started) return@LaunchedEffect
         try {
-            room.localParticipant.setCameraEnabled(!paused)
+            if (screenMode) {
+                // A captura de tela não pode ser religada sem pedir permissão de novo; então pausar só esconde a imagem.
+                (room.localParticipant.getTrackPublication(Track.Source.SCREEN_SHARE)?.track as? LocalVideoTrack)?.enabled = !paused
+            } else {
+                room.localParticipant.setCameraEnabled(!paused)
+            }
             room.localParticipant.setMicrophoneEnabled(!paused && micOn)
-            if (!paused) attachVideo(room, renderer, room.localParticipant.getTrackPublication(Track.Source.CAMERA)?.track as? VideoTrack)
+            if (!paused && !screenMode) attachVideo(room, renderer, room.localParticipant.getTrackPublication(Track.Source.CAMERA)?.track as? VideoTrack)
         } catch (_: Exception) { }
     }
     val firstFront = remember { booleanArrayOf(true) }
     LaunchedEffect(front) {
         if (firstFront[0]) { firstFront[0] = false; return@LaunchedEffect }
+        if (screenMode) return@LaunchedEffect
         try { (room.localParticipant.getTrackPublication(Track.Source.CAMERA)?.track as? LocalVideoTrack)?.switchCamera() } catch (_: Exception) { }
     }
     AndroidView(factory = { renderer }, modifier = modifier)

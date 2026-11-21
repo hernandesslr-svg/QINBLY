@@ -6295,18 +6295,21 @@ private fun QinblyLivesPage(initialLives: List<QinblyLive>, onNotice: (String) -
     }
 }
 
-/** Quem transmite: "Antes de começar" (título, quem assiste, comentários, presentes) → contagem 3-2-1 → "No ar".
+/** Quem transmite: "Antes de começar" (título, O que mostrar: Câmera ou Jogos, quem assiste, comentários, presentes) → contagem 5-4-3-2-1 → "No ar".
+ *  Jogos transmite a tela do celular (permissão de gravação do Android) em vez da câmera; sem virar câmera.
  *  Na barra de baixo: comentário, virar câmera, microfone, pausa e X vermelho (encerrar, com confirmação).
  *  A bolinha vermelha fica acesa só enquanto transmite: some (cinza) ao pausar e acende ao retomar.
- *  A transmissão usa o LiveKit (veja Live.kt e functions/api/live.js). Efeitos de rosto e cor valem só na prévia. */
+ *  A transmissão usa o LiveKit (veja Live.kt e functions/api/live.js). */
 @Composable
 private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit, backHook: MutableState<(() -> Unit)?>) {
     var stage by remember { mutableStateOf("setup") } // setup, count, live
-    var count by remember { mutableStateOf(3) }
+    var count by remember { mutableStateOf(5) }
     var seconds by remember { mutableStateOf(0) }
     var paused by remember { mutableStateOf(false) }
     var micOn by remember { mutableStateOf(true) }
     var title by remember { mutableStateOf("") }
+    var mode by remember { mutableStateOf("camera") } // camera ou game (tela do celular para jogos)
+    var screenData by remember { mutableStateOf<Intent?>(null) }
     var audienceAll by remember { mutableStateOf(true) }
     var commentsOn by remember { mutableStateOf(true) }
     var giftsOn by remember { mutableStateOf(true) }
@@ -6319,14 +6322,27 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit, back
     var liveCamOk by remember { mutableStateOf(androidx.core.content.ContextCompat.checkSelfPermission(liveContext, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) }
     val liveCamPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { liveCamOk = it }
     var liveMicOk by remember { mutableStateOf(androidx.core.content.ContextCompat.checkSelfPermission(liveContext, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) }
-    val liveMicPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { liveMicOk = it; if (it && liveCamOk) stage = "count" else if (!it) onNotice("Sem o microfone não dá para transmitir.") }
+    val liveScreenPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { res ->
+        val data = res.data
+        if (res.resultCode == android.app.Activity.RESULT_OK && data != null) { screenData = data; stage = "count" }
+        else onNotice("Sem a permissão do Android não dá para mostrar a tela.")
+    }
+    val liveStartScreen = {
+        val mpm = liveContext.getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
+        liveScreenPermission.launch(mpm.createScreenCaptureIntent())
+    }
+    val liveMicPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) {
+        liveMicOk = it
+        if (!it) onNotice("Sem o microfone não dá para transmitir.")
+        else if (mode == "game") liveStartScreen()
+        else if (liveCamOk) stage = "count"
+    }
     var viewersNow by remember { mutableIntStateOf(0) }
     var viewersPeak by remember { mutableIntStateOf(0) }
     var streamError by remember { mutableStateOf<String?>(null) }
     var liveFront by remember { mutableStateOf(true) }
     var liveFace by remember { mutableStateOf("Nenhum") }
     var liveColor by remember { mutableStateOf("Original") }
-    var fxOpen by remember { mutableStateOf(false) }
     var hostLikes by remember { mutableIntStateOf(0) }
     var hostViewerNames by remember { mutableStateOf<List<String>>(emptyList()) }
     var hostJoin by remember { mutableStateOf("") }
@@ -6335,10 +6351,10 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit, back
     var hostBoxH by remember { mutableIntStateOf(0) }
     LaunchedEffect(hostJoin) { if (hostJoin.isNotBlank()) { kotlinx.coroutines.delay(4000); hostJoin = "" } }
     val hostInputPad = qinblyInputBottomPadding()
-    androidx.compose.runtime.SideEffect { backHook.value = { if (stage == "live") confirmEnd = true else if (stage == "count") stage = "setup" else onClose() } }
+    androidx.compose.runtime.SideEffect { backHook.value = { if (stage == "live") confirmEnd = true else if (stage == "count") { screenData = null; stage = "setup" } else onClose() } }
     LaunchedEffect(stage) {
         if (stage == "count") {
-            count = 3
+            count = 5
             while (count > 0) { kotlinx.coroutines.delay(1000); count-- }
             seconds = 0; paused = false; viewersNow = 0; viewersPeak = 0; hostLikes = 0; hostViewerNames = emptyList(); streamError = null; stage = "live"
         }
@@ -6348,9 +6364,34 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit, back
     }
     val glass = Color(0x24FFFFFF)
     Box(Modifier.fillMaxSize().onSizeChanged { hostBoxW = it.width; hostBoxH = it.height }.background(Brush.verticalGradient(listOf(Color(0xFF4A586D), Color(0xFF222B3A), Color(0xFF12161E))))) {
-        if (liveCamOk && stage == "live") {
+        if (mode == "game") {
+            if (stage == "live" && screenData != null) {
+                QinblyLiveHostStream(
+                    paused = paused, front = liveFront, micOn = micOn, username = hostHandle, modifier = Modifier.fillMaxSize(), screenData = screenData,
+                    onViewers = { viewersNow = it; if (it > viewersPeak) viewersPeak = it },
+                    onViewerNames = { hostViewerNames = it.filter { n -> n.isNotBlank() } },
+                    onLikes = { hostLikes = it },
+                    onHeart = { n -> repeat(n.coerceAtMost(6)) { hostHearts.add(hostBoxW * (0.55f + 0.35f * Math.random().toFloat()), hostBoxH * 0.78f) } },
+                    onJoin = { hostJoin = "$it entrou na live" },
+                    onError = { streamError = it }
+                )
+            }
+            Column(Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding().padding(top = 110.dp, start = 36.dp, end = 36.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(Modifier.size(64.dp).clip(CircleShape).background(Color(0x408B5CF6)), contentAlignment = Alignment.Center) {
+                    Icon(androidx.compose.material.icons.Icons.Filled.SportsEsports, null, tint = Color(0xFFC9B8FF), modifier = Modifier.size(32.dp))
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(if (stage == "live") "Seu jogo está ao vivo" else "Seu jogo vai ao vivo", color = Color.White, fontSize = 14.sp)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    if (stage == "live") "Volte para o jogo. Para encerrar, abra o QINBLY e toque no X vermelho."
+                    else "Ao tocar em Iniciar live, abra o jogo. Quem assiste vê tudo que aparecer na tela, inclusive avisos.",
+                    color = Color(0xFF9A9AA8), fontSize = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        } else if (liveCamOk && stage == "live") {
             QinblyLiveHostStream(
-                paused = paused, front = liveFront, micOn = micOn, username = hostHandle, modifier = Modifier.fillMaxSize(),
+                paused = paused, front = liveFront, micOn = micOn, username = hostHandle, modifier = Modifier.fillMaxSize(), screenData = null,
                 onViewers = { viewersNow = it; if (it > viewersPeak) viewersPeak = it },
                 onViewerNames = { hostViewerNames = it.filter { n -> n.isNotBlank() } },
                 onLikes = { hostLikes = it },
@@ -6375,41 +6416,72 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit, back
                     Spacer(Modifier.weight(1f))
                     Text("Prévia", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 13.sp, modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(glass).padding(horizontal = 12.dp, vertical = 5.dp))
                     Spacer(Modifier.weight(1f))
-                    Box(Modifier.size(34.dp).clip(CircleShape).background(glass).clickable { liveFront = !liveFront }, contentAlignment = Alignment.Center) {
+                    if (mode == "camera") Box(Modifier.size(34.dp).clip(CircleShape).background(glass).clickable { liveFront = !liveFront }, contentAlignment = Alignment.Center) {
                         Icon(QinblyIcon.Cameraswitch, "Virar câmera", tint = Color.White, modifier = Modifier.size(18.dp))
-                    }
+                    } else Spacer(Modifier.size(34.dp))
                 }
+                val sheetLine = Color(0x1AFFFFFF)
+                val sheetLabel = Color(0xFF9A9AA8)
                 Column(
-                    Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().padding(bottom = hostInputPad).padding(10.dp)
-                        .clip(RoundedCornerShape(22.dp)).background(Color(0xC70C1018)).padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().padding(bottom = hostInputPad)
+                        .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)).background(Color(0xD60E0E16)).padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 12.dp)
                 ) {
-                    TextField(
-                        value = title, onValueChange = { title = it.take(80) }, singleLine = true,
-                        placeholder = { Text("Título da live (opcional)", color = Color(0x99FFFFFF)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, focusedIndicatorColor = Color(0x4DFFFFFF), unfocusedIndicatorColor = Color(0x4DFFFFFF), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
-                    )
-                    Text("QUEM PODE ASSISTIR", color = Color(0xA6FFFFFF), fontSize = 10.sp, fontWeight = FontWeight.Medium)
-                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0x1AFFFFFF)).padding(3.dp)) {
-                        listOf(true to "Todos", false to "Seguidores").forEach { (all, label) ->
-                            Text(label, color = Color.White, fontWeight = if (audienceAll == all) FontWeight.Medium else FontWeight.Normal, fontSize = 13.sp,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(if (audienceAll == all) QinblyBrand.Accent else Color.Transparent)
-                                    .clickable { audienceAll = all }.padding(vertical = 7.dp))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        QinblyLiveAvatar(hostHandle.ifBlank { "Você" }, "", 32.dp, Color(0xFFD4537E))
+                        TextField(
+                            value = title, onValueChange = { title = it.take(80) }, singleLine = true,
+                            placeholder = { Text("Título da live (opcional)", color = Color(0x99FFFFFF), fontSize = 14.sp) },
+                            modifier = Modifier.weight(1f),
+                            colors = TextFieldDefaults.colors(focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                        )
+                        Icon(androidx.compose.material.icons.Icons.Filled.Edit, null, tint = Color(0x99FFFFFF), modifier = Modifier.size(17.dp))
+                    }
+                    Box(Modifier.fillMaxWidth().height(0.5.dp).background(sheetLine))
+                    Text("O que mostrar", color = sheetLabel, fontSize = 11.sp, modifier = Modifier.padding(top = 12.dp, bottom = 6.dp))
+                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0x1AFFFFFF)).padding(3.dp)) {
+                        listOf("camera" to "Câmera", "game" to "Jogos").forEach { (key, label) ->
+                            Row(
+                                Modifier.weight(1f).clip(RoundedCornerShape(11.dp)).background(if (mode == key) QinblyBrand.Accent else Color.Transparent)
+                                    .clickable { mode = key }.padding(vertical = 7.dp),
+                                horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(if (key == "camera") androidx.compose.material.icons.Icons.Filled.CameraAlt else androidx.compose.material.icons.Icons.Filled.SportsEsports, null, tint = Color.White, modifier = Modifier.size(15.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(label, color = Color.White, fontWeight = if (mode == key) FontWeight.Medium else FontWeight.Normal, fontSize = 13.sp)
+                            }
                         }
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Comentários", color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                    Text("Quem pode assistir", color = sheetLabel, fontSize = 11.sp, modifier = Modifier.padding(top = 12.dp, bottom = 6.dp))
+                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0x1AFFFFFF)).padding(3.dp)) {
+                        listOf(true to "Todos", false to "Seguidores").forEach { (all, label) ->
+                            Row(
+                                Modifier.weight(1f).clip(RoundedCornerShape(11.dp)).background(if (audienceAll == all) QinblyBrand.Accent else Color.Transparent)
+                                    .clickable { audienceAll = all }.padding(vertical = 7.dp),
+                                horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(if (all) androidx.compose.material.icons.Icons.Filled.Public else androidx.compose.material.icons.Icons.Filled.Group, null, tint = Color.White, modifier = Modifier.size(15.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(label, color = Color.White, fontWeight = if (audienceAll == all) FontWeight.Medium else FontWeight.Normal, fontSize = 13.sp)
+                            }
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(androidx.compose.material.icons.Icons.Filled.ChatBubbleOutline, null, tint = Color(0xFFDDDDDD), modifier = Modifier.size(19.dp))
+                        Text("Comentários", color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f).padding(start = 10.dp))
                         Switch(checked = commentsOn, onCheckedChange = { commentsOn = it })
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Presentes", color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                    Box(Modifier.fillMaxWidth().height(0.5.dp).background(sheetLine))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(androidx.compose.material.icons.Icons.Filled.CardGiftcard, null, tint = Color(0xFFDDDDDD), modifier = Modifier.size(19.dp))
+                        Text("Presentes", color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f).padding(start = 10.dp))
                         Switch(checked = giftsOn, onCheckedChange = { giftsOn = it })
                     }
                     Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(QinblyBrand.Accent).clickable {
-                            if (!liveCamOk) liveCamPermission.launch(android.Manifest.permission.CAMERA)
+                        Modifier.fillMaxWidth().padding(top = 6.dp).clip(RoundedCornerShape(26.dp)).background(QinblyBrand.Accent).clickable {
+                            if (mode == "game") {
+                                if (!liveMicOk) liveMicPermission.launch(android.Manifest.permission.RECORD_AUDIO)
+                                else liveStartScreen()
+                            } else if (!liveCamOk) liveCamPermission.launch(android.Manifest.permission.CAMERA)
                             else if (!liveMicOk) liveMicPermission.launch(android.Manifest.permission.RECORD_AUDIO)
                             else stage = "count"
                         }.padding(vertical = 13.dp),
@@ -6469,33 +6541,10 @@ private fun QinblyLiveHost(onClose: () -> Unit, onNotice: (String) -> Unit, back
                             }
                         })
                     )
-                    QinblyLiveRoundButton(40.dp, onClick = { liveFront = !liveFront }) { Icon(QinblyIcon.Cameraswitch, "Virar câmera", tint = Color.White, modifier = Modifier.size(19.dp)) }
+                    if (mode == "camera") QinblyLiveRoundButton(40.dp, onClick = { liveFront = !liveFront }) { Icon(QinblyIcon.Cameraswitch, "Virar câmera", tint = Color.White, modifier = Modifier.size(19.dp)) }
                     QinblyLiveRoundButton(40.dp, onClick = { micOn = !micOn }) { Icon(if (micOn) Icons.Default.Mic else QinblyIcon.MicOff, if (micOn) "Silenciar" else "Ligar microfone", tint = Color.White, modifier = Modifier.size(19.dp)) }
                     QinblyLiveRoundButton(40.dp, onClick = { paused = !paused }) { Icon(Icons.Default.Pause, "Pausar", tint = Color.White, modifier = Modifier.size(19.dp)) }
                     QinblyLiveRoundButton(40.dp, Color(0xFFE24B4A), onClick = { confirmEnd = true }) { Icon(Icons.Default.Close, "Encerrar", tint = Color.White, modifier = Modifier.size(19.dp)) }
-                }
-            }
-        }
-        if (stage == "setup") {
-            Box(
-                Modifier.align(Alignment.CenterEnd).padding(end = 10.dp).size(40.dp).clip(CircleShape)
-                    .background(if (fxOpen) QinblyBrand.Accent else glass).clickable { fxOpen = !fxOpen },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(QinblyIcon.AutoAwesome, "Efeitos", tint = Color.White, modifier = Modifier.size(20.dp))
-            }
-            if (fxOpen) {
-                LazyRow(
-                    Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding().padding(top = 60.dp),
-                    contentPadding = PaddingValues(horizontal = 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(QinblyColorFilterNames) { cname ->
-                        QinblyFilterBubble(cname, liveColor == cname, { liveColor = cname }) {
-                            val swatch = qinblyFilterSwatch(cname)
-                            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(swatch[0], swatch[0], swatch[1], swatch[2]))))
-                        }
-                    }
                 }
             }
         }

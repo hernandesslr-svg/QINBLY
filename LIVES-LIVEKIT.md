@@ -19,4 +19,9 @@
 Franquia mensal fixa. Ao acabar, as lives param até o mês seguinte.
 
 ## Ainda não faz
-- Efeitos de rosto e cor durante a live (só na prévia).
+- Efeitos de rosto e cor (o botão saiu da prévia por enquanto).
+- Som do jogo na transmissão de tela (só vai a voz do microfone).
+- Comentários e curtidas por cima do jogo: ao abrir o jogo, o app fica em segundo plano; para ver comentários é preciso voltar ao QINBLY.
+
+## Modo Jogos (tela do celular)
+O app usa a captura de tela do Android (MediaProjection) pelo LiveKit (`setScreenShareEnabled` com `ScreenCaptureParams`). Precisa da permissão `FOREGROUND_SERVICE_MEDIA_PROJECTION` (no AndroidManifest) e do serviço de captura do próprio LiveKit, que mostra uma notificação enquanto a tela está no ar.

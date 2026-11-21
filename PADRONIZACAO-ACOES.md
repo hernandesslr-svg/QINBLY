@@ -1018,3 +1018,10 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Comentários em balões foscos, com o aviso "fulano entrou na live". Campo "Diga algo…" e botão de compartilhar para quem assiste; quem transmite mantém virar câmera, microfone, pausar e encerrar.
 - Sem cidade na tela. Resumo ao encerrar mostra as curtidas.
 - Curtidas e entradas trafegam pelo próprio LiveKit (mensagens de dados); quem assiste agora pode enviar dados (functions/api/live.js).
+
+## Live: "Antes de começar" com Câmera ou Jogos
+- A tela virou uma folha única, sem cartões: foto + título com lápis, **O que mostrar** (Câmera | Jogos), **Quem pode assistir** (Todos | Seguidores), Comentários, Presentes e **Iniciar live** acima dos botões do celular.
+- **Jogos** transmite a tela do celular no lugar da câmera. Ao tocar em Iniciar live o Android pede permissão para gravar a tela (aviso do sistema, não dá para tirar); depois da contagem, é só abrir o jogo. O microfone continua ligado. O som do jogo não vai junto. Quem assiste vê tudo que aparecer na tela, inclusive avisos.
+- No modo Jogos some o botão de virar câmera; pausar esconde a imagem e silencia o microfone.
+- Saiu o botão de filtro/efeitos da prévia (fica para depois).
+- A contagem antes de entrar no ar passou de 3 para 5 segundos.
