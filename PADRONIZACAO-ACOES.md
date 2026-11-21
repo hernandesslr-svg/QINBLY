@@ -1025,3 +1025,9 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - No modo Jogos some o botão de virar câmera; pausar esconde a imagem e silencia o microfone.
 - Saiu o botão de filtro/efeitos da prévia (fica para depois).
 - A contagem antes de entrar no ar passou de 3 para 5 segundos.
+
+## Perfil reorganizado e troca de conta no @
+- Cabeçalho do perfil: foto menor à esquerda (selo de verificado no canto), nome e @ ao lado. Interesses, descrição, país e data de entrada em letra pequena, alinhados à esquerda.
+- Os números (Publicações, Seguindo, Seguidores) ficam soltos, sem cartão. Logo abaixo, dois botões pequenos lado a lado: **Editar perfil** e **Compartilhar perfil**.
+- As abas ganharam um sublinhado fino na aba ativa e um divisor embaixo.
+- **Troca de conta** agora fica no perfil: a seta ao lado do @ abre uma folha de baixo com as contas salvas (conta atual marcada), "Adicionar outra conta" e, ao segurar uma conta, a opção de remover do aparelho. A linha "Alternar entre suas contas" saiu das configurações.

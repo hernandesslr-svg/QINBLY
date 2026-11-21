@@ -696,17 +696,17 @@ internal fun qinblyCategoryIcon(raw: String): androidx.compose.ui.graphics.vecto
 /** Linha de categorias do perfil: ícone de linha + nome, separadas por "•". Aceita o texto salvo (com ou sem emoji). */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-internal fun QinblyCategoryLine(raw: String, textColor: Color, iconColor: Color, modifier: Modifier = Modifier) {
+internal fun QinblyCategoryLine(raw: String, textColor: Color, iconColor: Color, modifier: Modifier = Modifier, compact: Boolean = false) {
     val items = raw.split(" • ").map { it.trim() }.filter { it.isNotBlank() }
     androidx.compose.foundation.layout.FlowRow(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
+        horizontalArrangement = if (compact) Arrangement.spacedBy(14.dp, Alignment.Start) else Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         items.forEach { item ->
             Row(verticalAlignment = Alignment.CenterVertically) {
-                androidx.compose.material3.Icon(qinblyCategoryIcon(item), contentDescription = null, tint = iconColor, modifier = Modifier.size(17.dp))
-                androidx.compose.material3.Text(qinblyCategoryName(item), color = textColor, style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 5.dp))
+                androidx.compose.material3.Icon(qinblyCategoryIcon(item), contentDescription = null, tint = iconColor, modifier = Modifier.size(if (compact) 15.dp else 17.dp))
+                androidx.compose.material3.Text(qinblyCategoryName(item), color = textColor, style = if (compact) androidx.compose.material3.MaterialTheme.typography.bodySmall else androidx.compose.material3.MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 5.dp))
             }
         }
     }
