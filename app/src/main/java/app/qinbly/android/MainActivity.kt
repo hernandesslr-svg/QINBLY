@@ -11507,9 +11507,9 @@ internal fun qinblySaveMediaCopy(context: android.content.Context, source: Uri, 
         val collection = if (isVideo) android.provider.MediaStore.Video.Media.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL_PRIMARY)
             else android.provider.MediaStore.Images.Media.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL_PRIMARY)
         val values = android.content.ContentValues().apply {
-            put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, "qinbly-" + System.currentTimeMillis() + (if (isVideo) ".mp4" else ".jpg"))
+            put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, (if (isVideo) "VID_" else "IMG_") + System.currentTimeMillis() + (if (isVideo) ".mp4" else ".jpg"))
             put(android.provider.MediaStore.MediaColumns.MIME_TYPE, if (isVideo) "video/mp4" else "image/jpeg")
-            put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, (if (isVideo) android.os.Environment.DIRECTORY_MOVIES else android.os.Environment.DIRECTORY_PICTURES) + "/Qinbly")
+            put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, (if (isVideo) android.os.Environment.DIRECTORY_MOVIES else android.os.Environment.DIRECTORY_PICTURES))
             put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
         }
         val target = resolver.insert(collection, values) ?: return false

@@ -1006,3 +1006,6 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 
 ## App agora usa o Cloudflare
 - O app passou a falar com `https://qinbly.pages.dev` (API, login, fotos e vídeos) em vez do Supabase. Quem estava logado precisa entrar de novo com o Google uma vez.
+
+## Foto/vídeo salvo na galeria: sem o nome do app
+- Ao salvar do editor da câmera, o arquivo vira `IMG_<número>.jpg` / `VID_<número>.mp4` e fica direto em Imagens/Filmes, sem a pasta "Qinbly".
