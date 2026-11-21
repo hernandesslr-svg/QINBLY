@@ -1002,3 +1002,4 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Login: Google (verificado pelo token do Google) e e-mail/senha. Sessões novas: quem estava logado precisa entrar de novo uma vez.
 - Fotos/vídeos: URLs públicas no mesmo formato `/storage/v1/object/public/post-media/...`.
 - Limites conhecidos: não há serviço de e-mail ("esqueci a senha" não envia nada); a conta de e-mail/senha antiga não tem senha importada.
+- Cópia dos arquivos antigos (138, ~235 MB) para o R2: página temporária `functions/migrar/arquivos.js`, protegida por chave guardada no banco. Deve ser apagada depois que a cópia terminar.
