@@ -65,6 +65,7 @@ import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.SportsEsports
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material.icons.outlined.Settings
