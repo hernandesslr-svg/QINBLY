@@ -61,6 +61,9 @@
     bag: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
     menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
     add: '<path d="M12 5v14M5 12h14"/>',
+    photo: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/>',
+    cal: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
     spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18 16l.7 1.8 1.8.7-1.8.7L18 21l-.7-1.8-1.8-.7 1.8-.7z"/>',
     play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/>',
     sensors: '<circle cx="12" cy="12" r="2"/><path d="M7.8 7.8a6 6 0 000 8.4M16.2 7.8a6 6 0 010 8.4M4.9 4.9a10 10 0 000 14.2M19.1 4.9a10 10 0 010 14.2"/>',
@@ -486,43 +489,70 @@
       .catch(function (e) { document.getElementById("pp").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
   }
 
+  function parseBio(bio) {
+    var cats = "", country = "", desc = [];
+    String(bio || "").split("\n").forEach(function (l) {
+      if (l.indexOf("✦ ") === 0) cats = l.slice(2); else if (l.indexOf("🌍 ") === 0) country = l.slice(3); else desc.push(l);
+    });
+    return { cats: cats ? cats.split(" • ").map(function (c) { return c.replace(/^[^\p{L}\p{N}]+/u, "").trim(); }).filter(Boolean) : [], country: country, desc: desc.join("\n").trim() };
+  }
+  function joinedTxt(u, short) {
+    var d = u.createdAt || u.created_at; if (!d) return ""; var dt = new Date(d); if (isNaN(dt)) return "";
+    return "Entrou em " + dt.toLocaleDateString("pt-BR", { month: short ? "short" : "long", year: "numeric" }).replace(".", "");
+  }
   function viewProfile(name) {
     var me = cur(), isMeRoute = name === "me";
     if (isMeRoute) name = me.username;
-    setView(top("@" + esc(name), { back: !isMeRoute, right: isMeRoute ? '<button class="ib" data-go="#/settings" aria-label="Configurações">' + svg("gear") + "</button>" : '<button class="ib" data-umenu aria-label="Mais">' + svg("dots") + "</button>" }) + '<div id="pf">' + spin() + "</div>", isMeRoute ? "me" : "");
+    var hdr = isMeRoute
+      ? '<header class="top pfhd"><span class="sp"></span><button class="ib" data-go="#/settings" aria-label="Configurações do perfil">' + svg("menu") + "</button></header>"
+      : '<header class="top pfhd"><button class="ib" data-back aria-label="Voltar">' + svg("back") + '</button><h1>@' + esc(name) + '</h1><button class="ib" data-umenu aria-label="Opções deste perfil">' + svg("dots") + "</button></header>";
+    setView(hdr + '<div id="pf">' + spin() + "</div>", isMeRoute ? "me" : "");
     api("/api/users/" + encodeURIComponent(name)).then(function (j) {
       var u = j.user, posts = (j.posts || []).slice().sort(function (a, b) { return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0); }), own = me && u.id === me.id;
       window.__pu = u;
       if (own) { me.displayName = u.displayName; me.avatarUrl = u.avatarUrl; me.username = u.username; save(); }
+      posts.forEach(function (p) { if (!p.author) p.author = { username: u.username, displayName: u.displayName, avatarUrl: u.avatarUrl, verified: u.verified }; if (!p.authorId) p.authorId = u.id; });
+      var bio = parseBio(u.bio), shown = u.displayName || u.username, unseen = (window.__unseen || {})[String(u.username).toLowerCase()];
+      var tabs = own ? ["Publicações", "Vídeos", "Fotos", "Salvos"] : ["Publicações", "Vídeos", "Fotos"];
+      var TIC = { "Publicações": "grid", "Vídeos": "play", "Fotos": "photo", "Salvos": "save" };
+      var meta = (bio.country ? '<span>' + svg("pin") + esc(bio.country) + "</span>" : "") + (joinedTxt(u, true) ? "<span>" + svg("cal") + esc(joinedTxt(u, true)) + "</span>" : "");
+      var cats = bio.cats.length ? '<div class="pcats">' + bio.cats.map(function (c) { return "<span>" + svg("spark") + esc(c) + "</span>"; }).join("") + "</div>" : "";
+      var stats = '<div class="pst"><div><b>' + (posts.length || u.posts_count || 0) + '</b><span>Publicações</span></div><button data-stat="following"><b>' + (u.following || 0) + '</b><span>Seguindo</span></button><button data-stat="followers"><b>' + (u.followers || 0) + "</b><span>Seguidores</span></button></div>";
+      var head;
+      if (own) {
+        head = '<div class="pown"><div class="pav"><span class="pring ' + (unseen ? "new" : "") + '">' + avatar(u.avatarUrl, shown, "l") + "</span>" + (u.verified ? '<i class="pvf">' + VERIFIED + "</i>" : "") + '</div><div class="pn"><button class="nm" data-edit><span>' + esc(shown) + "</span>" + (u.verified ? VERIFIED : "") + '</button><button class="at" data-accounts>@' + esc(u.username) + svg("chev") + "</button></div></div>" +
+          '<div class="pbio">' + (cats ? cats : "") + (bio.desc ? "<p>" + linkify(bio.desc) + "</p>" : (cats ? "" : '<p class="mut">Adicione uma descrição ao seu perfil</p>')) + (meta ? '<div class="pmeta">' + meta + "</div>" : "") + stats +
+          '<div class="pbt"><button class="pill" data-edit>' + svg("edit") + 'Editar perfil</button><button class="pill" data-shareprofile="' + esc(u.username) + '">' + svg("send") + "Compartilhar perfil</button></div></div>";
+      } else {
+        head = '<div class="pbig"><span class="pring xl ' + (unseen ? "new" : "") + '">' + avatar(u.avatarUrl, shown, "l") + '</span></div><div class="pc"><h2>' + esc(shown) + (u.verified ? VERIFIED : "") + '</h2><div class="at">@' + esc(u.username) + "</div>" + cats + (bio.desc ? "<p>" + linkify(bio.desc) + "</p>" : "") + (meta ? '<div class="pmeta">' + meta + "</div>" : "") + "</div>" + stats.replace('class="pst"', 'class="pst big"') +
+          '<div class="pfb"><button class="fol ' + (u.isFollowing ? "on" : "") + '" data-follow="' + u.id + '" data-profile="' + esc(u.username) + '">' + svg(u.isFollowing ? "check" : "add") + "<span>" + (u.isFollowing ? "Seguindo" : "Seguir") + '</span></button><button class="msgb" data-chat="' + esc(u.username) + '">' + svg("msg") + "Mensagem</button></div>";
+      }
       function gridOf(list) {
-        return list.map(function (p) {
-          POSTS[p.id] = p;
-          if (p.mediaType === "text" || p.mediaType === "poll") return '<button class="tx" data-open="' + p.id + '" style="' + (p.textBg ? "background:" + bgCss(p.textBg) : "") + '">' + (p.pinned ? "📌 " : "") + esc((p.caption || "").slice(0, 60)) + "</button>";
-          var img = p.mediaType === "video" ? "" : (p.mediaUrl ? "background-image:url('" + safeUrl(p.mediaUrl) + "')" : "");
-          return '<button data-open="' + p.id + '" style="' + img + '">' + (p.pinned ? "📌" : "") + (p.mediaType === "video" ? "▶" : "") + "</button>";
-        }).join("");
+        return list.map(function (p) { POSTS[p.id] = p; return '<button data-open="' + p.id + '" style="' + (p.mediaUrl ? "background-image:url('" + safeUrl(p.mediaUrl) + "')" : "") + '"></button>'; }).join("");
+      }
+      function listOf(list, emptyTxt, icon) {
+        if (!list.length) return '<div class="pemp">' + svg(icon) + "<b>" + emptyTxt + "</b></div>";
+        return list.map(postHTML).join("");
+      }
+      function show(tab) {
+        var pg = document.getElementById("pg"), pf = document.getElementById("pf");
+        pf.querySelectorAll("[data-ptab]").forEach(function (b) { var on = b.dataset.ptab === tab; b.classList.toggle("on", on); });
+        if (tab === "Fotos") { var ph = posts.filter(function (p) { return p.mediaType === "image"; }); pg.innerHTML = ph.length ? '<div class="pgrid">' + gridOf(ph) + "</div>" : '<div class="pemp">' + svg("photo") + "<b>Nenhuma foto ainda</b></div>"; return; }
+        if (tab === "Vídeos") { pg.innerHTML = listOf(posts.filter(function (p) { return p.mediaType === "video"; }), "Nenhum vídeo ainda", "play"); return; }
+        if (tab === "Salvos") { pg.innerHTML = spin(); api("/api/me/saved").then(function (r) { var l = r.posts || []; pg.innerHTML = l.length ? l.map(postHTML).join("") : '<div class="pemp">' + svg("save") + "<b>Nenhuma publicação salva</b><small>Toque no marcador de uma publicação para guardá-la aqui. Só você vê os seus salvos.</small></div>"; }).catch(onErr); return; }
+        pg.innerHTML = listOf(posts, own ? "Você ainda não publicou nada" : "Nenhuma publicação pública encontrada nesta conta", "grid");
       }
       var pf = document.getElementById("pf");
-      pf.innerHTML =
-        '<div class="ptop"><span class="ring">' + avatar(u.avatarUrl, u.displayName || u.username, "l") + '</span><div class="pname"><h2>' + esc(u.displayName || u.username) + (u.verified ? VERIFIED : "") + "</h2>" +
-        (own ? '<button class="at" data-accounts>@' + esc(u.username) + svg("chev") + "</button>" : '<span class="at">@' + esc(u.username) + "</span>") + "</div></div>" +
-        (u.bio ? '<div class="bio">' + linkify(u.bio) + "</div>" : "") + (u.createdAt || u.created_at ? '<div class="bio" style="color:var(--muted);font-size:12px">Entrou em ' + new Date(u.createdAt || u.created_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) + "</div>" : "") +
-        '<div class="stats"><div><b>' + (u.posts_count || 0) + '</b>Publicações</div><button data-stat="followers"><b>' + (u.followers || 0) + '</b>Seguidores</button><button data-stat="following"><b>' + (u.following || 0) + "</b>Seguindo</button></div>" +
-        '<div class="btns">' + (own ? '<button class="sb" data-edit>Editar perfil</button><button class="sb" data-shareprofile="' + esc(u.username) + '">Compartilhar perfil</button>'
-          : '<button class="sb ' + (u.isFollowing ? "" : "pri") + '" data-follow="' + u.id + '" data-profile="' + esc(u.username) + '">' + (u.isFollowing ? "Seguindo" : "Seguir") + '</button><button class="sb" data-chat="' + esc(u.username) + '">Mensagem</button>') + "</div>" +
-        '<div id="hl"></div><div class="tabs"><button class="on" data-ptab="grid" aria-label="Publicações">' + svg("grid") + '</button><button data-ptab="photos" aria-label="Fotos">🖼</button><button data-ptab="videos" aria-label="Vídeos">▶</button>' + (own ? '<button data-ptab="saved" aria-label="Salvos">' + svg("save") + "</button>" : "") + '</div><div id="pg">' + (posts.length ? '<div class="grid">' + gridOf(posts) + "</div>" : '<div class="empty">Nenhuma publicação ainda.</div>') + "</div>";
+      pf.innerHTML = head + '<div id="hl"></div><div class="ptabs">' + tabs.map(function (t, i) { return '<button data-ptab="' + t + '" class="' + (i ? "" : "on") + '">' + svg(TIC[t]) + "<span>" + t + '</span><i></i></button>'; }).join("") + '</div><div id="pg"></div>';
+      show("Publicações");
       pf.addEventListener("click", function (e) {
         var t = e.target.closest("[data-ptab],[data-hl]"); if (!t) return;
         if (t.dataset.hl !== undefined) { var h = (window.__hls || [])[Number(t.dataset.hl)]; if (h) openHighlight(h); return; }
-        pf.querySelectorAll("[data-ptab]").forEach(function (b) { b.classList.toggle("on", b === t); });
-        var pg = document.getElementById("pg");
-        if (t.dataset.ptab === "photos" || t.dataset.ptab === "videos") { var ty = t.dataset.ptab === "photos" ? "image" : "video", fl = posts.filter(function (p) { return p.mediaType === ty; }); pg.innerHTML = fl.length ? '<div class="grid">' + gridOf(fl) + "</div>" : '<div class="empty">' + (ty === "image" ? "Nenhuma foto ainda." : "Nenhum vídeo ainda.") + "</div>"; return; }
-        if (t.dataset.ptab === "grid") pg.innerHTML = posts.length ? '<div class="grid">' + gridOf(posts) + "</div>" : '<div class="empty">Nenhuma publicação ainda.</div>';
-        else { pg.innerHTML = spin(); api("/api/me/saved").then(function (r) { var l = r.posts || []; pg.innerHTML = l.length ? '<div class="grid">' + gridOf(l) + "</div>" : '<div class="empty">Você ainda não salvou nada.</div>'; }).catch(onErr); }
+        show(t.dataset.ptab);
       });
       api("/api/users/" + encodeURIComponent(u.username) + "/highlights").then(function (r) {
         var l = r.highlights || []; window.__hls = l; var el = document.getElementById("hl"); if (!el || !l.length) return;
-        el.innerHTML = '<div class="stories" style="border:0;padding-top:0">' + l.map(function (h, i) { return '<div class="story"><button class="ring new" data-hl="' + i + '" aria-label="Destaque">' + avatar(h.mediaType === "image" ? h.mediaUrl : "", h.title) + "</button><span>" + esc(h.title) + "</span></div>"; }).join("") + "</div>";
+        el.innerHTML = '<div class="hls">' + l.map(function (h, i) { return '<button data-hl="' + i + '" aria-label="Destaque"><span class="hc2" ' + (h.mediaType === "image" && h.mediaUrl ? 'style="background-image:url(\'' + safeUrl(h.mediaUrl) + '\')"' : "") + ">" + (h.mediaType === "image" && h.mediaUrl ? "" : "Aa") + "</span><em>" + esc(h.title) + "</em></button>"; }).join("") + "</div>";
       }).catch(function () { });
     }).catch(function (e) { document.getElementById("pf").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
   }

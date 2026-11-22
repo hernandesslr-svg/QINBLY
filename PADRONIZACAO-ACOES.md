@@ -1071,3 +1071,4 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Stories de 88px com anel roxo→rosa e "+" roxo; posts de tela inteira com avatar de 52px e anel de story.
 - Barra de ações: curtir (vermelho), comentar, repostar, salvar (amarelo), enviar. Barra de baixo com botão Criar branco com "+" em degradê.
 - "Instalar o app": no Android abre o instalador direto (ou baixa o APK); só no iPhone aparece a dica de Compartilhar, porque o iOS não permite instalar com um toque.
+- Perfil (próprio e de outras pessoas) refeito igual ao app: próprio = menu no canto, foto 76px + nome e @ com seta, categorias/descrição, país e "Entrou em", estatísticas Publicações/Seguindo/Seguidores, botões "Editar perfil" e "Compartilhar perfil", destaques e abas Publicações/Vídeos/Fotos/Salvos. De outra pessoa = foto grande centralizada, nome e @ no meio, botões "Seguir" e "Mensagem". Publicações e Vídeos aparecem como lista de posts; Fotos em grade de 3.
