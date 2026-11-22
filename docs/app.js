@@ -14,7 +14,7 @@
   function safeUrl(u) { return /^https?:\/\//i.test(u || "") ? esc(u).replace(/&apos;/g, "%27").replace(/\(/g, "%28").replace(/\)/g, "%29") : ""; }
   function toast(t) { $toast.textContent = t; $toast.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(function () { $toast.classList.remove("on"); }, 2800); }
 
-  var APK_URL = "https://github.com/hernandesslr-svg/QINBLY/releases/latest/download/qinbly-release.apk";
+  var APK_URL = "https://github.com/hernandesslr-svg/QINBLY/releases/latest/download/QINBLY-release.apk";
   var installEvt = null;
   window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); installEvt = e; });
   window.addEventListener("appinstalled", function () { installEvt = null; toast("App instalado."); });
