@@ -1697,7 +1697,7 @@ private object RemoteAppearance {
     var actionsVisible by androidx.compose.runtime.mutableStateOf(true)
     var navigationLabels by androidx.compose.runtime.mutableStateOf(listOf("Início", "Comunidades", "Criar", "Mensagens", "Perfil"))
     var feedLabels by androidx.compose.runtime.mutableStateOf(listOf("Descobrir", "Seguindo", "Comunidade"))
-    var navigationLabelSize by androidx.compose.runtime.mutableIntStateOf(14)
+    var navigationLabelSize by androidx.compose.runtime.mutableIntStateOf(12)
     private var headerBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color.Black)
     var headerBackgroundColor: Color
         get() = if (QiblyTheme.dark) QiblyTheme.background else headerBackgroundColorBase
