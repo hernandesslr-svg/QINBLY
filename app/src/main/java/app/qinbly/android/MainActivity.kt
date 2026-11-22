@@ -1189,13 +1189,17 @@ private fun readImageAspectRatio(context: android.content.Context, source: Uri?)
     return try {
         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it, null, options) }
-        if (options.outWidth > 0 && options.outHeight > 0) options.outWidth.toFloat() / options.outHeight.toFloat() else 16f / 10f
+        val rot = qinblyExifRotation(context, source)
+        val w = if (rot == 90 || rot == 270) options.outHeight else options.outWidth
+        val h = if (rot == 90 || rot == 270) options.outWidth else options.outHeight
+        if (w > 0 && h > 0) w.toFloat() / h.toFloat() else 16f / 10f
     } catch (_: Exception) { 16f / 10f }
 }
 
 private fun createAdjustedImage(context: android.content.Context, source: Uri, ratio: String, filter: String, zoom: Float = 1f, panX: Float = 0f, panY: Float = 0f, rotationDegrees: Float = 0f): Uri {
-    val decoded = context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it) }
+    val decoded0 = context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it) }
         ?: throw IllegalArgumentException("Não foi possível abrir a imagem selecionada.")
+    val decoded = qinblyUpright(context, source, decoded0)
     val rotated = if (rotationDegrees % 360f != 0f) {
         val rotationMatrix = android.graphics.Matrix().apply { postRotate(rotationDegrees) }
         Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, rotationMatrix, true)
@@ -1413,6 +1417,7 @@ internal fun qinblyMaxPan(imageRatio: Float, frameRatio: Float, zoom: Float): Pa
 /** Gira (90° por vez) e/ou espelha a foto e salva uma cópia; a prévia e o recorte passam a usar essa cópia. */
 private fun qinblyTransformCopy(context: android.content.Context, source: Uri, rotate90: Boolean, mirror: Boolean): Uri {
     val decoded = context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it) }
+        ?.let { qinblyUpright(context, source, it) }
         ?: throw IllegalArgumentException("Não foi possível abrir a imagem.")
     val matrix = android.graphics.Matrix()
     if (rotate90) matrix.postRotate(90f)
@@ -1436,7 +1441,9 @@ private fun qinblyRenderEditedPhoto(
     context: android.content.Context, source: Uri, ratio: String, zoom: Float, panX: Float, panY: Float,
     matrix: ColorMatrix, text: String, stickers: List<QinblyStickerSpec>, strokes: List<List<Offset>>, textFont: String = "Forte", textColor: Int = android.graphics.Color.WHITE, wordColors: Map<Int, Int> = emptyMap(), textDx: Float = 0f, textDy: Float = 0f, blurFill: Boolean = true, textScale: Float = 1f, strokeStyles: List<Pair<Int, Float>> = emptyList(), finish: QinblyFinish? = null
 ): Uri {
+    // A decodificação crua ignora o EXIF: sem girar aqui, foto de celular saía deitada e com barras pretas.
     val decoded = context.contentResolver.openInputStream(source)?.use { BitmapFactory.decodeStream(it) }
+        ?.let { qinblyUpright(context, source, it) }
         ?: throw IllegalArgumentException("Não foi possível abrir a imagem para aplicar as edições.")
     val imageRatio = decoded.width.toFloat() / decoded.height
     val frameRatio = qinblyRatioValue(ratio, imageRatio)
@@ -7450,7 +7457,7 @@ private fun QinblyCreateCommunityDialog(onDismiss: () -> Unit, onCreate: (String
     val photoContext = androidx.compose.ui.platform.LocalContext.current
     var photoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     val photoPicker = rememberQinblyPhotoLauncher { uri ->
-        if (uri != null) photoBitmap = runCatching { photoContext.contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it) } }.getOrNull()
+        if (uri != null) photoBitmap = runCatching { photoContext.contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it) }?.let { qinblyUpright(photoContext, uri, it) } }.getOrNull()
     }
     BackHandler(enabled = !sending) { onDismiss() }
     QinblyDialog(
@@ -12088,7 +12095,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 try {
                     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                     context.contentResolver.openInputStream(current)?.use { BitmapFactory.decodeStream(it, null, bounds) }
-                    if (bounds.outWidth > 0 && bounds.outHeight > 0) bounds.outWidth.toFloat() / bounds.outHeight else 1f
+                    val rot = qinblyExifRotation(context, current)
+                    val bw = if (rot == 90 || rot == 270) bounds.outHeight else bounds.outWidth
+                    val bh = if (rot == 90 || rot == 270) bounds.outWidth else bounds.outHeight
+                    if (bw > 0 && bh > 0) bw.toFloat() / bh else 1f
                 } catch (_: Exception) { 1f }
             }
         }

@@ -1089,3 +1089,8 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Canal novo `qinbly_social_v2` (importância alta, som padrão de notificação, vibração e luz). O canal antigo podia estar mudo e o Android não deixa o app alterar um canal já criado.
 - A permissão de notificação (Android 13+) volta a ser pedida, no máximo uma vez por dia, enquanto não for liberada. Antes só era pedida na primeira abertura, no meio de várias outras.
 - Limite conhecido: com o app fechado, os avisos chegam por consulta periódica (no melhor caso a cada ~15 min). Aviso na hora, com o app fechado, só com push de verdade (Firebase).
+
+## Foto deitada com barras pretas (editor do app)
+- Causa: o editor lia a foto sem aplicar a rotação (EXIF) do celular. A prévia (Coil) mostrava em pé, mas o arquivo final saía deitado e encaixado numa moldura 4:5 com barras pretas dentro da própria imagem.
+- Correção: toda leitura de foto do editor passa por `qinblyUpright` (proporção, ajuste/recorte, girar/espelhar, imagem final e foto de comunidade). A proporção "Original" agora segue a foto de verdade.
+- Publicações antigas já salvas assim continuam deitadas (o defeito está gravado no arquivo): é preciso apagar e publicar de novo.
