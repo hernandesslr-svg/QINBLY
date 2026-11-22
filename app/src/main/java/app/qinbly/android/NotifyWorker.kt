@@ -20,7 +20,7 @@ class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(co
         val ctx = applicationContext
         val prefs = ctx.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
         // Aviso de nova versão do app: roda mesmo sem conta logada, respeitando "Notificações" e "Avisos do sistema".
-        if (prefs.getBoolean("setting_notifications", true) && prefs.getBoolean("setting_notice_system", true) && !isAppInForeground(ctx)) {
+        if (prefs.getBoolean("setting_notifications", true) && prefs.getBoolean("setting_notice_system", true)) {
             checkAppUpdate(ctx)
         }
         val token = prefs.getString("token", null)
@@ -70,7 +70,7 @@ class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(co
         try {
             val sp = ctx.getSharedPreferences("qinbly_update_check", Context.MODE_PRIVATE)
             val now = System.currentTimeMillis()
-            if (now - sp.getLong("last_check", 0L) < TimeUnit.HOURS.toMillis(1)) return
+            if (now - sp.getLong("last_check", 0L) < TimeUnit.MINUTES.toMillis(10)) return
             sp.edit().putLong("last_check", now).apply()
             val connection = (java.net.URL("https://api.github.com/repos/hernandesslr-svg/QINBLY/releases/latest").openConnection() as java.net.HttpURLConnection).apply {
                 requestMethod = "GET"
@@ -88,7 +88,7 @@ class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(co
             val m = Regex("^v(\\d+)\\.(\\d+)\\.(\\d+)$").matchEntire(tag) ?: return
             val latestCode = m.groupValues[1].toInt() * 1000000 + m.groupValues[2].toInt() * 10000 + m.groupValues[3].toInt()
             if (latestCode <= BuildConfig.VERSION_CODE || latestCode == sp.getInt("notified_code", 0)) return
-            if (qinblyNotifyUpdate(ctx)) sp.edit().putInt("notified_code", latestCode).apply()
+            if (qinblyNotifyUpdate(ctx, tag.removePrefix("v"))) sp.edit().putInt("notified_code", latestCode).apply()
         } catch (_: Exception) { }
     }
 
@@ -115,18 +115,22 @@ class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(co
                     .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
                     .build()
                 WorkManager.getInstance(context).enqueueUniquePeriodicWork("qinbly_notify", ExistingPeriodicWorkPolicy.KEEP, request)
+                // Uma checagem logo ao abrir o app, sem esperar o ciclo de 15 minutos.
+                WorkManager.getInstance(context).enqueueUniqueWork(
+                    "qinbly_notify_now", androidx.work.ExistingWorkPolicy.REPLACE,
+                    androidx.work.OneTimeWorkRequestBuilder<QinblyNotifyWorker>()
+                        .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()).build()
+                )
             } catch (_: Exception) { }
         }
     }
 }
 
 /** Aviso "Nova atualização disponível". Ao tocar, abre a tela de atualização do app. Retorna false se não pôde mostrar. */
-internal fun qinblyNotifyUpdate(context: Context): Boolean {
+internal fun qinblyNotifyUpdate(context: Context, version: String = ""): Boolean {
     return try {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-        if (android.os.Build.VERSION.SDK_INT >= 26) {
-            manager.createNotificationChannel(android.app.NotificationChannel("qinbly_update", "Atualizações do app", android.app.NotificationManager.IMPORTANCE_DEFAULT))
-        }
+        qinblyEnsureUpdateChannel(manager)
         if (android.os.Build.VERSION.SDK_INT >= 33 &&
             androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
         ) return false
@@ -134,15 +138,32 @@ internal fun qinblyNotifyUpdate(context: Context): Boolean {
             context, 7001, android.content.Intent(context, RemoteUiActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
             android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
         )
-        val notification = androidx.core.app.NotificationCompat.Builder(context, "qinbly_update")
+        val updateText = (if (version.isNotBlank()) "A versão $version do QINBLY está pronta. " else "A versão mais recente do QINBLY está pronta. ") + "Toque para atualizar."
+        val notification = androidx.core.app.NotificationCompat.Builder(context, "qinbly_update_v2")
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setContentTitle("Nova atualização disponível")
-            .setContentText("A versão mais recente do QINBLY está pronta. Toque para atualizar.")
-            .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText("A versão mais recente do QINBLY está pronta. Toque para atualizar."))
+            .setContentText(updateText)
+            .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText(updateText))
             .setContentIntent(open)
             .setAutoCancel(true)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(androidx.core.app.NotificationCompat.DEFAULT_ALL)
             .build()
         manager.notify(7001, notification)
         true
     } catch (_: Exception) { false }
+}
+
+/** Canal das atualizações do app: importância alta, com som e vibração (o canal antigo `qinbly_update` era discreto). */
+internal fun qinblyEnsureUpdateChannel(manager: android.app.NotificationManager) {
+    if (android.os.Build.VERSION.SDK_INT < 26) return
+    val channel = android.app.NotificationChannel("qinbly_update_v2", "Atualizações do app", android.app.NotificationManager.IMPORTANCE_HIGH).apply {
+        description = "Aviso quando sai uma versão nova do QINBLY"
+        enableVibration(true)
+        setSound(
+            android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION),
+            android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION).setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build()
+        )
+    }
+    manager.createNotificationChannel(channel)
 }

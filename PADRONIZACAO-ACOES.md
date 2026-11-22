@@ -1094,3 +1094,7 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Causa: o editor lia a foto sem aplicar a rotação (EXIF) do celular. A prévia (Coil) mostrava em pé, mas o arquivo final saía deitado e encaixado numa moldura 4:5 com barras pretas dentro da própria imagem.
 - Correção: toda leitura de foto do editor passa por `qinblyUpright` (proporção, ajuste/recorte, girar/espelhar, imagem final e foto de comunidade). A proporção "Original" agora segue a foto de verdade.
 - Publicações antigas já salvas assim continuam deitadas (o defeito está gravado no arquivo): é preciso apagar e publicar de novo.
+
+## Aviso de atualização do app
+- Já existia: o app consulta a última versão no GitHub e avisa uma vez por versão nova. Ajustes: canal novo `qinbly_update_v2` (importância alta, som e vibração), texto com o número da versão, checagem a cada 10 min (antes 1 h), checagem imediata ao abrir o app e aviso também com o app aberto (antes só com o app fechado).
+- Limites: o aviso só chega depois que a pessoa instalou uma versão que já tem esse recurso; com o app fechado depende do Android acordar o app (~15 min ou mais, bateria). Aviso instantâneo exige push (Firebase).

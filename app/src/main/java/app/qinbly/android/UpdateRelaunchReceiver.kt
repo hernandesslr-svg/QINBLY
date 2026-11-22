@@ -24,14 +24,12 @@ class UpdateRelaunchReceiver : BroadcastReceiver() {
         try { context.startActivity(launch) } catch (_: Exception) { }
         try {
             val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            if (android.os.Build.VERSION.SDK_INT >= 26) {
-                manager.createNotificationChannel(NotificationChannel("qinbly_update", "Atualizações do app", NotificationManager.IMPORTANCE_DEFAULT))
-            }
+            qinblyEnsureUpdateChannel(manager)
             if (android.os.Build.VERSION.SDK_INT >= 33 &&
                 androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
             ) return
             val open = PendingIntent.getActivity(context, 7002, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-            val notification = androidx.core.app.NotificationCompat.Builder(context, "qinbly_update")
+            val notification = androidx.core.app.NotificationCompat.Builder(context, "qinbly_update_v2")
                 .setSmallIcon(android.R.drawable.stat_sys_download_done)
                 .setContentTitle("QINBLY atualizado")
                 .setContentText("Toque para abrir o app.")
