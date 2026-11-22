@@ -49,6 +49,7 @@
     groups: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.9.3 5 2.6 5 5.8"/>',
     bag: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
     menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
     dots: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>'
   };
   function svg(n) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + IC[n] + "</svg>"; }
@@ -108,6 +109,7 @@
     function go() {
       var h = {};
       if (opt.body !== undefined) h["Content-Type"] = "application/json";
+      if (opt.headers) Object.keys(opt.headers).forEach(function (k) { h[k] = opt.headers[k]; });
       if (acc && acc.token && !opt.anon) h.Authorization = "Bearer " + acc.token;
       return fetch(url, { method: opt.method || "GET", headers: h, body: opt.body !== undefined ? JSON.stringify(opt.body) : undefined });
     }
@@ -244,7 +246,7 @@
       '<div class="ph"><a href="#/u/' + esc(a.username) + '" class="ring">' + avatar(a.avatarUrl, a.displayName || a.username, "s") + "</a>" +
       '<div class="who"><b><a href="#/u/' + esc(a.username) + '">' + esc(a.displayName || a.username) + "</a>" + (a.verified ? VERIFIED : "") + "</b><small>@" + esc(a.username) + " · " + ago(p.createdAt) + (p.visibility === "private" ? " · privado" : "") + "</small></div>" +
       (!mine && !p.isFollowing && me ? '<button class="sb" style="flex:none;width:76px" data-follow="' + p.authorId + '">Seguir</button>' : "") + '<button class="ib" data-pmenu="' + p.id + '" aria-label="Mais opções">' + svg("dots") + "</button></div>" +
-      (cap ? '<div class="cap">' + linkify(cap) + "</div>" : "") + media +
+      (cap ? '<div class="cap">' + linkify(cap) + "</div>" : "") + media + ((p.taggedUsers && p.taggedUsers.length) ? '<div class="tagged">Com ' + p.taggedUsers.map(function (u) { return '<a href="#/u/' + esc(u) + '">@' + esc(u) + "</a>"; }).join(", ") + "</div>" : "") +
       '<div class="acts"><button class="act ' + (p.likedByMe ? "on" : "") + '" data-like="' + p.id + '" aria-label="Curtir">' + svg("heart") + (p.likes || "") + "</button>" +
       '<button class="act" data-comments="' + p.id + '" aria-label="Comentários">' + svg("comment") + (p.comments || "") + "</button>" +
       '<button class="act" data-share="' + p.id + '" aria-label="Compartilhar">' + svg("send") + "</button><span class=\"sp\"></span>" +
@@ -264,13 +266,13 @@
   function closeSheet() { $sheet.innerHTML = ""; }
 
   function openComments(id) {
-    var me = cur(), reply = null;
+    var me = cur(), reply = null, editing = null;
     var s = sheet("Comentários", spin(),
       '<div id="rp" class="rpl" hidden></div><form class="cin" id="cf"><input id="ci" maxlength="2000" placeholder="Adicione um comentário…" autocomplete="off"><button type="submit">Enviar</button></form>');
     var box = s.querySelector(".body"), list = [];
     function one(c, sub) {
       var a = c.author || {}, mine = me && a.id === me.id;
-      return '<div class="cm ' + (sub ? "sub" : "") + '"><a href="#/u/' + esc(a.username) + '">' + avatar(a.avatarUrl, a.displayName || a.username, "s") + '</a><div class="b"><b>' + esc(a.username) + "</b>" + linkify(c.body) + "<small>" + ago(c.createdAt) + (c.editedAt ? " · editado" : "") + ' · <button data-crep="' + c.id + ":" + esc(a.username) + '">Responder</button>' + (mine ? ' · <button data-cdel="' + c.id + '">Apagar</button>' : ' · <button data-crpt="' + c.id + '">Denunciar</button>') + '</small></div><button class="act ' + (c.likedByMe ? "on" : "") + '" data-clike="' + c.id + '" aria-label="Curtir">' + svg("heart") + (c.likes || "") + "</button></div>";
+      return '<div class="cm ' + (sub ? "sub" : "") + '"><a href="#/u/' + esc(a.username) + '">' + avatar(a.avatarUrl, a.displayName || a.username, "s") + '</a><div class="b"><b>' + esc(a.username) + "</b>" + (/^qinbly:sticker:/.test(c.body) ? '<img class="mstk" style="width:90px;height:90px" src="' + safeUrl(HOST + "/storage/v1/object/public/post-media/" + c.body.slice(15)) + '" alt="Figurinha">' : linkify(c.body)) + "<small>" + ago(c.createdAt) + (c.editedAt ? " · editado" : "") + ' · <button data-crep="' + c.id + ":" + esc(a.username) + '">Responder</button>' + (mine ? ' · <button data-cedit="' + c.id + '">Editar</button> · <button data-cdel="' + c.id + '">Apagar</button>' : ' · <button data-crpt="' + c.id + '">Denunciar</button>') + '</small></div><button class="act ' + (c.likedByMe ? "on" : "") + '" data-clike="' + c.id + '" aria-label="Curtir">' + svg("heart") + (c.likes || "") + "</button></div>";
     }
     function draw() {
       var top = list.filter(function (c) { return !c.parentId; }), h = "";
@@ -279,18 +281,20 @@
     }
     api("/api/posts/" + id + "/comments").then(function (j) { list = j.comments || []; draw(); }).catch(function (e) { box.innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
     s.addEventListener("click", function (e) {
-      var t = e.target.closest("[data-crep],[data-cdel],[data-clike],[data-crpt]"); if (!t) return; e.stopPropagation();
+      var t = e.target.closest("[data-crep],[data-cdel],[data-clike],[data-crpt],[data-cedit]"); if (!t) return; e.stopPropagation();
       if (t.dataset.crep) { var a = t.dataset.crep.split(":"); reply = a[0]; var r = s.querySelector("#rp"); r.hidden = false; r.textContent = "Respondendo a @" + a[1] + " (toque para cancelar)"; s.querySelector("#ci").value = "@" + a[1] + " "; s.querySelector("#ci").focus(); }
+      else if (t.dataset.cedit) { var cc = list.filter(function (c) { return c.id === t.dataset.cedit; })[0]; editing = cc.id; var r2 = s.querySelector("#rp"); r2.hidden = false; r2.textContent = "Editando comentário (toque para cancelar)"; s.querySelector("#ci").value = cc.body; s.querySelector("#ci").focus(); }
       else if (t.dataset.cdel) api("/api/comments/" + t.dataset.cdel, { method: "DELETE" }).then(function () { list = list.filter(function (c) { return c.id !== t.dataset.cdel && c.parentId !== t.dataset.cdel; }); draw(); if (POSTS[id]) { POSTS[id].comments = Math.max(0, (POSTS[id].comments || 1) - 1); repaint(id); } }).catch(onErr);
       else if (t.dataset.clike) api("/api/comments/" + t.dataset.clike + "/like", { method: "POST", body: {} }).then(function (r) { list.forEach(function (c) { if (c.id === t.dataset.clike) { c.likedByMe = !!r.liked; c.likes = Math.max(0, (c.likes || 0) + (r.liked ? 1 : -1)); } }); draw(); }).catch(onErr);
       else if (t.dataset.crpt) { closeSheet(); reportSheet("comment", t.dataset.crpt); }
     });
-    s.querySelector("#rp").addEventListener("click", function () { reply = null; this.hidden = true; });
+    s.querySelector("#rp").addEventListener("click", function () { reply = null; editing = null; this.hidden = true; s.querySelector("#ci").value = ""; });
     s.querySelector("#cf").addEventListener("submit", function (e) {
       e.preventDefault();
       var inp = s.querySelector("#ci"), t = inp.value.trim(); if (!t) return;
       if (!cur()) { location.hash = "#/login"; return; }
       inp.disabled = true;
+      if (editing) { var eid = editing; api("/api/comments/" + eid, { method: "PATCH", body: { body: t } }).then(function () { list.forEach(function (c) { if (c.id === eid) { c.body = t; c.editedAt = new Date().toISOString(); } }); draw(); inp.value = ""; editing = null; s.querySelector("#rp").hidden = true; }).catch(onErr).then(function () { inp.disabled = false; inp.focus(); }); return; }
       api("/api/posts/" + id + "/comments", { method: "POST", body: { body: t, parentId: reply || undefined } }).then(function (j) {
         list.push(j.comment); draw(); inp.value = ""; reply = null; s.querySelector("#rp").hidden = true; box.scrollTop = box.scrollHeight; if (POSTS[id]) { POSTS[id].comments = (POSTS[id].comments || 0) + 1; repaint(id); }
       }).catch(onErr).then(function () { inp.disabled = false; inp.focus(); });
@@ -319,7 +323,7 @@
       var media = isText ? '<div class="tx" style="background:' + storyBg(cp.bg < 0 ? 0 : cp.bg) + '">' + esc(cp.text) + "</div>"
         : s.mediaType === "video" ? '<video src="' + safeUrl(s.mediaUrl) + '" autoplay playsinline></video>' : '<img src="' + safeUrl(s.mediaUrl) + '" alt="">';
       var foot = "";
-      if (own && s.id) foot = '<div class="sfoot"><span>👁 ' + (s.views || 0) + '</span><button data-shl>Destaque</button><button data-sdel>Apagar</button></div>';
+      if (own && s.id) foot = '<div class="sfoot"><button data-sviews>👁 ' + (s.views || 0) + ' · Quem viu</button><button data-shl>Destaque</button><button data-sdel>Apagar</button></div>';
       else if (!entry.hl && s.id && me) foot = '<form class="cin sreply" id="srf"><input id="sri" maxlength="300" placeholder="Responder a @' + esc(entry.username) + '…" autocomplete="off"><button type="submit">Enviar</button></form>';
       v.innerHTML = '<div class="bar">' + bars + '</div><div class="who">' + avatar(entry.avatarUrl, entry.displayName || entry.username, "s") + "<b>" + esc(entry.hl ? entry.displayName : entry.username) + "</b><small>" + ago(s.createdAt) + '</small><span class="sp" style="flex:1"></span><button class="ib" data-x aria-label="Fechar">' + svg("x") + '</button></div><div class="stage">' + media + '<div class="zone" style="left:0" data-prev></div><div class="zone" style="right:0" data-next></div></div>' + (!isText && cp.text ? '<div class="cap2">' + esc(cp.text) + "</div>" : "") + foot;
       var bar = v.querySelectorAll(".bar i b")[i];
@@ -335,9 +339,10 @@
       }
     }
     v.addEventListener("click", function (e) {
-      var t = e.target.closest("[data-x],[data-prev],[data-next],[data-shl],[data-sdel]"); if (!t) return;
+      var t = e.target.closest("[data-x],[data-prev],[data-next],[data-shl],[data-sdel],[data-sviews]"); if (!t) return;
       if (t.hasAttribute("data-x")) return end();
       var s = items[i];
+      if (t.hasAttribute("data-sviews")) { clearTimeout(timer); storyInfo(items[i]); return; }
       if (t.hasAttribute("data-shl")) { clearTimeout(timer); var ti = prompt("Nome do destaque", "Destaques"); if (ti === null) return show(); api("/api/highlights", { method: "POST", body: { storyId: s.id, title: ti } }).then(function () { toast("Adicionado aos destaques."); }).catch(onErr); return; }
       if (t.hasAttribute("data-sdel")) { clearTimeout(timer); if (!confirm("Apagar este story?")) return show(); api("/api/stories/" + s.id, { method: "DELETE" }).then(function () { items.splice(i, 1); toast("Story apagado."); loadStories(); show(); }).catch(onErr); return; }
       if (t.hasAttribute("data-prev")) { i = Math.max(0, i - 1); } else { i++; }
@@ -356,12 +361,15 @@
       '<label class="fld">Senha<input class="inp" id="p" type="password" autocomplete="' + (reg ? "new-password" : "current-password") + '"></label>' +
       '<div class="err" id="er"></div><button class="btn" id="go" type="submit">' + (reg ? "Criar conta" : "Entrar") + "</button></form>" +
       '<div class="alt" style="margin:16px 0 8px">ou</div><div id="gb" style="display:flex;justify-content:center;min-height:44px"></div><div class="err" id="ger" style="text-align:center"></div>' +
+      (reg ? "" : '<div class="alt"><button data-forgot>Esqueci a senha</button></div>') +
       '<div class="alt">' + (reg ? 'Já tem conta? <button data-mode="login">Entrar</button>' : 'Não tem conta? <button data-mode="register">Criar conta</button>') + "</div>" +
       (add && accounts.length ? '<div class="alt"><button data-back>Cancelar</button></div>' : "") +
       '<div class="alt" style="font-size:12px">Entrou no app só com o Google? Defina uma senha em Configurações, no app, para usar aqui.</div>' +
       '<div class="alt" style="font-size:12px"><a class="link" href="baixar.html">Baixar o app para Android</a></div>' + (ios ? '<div class="alt" style="font-size:12px">Para instalar no iPhone: toque em compartilhar e depois em “Adicionar à Tela de Início”.</div>' : "") +
       "</main>";
     initGoogle();
+    var ue = $app.querySelector("#u");
+    if (ue) { var ut; ue.addEventListener("input", function () { clearTimeout(ut); var v = ue.value.trim().toLowerCase(), er0 = $app.querySelector("#er"); if (v.length < 3) { er0.textContent = ""; return; } ut = setTimeout(function () { call(API + "/api/users/username-available?u=" + encodeURIComponent(v), { anon: true }).then(function (j) { er0.style.color = j.available ? "#4ade80" : ""; er0.textContent = j.available ? "Nome de usuário livre." : "Esse nome de usuário já existe."; }).catch(function () { }); }, 400); }); }
     var f = $app.querySelector("#lf"), er = $app.querySelector("#er"), go = $app.querySelector("#go");
     f.addEventListener("submit", function (e) {
       e.preventDefault(); er.textContent = ""; go.disabled = true;
@@ -402,10 +410,10 @@
   }
 
   var FEED = [], feedTab = "Descobrir", feedBefore = null, feedMore = false;
-  var FTABS = ["Descobrir", "Seguindo", "Em alta", "Vídeos", "Lives"];
+  var FTABS = ["Descobrir", "Seguindo", "Em alta", "Vídeos", "Perto de mim", "Lives"];
   function hot(p) { return (p.likes || 0) * 2 + (p.comments || 0) * 3 + (p.reposts || 0) * 3; }
   function feedList() {
-    var l = FEED.filter(function (p) { return !isHidden(p); });
+    var hp = lget("hposts", []), l = FEED.filter(function (p) { return !isHidden(p) && hp.indexOf(p.id) < 0; });
     if (feedTab === "Seguindo") l = l.filter(function (p) { return p.isFollowing; });
     else if (feedTab === "Vídeos") l = l.filter(function (p) { return p.mediaType === "video"; });
     else if (feedTab === "Em alta") { var lim = Date.now() - 7 * 86400000; l = l.filter(function (p) { return Date.parse(p.createdAt) > lim; }).sort(function (x, y) { return hot(y) - hot(x); }).slice(0, 30); }
@@ -433,9 +441,10 @@
   function drawFeed() {
     var fd = document.getElementById("fd"); if (!fd) return;
     if (feedTab === "Lives") return liveList();
+    if (feedTab === "Perto de mim") return nearbyView();
     var l = feedList();
-    var empty = { "Descobrir": "Ainda não há publicações. Toque em Criar e publique a primeira.", "Seguindo": "Siga pessoas para ver as publicações delas aqui.", "Em alta": "Nada em alta nos últimos 7 dias.", "Vídeos": "Ainda não há vídeos." }[feedTab];
-    fd.innerHTML = l.length ? l.map(postHTML).join("") : '<div class="empty">' + empty + "</div>";
+    var empty = { "Descobrir": "Ainda não há publicações. Toque em Criar e publique a primeira.", "Seguindo": "Siga pessoas para ver as publicações delas aqui.", "Em alta": "Nada em alta nos últimos 7 dias.", "Vídeos": "Ainda não há vídeos.", "Perto de mim": "" }[feedTab];
+    fd.innerHTML = (feedTab === "Descobrir" ? homeHeader() : "") + (l.length ? l.map(postHTML).join("") : '<div class="empty">' + empty + "</div>");
     if (feedMore) fd.insertAdjacentHTML("beforeend", '<button class="more" data-more>Carregar mais</button>');
   }
   function loadFeed(first) {
@@ -474,16 +483,17 @@
       pf.innerHTML =
         '<div class="ptop"><span class="ring">' + avatar(u.avatarUrl, u.displayName || u.username, "l") + '</span><div class="pname"><h2>' + esc(u.displayName || u.username) + (u.verified ? VERIFIED : "") + "</h2>" +
         (own ? '<button class="at" data-accounts>@' + esc(u.username) + svg("chev") + "</button>" : '<span class="at">@' + esc(u.username) + "</span>") + "</div></div>" +
-        (u.bio ? '<div class="bio">' + linkify(u.bio) + "</div>" : "") +
+        (u.bio ? '<div class="bio">' + linkify(u.bio) + "</div>" : "") + (u.createdAt || u.created_at ? '<div class="bio" style="color:var(--muted);font-size:12px">Entrou em ' + new Date(u.createdAt || u.created_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) + "</div>" : "") +
         '<div class="stats"><div><b>' + (u.posts_count || 0) + '</b>Publicações</div><button data-stat="followers"><b>' + (u.followers || 0) + '</b>Seguidores</button><button data-stat="following"><b>' + (u.following || 0) + "</b>Seguindo</button></div>" +
         '<div class="btns">' + (own ? '<button class="sb" data-edit>Editar perfil</button><button class="sb" data-shareprofile="' + esc(u.username) + '">Compartilhar perfil</button>'
           : '<button class="sb ' + (u.isFollowing ? "" : "pri") + '" data-follow="' + u.id + '" data-profile="' + esc(u.username) + '">' + (u.isFollowing ? "Seguindo" : "Seguir") + '</button><button class="sb" data-chat="' + esc(u.username) + '">Mensagem</button>') + "</div>" +
-        '<div id="hl"></div><div class="tabs"><button class="on" data-ptab="grid" aria-label="Publicações">' + svg("grid") + "</button>" + (own ? '<button data-ptab="saved" aria-label="Salvos">' + svg("save") + "</button>" : "") + '</div><div id="pg">' + (posts.length ? '<div class="grid">' + gridOf(posts) + "</div>" : '<div class="empty">Nenhuma publicação ainda.</div>') + "</div>";
+        '<div id="hl"></div><div class="tabs"><button class="on" data-ptab="grid" aria-label="Publicações">' + svg("grid") + '</button><button data-ptab="photos" aria-label="Fotos">🖼</button><button data-ptab="videos" aria-label="Vídeos">▶</button>' + (own ? '<button data-ptab="saved" aria-label="Salvos">' + svg("save") + "</button>" : "") + '</div><div id="pg">' + (posts.length ? '<div class="grid">' + gridOf(posts) + "</div>" : '<div class="empty">Nenhuma publicação ainda.</div>') + "</div>";
       pf.addEventListener("click", function (e) {
         var t = e.target.closest("[data-ptab],[data-hl]"); if (!t) return;
         if (t.dataset.hl !== undefined) { var h = (window.__hls || [])[Number(t.dataset.hl)]; if (h) openHighlight(h); return; }
         pf.querySelectorAll("[data-ptab]").forEach(function (b) { b.classList.toggle("on", b === t); });
         var pg = document.getElementById("pg");
+        if (t.dataset.ptab === "photos" || t.dataset.ptab === "videos") { var ty = t.dataset.ptab === "photos" ? "image" : "video", fl = posts.filter(function (p) { return p.mediaType === ty; }); pg.innerHTML = fl.length ? '<div class="grid">' + gridOf(fl) + "</div>" : '<div class="empty">' + (ty === "image" ? "Nenhuma foto ainda." : "Nenhum vídeo ainda.") + "</div>"; return; }
         if (t.dataset.ptab === "grid") pg.innerHTML = posts.length ? '<div class="grid">' + gridOf(posts) + "</div>" : '<div class="empty">Nenhuma publicação ainda.</div>';
         else { pg.innerHTML = spin(); api("/api/me/saved").then(function (r) { var l = r.posts || []; pg.innerHTML = l.length ? '<div class="grid">' + gridOf(l) + "</div>" : '<div class="empty">Você ainda não salvou nada.</div>'; }).catch(onErr); }
       });
@@ -644,18 +654,7 @@
       }).then(function () { draw.cap = ""; feedBefore = null; toast(sched ? "Publicação agendada." : "Publicado."); location.hash = "#/"; })
         .catch(function (x) { er.textContent = x.message; btn.disabled = false; btn.textContent = sched ? "Agendar" : "Publicar"; });
     }
-    draw.cap = ""; draw();
-  }
-  function viewInbox() {
-    setView(top("Mensagens", { right: '<button class="ib" data-find aria-label="Nova conversa">' + svg("search") + "</button>" }) + '<div id="ib">' + spin() + "</div>", "inbox");
-    api("/api/inbox").then(function (j) {
-      var cs = j.conversations || [];
-      unread = cs.reduce(function (s, c) { return s + (c.unreadCount || 0); }, 0);
-      document.getElementById("ib").innerHTML = cs.length ? cs.map(function (c) {
-        return '<button class="row" data-chat="' + esc(c.username) + '">' + avatar(c.avatarUrl, c.displayName || c.username) + '<span class="t"><b>' + esc(c.displayName || c.username) + "</b><small>" + esc(c.body) + '</small></span><span class="meta">' + ago(c.createdAt) + "</span>" + (c.unreadCount ? '<span class="dot">' + c.unreadCount + "</span>" : "") + "</button>";
-      }).join("") : '<div class="empty">Nenhuma conversa ainda. Toque na lupa para procurar alguém.</div>';
-      paintBadges();
-    }).catch(onErr);
+    draw.cap = ""; if (NEWPRE) { kind = NEWPRE.kind; draw.cap = NEWPRE.text; NEWPRE = null; } draw();
   }
   function findPeople() {
     var s = sheet("Nova conversa", '<div style="padding:0 16px 8px"><input class="inp" id="q" placeholder="Procurar por nome ou @usuário" autocomplete="off"></div><div id="qr"></div>');
@@ -672,32 +671,6 @@
     setTimeout(function () { var q = s.querySelector("#q"); if (q) q.focus(); }, 50);
   }
 
-  function viewChat(name) {
-    var me = cur(), last = "";
-    setView(top("@" + esc(name), { back: true, right: '<a class="ib" href="#/u/' + esc(name) + '" aria-label="Ver perfil">' + svg("user") + "</a>" }) + '<div class="chat" id="ch">' + spin() + "</div>" +
-      '<div class="composer"><form class="in" id="cf"><button type="button" class="ib" id="at" aria-label="Anexar">' + svg("plus") + '</button><textarea id="mi" rows="1" maxlength="10000" placeholder="Mensagem…"></textarea><button class="send" type="submit">Enviar</button></form></div>', "inbox", "noNav chatv");
-    function show(list) {
-      var sig = list.map(function (m) { return m.id + (m.poll ? JSON.stringify(m.poll.votes) + m.poll.myVote : ""); }).join();
-      if (sig === last) return; last = sig;
-      var ch = document.getElementById("ch"); if (!ch) return;
-      var stick = (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 160 || !ch.dataset.done;
-      ch.dataset.done = "1";
-      ch.innerHTML = list.length ? list.map(function (m) {
-        return '<div class="' + bubbleClass(m) + (m.senderId === me.id ? " me" : "") + '">' + msgBody(m) + "<small>" + new Date(m.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) + "</small></div>";
-      }).join("") : '<div class="empty">Diga olá para @' + esc(name) + ".</div>";
-      if (stick) window.scrollTo(0, document.body.scrollHeight);
-    }
-    function load() { api("/api/messages/" + encodeURIComponent(name)).then(function (j) { show(j.messages || []); }).catch(function (e) { if (e.expired) onErr(e); }); }
-    function send(text) { return api("/api/messages/" + encodeURIComponent(name), { method: "POST", body: { body: text } }); }
-    window.__reload = load; load(); timers.push(setInterval(load, 5000));
-    document.getElementById("at").addEventListener("click", function () { attachMenu(send, load); });
-    document.getElementById("cf").addEventListener("submit", function (e) {
-      e.preventDefault();
-      var inp = document.getElementById("mi"), t = inp.value.trim(); if (!t) return;
-      inp.value = "";
-      send(t).then(load).catch(function (x) { inp.value = t; onErr(x); });
-    });
-  }
   function accountsSheet() {
     var s = sheet("Suas contas", accounts.map(function (a) {
       return '<div class="row" style="padding:0 16px 0 0"><button class="row" data-switch="' + a.id + '">' + avatar(a.avatarUrl, a.displayName || a.username) + '<span class="t"><b>' + esc(a.displayName || a.username) + "</b><small>@" + esc(a.username) + "</small></span>" + (a.id === activeId ? '<span class="link">●</span>' : "") + '</button><button class="link" data-drop="' + a.id + '" style="font-size:12px;color:var(--muted)">Sair</button></div>';
@@ -750,18 +723,6 @@
 
   /* ---------- notificações ---------- */
   var NOTIF_TEXT = { verification_approved: "Sua conta foi verificada! Parabéns.", verification_rejected: "Seu pedido de verificação não foi aprovado.", follow: "começou a seguir você", follow_request: "pediu para seguir você", follow_accepted: "aceitou seu pedido de seguir", like: "curtiu sua publicação", comment: "comentou na sua publicação", mention: "mencionou você em uma publicação", mention_comment: "mencionou você em um comentário", tag: "marcou você em uma publicação", reply: "respondeu ao seu comentário", message: "enviou uma mensagem" };
-  function viewNotifs() {
-    setView(top("Notificações") + '<div id="nt">' + spin() + "</div>", "notif");
-    api("/api/notifications").then(function (j) {
-      var l = j.notifications || [];
-      document.getElementById("nt").innerHTML = l.length ? l.map(function (n) {
-        var a = n.actor || {}, href = /^(like|comment|mention|mention_comment|tag|reply)$/.test(n.kind) && n.entityId ? "#/post/" + n.entityId : n.kind === "message" ? "#/chat/" + esc(a.username) : a.username ? "#/u/" + esc(a.username) : "#/";
-        return '<a class="row" href="' + href + '">' + avatar(a.avatarUrl, a.displayName || a.username) + '<span class="t"><b style="font-weight:400">' + (a.username ? "<b style='font-weight:600'>" + esc(a.username) + "</b> " : "") + esc(NOTIF_TEXT[n.kind] || "tem uma novidade para você") + "</b><small>" + ago(n.createdAt) + "</small></span>" + (n.readAt ? "" : '<span class="dot" style="min-width:10px;height:10px;padding:0"></span>') + "</a>";
-      }).join("") : '<div class="empty">Nenhuma notificação ainda.</div>';
-      if (l.some(function (n) { return !n.readAt; })) api("/api/notifications/read", { method: "POST", body: {} }).then(function () { notifN = 0; paintBadges(); }).catch(function () { });
-    }).catch(function (e) { document.getElementById("nt").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
-  }
-
   /* ---------- comunidades ---------- */
   var comTab = "mine";
   function comRow(c) {
@@ -785,25 +746,51 @@
     });
   }
   function viewCommunity(id) {
-    var me = cur(), last = "";
-    setView(top("Comunidade", { back: true }) + '<div id="ch0">' + spin() + '</div><div class="chat" id="ch"></div><div class="composer" id="cc" hidden><form class="in" id="cf"><button type="button" class="ib" id="at" aria-label="Anexar">' + svg("plus") + '</button><textarea id="mi" rows="1" maxlength="10000" placeholder="Escreva para a comunidade…"></textarea><button class="send" type="submit">Enviar</button></form></div>', "communities", "noNav chatv");
+    var me = cur(), last = "", COM = null, PM = [], ckey = "com:" + id;
+    setView(top("Comunidade", { back: true, right: '<button class="ib" id="cmn2" aria-label="Opções">' + svg("dots") + "</button>" }) + '<div id="ch0">' + spin() + '</div><div class="chat" id="ch"></div><div class="composer" id="cc" hidden><form class="in" id="cf"><button type="button" class="ib" id="at" aria-label="Anexar">' + svg("plus") + '</button><button type="button" class="ib" id="em" aria-label="Emojis">😊</button><textarea id="mi" rows="1" maxlength="10000" placeholder="Escreva para a comunidade…"></textarea><button class="send" type="submit">Enviar</button></form><div id="emp" class="emp" hidden></div></div>', "communities", "noNav chatv");
     function load() {
       api("/api/communities/" + id).then(function (j) {
-        var c = j.community, h = document.getElementById("ch0"); if (!h) return;
+        var c = j.community, h = document.getElementById("ch0"); if (!h) return; COM = c;
         h.innerHTML = '<div class="ptop"><span class="av l" style="font-size:32px">' + esc(c.emoji) + '</span><div class="pname"><h2>' + esc(c.name) + "</h2><span class=\"at\">" + c.members + " membro" + (c.members === 1 ? "" : "s") + " · criada por @" + esc(c.ownerUsername) + "</span></div>" + (c.isOwner ? "" : '<button class="sb ' + (c.joined ? "" : "pri") + '" style="flex:none;width:84px" data-joincom="' + c.id + '" data-stay>' + (c.joined ? "Sair" : "Entrar") + "</button>") + "</div>" + (c.description ? '<div class="bio">' + linkify(c.description) + "</div>" : "");
         document.getElementById("cc").hidden = !c.joined;
+        var hid = lget("hmsgs", []), cl = chatPref(ckey).cleared || "";
+        PM = (j.posts || []).filter(function (m) { return hid.indexOf(m.id) < 0 && (!cl || m.createdAt > cl); }); j.posts = PM;
         var sig = (j.posts || []).map(function (m) { return m.id + (m.poll ? JSON.stringify(m.poll.votes) + m.poll.myVote : ""); }).join(); if (sig === last) return; last = sig;
         var ch = document.getElementById("ch"), stick = (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 160 || !ch.dataset.done; ch.dataset.done = "1";
         ch.innerHTML = (j.posts || []).length ? j.posts.map(function (m) {
           var a = m.author || {};
-          return '<div class="' + bubbleClass(m) + (m.mine ? " me" : "") + '">' + (m.mine ? "" : "<b style='font-size:12px'>" + esc(a.username) + "</b><br>") + msgBody(m) + "<small>" + ago(m.createdAt) + "</small></div>";
+          return '<div class="' + bubbleClass(m) + (m.mine ? " me" : "") + '" data-msg="' + m.id + '">' + (m.mine ? "" : "<b style='font-size:12px'>" + esc(a.username) + "</b><br>") + msgBody(m) + "<small>" + ago(m.createdAt) + "</small></div>";
         }).join("") : '<div class="empty">Ninguém escreveu ainda.</div>';
+        hydrateShared(ch);
         if (stick) window.scrollTo(0, document.body.scrollHeight);
       }).catch(function (e) { var h = document.getElementById("ch0"); if (h) h.innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
     }
     window.__reload = load; load(); timers.push(setInterval(load, 6000));
     function sendC(text) { return api("/api/communities/" + id + "/posts", { method: "POST", body: { body: text } }); }
+    var cctx = {
+      own: function (m) { return !!m.mine; }, react: false, forward: true, hide: true, reload: load, repaint: function () { last = ""; load(); },
+      del: function (m) { return m.mine || (COM && COM.isOwner); },
+      remove: function (m) { confirmSheet("Excluir mensagem?", "Ela some para todos da comunidade.", "Excluir", true, function () { api("/api/communities/" + id + "/posts/" + m.id, { method: "DELETE" }).then(function () { toast("Mensagem excluída."); load(); }).catch(onErr); }); }
+    };
+    document.getElementById("ch").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-msg]"); if (!b || e.target.closest("a,audio,video,button,.opt,.shp")) return;
+      var m = PM.filter(function (x) { return x.id === b.dataset.msg; })[0]; if (m) msgSheet(m, cctx);
+    });
+    document.getElementById("cmn2").addEventListener("click", function () {
+      var pf = chatPref(ckey), c = COM || {};
+      function row(k, t, d) { return '<button class="row" data-cx="' + k + '"><span class="t"><b' + (d ? ' style="color:var(--danger)"' : "") + ">" + t + "</b></span></button>"; }
+      var sh = sheet(c.name || "Comunidade", row("share", "Compartilhar comunidade") + row("mute", pf.mute ? "Reativar avisos" : "Silenciar avisos") + row("clear", "Limpar conversa", true) + (c.joined && !c.isOwner ? row("leave", "Sair da comunidade", true) : "") + (c.isOwner ? row("del", "Excluir comunidade", true) : ""));
+      sh.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-cx]"); if (!b) return; var k = b.dataset.cx; closeSheet();
+        if (k === "share") { var u = new URL("#/community/" + id, location.href).href; if (navigator.share) navigator.share({ title: c.name || "QINBLY", url: u }).catch(function () { }); else copyText(u, "Link copiado."); }
+        else if (k === "mute") { setChatPref(ckey, { mute: !pf.mute }); toast(pf.mute ? "Avisos reativados." : "Avisos silenciados."); }
+        else if (k === "clear") confirmSheet("Limpar conversa?", "As mensagens somem só para você, neste navegador.", "Limpar", true, function () { setChatPref(ckey, { cleared: new Date().toISOString() }); last = ""; load(); toast("Conversa limpa."); });
+        else if (k === "leave") confirmSheet("Sair da comunidade?", "Você deixa de ver e enviar mensagens.", "Sair", true, function () { api("/api/communities/" + id + "/join", { method: "POST", body: {} }).then(function () { toast("Você saiu da comunidade."); location.hash = "#/communities"; }).catch(onErr); });
+        else if (k === "del") confirmSheet("Excluir comunidade?", "Todas as mensagens e membros serão removidos. Não dá para desfazer.", "Excluir", true, function () { api("/api/communities/" + id, { method: "DELETE" }).then(function () { toast("Comunidade excluída."); location.hash = "#/communities"; }).catch(onErr); });
+      });
+    });
     document.getElementById("at").addEventListener("click", function () { attachMenu(sendC, load); });
+    document.getElementById("em").addEventListener("click", function () { emojiPanel(document.getElementById("emp"), document.getElementById("mi")); });
     document.getElementById("cf").addEventListener("submit", function (e) {
       e.preventDefault();
       var inp = document.getElementById("mi"), t = inp.value.trim(); if (!t) return; inp.value = "";
@@ -823,26 +810,13 @@
       '<button class="row" data-accounts><span class="t"><b>Trocar de conta</b><small>@' + esc(cur() ? cur().username : "") + "</small></span></button>" +
       '<a class="row" href="#/saved"><span class="t"><b>Salvos</b></span></a>' +
       '<a class="row" href="#/settings"><span class="t"><b>Configurações</b><small>Conta, privacidade, tema e mais</small></span></a>' +
+      '<button class="row" data-invite><span class="t"><b>Convidar amigos</b><small>Compartilhe o link do QINBLY</small></span></button>' +
       '<a class="row" href="#/golive"><span class="t"><b>Transmitir ao vivo</b></span></a>' +
       '<a class="row" href="baixar.html"><span class="t"><b>Baixar o app para Android</b><small>Instalar o QINBLY no celular</small></span></a>' +
       '<button class="row" data-install><span class="t"><b>Instalar no iPhone</b><small>Como adicionar à Tela de Início</small></span></button>' +
       '<a class="row" href="privacidade.html"><span class="t"><b>Privacidade</b></span></a><a class="row" href="termos.html"><span class="t"><b>Termos de uso</b></span></a>' +
       '<button class="row" data-drop="' + activeId + '"><span class="t"><b style="color:var(--danger)">Sair desta conta</b></span></button>');
   }
-  function addStory() {
-    var f = document.createElement("input"); f.type = "file"; f.accept = "image/*,video/*";
-    f.addEventListener("change", function () {
-      var file = f.files[0]; if (!file) return;
-      var isVid = file.type.indexOf("video/") === 0;
-      if ((isVid ? VID_OK : IMG_OK).indexOf(file.type) < 0) return toast("Esse tipo de arquivo não é aceito.");
-      toast("Enviando story…");
-      (isVid ? Promise.resolve(file) : shrink(file)).then(function (b) { return upload(b, "story_media"); })
-        .then(function (path) { return api("/api/stories", { method: "POST", body: { mediaFileId: path, mediaType: isVid ? "video" : "image" } }); })
-        .then(function () { toast("Story publicado por 24 horas."); loadStories(); }).catch(onErr);
-    });
-    f.click();
-  }
-
   /* =====================================================================
      Recursos completos: menu do post, mensagens com mídia, enquetes,
      mercado, configurações, lives, destaques e notas
@@ -882,7 +856,7 @@
         '<button class="row" data-pact="stats:' + id + '"><span class="t"><b>Estatísticas</b></span></button>' + rows +
         '<button class="row" data-pact="del:' + id + '"><span class="t"><b style="color:var(--danger)">Excluir publicação</b></span></button>';
     } else {
-      rows = '<button class="row" data-pact="repost:' + id + '"><span class="t"><b>' + (p.repostedByMe ? "Desfazer repostagem" : "Repostar") + "</b></span></button>" + rows +
+      rows = '<button class="row" data-pact="hide:' + id + '"><span class="t"><b>Ocultar publicação</b></span></button><button class="row" data-pact="copy:' + id + '"><span class="t"><b>Copiar link</b></span></button>' + '<button class="row" data-pact="repost:' + id + '"><span class="t"><b>' + (p.repostedByMe ? "Desfazer repostagem" : "Repostar") + "</b></span></button>" + rows +
         '<button class="row" data-pact="report:' + id + '"><span class="t"><b>Denunciar</b></span></button>' +
         '<button class="row" data-pact="block:' + id + '"><span class="t"><b style="color:var(--danger)">Bloquear @' + esc((p.author || {}).username) + "</b></span></button>";
     }
@@ -898,7 +872,10 @@
   }
   function postAction(act, id) {
     var p = POSTS[id]; closeSheet();
-    if (act === "share") { var url = new URL("#/post/" + id, location.href).href; if (navigator.share) navigator.share({ title: "QINBLY", url: url }).catch(function () { }); else if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { toast("Link copiado."); }); return; }
+    if (act === "share") return shareSheet(id);
+    if (act === "share_old") { var url = new URL("#/post/" + id, location.href).href; if (navigator.share) navigator.share({ title: "QINBLY", url: url }).catch(function () { }); else if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { toast("Link copiado."); }); return; }
+    if (act === "copy") return copyText(postLink(id), "Link copiado.");
+    if (act === "hide") { var hp2 = lget("hposts", []); hp2.push(id); lset("hposts", hp2); FEED = FEED.filter(function (x) { return x.id !== id; }); var pe = document.querySelector('[data-post="' + id + '"]'); if (pe) pe.remove(); return toast("Publicação ocultada deste feed."); }
     if (act === "repost") return api("/api/posts/" + id + "/repost", { method: "POST", body: {} }).then(function (r) { p.repostedByMe = !!r.reposted; toast(r.reposted ? "Repostado." : "Repostagem desfeita."); }).catch(onErr);
     if (act === "report") return reportSheet("post", id);
     if (act === "block") return confirmSheet("Bloquear @" + (p.author || {}).username + "?", "Vocês deixam de ver as publicações um do outro.", "Bloquear", true, function () {
@@ -943,13 +920,15 @@
   }
   function bubbleClass(m) { return m.imageUrl || m.stickerUrl ? "msg media" : "msg"; }
   function attachMenu(send, done) {
-    var s = sheet("Enviar", ["photo:Foto", "doc:Documento", "audio:Áudio (gravar)", "sticker:Figurinha", "poll:Enquete"].map(function (x) { var a = x.split(":"); return '<button class="row" data-att="' + a[0] + '"><span class="t"><b>' + a[1] + "</b></span></button>"; }).join(""));
+    var s = sheet("Enviar", ["photo:Foto", "doc:Documento", "audio:Áudio (gravar)", "camera:Câmera", "loc:Localização", "sticker:Figurinha", "poll:Enquete"].map(function (x) { var a = x.split(":"); return '<button class="row" data-att="' + a[0] + '"><span class="t"><b>' + a[1] + "</b></span></button>"; }).join(""));
     function pick(accept, cb) { var f = document.createElement("input"); f.type = "file"; f.accept = accept; f.onchange = function () { if (f.files[0]) cb(f.files[0]); }; f.click(); }
     function go(p) { closeSheet(); toast("Enviando…"); p.then(function () { done && done(); }).catch(onErr); }
     s.addEventListener("click", function (e) {
       var b = e.target.closest("[data-att]"); if (!b) return; var k = b.dataset.att;
       if (k === "photo") pick("image/*", function (f) { if (IMG_OK.indexOf(f.type) < 0) return toast("Use JPG, PNG, WebP ou GIF."); go(shrink(f).then(function (x) { return upload(x, "message_media"); }).then(function (path) { return send("qinbly:img:" + path); })); });
       else if (k === "doc") pick(".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip", function (f) { if (DOC_OK.indexOf(f.type) < 0) return toast("Tipo de documento não aceito."); go(upload(f, "message_file").then(function (path) { return send("qinbly:file:" + path + ":" + encodeURIComponent(f.name)); })); });
+      else if (k === "camera") { var cf = document.createElement("input"); cf.type = "file"; cf.accept = "image/*"; cf.setAttribute("capture", "environment"); cf.onchange = function () { var f = cf.files[0]; if (!f) return; if (IMG_OK.indexOf(f.type) < 0) return toast("Use JPG, PNG, WebP ou GIF."); go(shrink(f).then(function (x) { return upload(x, "message_media"); }).then(function (path) { return send("qinbly:img:" + path); })); }; cf.click(); }
+      else if (k === "loc") sendLocation(send, done);
       else if (k === "audio") recordSheet(send, done);
       else if (k === "sticker") stickerSheet(send, done);
       else if (k === "poll") pollSheet(send, done);
@@ -1027,11 +1006,11 @@
   }
   function textStory() {
     var bg = 0;
-    var s = sheet("Story de texto", '<div class="form"><div id="tsp" class="tbg" style="min-height:200px;border-radius:12px;background:' + storyBg(0) + '"><textarea id="tst" maxlength="300" placeholder="Escreva aqui" style="background:none;border:0;color:#fff;font:inherit;text-align:center;width:100%;resize:none;outline:none;min-height:120px"></textarea></div><div class="bgs" id="tsb">' + STORY_BGS.map(function (_, i) { return '<button data-b="' + i + '" class="' + (i === 0 ? "on" : "") + '" style="background:' + storyBg(i) + '"></button>'; }).join("") + "</div>" + err("tse") + '<button class="btn" id="tss">Publicar story</button></div>');
+    var s = sheet("Story de texto", '<div class="form"><div id="tsp" class="tbg" style="min-height:200px;border-radius:12px;background:' + storyBg(0) + '"><textarea id="tst" maxlength="300" placeholder="Escreva aqui" style="background:none;border:0;color:#fff;font:inherit;text-align:center;width:100%;resize:none;outline:none;min-height:120px"></textarea></div><div class="bgs" id="tsb">' + STORY_BGS.map(function (_, i) { return '<button data-b="' + i + '" class="' + (i === 0 ? "on" : "") + '" style="background:' + storyBg(i) + '"></button>'; }).join("") + "</div>" + '<label class="fld">Quem pode ver<select class="inp" id="tsa">' + AUDIENCES.map(function (a) { return '<option value="' + a[0] + '">' + a[1] + "</option>"; }).join("") + "</select></label>" + err("tse") + '<button class="btn" id="tss">Publicar story</button></div>');
     s.querySelector("#tsb").addEventListener("click", function (e) { var b = e.target.closest("[data-b]"); if (!b) return; bg = Number(b.dataset.b); s.querySelector("#tsp").style.background = storyBg(bg); s.querySelectorAll("#tsb button").forEach(function (x) { x.classList.toggle("on", x === b); }); });
     s.querySelector("#tss").addEventListener("click", function () {
       var text = s.querySelector("#tst").value.trim(); if (!text) { s.querySelector("#tse").textContent = "Escreva algo para publicar."; return; }
-      call(HOST + "/rest/v1/stories", { method: "POST", body: { user_id: cur().id, media_path: "text", media_type: "text", caption: "qinbly:text:" + bg + ":3:1:0:0\n" + text, expires_at: new Date(Date.now() + 86400000).toISOString() } })
+      call(HOST + "/rest/v1/stories", { method: "POST", body: { user_id: cur().id, media_path: "text", media_type: "text", caption: "qinbly:text:" + bg + ":3:1:0:0\n" + text, audience: s.querySelector("#tsa").value, city: s.querySelector("#tsa").value === "near" ? myCity() : "", expires_at: new Date(Date.now() + 86400000).toISOString() } })
         .then(function () { closeSheet(); toast("Story publicado por 24 horas."); loadStories(); }).catch(function (e) { s.querySelector("#tse").textContent = e.message; });
     });
   }
@@ -1082,6 +1061,7 @@
     el.innerHTML = spin();
     call(HOST + "/api/live?action=list").then(function (j) {
       var l = j.lives || [];
+      l.sort(function (a, b) { return b.viewers - a.viewers; });
       el.innerHTML = '<div style="padding:12px 16px"><button class="btn" data-golive>Transmitir ao vivo</button></div>' + (l.length ? l.map(function (x) { return '<a class="row" href="#/live/' + esc(x.id) + "/" + encodeURIComponent(x.host) + '"><span class="av" style="background:var(--danger)">●</span><span class="t"><b>@' + esc(x.host) + '</b><small>Ao vivo · ' + x.viewers + " assistindo</small></span><span class=\"sb pri\" style=\"flex:none;width:72px;line-height:30px;text-align:center\">Assistir</span></a>"; }).join("") : '<div class="empty">Ninguém está ao vivo agora.</div>');
     }).catch(function (e) { el.innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
   }
@@ -1157,7 +1137,7 @@
   }
 
   /* ---------- configurações ---------- */
-  var SET_ITEMS = [["account", "Conta", "Senha, e-mail, aparelhos e exclusão"], ["privacy", "Privacidade", "Quem vê, quem fala com você e bloqueios"], ["content", "Conteúdo", "Palavras ocultas e publicações arquivadas"], ["appearance", "Tela", "Tema claro ou escuro"], ["accessibility", "Acessibilidade", "Texto maior e menos animações"], ["storage", "Dados e armazenamento", "Cache e seus dados"], ["verify", "Verificação", "Peça o selo de conta verificada"], ["help", "Ajuda e suporte", "Termos, privacidade e sobre"]];
+  var SET_ITEMS = [["activity", "Atividade", "Aparecer online"], ["location", "Localização", "Perto de mim e dados de localização"], ["fonts", "Fontes", "Letra do site e dos nomes"], ["stories", "Stories", "Quem vê seus stories por padrão"], ["account", "Conta", "Senha, e-mail, aparelhos e exclusão"], ["privacy", "Privacidade", "Quem vê, quem fala com você e bloqueios"], ["content", "Conteúdo", "Palavras ocultas e publicações arquivadas"], ["appearance", "Tela", "Tema claro ou escuro"], ["accessibility", "Acessibilidade", "Texto maior e menos animações"], ["storage", "Dados e armazenamento", "Cache e seus dados"], ["verify", "Verificação", "Peça o selo de conta verificada"], ["help", "Ajuda e suporte", "Termos, privacidade e sobre"]];
   function viewSettings(section) {
     if (!section) {
       setView(top("Configurações", { back: true }) + SET_ITEMS.map(function (i) { return '<a class="row" href="#/settings/' + i[0] + '"><span class="t"><b>' + i[1] + "</b><small>" + i[2] + '</small></span></a>'; }).join("") + '<button class="row" data-drop="' + activeId + '"><span class="t"><b style="color:var(--danger)">Sair desta conta</b></span></button>', "");
@@ -1223,6 +1203,21 @@
     } else if (section === "accessibility") {
       sb.innerHTML = sw("big", "Texto maior", "Aumenta as letras do site", !!LS.get("qb_big", false)) + sw("calm", "Menos animações", "Tira transições e movimentos", !!LS.get("qb_calm", false));
       sb.addEventListener("click", function (e) { var t = e.target.closest("[data-sw]"); if (!t) return; var k = "qb_" + t.dataset.sw; LS.set(k, !LS.get(k, false)); applyPrefs(); viewSettings("accessibility"); });
+    } else if (section === "activity") {
+      sb.innerHTML = sw("online", "Mostrar que estou online", "Outras pessoas podem ver quando você está ativo", LS.get("qb_online", true) !== false) + '<div class="sect">Convites</div><button class="row" data-invite><span class="t"><b>Convidar amigos</b><small>Compartilhe o link do QINBLY</small></span></button>';
+      sb.addEventListener("click", function (e) { var t = e.target.closest("[data-sw]"); if (!t) return; LS.set("qb_online", LS.get("qb_online", true) === false); viewSettings("activity"); });
+    } else if (section === "location") {
+      sb.innerHTML = sw("locon", "Usar minha localização", "Mostra publicações e avisos perto de você", LS.get("qb_loc_on", true) !== false) + '<div class="sect">Sua cidade</div><div style="padding:0 16px 12px;color:var(--muted)">' + esc(myCity() || "Ainda não definida. Abra Perto de mim no feed.") + '</div><div class="form"><button class="btn ghost" id="lcl" style="color:var(--danger)">Apagar dados de localização</button></div>';
+      sb.addEventListener("click", function (e) { var t = e.target.closest("[data-sw]"); if (t) { LS.set("qb_loc_on", LS.get("qb_loc_on", true) === false); viewSettings("location"); } });
+      sb.querySelector("#lcl").addEventListener("click", function () { confirmSheet("Apagar dados de localização?", "Apaga sua cidade e os avisos que você escreveu no mural.", "Apagar", true, function () { call(HOST + "/rest/v1/neighborhood_notices?user_id=eq." + me.id, { method: "DELETE" }).catch(function () { }).then(function () { return call(HOST + "/rest/v1/profiles?id=eq." + me.id, { method: "PATCH", body: { city: "" }, headers: { Prefer: "return=minimal" } }); }).then(function () { LS.set("qb_place", ""); HERE = null; toast("Dados de localização apagados."); viewSettings("location"); }).catch(onErr); }); });
+    } else if (section === "fonts") {
+      var ft = LS.get("qb_font", "padrao"), fn = LS.get("qb_nfont", "padrao");
+      sb.innerHTML = '<div class="sect">Fonte do site</div>' + FONTS.map(function (f) { return '<button class="row" data-ch="font:' + f[0] + '"><span class="rad ' + (ft === f[0] ? "on" : "") + '"></span><span class="t"><b style="' + (f[2] ? "font-family:" + f[2] : "") + '">' + f[1] + "</b></span></button>"; }).join("") + '<div class="sect">Fonte dos nomes</div>' + FONTS.map(function (f) { return '<button class="row" data-ch="nfont:' + f[0] + '"><span class="rad ' + (fn === f[0] ? "on" : "") + '"></span><span class="t"><b style="' + (f[2] ? "font-family:" + f[2] : "") + '">' + f[1] + "</b></span></button>"; }).join("");
+      sb.addEventListener("click", function (e) { var t = e.target.closest("[data-ch]"); if (!t) return; var p = t.dataset.ch.split(":"); LS.set("qb_" + p[0], p[1]); applyFonts(); viewSettings("fonts"); });
+    } else if (section === "stories") {
+      var sa = LS.get("qb_story_aud", "all");
+      sb.innerHTML = '<div style="padding:12px 16px;color:var(--muted)">Em cada story você ainda pode mudar isso antes de publicar.</div>' + AUDIENCES.map(function (a) { return '<button class="row" data-ch="aud:' + a[0] + '"><span class="rad ' + (sa === a[0] ? "on" : "") + '"></span><span class="t"><b>' + a[1] + "</b></span></button>"; }).join("");
+      sb.addEventListener("click", function (e) { var t = e.target.closest("[data-ch]"); if (!t) return; LS.set("qb_story_aud", t.dataset.ch.split(":")[1]); viewSettings("stories"); });
     } else if (section === "storage") {
       sb.innerHTML = '<div class="form"><button class="btn ghost" id="cc">Limpar cache deste aparelho</button><button class="btn ghost" id="ex">Baixar meus dados (arquivo JSON)</button></div>';
       sb.querySelector("#cc").addEventListener("click", function () { (window.caches ? caches.keys().then(function (k) { return Promise.all(k.map(function (x) { return caches.delete(x); })); }) : Promise.resolve()).then(function () { FEED = []; toast("Cache limpo."); }); });
@@ -1240,6 +1235,7 @@
     }
   }
   function applyPrefs() {
+    applyFonts();
     var th = LS.get("qb_theme", "dark"), light = th === "light" || (th === "auto" && window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches);
     document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
     document.body.classList.toggle("big", !!LS.get("qb_big", false));
@@ -1250,12 +1246,519 @@
   /* ---------- destaques, comentários, stories ---------- */
   function openHighlight(h) { openStories({ username: "", displayName: h.title, avatarUrl: "", stories: [{ id: "", mediaUrl: h.mediaUrl, mediaType: h.mediaType, caption: h.caption, createdAt: h.createdAt }], hl: true }); }
 
+  /* =====================================================================
+     Segunda leva: mensagens completas, compartilhar, caixa de entrada,
+     preferências locais, esqueci a senha, presença
+     ===================================================================== */
+  function el(id) { return document.getElementById(id); }
+  function enc(s) { return encodeURIComponent(s); }
+  function lk(name) { var m = cur(); return "qb_" + (m ? m.id : "x") + "_" + name; }
+  function lget(name, d) { return LS.get(lk(name), d); }
+  function lset(name, v) { LS.set(lk(name), v); }
+  function chatPref(u) { return (lget("chats", {}) || {})[String(u).toLowerCase()] || {}; }
+  function setChatPref(u, patch) { var all = lget("chats", {}) || {}, k = String(u).toLowerCase(); all[k] = Object.assign(all[k] || {}, patch); lset("chats", all); }
+  function myCity() { return LS.get("qb_city", "") || LS.get("qb_place", ""); }
+  function copyText(t, msg) { if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { toast(msg || "Copiado."); }).catch(function () { toast("Não foi possível copiar."); }); else toast("Não foi possível copiar."); }
+  function postLink(id) { return new URL("#/post/" + id, location.href).href; }
+  function pathOf(url) { var i = String(url).indexOf("/post-media/"); return i < 0 ? url : url.slice(i + 12); }
+  function dayLabel(d) {
+    var t = new Date(), y = new Date(Date.now() - 86400000);
+    if (d.toDateString() === t.toDateString()) return "Hoje";
+    if (d.toDateString() === y.toDateString()) return "Ontem";
+    return d.toLocaleDateString("pt-BR");
+  }
+
+  /* ---------- esqueci a senha ---------- */
+  function forgotSheet() {
+    var s = sheet("Esqueci a senha", '<div class="form"><div style="color:var(--muted)">Digite seu e-mail ou nome de usuário. Enviamos um link para criar uma nova senha.</div><input class="inp" id="fg" autocapitalize="none" placeholder="E-mail ou usuário"><div class="err" id="fge"></div><button class="btn" id="fgb">Enviar link</button></div>');
+    s.querySelector("#fgb").addEventListener("click", function () {
+      var v = s.querySelector("#fg").value.trim().toLowerCase(), b = this; if (!v) return;
+      b.disabled = true;
+      (v.indexOf("@") > 0 ? call(API + "/api/auth/forgot", { method: "POST", anon: true, body: { email: v } }) : call(API + "/signin/username", { method: "POST", anon: true, body: { action: "forgot", username: v.replace(/^@/, "") } }))
+        .then(function (j) { s.querySelector(".body").innerHTML = '<div class="empty">' + esc(j.message || "Se existir uma conta com esses dados, enviamos o link para criar uma nova senha.") + "</div>"; })
+        .catch(function (e) { s.querySelector("#fge").textContent = e.message; b.disabled = false; });
+    });
+  }
+
+  /* ---------- presença (online) ---------- */
+  function beat() { if (!cur() || document.hidden || LS.get("qb_online", true) === false) return; api("/api/presence/heartbeat", { method: "POST", body: {} }).catch(function () { }); }
+
+  /* ---------- mensagens: tipos, emojis, reações ---------- */
+  var REACTS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "👏", "😍", "🎉", "🤔", "😡", "🥳", "😎", "💯", "👎", "🤣", "😭", "🙌", "💔"];
+  var EMOJIS = Array.from("😀😃😄😁😆😅😂🤣😊😇🙂😉😌😍🥰😘😋😛😜🤪🤗🤭🤔😐😏😒🙄😬😮😯😲😳🥺😢😭😤😡🤬😱😨😰😓😴🤒🤕🤢🤮🥳😎🤓🥱👍👎👏🙌🙏💪👋🤝✌️🤞👌❤️🧡💛💚💙💜🖤💔💕💯🔥✨⭐🎉🎂🎁🍕🍔🍟🍺☕⚽🏆🎵🎶📸🚗✈️🌴🌞🌙🌧️🐶🐱🐼🦋🌹");
+  function reactOrder() { return REACTS.slice().sort(function (a, b) { return LS.get("qb_rc_" + b, 0) - LS.get("qb_rc_" + a, 0); }); }
+  function msgText(m) { return m.imageUrl ? "foto" : m.stickerUrl ? "figurinha" : m.audioUrl ? "mensagem de voz" : m.fileUrl ? (m.fileName || "documento") : m.poll ? (m.poll.question || "enquete") : String(m.body || ""); }
+  function snippet(m) {
+    if (m.poll) return "Enquete"; if (m.stickerUrl) return "Figurinha"; if (m.imageUrl) return "Foto"; if (m.audioUrl) return "Mensagem de voz"; if (m.fileUrl) return m.fileName || "Documento";
+    return String(m.body || "").replace(/\n/g, " ").slice(0, 80);
+  }
+  function rawBody(m) {
+    if (m.poll) return null;
+    if (m.stickerUrl) return "qinbly:sticker:" + pathOf(m.stickerUrl);
+    if (m.imageUrl) return "qinbly:img:" + pathOf(m.imageUrl);
+    if (m.audioUrl) return "qinbly:audio:" + pathOf(m.audioUrl) + ":" + (m.audioSeconds || 1);
+    if (m.fileUrl) return "qinbly:file:" + pathOf(m.fileUrl) + ":" + enc(m.fileName || "documento");
+    return m.body || null;
+  }
+  var SHARED = {};
+  function msgHTML(m) {
+    var b = typeof m.body === "string" ? m.body : "";
+    if (!m.imageUrl && !m.stickerUrl && !m.audioUrl && !m.fileUrl && !m.poll) {
+      var sp = /post\/([0-9a-fA-F-]{36})/.exec(b);
+      if (sp) {
+        var lines = b.split("\n").filter(function (x) { return x.trim() && x.indexOf("/post/") < 0; }), ii = -1;
+        lines.forEach(function (x, i) { if (ii < 0 && /^Confira esta publicação no [^:]*:/.test(x)) ii = i; });
+        var note = ii > 0 ? lines.slice(0, ii).join("\n") : "";
+        return '<div class="shp" data-sp="' + sp[1] + '"><div class="spin"><i></i></div></div>' + (note ? '<div class="shn">' + linkify(note) + "</div>" : "");
+      }
+      if (b.indexOf("> ") === 0 && b.indexOf("\n") > 0) return '<div class="qt">' + esc(b.slice(2, b.indexOf("\n"))) + "</div>" + linkify(b.slice(b.indexOf("\n") + 1));
+    }
+    return msgBody(m);
+  }
+  function hydrateShared(root) {
+    if (!root) return;
+    root.querySelectorAll("[data-sp]:not([data-ok])").forEach(function (box) {
+      box.setAttribute("data-ok", "1"); var id = box.dataset.sp;
+      (SHARED[id] ? Promise.resolve(SHARED[id]) : api("/api/posts/" + id).then(function (j) { SHARED[id] = j.post; return j.post; })).then(function (p) {
+        var a = p.author || {}, u = safeUrl(p.mediaUrl);
+        var media = p.mediaType === "video" && u ? '<video src="' + u + '" preload="metadata" muted playsinline></video>' : u ? '<img src="' + u + '" loading="lazy" alt="">' : '<div class="shtx" style="' + (p.textBg ? "background:" + bgCss(p.textBg) : "") + '">' + esc((p.caption || "").slice(0, 160)) + "</div>";
+        box.innerHTML = '<a href="#/post/' + id + '">' + media + '<span class="shw">' + avatar(a.avatarUrl, a.displayName || a.username, "s") + "<b>" + esc(a.displayName || a.username || "") + "</b></span>" + (u && p.caption ? "<small>" + esc(p.caption.slice(0, 120)) + "</small>" : "") + "</a>";
+      }).catch(function () { box.innerHTML = '<a href="#/post/' + id + '">Publicação compartilhada</a>'; });
+    });
+  }
+  function reactChips(list, myId) {
+    var g = {}; list.forEach(function (r) { g[r.emoji] = g[r.emoji] || { n: 0, mine: false }; g[r.emoji].n++; if (r.user_id === myId) g[r.emoji].mine = true; });
+    return '<span class="rxs">' + Object.keys(g).map(function (k) { return '<i class="' + (g[k].mine ? "on" : "") + '">' + k + (g[k].n > 1 ? " " + g[k].n : "") + "</i>"; }).join("") + "</span>";
+  }
+
+  /* ---------- menu de uma mensagem ---------- */
+  function msgSheet(m, ctx) {
+    var me = cur(), own = ctx.own(m), mine = ((ctx.reacts && ctx.reacts[m.id]) || []).filter(function (r) { return r.user_id === me.id; })[0];
+    var rx = reactOrder(), rows = "";
+    if (ctx.react) rows += '<div class="rxrow">' + rx.slice(0, 6).map(function (e) { return '<button data-re="' + e + '" class="' + (mine && mine.emoji === e ? "on" : "") + '">' + e + "</button>"; }).join("") + '<button data-re="+" aria-label="Mais">＋</button></div><div id="rxall" class="rxrow wrap" hidden>' + rx.slice(6).map(function (e) { return '<button data-re="' + e + '">' + e + "</button>"; }).join("") + "</div>";
+    function row(k, t, danger) { return '<button class="row" data-ma="' + k + '"><span class="t"><b' + (danger ? ' style="color:var(--danger)"' : "") + ">" + t + "</b></span></button>"; }
+    if (ctx.reply) rows += row("reply", "Responder");
+    var txt = rawBody(m); if (txt && !m.stickerUrl && !m.imageUrl && !m.audioUrl && !m.fileUrl && !/post\/[0-9a-fA-F-]{36}/.test(txt)) rows += row("copy", "Copiar texto");
+    if (m.imageUrl || m.fileUrl || m.audioUrl) rows += row("open", m.imageUrl ? "Abrir foto" : m.audioUrl ? "Abrir áudio" : "Abrir documento");
+    if (m.stickerUrl) rows += row("savestk", "Salvar nas minhas figurinhas");
+    if (ctx.forward && rawBody(m)) rows += row("fwd", "Encaminhar");
+    if (ctx.pin) rows += row("pin", ctx.pinned === m.id ? "Desafixar" : "Fixar no topo");
+    if (ctx.cancel && own) rows += row("cancel", "Cancelar envio", true);
+    if (ctx.hide) rows += row("hide", "Apagar para mim", true);
+    if (ctx.del && ctx.del(m)) rows += row("del", "Excluir mensagem", true);
+    if (!own && ctx.report) rows += row("report", "Denunciar mensagem", true);
+    var s = sheet("Sobre a mensagem", rows);
+    s.addEventListener("click", function (e) {
+      var r = e.target.closest("[data-re]"), a = e.target.closest("[data-ma]");
+      if (r) {
+        if (r.dataset.re === "+") { s.querySelector("#rxall").hidden = false; r.hidden = true; return; }
+        var em = r.dataset.re; closeSheet(); LS.set("qb_rc_" + em, LS.get("qb_rc_" + em, 0) + 1);
+        (mine && mine.emoji === em ? call(HOST + "/rest/v1/message_reactions?message_id=eq." + m.id, { method: "DELETE" }) : call(HOST + "/rest/v1/message_reactions?on_conflict=message_id,user_id", { method: "POST", body: { message_id: m.id, emoji: em }, headers: { Prefer: "resolution=merge-duplicates,return=minimal" } }))
+          .then(function () { ctx.reload(); }).catch(function () { toast("Não foi possível reagir."); });
+        return;
+      }
+      if (!a) return; var k = a.dataset.ma; closeSheet();
+      if (k === "reply") ctx.reply(m);
+      else if (k === "copy") copyText(txt, "Texto copiado.");
+      else if (k === "open") window.open(safeUrl(m.imageUrl || m.audioUrl || m.fileUrl), "_blank", "noopener");
+      else if (k === "savestk") api("/api/stickers", { method: "POST", body: { fileId: pathOf(m.stickerUrl) } }).then(function () { toast("Figurinha salva nas suas figurinhas."); }).catch(function (x) { toast(x.message || "Não foi possível salvar a figurinha."); });
+      else if (k === "fwd") forwardSheet(rawBody(m));
+      else if (k === "pin") ctx.pin(m);
+      else if (k === "cancel") confirmSheet("Cancelar envio?", "A mensagem some para as duas pessoas.", "Cancelar envio", true, function () {
+        call(HOST + "/rest/v1/messages?id=eq." + m.id, { method: "DELETE", headers: { Prefer: "return=representation" } }).then(function (r) { if (Array.isArray(r) && !r.length) throw new Error("Só quem enviou pode cancelar o envio."); toast("Envio cancelado."); ctx.reload(); }).catch(function (x) { toast(x.message || "Não foi possível cancelar o envio."); });
+      });
+      else if (k === "hide") { var h = lget("hmsgs", []); h.push(m.id); lset("hmsgs", h); toast("Mensagem apagada só para você."); ctx.repaint(); }
+      else if (k === "del") ctx.remove(m);
+      else if (k === "report") reportSheet("message", m.id);
+    });
+  }
+  function convPicker(title, onPick, withCommunities) {
+    var s = sheet(title, '<div style="padding:0 16px 8px"><input class="inp" id="cq" placeholder="Buscar pessoas" autocomplete="off"></div><div id="cr">' + spin() + "</div>");
+    var recent = [], t;
+    function row(u, kind) { return '<button class="row" data-pick="' + kind + ":" + esc(u.username || u.id) + '">' + (kind === "com" ? '<span class="av" style="font-size:18px">' + esc(u.emoji || "👥") + "</span>" : avatar(u.avatarUrl, u.displayName || u.username)) + '<span class="t"><b>' + esc(kind === "com" ? u.name : (u.displayName || u.username)) + "</b>" + (kind === "com" ? "<small>Comunidade</small>" : "<small>@" + esc(u.username) + "</small>") + "</span></button>"; }
+    function paint(users) { el("cr").innerHTML = (users.length ? '<div class="sect">' + (el("cq").value.trim() ? "Pessoas encontradas" : "Conversas recentes") + "</div>" + users.map(function (u) { return row(u, "u"); }).join("") : '<div class="empty">Nenhuma pessoa encontrada.</div>') + (!el("cq").value.trim() && s.__coms && s.__coms.length ? '<div class="sect">Comunidades</div>' + s.__coms.map(function (c) { return row({ username: c.id, name: c.name, emoji: c.emoji }, "com"); }).join("") : ""); }
+    Promise.all([api("/api/inbox").catch(function () { return { conversations: [] }; }), withCommunities ? api("/api/communities?filter=mine").catch(function () { return { communities: [] }; }) : Promise.resolve({ communities: [] })]).then(function (a) {
+      recent = (a[0].conversations || []).map(function (c) { return { username: c.username, displayName: c.displayName, avatarUrl: c.avatarUrl }; }); s.__coms = a[1].communities || []; if (el("cr")) paint(recent);
+    });
+    s.querySelector("#cq").addEventListener("input", function (e) {
+      clearTimeout(t); var q = e.target.value.trim().replace(/^@/, "");
+      if (q.length < 2) { paint(recent); return; }
+      t = setTimeout(function () { api("/api/users/search?q=" + enc(q)).then(function (j) { paint(j.users || []); }).catch(function () { }); }, 300);
+    });
+    s.addEventListener("click", function (e) { var b = e.target.closest("[data-pick]"); if (!b) return; var p = b.dataset.pick.split(":"); onPick(p[0], p.slice(1).join(":"), s); });
+  }
+  function forwardSheet(raw) {
+    convPicker("Encaminhar para", function (kind, who, s) {
+      closeSheet(); toast("Enviando…");
+      api("/api/messages/" + enc(who), { method: "POST", body: { body: raw } }).then(function () { toast("Mensagem encaminhada."); }).catch(function () { toast("Não foi possível encaminhar."); });
+    }, false);
+  }
+  function shareSheet(id) {
+    var p = POSTS[id] || SHARED[id] || {}, link = postLink(id), noteHtml = '<div style="padding:0 16px 8px"><input class="inp" id="shn" maxlength="300" placeholder="Escreva uma mensagem (opcional)"></div>';
+    var s = sheet("Compartilhar", noteHtml + '<button class="row" data-sh="copy"><span class="t"><b>Copiar link</b></span></button>' + (navigator.share ? '<button class="row" data-sh="app"><span class="t"><b>Compartilhar em outro aplicativo</b></span></button>' : "") + '<div id="shbox"></div>');
+    var box = s.querySelector("#shbox");
+    box.insertAdjacentHTML("beforeend", '<div class="sect">Enviar para</div><div id="shr">' + spin() + "</div>");
+    var recent = [], coms = [];
+    function row(u, kind) { return '<button class="row" data-pick="' + kind + ":" + esc(u.username || u.id) + '">' + (kind === "com" ? '<span class="av" style="font-size:18px">' + esc(u.emoji || "👥") + "</span>" : avatar(u.avatarUrl, u.displayName || u.username)) + '<span class="t"><b>' + esc(kind === "com" ? u.name : (u.displayName || u.username)) + "</b><small>" + (kind === "com" ? "Comunidade" : "@" + esc(u.username)) + '</small></span><span class="sb pri sent" style="flex:none;width:72px;line-height:30px;text-align:center">Enviar</span></button>'; }
+    function paint(users) { var h = users.map(function (u) { return row(u, "u"); }).join("") + coms.map(function (c) { return row({ username: c.id, name: c.name, emoji: c.emoji }, "com"); }).join(""); var r = el("shr"); if (r) r.innerHTML = h || '<div class="empty">Nenhuma conversa recente. Busque uma pessoa na aba Mensagens.</div>'; }
+    Promise.all([api("/api/inbox").catch(function () { return { conversations: [] }; }), api("/api/communities?filter=mine").catch(function () { return { communities: [] }; })]).then(function (a) { recent = (a[0].conversations || []).map(function (c) { return { username: c.username, displayName: c.displayName, avatarUrl: c.avatarUrl }; }); coms = a[1].communities || []; paint(recent); });
+    s.addEventListener("click", function (e) {
+      var sh = e.target.closest("[data-sh]"), pk = e.target.closest("[data-pick]");
+      if (sh) { if (sh.dataset.sh === "copy") { copyText(link, "Link copiado."); closeSheet(); } else { navigator.share({ title: "QINBLY", url: link }).catch(function () { }); } return; }
+      if (!pk) return;
+      var kind = pk.dataset.pick.split(":")[0], who = pk.dataset.pick.split(":").slice(1).join(":"), note = s.querySelector("#shn").value.trim();
+      var body = (note ? note + "\n" : "") + "Confira esta publicação no QINBLY: " + String(p.caption || "").slice(0, 160) + "\nhttps://qinbly.com/post/" + id;
+      var b = pk.querySelector(".sent"); if (b) b.textContent = "Enviando";
+      (kind === "com" ? api("/api/communities/" + who + "/posts", { method: "POST", body: { body: body } }) : api("/api/messages/" + enc(who), { method: "POST", body: { body: body } }))
+        .then(function () { if (b) { b.textContent = "Enviado"; b.classList.remove("pri"); } }).catch(function (x) { if (b) b.textContent = "Enviar"; toast(x.message || "Não foi possível enviar."); });
+    });
+  }
+
+  /* ---------- emojis, localização, câmera ---------- */
+  function emojiPanel(box, ta) {
+    box.hidden = !box.hidden; if (box.hidden) return;
+    box.innerHTML = EMOJIS.map(function (e) { return "<button type=\"button\">" + e + "</button>"; }).join("");
+    box.onclick = function (e) { var b = e.target.closest("button"); if (!b) return; var st = ta.selectionStart || ta.value.length; ta.value = ta.value.slice(0, st) + b.textContent + ta.value.slice(ta.selectionEnd || st); ta.focus(); };
+  }
+  function sendLocation(send, done) {
+    if (!navigator.geolocation) return toast("Este navegador não tem localização.");
+    toast("Pegando sua localização…");
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      send("Minha localização:\nhttps://maps.google.com/?q=" + pos.coords.latitude + "," + pos.coords.longitude).then(function () { done && done(); }).catch(onErr);
+    }, function () { toast("Não consegui pegar sua localização. Permita o acesso e tente de novo."); }, { timeout: 15000 });
+  }
+
+  /* ---------- menu e mídia da conversa ---------- */
+  function sharedMedia(msgs) {
+    var tab = "m";
+    var s = sheet("Mídia, links e documentos", '<div style="padding:0 16px 8px"><div class="seg" id="smt"><button data-t="m" class="on">Mídia</button><button data-t="l">Links</button><button data-t="d">Documentos</button><button data-t="a">Áudios</button></div></div><div id="smb"></div>');
+    function paint() {
+      var h = "";
+      if (tab === "m") { var l = msgs.filter(function (m) { return m.imageUrl; }); h = l.length ? '<div class="grid">' + l.map(function (m) { return '<a href="' + safeUrl(m.imageUrl) + '" target="_blank" rel="noopener" style="background-image:url(\'' + safeUrl(m.imageUrl) + "')\"></a>"; }).join("") + "</div>" : '<div class="empty">Nenhuma foto compartilhada ainda.</div>'; }
+      if (tab === "l") { var ls = []; msgs.forEach(function (m) { var r = String(m.body || "").match(/https?:\/\/[^\s]+/g); if (r) r.forEach(function (u) { ls.push(u); }); }); h = ls.length ? ls.map(function (u) { return '<a class="row" href="' + safeUrl(u) + '" target="_blank" rel="noopener"><span class="t"><b style="font-size:14px;word-break:break-all">' + esc(u) + "</b></span></a>"; }).join("") : '<div class="empty">Nenhum link compartilhado ainda.</div>'; }
+      if (tab === "d") { var d = msgs.filter(function (m) { return m.fileUrl; }); h = d.length ? d.map(function (m) { return '<a class="row" href="' + safeUrl(m.fileUrl) + '" target="_blank" rel="noopener"><span class="t"><b>📄 ' + esc(m.fileName || "Documento") + "</b></span></a>"; }).join("") : '<div class="empty">Nenhum documento compartilhado ainda.</div>'; }
+      if (tab === "a") { var a = msgs.filter(function (m) { return m.audioUrl; }); h = a.length ? a.map(function (m) { return '<div style="padding:8px 16px"><audio controls preload="none" src="' + safeUrl(m.audioUrl) + '"></audio></div>'; }).join("") : '<div class="empty">Nenhum áudio compartilhado ainda.</div>'; }
+      s.querySelector("#smb").innerHTML = h;
+    }
+    s.querySelector("#smt").addEventListener("click", function (e) { var b = e.target.closest("[data-t]"); if (!b) return; tab = b.dataset.t; s.querySelectorAll("#smt button").forEach(function (x) { x.classList.toggle("on", x === b); }); paint(); });
+    paint();
+  }
+  function chatMenu(name, ctx) {
+    var pf = chatPref(name);
+    function row(k, t, d) { return '<button class="row" data-cx="' + k + '"><span class="t"><b' + (d ? ' style="color:var(--danger)"' : "") + ">" + t + "</b></span></button>"; }
+    var s = sheet("@" + name, row("search", "Pesquisar nesta conversa") + row("media", "Mídia, links e documentos") + row("pin", pf.pin ? "Desafixar conversa" : "Fixar conversa") + row("mute", pf.mute ? "Reativar notificações" : "Silenciar notificações") + row("profile", "Ver perfil") + row("clear", "Limpar conversa", true) + row("del", "Apagar conversa", true) + row("block", "Bloquear usuário", true) + row("report", "Denunciar usuário", true));
+    s.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-cx]"); if (!b) return; var k = b.dataset.cx; closeSheet();
+      if (k === "search") ctx.search();
+      else if (k === "media") sharedMedia(ctx.msgs());
+      else if (k === "pin") { setChatPref(name, { pin: !pf.pin }); toast(pf.pin ? "Conversa desafixada." : "Conversa fixada."); }
+      else if (k === "mute") { setChatPref(name, { mute: !pf.mute }); toast(pf.mute ? "Notificações reativadas." : "Notificações silenciadas."); }
+      else if (k === "profile") location.hash = "#/u/" + name;
+      else if (k === "clear") confirmSheet("Limpar conversa?", "As mensagens somem só para você, neste navegador.", "Limpar", true, function () { setChatPref(name, { cleared: new Date().toISOString() }); ctx.repaint(); toast("Conversa limpa."); });
+      else if (k === "del") confirmSheet("Apagar conversa?", "Ela some da sua lista até chegar uma mensagem nova.", "Apagar", true, function () { setChatPref(name, { cleared: new Date().toISOString(), hiddenAt: new Date().toISOString() }); toast("Conversa apagada."); location.hash = "#/inbox"; });
+      else api("/api/users/" + enc(name)).then(function (j) {
+        if (k === "report") reportSheet("user", j.user.id);
+        else confirmSheet("Bloquear @" + name + "?", "Vocês deixam de ver as publicações e mensagens um do outro.", "Bloquear", true, function () { api("/api/users/" + j.user.id + "/block", { method: "POST", body: {} }).then(function () { toast("Conta bloqueada."); location.hash = "#/inbox"; }).catch(onErr); });
+      }).catch(onErr);
+    });
+  }
+
+  /* ---------- conversa ---------- */
+  function viewChat(name) {
+    var me = cur(), last = "", MSGS = [], REACT = {}, reply = null, q = "";
+    setView(top("@" + esc(name), { back: true, right: '<button class="ib" id="cs" aria-label="Pesquisar">' + svg("search") + '</button><button class="ib" id="cmn" aria-label="Opções">' + svg("dots") + "</button>" }) +
+      '<div id="sbar" class="sbar" hidden><input id="sq" placeholder="Pesquisar mensagens..." autocomplete="off"></div><div id="pbar" class="pbar" hidden></div><div class="chat" id="ch">' + spin() + "</div>" +
+      '<div id="rpq" class="rpl" hidden></div><div class="composer"><form class="in" id="cf"><button type="button" class="ib" id="at" aria-label="Anexar">' + svg("plus") + '</button><button type="button" class="ib" id="em" aria-label="Emojis">😊</button><textarea id="mi" rows="1" maxlength="10000" placeholder="Mensagem…"></textarea><button class="send" type="submit">Enviar</button></form><div id="emp" class="emp" hidden></div></div>', "inbox", "noNav chatv");
+    function own(m) { return m.senderId === me.id; }
+    function visible() {
+      var hid = lget("hmsgs", []), cl = chatPref(name).cleared || "";
+      return MSGS.filter(function (m) { return hid.indexOf(m.id) < 0 && (!cl || m.createdAt > cl) && (!q || msgText(m).toLowerCase().indexOf(q) >= 0); });
+    }
+    function paint() {
+      var ch = el("ch"); if (!ch) return;
+      var list = visible(), pinId = chatPref(name).pinmsg || "", pm = pinId && MSGS.filter(function (m) { return m.id === pinId; })[0], pb = el("pbar");
+      if (pm) { pb.hidden = false; pb.innerHTML = "📌 " + esc(snippet(pm)) + '<button aria-label="Desafixar" data-unpin>✕</button>'; } else pb.hidden = true;
+      var sig = list.map(function (m) { return m.id + (m.poll ? JSON.stringify(m.poll.votes) + m.poll.myVote : "") + ((REACT[m.id] || []).map(function (r) { return r.user_id + r.emoji; }).join()); }).join("|") + pinId + q;
+      if (sig === last) return; last = sig;
+      var stick = (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 160 || !ch.dataset.done; ch.dataset.done = "1";
+      var h = "", prev = "";
+      list.forEach(function (m) {
+        var d = new Date(m.createdAt), day = d.toDateString();
+        if (day !== prev) { prev = day; h += '<div class="day">' + dayLabel(d) + "</div>"; }
+        h += '<div class="' + bubbleClass(m) + (own(m) ? " me" : "") + '" data-msg="' + m.id + '">' + msgHTML(m) + "<small>" + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) + "</small>" + ((REACT[m.id] || []).length ? reactChips(REACT[m.id], me.id) : "") + "</div>";
+      });
+      ch.innerHTML = h || '<div class="empty">' + (q ? "Nenhuma mensagem encontrada." : "Diga olá para @" + esc(name) + ".") + "</div>";
+      hydrateShared(ch);
+      if (stick && !q) window.scrollTo(0, document.body.scrollHeight);
+    }
+    function load() {
+      api("/api/messages/" + enc(name)).then(function (j) {
+        MSGS = j.messages || [];
+        var ids = MSGS.slice(-80).map(function (m) { return m.id; });
+        return (ids.length ? call(HOST + "/rest/v1/message_reactions?select=message_id,user_id,emoji&message_id=in.(" + ids.join(",") + ")").catch(function () { return []; }) : Promise.resolve([])).then(function (r) {
+          REACT = {}; (Array.isArray(r) ? r : []).forEach(function (x) { (REACT[x.message_id] = REACT[x.message_id] || []).push(x); }); paint();
+        });
+      }).catch(function (e) { if (e.expired) onErr(e); });
+    }
+    function send(text) { return api("/api/messages/" + enc(name), { method: "POST", body: { body: text } }); }
+    window.__reload = load; load(); timers.push(setInterval(load, 5000));
+    var ctx = {
+      own: own, reacts: REACT, react: true, reload: load, repaint: function () { last = ""; paint(); }, forward: true, report: true, cancel: true, hide: true, pinned: "",
+      reply: function (m) { reply = m; var r = el("rpq"); r.hidden = false; r.textContent = "Respondendo: " + snippet(m) + "  ✕"; el("mi").focus(); },
+      pin: function (m) { var cp = chatPref(name).pinmsg; setChatPref(name, { pinmsg: cp === m.id ? "" : m.id }); last = ""; paint(); }
+    };
+    el("ch").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-msg]"); if (!b || e.target.closest("a,audio,video,button,.opt,.shp")) return;
+      var m = MSGS.filter(function (x) { return x.id === b.dataset.msg; })[0]; if (!m) return;
+      ctx.reacts = REACT; ctx.pinned = chatPref(name).pinmsg || ""; msgSheet(m, ctx);
+    });
+    el("pbar").addEventListener("click", function (e) { if (e.target.closest("[data-unpin]")) { setChatPref(name, { pinmsg: "" }); last = ""; paint(); } });
+    el("rpq").addEventListener("click", function () { reply = null; this.hidden = true; });
+    el("cs").addEventListener("click", function () { var b = el("sbar"); b.hidden = !b.hidden; if (!b.hidden) el("sq").focus(); else { q = ""; el("sq").value = ""; last = ""; paint(); } });
+    el("sq").addEventListener("input", function (e) { q = e.target.value.trim().toLowerCase(); last = ""; paint(); });
+    el("cmn").addEventListener("click", function () { chatMenu(name, { search: function () { el("sbar").hidden = false; el("sq").focus(); }, msgs: function () { return MSGS; }, repaint: ctx.repaint }); });
+    el("at").addEventListener("click", function () { attachMenu(send, load); });
+    el("em").addEventListener("click", function () { emojiPanel(el("emp"), el("mi")); });
+    el("cf").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var inp = el("mi"), t = inp.value.trim(); if (!t) return;
+      var body = reply ? "> " + snippet(reply) + "\n" + t : t; inp.value = ""; var rp = reply; reply = null; el("rpq").hidden = true;
+      send(body).then(load).catch(function (x) { inp.value = t; reply = rp; onErr(x); });
+    });
+  }
+
+  /* ---------- caixa de entrada ---------- */
+  var FOLLOWING = null;
+  function viewInbox() {
+    var tab = "all", cs = [], me = cur(), qv = "";
+    setView(top("Mensagens", { right: '<button class="ib" data-find aria-label="Nova conversa">' + svg("search") + "</button>" }) + '<div class="chips"><button data-it="all" class="on">Todas</button><button data-it="unread">Não lidas</button><button data-it="req">Solicitações</button></div><div style="padding:0 16px 8px"><input class="inp" id="iq" placeholder="Pesquisar conversas" autocomplete="off"></div><div id="ib">' + spin() + "</div>", "inbox");
+    function paint() {
+      var box = el("ib"); if (!box) return;
+      var l = cs.filter(function (c) { var p = chatPref(c.username); return !(p.hiddenAt && c.createdAt <= p.hiddenAt); });
+      if (tab === "unread") l = l.filter(function (c) { return c.unreadCount > 0; });
+      if (tab === "req") l = l.filter(function (c) { return FOLLOWING && !FOLLOWING[String(c.username).toLowerCase()]; });
+      else if (FOLLOWING) { /* todas */ }
+      if (qv) l = l.filter(function (c) { return (c.displayName + " " + c.username + " " + c.body).toLowerCase().indexOf(qv) >= 0; });
+      l.sort(function (a, b) { return (chatPref(b.username).pin ? 1 : 0) - (chatPref(a.username).pin ? 1 : 0); });
+      var sug = RC.sug || [];
+      box.innerHTML = l.length ? l.map(function (c) {
+        var p = chatPref(c.username), snip = c.body && /^qinbly:/.test(c.body) ? "Mídia" : (c.body || "");
+        return '<button class="row" data-chat="' + esc(c.username) + '">' + avatar(c.avatarUrl, c.displayName || c.username) + '<span class="t"><b>' + (p.pin ? "📌 " : "") + esc(c.displayName || c.username) + (p.mute ? " 🔕" : "") + "</b><small>" + esc(snip) + '</small></span><span class="meta">' + ago(c.createdAt) + (c.unreadCount ? ' <i class="dotn">' + c.unreadCount + "</i>" : "") + "</span></button>";
+      }).join("") : '<div class="empty">' + (tab === "unread" ? "Tudo em dia!" : tab === "req" ? "Nenhuma solicitação. Mensagens de pessoas que você não segue aparecem aqui." : "Nenhuma conversa ainda. Toque na lupa para procurar alguém.") + "</div>" +
+        (tab === "all" && !l.length && sug.length ? '<div class="sect">Pessoas para seguir</div>' + sug.slice(0, 5).map(function (u) { return '<a class="row" href="#/u/' + esc(u.username) + '">' + avatar(u.avatarUrl, u.displayName || u.username) + '<span class="t"><b>' + esc(u.displayName || u.username) + "</b><small>@" + esc(u.username) + "</small></span></a>"; }).join("") : "");
+    }
+    api("/api/inbox").then(function (j) {
+      cs = j.conversations || [];
+      unread = cs.reduce(function (s, c) { return s + (c.unreadCount || 0); }, 0); paintBadges(); paint();
+    }).catch(onErr);
+    (FOLLOWING ? Promise.resolve() : api("/api/users/" + enc(me.username) + "/following").then(function (j) { FOLLOWING = {}; (j.users || []).forEach(function (u) { FOLLOWING[String(u.username).toLowerCase()] = 1; }); }).catch(function () { })).then(paint);
+    document.querySelector(".chips").addEventListener("click", function (e) { var b = e.target.closest("[data-it]"); if (!b) return; tab = b.dataset.it; document.querySelectorAll(".chips button").forEach(function (x) { x.classList.toggle("on", x === b); }); paint(); });
+    el("iq").addEventListener("input", function (e) { qv = e.target.value.trim().toLowerCase(); paint(); });
+  }
+
+
+  /* =====================================================================
+     Home (pergunta do dia, desafio), Perto de mim, mural de avisos,
+     notificações completas, stories com público, configurações extras
+     ===================================================================== */
+  var DAILY_Q = ["Qual foi seu melhor momento de hoje?", "O que te fez sorrir hoje?", "Qual música não sai da sua cabeça?", "Qual é o seu lugar favorito?", "O que você aprendeu essa semana?", "Qual foi sua última boa surpresa?", "Com quem você gostaria de falar hoje?"];
+  var WEEK_CH = [["meucafe", "Foto do seu café"], ["meupet", "Foto do seu pet"], ["pordosol", "Um pôr do sol perto de você"], ["meuprato", "O que você comeu de melhor"], ["meucantinho", "Seu cantinho favorito"], ["diadetreino", "Seu treino de hoje"]];
+  var NEWPRE = null;
+  function dayOfYear() { var n = new Date(), s = new Date(n.getFullYear(), 0, 0); return Math.floor((n - s) / 86400000); }
+  function homeHeader() {
+    var d = dayOfYear(), q = DAILY_Q[d % DAILY_Q.length], ch = WEEK_CH[Math.floor(d / 7) % WEEK_CH.length];
+    var part = {}; FEED.forEach(function (p) { if ((p.caption || "").toLowerCase().indexOf("#" + ch[0]) >= 0 && p.author) part[p.author.username] = 1; });
+    var n = Object.keys(part).length;
+    return '<button class="comp" data-newwith="text:"><span>✏️</span><span class="g">Escrever algo...</span><span class="pl" data-newwith="poll:">Enquete</span></button>' +
+      '<div class="hcards"><button class="hc" data-newwith="text:#perguntadodia "><small>PERGUNTA DO DIA</small><b>' + esc(q) + "</b><span>Responder com uma publicação →</span></button>" +
+      '<div class="hc"><small>DESAFIO DA SEMANA</small><b>' + esc(ch[1]) + "</b>" + (n ? "<span>" + n + (n === 1 ? " participante" : " participantes") + "</span>" : "") + '<span><a href="#/tag/' + ch[0] + '">Ver</a> · <button data-newwith="image:#' + ch[0] + ' " style="color:var(--accent);font-weight:600">Participar</button></span></div></div>';
+  }
+
+  /* ---------- localização ---------- */
+  function getPlace(ok, fail) {
+    if (!navigator.geolocation) return fail("Este navegador não tem localização.");
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      var lat = pos.coords.latitude, lng = pos.coords.longitude;
+      fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=pt-BR&lat=" + lat + "&lon=" + lng).then(function (r) { return r.json(); }).then(function (j) {
+        var a = j.address || {}, city = a.city || a.town || a.village || a.municipality || a.county || "", st = a.state || "";
+        ok({ lat: lat, lng: lng, place: city ? city + (st ? ", " + st : "") : "" });
+      }).catch(function () { ok({ lat: lat, lng: lng, place: "" }); });
+    }, function () { fail("Não consegui pegar sua localização. Permita o acesso no navegador e tente de novo."); }, { timeout: 15000, maximumAge: 60000 });
+  }
+  var HERE = null;
+  function nearbyView() {
+    var fd = el("fd"); if (!fd) return;
+    if (LS.get("qb_loc_on", true) === false) { fd.innerHTML = '<div class="empty">A localização está desligada.<br><br><button class="btn" data-locon style="max-width:260px;margin:auto">Ligar localização</button></div>'; return; }
+    function content() {
+      fd.innerHTML = '<div class="empty" style="padding:24px 24px 8px"><b style="color:var(--text);font-size:18px">Você está em ' + esc(HERE.place || "um lugar sem nome") + '</b><br><button class="sb" data-nrefresh style="width:120px;margin-top:10px">Atualizar</button></div><div class="chips" id="ntabs"><button data-nt="posts" class="on">Publicações</button><button data-nt="board">Mural de avisos</button></div><div id="nbody">' + spin() + "</div>";
+      var tabs = el("ntabs"); tabs.addEventListener("click", function (e) { var b = e.target.closest("[data-nt]"); if (!b) return; tabs.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); }); if (b.dataset.nt === "posts") nearPosts(); else board(); });
+      nearPosts();
+    }
+    if (HERE) return content();
+    fd.innerHTML = '<div class="empty">Procurando sua localização…</div>';
+    getPlace(function (h) {
+      HERE = h; if (h.place) { LS.set("qb_place", h.place); var me = cur(); call(HOST + "/rest/v1/profiles?id=eq." + me.id, { method: "PATCH", body: { city: h.place }, headers: { Prefer: "return=minimal" } }).catch(function () { }); }
+      if (el("fd") && feedTab === "Perto de mim") content();
+    }, function (msg) { if (el("fd")) fd.innerHTML = '<div class="empty">' + esc(msg) + '<br><br><button class="btn" data-nrefresh style="max-width:260px;margin:auto">Tentar de novo</button></div>'; });
+  }
+  function nearPosts() {
+    var nb = el("nbody"); if (!nb) return; nb.innerHTML = spin();
+    var place = HERE.place || myCity(), city = place.split(",")[0].replace(/[*%,()]/g, " ").trim();
+    if (!city) { nb.innerHTML = '<div class="empty">Não foi possível descobrir sua cidade.</div>'; return; }
+    var now = new Date().toISOString(), me = cur();
+    call(HOST + "/rest/v1/posts?select=id,profiles!posts_user_id_fkey!inner(city)&profiles.city=ilike." + enc(city) + "*&visibility=eq.public&archived_at=is.null&or=(publish_at.is.null,publish_at.lte." + now + ")&user_id=neq." + me.id + "&order=created_at.desc&limit=24").then(function (rows) {
+      var ids = (Array.isArray(rows) ? rows : []).map(function (r) { return r.id; });
+      if (!ids.length) { nb.innerHTML = '<div class="empty">Ainda não há publicações perto de você.<br>Quando alguém da sua cidade publicar, aparece aqui.</div>'; return; }
+      return Promise.all(ids.map(function (id) { return api("/api/posts/" + id).then(function (j) { return j.post; }).catch(function () { return null; }); })).then(function (ps) {
+        ps = ps.filter(Boolean); ps.forEach(function (p) { POSTS[p.id] = p; });
+        if (el("nbody")) el("nbody").innerHTML = ps.length ? ps.map(postHTML).join("") : '<div class="empty">Ainda não há publicações perto de você.</div>';
+      });
+    }).catch(function (e) { if (el("nbody")) el("nbody").innerHTML = '<div class="empty">Não foi possível carregar. ' + esc(e.message) + "</div>"; });
+  }
+  var NOTICES = {};
+  function board() {
+    var nb = el("nbody"); if (!nb) return;
+    var me = cur(), gLat = Math.round(HERE.lat * 100) / 100, gLng = Math.round(HERE.lng * 100) / 100;
+    nb.innerHTML = '<div class="form" style="padding-bottom:8px"><textarea class="inp" id="nbt" maxlength="500" placeholder="Escreva um aviso para a vizinhança…"></textarea><button class="btn" id="nbp">Publicar</button></div><div class="sect">Avisos de até ~5 km · somem em 48 h</div><div id="nbl">' + spin() + "</div>";
+    function load() {
+      var dLat = 0.05, dLng = 0.05 / Math.max(0.2, Math.cos(HERE.lat * Math.PI / 180));
+      call(HOST + "/rest/v1/neighborhood_notices?lat=gte." + (gLat - dLat) + "&lat=lte." + (gLat + dLat) + "&lng=gte." + (gLng - dLng) + "&lng=lte." + (gLng + dLng) + "&expires_at=gt." + new Date().toISOString() + "&select=id,body,kind,photo,created_at,user_id,profiles!neighborhood_notices_user_id_fkey(username,display_name),neighborhood_comments(count)&order=created_at.desc&limit=50").then(function (l) {
+        l = Array.isArray(l) ? l : []; l.forEach(function (n) { NOTICES[n.id] = n; });
+        var box = el("nbl"); if (!box) return;
+        box.innerHTML = l.length ? l.map(function (n) {
+          var p = n.profiles || {}, cnt = (n.neighborhood_comments && n.neighborhood_comments[0] && n.neighborhood_comments[0].count) || 0;
+          return '<button class="row" data-notice="' + n.id + '" style="align-items:flex-start"><span class="t"><small style="color:#7FA6F2">' + esc(p.display_name || p.username || "") + " · " + ago(n.created_at) + '</small><b style="font-weight:400;white-space:pre-wrap">' + esc(n.body) + "</b><small>" + (cnt ? cnt + (cnt === 1 ? " comentário" : " comentários") : "Comentar") + "</small></span></button>";
+        }).join("") : '<div class="empty">Nenhum aviso por perto ainda. Escreva o primeiro.</div>';
+      }).catch(function (e) { if (el("nbl")) el("nbl").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
+    }
+    load();
+    el("nbp").addEventListener("click", function () {
+      var t = el("nbt").value.trim(), b = this; if (!t) return; b.disabled = true;
+      call(HOST + "/rest/v1/neighborhood_notices", { method: "POST", body: { body: t, lat: gLat, lng: gLng, kind: "aviso" }, headers: { Prefer: "return=minimal" } }).then(function () { toast("Aviso publicado. Some em 48 horas."); el("nbt").value = ""; load(); }).catch(function (e) { toast(e.message || "Não foi possível publicar."); }).then(function () { b.disabled = false; });
+    });
+  }
+  function noticeSheet(id) {
+    var n = NOTICES[id]; if (!n) return; var me = cur(), p = n.profiles || {}, reply = null, list = [];
+    var s = sheet("Aviso", '<div style="padding:4px 16px 12px"><small style="color:#7FA6F2">' + esc(p.display_name || p.username || "") + " · " + ago(n.created_at) + '</small><div style="white-space:pre-wrap;font-size:16px;margin-top:4px">' + linkify(n.body) + "</div>" + (n.user_id === me.id ? '<button class="link" id="nd" style="color:var(--danger);margin-top:8px">Apagar aviso</button>' : "") + '</div><div id="nc">' + spin() + '</div>', '<div id="nrp" class="rpl" hidden></div><form class="cin" id="ncf"><input id="nci" maxlength="1000" placeholder="Comentar…" autocomplete="off"><button type="submit">Enviar</button></form>');
+    function draw() {
+      var tops = list.filter(function (c) { return !c.parent_id; });
+      function one(c, sub) { var a = c.profiles || {}; return '<div class="cm ' + (sub ? "sub" : "") + '"><div class="b"><b>' + esc(a.username || "") + "</b>" + linkify(c.body) + "<small>" + ago(c.created_at) + ' · <button data-nr="' + c.id + ":" + esc(a.username || "") + '">Responder</button>' + (c.user_id === me.id ? ' · <button data-nx="' + c.id + '">Apagar</button>' : "") + "</small></div></div>"; }
+      var h = ""; tops.forEach(function (c) { h += one(c, false); list.filter(function (r) { return r.parent_id === c.id; }).forEach(function (r) { h += one(r, true); }); });
+      el("nc").innerHTML = h || '<div class="empty" style="padding:16px">Nenhum comentário ainda.</div>';
+    }
+    function load() { call(HOST + "/rest/v1/neighborhood_comments?notice_id=eq." + id + "&select=id,parent_id,user_id,body,created_at,profiles!neighborhood_comments_user_id_fkey(username,display_name)&order=created_at.asc&limit=300").then(function (r) { list = Array.isArray(r) ? r : []; draw(); }).catch(function () { }); }
+    load();
+    var del = s.querySelector("#nd"); if (del) del.addEventListener("click", function () { call(HOST + "/rest/v1/neighborhood_notices?id=eq." + id, { method: "DELETE" }).then(function () { closeSheet(); toast("Aviso apagado."); if (el("nbl")) board(); }).catch(onErr); });
+    s.addEventListener("click", function (e) {
+      var r = e.target.closest("[data-nr]"), x = e.target.closest("[data-nx]");
+      if (r) { var a = r.dataset.nr.split(":"); reply = a[0]; var rp = s.querySelector("#nrp"); rp.hidden = false; rp.textContent = "Respondendo a @" + a[1] + " (toque para cancelar)"; s.querySelector("#nci").focus(); }
+      if (x) call(HOST + "/rest/v1/neighborhood_comments?id=eq." + x.dataset.nx, { method: "DELETE" }).then(load).catch(onErr);
+    });
+    s.querySelector("#nrp").addEventListener("click", function () { reply = null; this.hidden = true; });
+    s.querySelector("#ncf").addEventListener("submit", function (e) {
+      e.preventDefault(); var i = s.querySelector("#nci"), t = i.value.trim(); if (!t) return; i.value = "";
+      var body = { notice_id: id, user_id: me.id, body: t }; if (reply) body.parent_id = reply;
+      call(HOST + "/rest/v1/neighborhood_comments", { method: "POST", body: body, headers: { Prefer: "return=minimal" } }).then(function () { reply = null; s.querySelector("#nrp").hidden = true; load(); }).catch(onErr);
+    });
+  }
+
+  /* ---------- notificações completas ---------- */
+  var NOTIF_KINDS = [["follow", "Novos seguidores e pedidos de seguir"], ["like", "Curtidas"], ["comment", "Comentários"], ["mention", "Menções (@)"], ["message", "Mensagens"]];
+  function notifOff(kind) { return (lget("noff", []) || []).indexOf(kind) >= 0; }
+  function viewNotifs() {
+    var filt = "all", list = [], reqs = [], backs = [];
+    setView(top("Notificações", { right: '<button class="ib" id="nread" aria-label="Marcar como lidas">' + svg("check") + '</button><button class="ib" id="nset" aria-label="Ajustes">' + svg("gear") + "</button>" }) + '<div class="chips"><button data-nf="all" class="on">Todas</button><button data-nf="act">Atividades</button><button data-nf="men">Menções</button><button data-nf="fol">Seguindo</button></div><div id="nt">' + spin() + "</div>", "notif");
+    var me = cur();
+    function kindOf(n) { return /^(mention|mention_comment|tag)$/.test(n.kind) ? "mention" : /^(follow|follow_request|follow_accepted)$/.test(n.kind) ? "follow" : /^(comment|reply)$/.test(n.kind) ? "comment" : n.kind; }
+    function paint() {
+      var box = el("nt"); if (!box) return;
+      var l = list.filter(function (n) { return !notifOff(kindOf(n)); });
+      if (filt === "act") l = l.filter(function (n) { return n.kind !== "message"; });
+      if (filt === "men") l = l.filter(function (n) { return kindOf(n) === "mention"; });
+      if (filt === "fol") l = l.filter(function (n) { return kindOf(n) === "follow"; });
+      var h = "";
+      if (filt === "all" && reqs.length) h += '<button class="row" data-reqs><span class="av" style="font-size:18px">👤</span><span class="t"><b>Pedidos de seguir</b><small>' + reqs.length + (reqs.length === 1 ? " pedido" : " pedidos") + " para aprovar</small></span></button>";
+      function item(n) {
+        var a = n.actor || {}, href = /^(like|comment|mention|mention_comment|tag|reply)$/.test(n.kind) && n.entityId ? "#/post/" + n.entityId : n.kind === "message" ? "#/chat/" + esc(a.username) : a.username ? "#/u/" + esc(a.username) : "#/";
+        return '<a class="row" href="' + href + '">' + avatar(a.avatarUrl, a.displayName || a.username) + '<span class="t"><b style="font-weight:400">' + (a.username ? "<b style='font-weight:600'>" + esc(a.username) + "</b> " : "") + esc(NOTIF_TEXT[n.kind] || "tem uma novidade para você") + "</b><small>" + ago(n.createdAt) + "</small></span>" + (n.kind === "follow" && a.username && !n.followedBack ? '<span class="sb pri fb" data-fback="' + esc(a.username) + '" style="flex:none;width:104px;line-height:30px;text-align:center">Seguir de volta</span>' : "") + (n.readAt ? "" : '<i class="dotn"></i>') + "</a>";
+      }
+      var fresh = l.filter(function (n) { return !n.readAt; }), old = l.filter(function (n) { return n.readAt; });
+      if (fresh.length) h += '<div class="sect">Novas</div>' + fresh.map(item).join("");
+      if (old.length) h += '<div class="sect">' + (fresh.length ? "Anteriores" : "Recentes") + "</div>" + old.map(item).join("");
+      if (!l.length && !reqs.length) h += '<div class="empty">' + (filt === "all" ? "Você está em dia! Novos seguidores, curtidas e comentários aparecem aqui." : "Nada por aqui.") + "</div>";
+      box.innerHTML = h;
+      box.querySelectorAll("[data-fback]").forEach(function (b) { b.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); api("/api/users/" + enc(b.dataset.fback)).then(function (j) { return followUser(j.user.id, ""); }).then(function () { b.remove(); }).catch(onErr); }); });
+    }
+    Promise.all([api("/api/notifications"), call(HOST + "/rest/v1/follow_requests?target_id=eq." + me.id + "&select=requester_id,profiles!follow_requests_requester_id_fkey(username,display_name,avatar_path)&order=created_at.desc&limit=100").catch(function () { return []; })]).then(function (a) {
+      list = a[0].notifications || []; reqs = Array.isArray(a[1]) ? a[1] : []; paint();
+      if (list.some(function (n) { return !n.readAt; })) setTimeout(function () { api("/api/notifications/read", { method: "POST", body: {} }).then(function () { notifN = 0; paintBadges(); }).catch(function () { }); }, 4000);
+    }).catch(function (e) { el("nt").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
+    document.querySelector(".chips").addEventListener("click", function (e) { var b = e.target.closest("[data-nf]"); if (!b) return; filt = b.dataset.nf; document.querySelectorAll(".chips button").forEach(function (x) { x.classList.toggle("on", x === b); }); paint(); });
+    el("nread").addEventListener("click", function () { api("/api/notifications/read", { method: "POST", body: {} }).then(function () { list.forEach(function (n) { n.readAt = n.readAt || "x"; }); notifN = 0; paintBadges(); paint(); toast("Marcadas como lidas."); }).catch(onErr); });
+    el("nset").addEventListener("click", function () {
+      var s = sheet("Ajustes dos avisos", NOTIF_KINDS.map(function (k) { return '<button class="row" data-nk="' + k[0] + '"><span class="t"><b>' + k[1] + '</b></span><span class="tog ' + (notifOff(k[0]) ? "" : "on") + '"><i></i></span></button>'; }).join("") + '<div style="padding:8px 16px 16px;color:var(--muted);font-size:12px">Vale só para este navegador.</div>');
+      s.addEventListener("click", function (e) { var b = e.target.closest("[data-nk]"); if (!b) return; var off = lget("noff", []) || [], k = b.dataset.nk, i = off.indexOf(k); if (i >= 0) off.splice(i, 1); else off.push(k); lset("noff", off); b.querySelector(".tog").classList.toggle("on", i >= 0); paint(); });
+    });
+    document.getElementById("nt").addEventListener("click", function (e) {
+      if (!e.target.closest("[data-reqs]")) return;
+      var s = sheet("Pedidos de seguir", "");
+      function draw() { s.querySelector(".body").innerHTML = reqs.length ? reqs.map(function (r) { var p = r.profiles || {}; return '<div class="row">' + avatar(photoUrl(p.avatar_path), p.display_name || p.username) + '<span class="t"><b>' + esc(p.display_name || p.username || "") + "</b><small>@" + esc(p.username || "") + '</small></span><button class="sb pri" style="flex:none;width:74px" data-ap="' + r.requester_id + '">Aceitar</button><button class="sb" style="flex:none;width:74px" data-rj="' + r.requester_id + '">Recusar</button></div>'; }).join("") : '<div class="empty">Nenhum pedido.</div>'; }
+      draw();
+      s.addEventListener("click", function (e) {
+        var a = e.target.closest("[data-ap]"), r = e.target.closest("[data-rj]");
+        if (a) call(HOST + "/rest/v1/rpc/approve_follow_request", { method: "POST", body: { requester: a.dataset.ap } }).then(function () { reqs = reqs.filter(function (x) { return x.requester_id !== a.dataset.ap; }); draw(); paint(); toast("Pedido aceito."); }).catch(onErr);
+        if (r) call(HOST + "/rest/v1/follow_requests?requester_id=eq." + r.dataset.rj + "&target_id=eq." + me.id, { method: "DELETE" }).then(function () { reqs = reqs.filter(function (x) { return x.requester_id !== r.dataset.rj; }); draw(); paint(); }).catch(onErr);
+      });
+    });
+  }
+
+  /* ---------- story: publicar com público e duração ---------- */
+  var AUDIENCES = [["all", "Todos"], ["followers", "Seguidores"], ["friends", "Amigos (quem você segue e te segue)"], ["near", "Perto de você (sua cidade)"]];
+  function addStory() {
+    var f = document.createElement("input"); f.type = "file"; f.accept = "image/*,video/*";
+    f.addEventListener("change", function () {
+      var file = f.files[0]; if (!file) return;
+      var isVid = file.type.indexOf("video/") === 0;
+      if ((isVid ? VID_OK : IMG_OK).indexOf(file.type) < 0) return toast("Esse tipo de arquivo não é aceito.");
+      var url = URL.createObjectURL(file), aud = LS.get("qb_story_aud", "all");
+      var s = sheet("Publicar story", '<div class="form"><div class="tbg" style="background:#000;border-radius:12px;padding:0;overflow:hidden;max-height:260px">' + (isVid ? '<video src="' + url + '" controls style="max-height:260px"></video>' : '<img src="' + url + '" style="max-height:260px;object-fit:contain" alt="">') + '</div><input class="inp" id="spc" maxlength="300" placeholder="Legenda (opcional)"><div class="sect" style="padding-left:0">Quem pode ver</div>' + AUDIENCES.map(function (a) { return '<button class="row" style="padding:8px 0" data-aud="' + a[0] + '"><span class="rad ' + (aud === a[0] ? "on" : "") + '"></span><span class="t"><b style="font-size:14px">' + a[1] + "</b></span></button>"; }).join("") + '<label class="fld">Duração<select class="inp" id="sdu">' + [24, 12, 6, 3, 1].map(function (h) { return '<option value="' + h + '">' + h + (h === 1 ? " hora" : " horas") + "</option>"; }).join("") + '</select></label><div class="err" id="spe"></div><button class="btn" id="spb">Publicar story</button></div>');
+      s.addEventListener("click", function (e) { var a = e.target.closest("[data-aud]"); if (!a) return; aud = a.dataset.aud; s.querySelectorAll("[data-aud] .rad").forEach(function (r) { r.classList.remove("on"); }); a.querySelector(".rad").classList.add("on"); });
+      s.querySelector("#spb").addEventListener("click", function () {
+        var b = this, er = s.querySelector("#spe"); b.disabled = true; b.textContent = "Enviando…";
+        if (aud === "near" && !myCity()) { er.textContent = "Abra Perto de mim no feed primeiro para saber sua cidade."; b.disabled = false; b.textContent = "Publicar story"; return; }
+        (isVid ? Promise.resolve(file) : shrink(file)).then(function (x) { return upload(x, "story_media"); }).then(function (path) {
+          return call(HOST + "/rest/v1/stories", { method: "POST", body: { media_path: path, media_type: isVid ? "video" : "image", caption: s.querySelector("#spc").value.trim(), audience: aud, city: aud === "near" ? myCity() : "", expires_at: new Date(Date.now() + Number(s.querySelector("#sdu").value) * 3600000).toISOString() }, headers: { Prefer: "return=minimal" } });
+        }).then(function () { closeSheet(); LS.set("qb_story_aud", aud); toast("Story publicado."); loadStories(); }).catch(function (x) { er.textContent = x.message; b.disabled = false; b.textContent = "Publicar story"; });
+      });
+    });
+    f.click();
+  }
+  function storyInfo(st) {
+    var s = sheet("Seu story", '<div class="sect">Quem viu</div><div id="svw">' + spin() + '</div><div class="sect">Respostas</div><div id="scm"></div><div class="sect">Quem pode ver</div>' + AUDIENCES.map(function (a) { return '<button class="row" data-aud="' + a[0] + '"><span class="t"><b style="font-size:14px">' + a[1] + "</b></span></button>"; }).join(""));
+    api("/api/stories/" + st.id + "/views").then(function (j) { var l = j.viewers || []; el("svw").innerHTML = l.length ? l.map(function (v) { return '<a class="row" href="#/u/' + esc(v.username) + '">' + avatar(v.avatarUrl, v.displayName || v.username) + '<span class="t"><b style="font-size:14px">' + esc(v.displayName || v.username) + "</b><small>" + ago(v.viewedAt) + "</small></span></a>"; }).join("") : '<div class="empty" style="padding:12px">Ninguém viu ainda.</div>'; }).catch(function () { if (el("svw")) el("svw").innerHTML = ""; });
+    call(HOST + "/rest/v1/story_comments?story_id=eq." + st.id + "&select=id,body,created_at,kind,profiles(username,display_name)&order=created_at.asc&limit=200").then(function (l) { l = Array.isArray(l) ? l : []; el("scm").innerHTML = l.length ? l.map(function (c) { var p = c.profiles || {}; return '<div class="cm"><div class="b"><b>' + esc(p.username || "") + "</b>" + esc(c.kind === "comment" ? c.body : "(" + c.kind + ")") + "<small>" + ago(c.created_at) + "</small></div></div>"; }).join("") : '<div class="empty" style="padding:12px">Nenhuma resposta.</div>'; }).catch(function () { });
+    s.addEventListener("click", function (e) { var a = e.target.closest("[data-aud]"); if (!a) return; if (a.dataset.aud === "near" && !myCity()) return toast("Abra Perto de mim no feed primeiro para saber sua cidade."); call(HOST + "/rest/v1/stories?id=eq." + st.id, { method: "PATCH", body: a.dataset.aud === "near" ? { audience: "near", city: myCity() } : { audience: a.dataset.aud }, headers: { Prefer: "return=minimal" } }).then(function () { closeSheet(); toast("Público do story atualizado."); }).catch(onErr); });
+  }
+
+  /* ---------- configurações extras ---------- */
+  var FONTS = [["padrao", "Padrão", ""], ["moderna", "Moderna", "'Trebuchet MS','Segoe UI',sans-serif"], ["classica", "Clássica", "Georgia,'Times New Roman',serif"], ["elegante", "Elegante", "'Palatino Linotype',Palatino,serif"], ["minimalista", "Minimalista", "'Helvetica Neue',Arial,sans-serif"], ["arredondada", "Arredondada", "ui-rounded,'Arial Rounded MT Bold',Nunito,sans-serif"], ["mono", "Monoespaçada", "ui-monospace,Consolas,monospace"]];
+  function fontCss(k) { var f = FONTS.filter(function (x) { return x[0] === k; })[0]; return f ? f[2] : ""; }
+  function applyFonts() {
+    var r = document.documentElement.style, a = fontCss(LS.get("qb_font", "padrao")), n = fontCss(LS.get("qb_nfont", "padrao"));
+    if (a) r.setProperty("--font", a); else r.removeProperty("--font");
+    if (n) r.setProperty("--nfont", n); else r.removeProperty("--nfont");
+  }
+  function inviteFriends() {
+    var url = new URL("./", location.href).href, text = "Venha para o QINBLY: " + url;
+    if (navigator.share) navigator.share({ title: "QINBLY", text: "Venha para o QINBLY", url: url }).catch(function () { }); else copyText(text, "Convite copiado.");
+  }
+
   /* ---------- cliques (uma escuta só para o app inteiro) ---------- */
   function toggleFollow(id, name) {
     api("/api/users/" + id + "/follow", { method: "POST", body: {} }).then(function () { if (name) viewProfile(name); else { toast("Seguindo."); RC.sug = RC.sug.filter(function (u) { return u.id !== id; }); fillRcol(); Object.keys(POSTS).forEach(function (k) { if (POSTS[k].authorId === id) { POSTS[k].isFollowing = true; repaint(k); } }); } }).catch(onErr);
   }
   document.addEventListener("click", function (e) {
-    var t = e.target.closest("[data-go],[data-back],[data-like],[data-save],[data-comments],[data-share],[data-vote],[data-follow],[data-open],[data-story],[data-more],[data-settings],[data-accounts],[data-edit],[data-shareprofile],[data-chat],[data-find],[data-switch],[data-drop],[data-addacc],[data-install],[data-mode],[data-moremenu],[data-ftab],[data-ctab],[data-joincom],[data-newcom],[data-mk],[data-listing],[data-addstory],[data-pmenu],[data-pact],[data-cvote],[data-golive],[data-stat],[data-umenu],[data-newlisting]");
+    var t = e.target.closest("[data-go],[data-back],[data-like],[data-save],[data-comments],[data-share],[data-vote],[data-follow],[data-open],[data-story],[data-more],[data-settings],[data-accounts],[data-edit],[data-shareprofile],[data-chat],[data-find],[data-switch],[data-drop],[data-addacc],[data-install],[data-mode],[data-moremenu],[data-ftab],[data-ctab],[data-joincom],[data-newcom],[data-mk],[data-listing],[data-addstory],[data-pmenu],[data-pact],[data-newwith],[data-locon],[data-nrefresh],[data-notice],[data-invite],[data-forgot],[data-cvote],[data-golive],[data-stat],[data-umenu],[data-newlisting]");
     if (!t) return;
     var d = t.dataset;
     if (d.go) { if (location.hash === d.go) render(); else location.hash = d.go; return; }
@@ -1263,7 +1766,8 @@
     if (d.like) { var p = POSTS[d.like]; if (!cur()) { location.hash = "#/login"; return; } api("/api/posts/" + d.like + "/like", { method: "POST", body: {} }).then(function (r) { p.likedByMe = !!r.liked; p.likes = Math.max(0, (p.likes || 0) + (r.liked ? 1 : -1)); repaint(d.like); }).catch(onErr); return; }
     if (d.save) { var q = POSTS[d.save]; api("/api/posts/" + d.save + "/save", { method: "POST", body: {} }).then(function (r) { q.savedByMe = r.saved !== undefined ? !!r.saved : !q.savedByMe; repaint(d.save); toast(q.savedByMe ? "Publicação salva." : "Removida dos salvos."); }).catch(onErr); return; }
     if (d.comments) return openComments(d.comments);
-    if (d.share) { var url = new URL("#/post/" + d.share, location.href).href; if (navigator.share) navigator.share({ title: "QINBLY", url: url }).catch(function () { }); else if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { toast("Link copiado."); }); return; }
+    if (d.share) return shareSheet(d.share);
+    if (d.share_old) { var url = new URL("#/post/" + d.share, location.href).href; if (navigator.share) navigator.share({ title: "QINBLY", url: url }).catch(function () { }); else if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { toast("Link copiado."); }); return; }
     if (d.vote) { var pv = d.vote.split(":"); api("/api/posts/" + pv[0] + "/vote", { method: "POST", body: { optionIndex: Number(pv[1]) } }).then(function () { return api("/api/posts/" + pv[0]); }).then(function (j) { POSTS[pv[0]] = j.post; repaint(pv[0]); }).catch(onErr); return; }
     if (d.follow) return followUser(d.follow, d.profile);
     if (d.open) { location.hash = "#/post/" + d.open; return; }
@@ -1288,6 +1792,12 @@
     if (d.mk !== undefined) { mkCat = Number(d.mk); viewMarket(); return; }
     if (d.listing) return openListing(d.listing);
     if (t.hasAttribute("data-addstory")) return storyMenu();
+    if (d.newwith !== undefined) { var nw = d.newwith.split(":"); NEWPRE = { kind: nw[0] || "text", text: nw.slice(1).join(":") }; location.hash = "#/new"; if (location.hash === "#/new") render(); return; }
+    if (t.hasAttribute("data-locon")) { LS.set("qb_loc_on", true); nearbyView(); return; }
+    if (t.hasAttribute("data-nrefresh")) { HERE = null; nearbyView(); return; }
+    if (d.notice) return noticeSheet(d.notice);
+    if (t.hasAttribute("data-invite")) return inviteFriends();
+    if (t.hasAttribute("data-forgot")) return forgotSheet();
     if (d.pmenu) return postMenu(d.pmenu);
     if (d.pact) { var pa = d.pact.split(":"); closeSheet(); return postAction(pa[0], pa[1]); }
     if (d.cvote) { var cv = d.cvote.split(":"); call(HOST + "/api/chat-polls/" + cv[0] + "/vote", { method: "POST", body: { optionIndex: Number(cv[1]) } }).then(function () { toast("Voto registrado."); if (window.__reload) window.__reload(); }).catch(onErr); return; }
@@ -1336,6 +1846,7 @@
     api("/api/notifications").then(function (j) { notifN = (j.notifications || []).filter(function (n) { return !n.readAt; }).length; paintBadges(); }).catch(function () { });
   }
   setInterval(pollUnread, 30000); setTimeout(pollUnread, 1500);
+  setInterval(beat, 60000); setTimeout(beat, 3000);
 
   if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () { }); }); }
 })();
