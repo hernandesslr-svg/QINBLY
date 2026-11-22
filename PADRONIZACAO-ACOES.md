@@ -1050,3 +1050,6 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Tamanhos decorativos (contagem regressiva da live etc.) ficam fora da tabela.
 - A redução geral de 10% (`QINBLY_TEXT_SCALE = 0.9`) foi removida (agora 1.0); era o que deixava muitas letras pequenas demais. "Letras grandes" nas configurações continua multiplicando por cima.
 - Ao criar uma tela nova, usar um destes tamanhos (ou `MaterialTheme.typography`, que já segue a tabela).
+
+## Configurações: saiu "Mercado e avisos"
+- A linha "Mercado e avisos" foi removida da lista de Configurações. O Mercado e os Avisos continuam acessíveis pelo ícone da cestinha no início e pelo menu do Mercado; só o atalho nas configurações saiu.

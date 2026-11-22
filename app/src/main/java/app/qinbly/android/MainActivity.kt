@@ -10587,7 +10587,6 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
             if (section == "home") {
                 item { Text("CONFIGURAÇÕES", color = Color(0xFF8A9BAB), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold) }
                 val categories = listOf(
-                    Triple("market", "Mercado e avisos", "Vendas, doações, achados e avisos do bairro"),
                     Triple("account", "Conta", "Senha, e-mail, aparelhos e exclusão"),
                     Triple("privacy", "Privacidade", "Quem vê, quem fala com você e bloqueios"),
                     Triple("location", "Localização", "Usar a localização e apagar o que foi guardado"),
