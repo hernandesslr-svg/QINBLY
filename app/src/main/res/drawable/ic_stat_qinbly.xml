@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ícone das notificações (barra de status): silhueta branca do logo do QINBLY, anel com a estrela. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="79"
+    android:viewportHeight="79">
+    <group android:translateX="-10.5" android:translateY="-10.5">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M10.5,50 a39.5,39.5 0 1,0 79,0 a39.5,39.5 0 1,0 -79,0 M21.5,50 a28.5,28.5 0 1,1 57,0 a28.5,28.5 0 1,1 -57,0 Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M50,33 Q52.8,47.2 67,50 Q52.8,52.8 50,67 Q47.2,52.8 33,50 Q47.2,47.2 50,33 Z" />
+    </group>
+</vector>

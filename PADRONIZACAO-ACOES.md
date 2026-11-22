@@ -1098,3 +1098,6 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 ## Aviso de atualização do app
 - Já existia: o app consulta a última versão no GitHub e avisa uma vez por versão nova. Ajustes: canal novo `qinbly_update_v2` (importância alta, som e vibração), texto com o número da versão, checagem a cada 10 min (antes 1 h), checagem imediata ao abrir o app e aviso também com o app aberto (antes só com o app fechado).
 - Limites: o aviso só chega depois que a pessoa instalou uma versão que já tem esse recurso; com o app fechado depende do Android acordar o app (~15 min ou mais, bateria). Aviso instantâneo exige push (Firebase).
+
+## Ícone das notificações
+- A barra de status mostrava o "i" genérico do Android. Agora usa `ic_stat_qinbly` (silhueta branca do logo: anel com estrela) nas notificações de novidades, mensagens, atualização e "QINBLY atualizado".

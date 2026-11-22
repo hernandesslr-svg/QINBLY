@@ -30,7 +30,7 @@ class UpdateRelaunchReceiver : BroadcastReceiver() {
             ) return
             val open = PendingIntent.getActivity(context, 7002, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
             val notification = androidx.core.app.NotificationCompat.Builder(context, "qinbly_update_v2")
-                .setSmallIcon(android.R.drawable.stat_sys_download_done)
+                .setSmallIcon(R.drawable.ic_stat_qinbly)
                 .setContentTitle("QINBLY atualizado")
                 .setContentText("Toque para abrir o app.")
                 .setContentIntent(open)

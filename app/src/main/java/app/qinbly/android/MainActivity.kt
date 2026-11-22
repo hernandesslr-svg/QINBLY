@@ -604,7 +604,7 @@ internal fun qinblyNotify(context: android.content.Context, title: String, text:
             android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
         )
         val notification = androidx.core.app.NotificationCompat.Builder(context, "qinbly_social_v2")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_stat_qinbly)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText(text))

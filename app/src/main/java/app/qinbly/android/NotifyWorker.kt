@@ -140,7 +140,7 @@ internal fun qinblyNotifyUpdate(context: Context, version: String = ""): Boolean
         )
         val updateText = (if (version.isNotBlank()) "A versão $version do QINBLY está pronta. " else "A versão mais recente do QINBLY está pronta. ") + "Toque para atualizar."
         val notification = androidx.core.app.NotificationCompat.Builder(context, "qinbly_update_v2")
-            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setSmallIcon(R.drawable.ic_stat_qinbly)
             .setContentTitle("Nova atualização disponível")
             .setContentText(updateText)
             .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText(updateText))
