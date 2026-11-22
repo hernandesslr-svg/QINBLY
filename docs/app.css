@@ -246,3 +246,62 @@ textarea.inp{min-height:120px;resize:vertical}
 @media(min-width:1180px){
   .rcol{display:block;width:340px;padding:28px 24px;position:sticky;top:0;height:100vh;overflow:auto;flex:none}
 }
+
+/* ===== recursos completos: menu do post, comentários, mídia em mensagens ===== */
+.tog{width:44px;height:26px;border-radius:13px;background:#4a4c55;position:relative;flex:none;transition:background .2s}
+.tog i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s}
+.tog.on{background:var(--accent)}
+.tog.on i{left:21px}
+.rad{width:22px;height:22px;border-radius:50%;border:2px solid var(--muted);flex:none;position:relative}
+.rad.on{border-color:var(--accent)}
+.rad.on::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--accent)}
+.sect{padding:16px 16px 6px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.cm.sub{padding-left:52px}
+.cm .b small button{color:var(--muted);font-size:12px}
+.cm .act{align-self:flex-start;padding:4px;font-size:12px;flex-direction:column;gap:2px}
+.cm .act svg{width:18px;height:18px}
+.rpl{padding:8px 16px;font-size:12px;color:var(--muted);background:var(--bg);border-top:.5px solid var(--line);cursor:pointer}
+.msg.media{background:none;padding:0}
+.msg.media.me{background:none}
+.mimg{max-width:240px;max-height:300px;border-radius:14px;object-fit:cover}
+.mstk{width:120px;height:120px;object-fit:contain}
+.mfile{display:inline-block;padding:4px 0;text-decoration:underline;word-break:break-all}
+.msg audio{max-width:230px;height:36px}
+.cpoll{min-width:210px;display:flex;flex-direction:column;gap:6px}
+.cpoll>b{font-size:14px;margin-bottom:2px}
+.cpoll .opt{background:rgba(0,0,0,.18);color:inherit}
+.stk{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px 16px 16px}
+.stk button{aspect-ratio:1;background:var(--bg);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:4px}
+.stk img{max-width:100%;max-height:100%;object-fit:contain}
+.story .note{position:absolute;top:-10px;left:50%;transform:translateX(-50%);max-width:72px;background:var(--surface);border:.5px solid var(--line);border-radius:12px;padding:2px 8px;font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
+.viewer .sfoot{display:flex;align-items:center;gap:16px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));color:#fff;font-size:14px}
+.viewer .sfoot button{color:#fff;font-weight:600}
+.viewer .sreply{background:#000;border-top:0;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+.viewer .sreply input{color:#fff;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3)}
+.tbg{display:flex;align-items:center;justify-content:center;padding:16px}
+.ptop{display:flex;align-items:center;gap:16px;padding:16px}
+.ptop .pname{min-width:0}
+.ptop h2{margin:0;font-size:20px}
+.bio{padding:0 16px 8px;white-space:pre-wrap}
+.stats{display:flex;justify-content:space-around;padding:8px 16px;text-align:center;font-size:12px;color:var(--muted)}
+.stats b{display:block;font-size:18px;color:var(--text)}
+.stats button{color:var(--muted)}
+
+/* ===== lives ===== */
+.livebox{position:relative;background:#000;aspect-ratio:9/16;max-height:62vh;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:0}
+.livebox video{width:100%;height:100%;object-fit:contain}
+.livemsg{color:#cfd2da;text-align:center;padding:24px;font-size:14px}
+.liveinfo{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;font-size:14px}
+.live-badge{background:var(--danger);color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:3px 8px;margin-right:12px}
+.lcm{max-height:160px;overflow-y:auto;padding:4px 16px}
+.lc{font-size:14px;padding:2px 0}
+.lc b{margin-right:6px}
+
+/* ===== tema claro, texto maior, menos animação ===== */
+[data-theme=light]{--bg:#ffffff;--surface:#f2f3f6;--line:rgba(0,0,0,.12);--text:#14151a;--muted:#6a6e7a}
+[data-theme=light] .row:active,[data-theme=light] .ib:active{background:rgba(0,0,0,.06)}
+[data-theme=light] .msg{background:#e8eaee;color:#14151a}
+[data-theme=light] .msg.me{background:var(--accent);color:#fff}
+[data-theme=light] .tog{background:#c5c8d0}
+body.big{zoom:1.15}
+body.calm *{transition:none!important;animation:none!important}
