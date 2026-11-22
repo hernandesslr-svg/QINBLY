@@ -10,7 +10,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 input,textarea{font:inherit;color:var(--text)}
 a{color:inherit;text-decoration:none}
 img,video{max-width:100%;display:block}
-#app{max-width:520px;margin:0 auto;min-height:100%;position:relative}
+#app{min-height:100%;position:relative}
 .view{padding-bottom:calc(var(--nav) + 24px + env(safe-area-inset-bottom))}
 .view.noNav{padding-bottom:24px}
 
@@ -135,12 +135,13 @@ textarea.inp{min-height:120px;resize:vertical}
 .bgs button.on{border-color:#fff}
 
 /* mensagens */
-.chat{display:flex;flex-direction:column;padding:12px 16px 96px;gap:6px}
+.chat{display:flex;flex-direction:column;padding:12px 16px 16px;gap:6px}
+.view.chatv{display:flex;flex-direction:column;min-height:100vh}.view.chatv .chat{flex:1}
 .msg{max-width:78%;padding:8px 12px;border-radius:16px;background:#2e2f35;font-size:14px;white-space:pre-wrap;word-wrap:break-word;align-self:flex-start}
 .msg.me{align-self:flex-end;background:var(--accent);color:#fff}
 .msg small{display:block;font-size:11px;opacity:.7;margin-top:2px}
-.composer{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:.5px solid var(--line);padding:8px 12px calc(8px + env(safe-area-inset-bottom))}
-.composer .in{max-width:520px;margin:0 auto;display:flex;gap:8px;align-items:flex-end}
+.composer{position:sticky;bottom:0;background:var(--bg);border-top:.5px solid var(--line);padding:8px 12px calc(8px + env(safe-area-inset-bottom))}
+.composer .in{display:flex;gap:8px;align-items:flex-end}
 .composer textarea{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:10px 14px;font-size:16px;resize:none;max-height:120px;outline:none}
 .composer .send{height:42px;padding:0 16px;border-radius:21px;background:var(--accent);color:#fff;font-weight:600}
 
@@ -173,3 +174,75 @@ textarea.inp{min-height:120px;resize:vertical}
 .spin i{width:24px;height:24px;border:3px solid var(--line);border-top-color:var(--text);border-radius:50%;animation:r .8s linear infinite}
 @keyframes r{to{transform:rotate(360deg)}}
 .more{display:block;margin:16px auto;color:#7aa2ff;font-weight:600}
+
+/* ---- layout de site: menu à esquerda, conteúdo no centro, sugestões à direita ---- */
+.layout{display:flex;justify-content:center;min-height:100vh}
+.view{width:100%;max-width:630px;min-width:0;flex:1 1 auto}
+.side,.rcol{display:none}
+.mob{display:flex}
+.badge[hidden]{display:none}
+.nav button{position:relative}
+.nav .badge{position:absolute;top:4px;left:55%;margin:0}
+.av.xs{width:24px;height:24px;font-size:11px}
+.ftabs{display:flex;border-bottom:.5px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:4}
+.top+.ftabs,.top ~ .ftabs{top:52px}
+.ftabs button{flex:1;height:44px;color:var(--muted);font-size:14px;border-bottom:2px solid transparent}
+.ftabs button.on{color:var(--text);border-bottom-color:var(--text);font-weight:500}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 16px;scrollbar-width:none}
+.chips button{flex:none;padding:7px 14px;border-radius:16px;background:var(--surface);font-size:14px;color:var(--muted)}
+.chips button.on{background:var(--text);color:var(--bg);font-weight:500}
+.story{position:relative}
+.story .plus{position:absolute;top:36px;left:50%;margin-left:6px;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:14px;line-height:18px;text-align:center;border:2px solid var(--bg);font-weight:700}
+.story>.ring{background:var(--line)}
+.row.mt a{display:flex}
+.side .si{display:flex;align-items:center;gap:16px;width:100%;padding:12px;border-radius:12px;font-size:16px;color:var(--text);position:relative}
+.side .si:hover{background:rgba(255,255,255,.07)}
+.side .si.on{font-weight:600}
+.side .si.on svg{stroke-width:2.4}
+.side .si svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.side .si .av{flex:none}
+.side .si .badge{position:absolute;left:30px;top:6px;background:var(--danger);color:#fff;border-radius:9px;min-width:18px;height:18px;padding:0 5px;font-size:11px;line-height:18px;text-align:center}
+.side .logo{font-size:20px;font-weight:700;letter-spacing:1.5px;color:var(--brand);padding:12px;text-align:left;margin-bottom:12px}
+.side .si.more{margin-top:auto}
+.rcol .racc{display:flex;align-items:center;gap:12px;padding:8px 0}
+.rcol .racc .t{flex:1;min-width:0}
+.rcol .racc .t b{display:block;font-size:14px;font-weight:600}
+.rcol .racc small{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rcol .link{background:none;font-size:12px;font-weight:600;color:#7aa2ff}
+.rcol .rh{margin:20px 0 6px;font-size:14px;font-weight:600;color:var(--muted)}
+.rcol .tags{display:flex;flex-direction:column;gap:8px}
+.rcol .tg{font-size:14px;font-weight:500}
+.rcol .tg small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.rcol .rf{margin-top:28px;font-size:12px;color:var(--muted);line-height:1.8}
+.rcol .rf a:hover{text-decoration:underline}
+@media(min-width:700px){
+  .side{display:flex;flex-direction:column;position:sticky;top:0;height:100vh;width:76px;padding:12px 8px;border-right:.5px solid var(--line);flex:none;align-items:stretch;overflow:hidden}
+  .side .lbl{display:none}
+  .side .logo{font-size:0;padding:12px 0;text-align:center;height:48px}
+  .side .logo::before{content:"Q";font-size:24px;color:var(--brand);font-weight:700;letter-spacing:0}
+  .side .si{justify-content:center;padding:12px 0}
+  .side .si .badge{left:auto;right:12px}
+  .nav,.mob{display:none}
+  .mob~.ftabs{top:0}
+  .view,.view.noNav{padding-bottom:40px}
+  .view{border-right:.5px solid var(--line);flex:0 1 630px}
+  .top{border-bottom:.5px solid var(--line)}
+  .post,.stories,.poll{max-width:470px}
+  .post{margin:0 auto}
+  .stories{margin:0 auto}
+  .composer{padding-bottom:12px}
+  .shade{align-items:center}
+  .sheet{border-radius:16px;max-width:480px;max-height:80vh}
+  #toast{bottom:32px}
+}
+@media(min-width:1000px){
+  .side{width:244px;padding:12px}
+  .side .lbl{display:inline}
+  .side .logo{font-size:20px;text-align:left;padding:12px;height:auto}
+  .side .logo::before{content:none}
+  .side .si{justify-content:flex-start;padding:12px}
+  .side .si .badge{left:30px;right:auto}
+}
+@media(min-width:1180px){
+  .rcol{display:block;width:340px;padding:28px 24px;position:sticky;top:0;height:100vh;overflow:auto;flex:none}
+}

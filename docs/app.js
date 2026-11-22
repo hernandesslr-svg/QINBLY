@@ -25,7 +25,7 @@
     return esc(text).replace(/(https?:\/\/[^\s<]+)|(@[a-zA-Z0-9_.]{3,30})|(#[\p{L}\d_]+)/gu, function (m, url, men, tag) {
       if (url) return '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + url + "</a>";
       if (men) return '<a href="#/u/' + men.slice(1).toLowerCase() + '">' + men + "</a>";
-      return '<span class="link">' + tag + "</span>";
+      return '<a href="#/tag/' + encodeURIComponent(tag.slice(1)) + '" class="link">' + tag + "</a>";
     });
   }
   var IC = {
@@ -43,7 +43,12 @@
     grid: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
     chev: '<path d="M6 9l6 6 6-6"/>',
     x: '<path d="M6 6l12 12M18 6L6 18"/>',
-    play: '<path d="M8 5v14l11-7z"/>'
+    play: '<path d="M8 5v14l11-7z"/>',
+    flame: '<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z"/>',
+    bell: '<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/>',
+    groups: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.9.3 5 2.6 5 5.8"/>',
+    bag: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
+    menu: '<path d="M4 7h16M4 12h16M4 17h16"/>'
   };
   function svg(n) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + IC[n] + "</svg>"; }
   var VERIFIED = '<svg class="vf" viewBox="0 0 24 24" aria-label="verificado"><path d="M12 2l2.4 2 3.1-.2 1 3 2.7 1.6-.9 3 .9 3-2.7 1.6-1 3-3.1-.2L12 22l-2.4-2-3.1.2-1-3-2.7-1.6.9-3-.9-3 2.7-1.6 1-3 3.1.2z"/><path d="M8.5 12l2.5 2.5 4.5-5" stroke="#fff" fill="none" stroke-width="2"/></svg>';
@@ -161,10 +166,45 @@
   /* ---------- estrutura das telas ---------- */
   var timers = [];
   function clearTimers() { timers.forEach(clearInterval); timers = []; }
-  var unread = 0;
-  function nav(tab) {
-    function b(id, label, icon, href) { return '<button data-go="' + href + '" class="' + (tab === id ? "on" : "") + '" aria-label="' + label + '">' + svg(icon) + label + (id === "inbox" && unread ? '<span class="badge">' + (unread > 99 ? "99+" : unread) + "</span>" : "") + "</button>"; }
-    return '<nav class="nav"><div class="in">' + b("home", "Início", "home", "#/") + b("new", "Criar", "plus", "#/new") + b("inbox", "Mensagens", "msg", "#/inbox") + b("me", "Perfil", "user", "#/me") + "</div></nav>";
+  var unread = 0, notifN = 0;
+  function badge(key, n) { return '<span class="badge" data-bd="' + key + '"' + (n ? "" : " hidden") + ">" + (n > 99 ? "99+" : n) + "</span>"; }
+  function paintBadges() {
+    [["inbox", unread], ["notif", notifN]].forEach(function (p) {
+      document.querySelectorAll('[data-bd="' + p[0] + '"]').forEach(function (el) { el.textContent = p[1] > 99 ? "99+" : p[1]; el.hidden = !p[1]; });
+    });
+  }
+  function side(tab) {
+    function it(id, label, icon, href, extra) { return '<button class="si ' + (tab === id ? "on" : "") + '" data-go="' + href + '" aria-label="' + label + '">' + svg(icon) + '<span class="lbl">' + label + "</span>" + (extra || "") + "</button>"; }
+    var me = cur();
+    return '<aside class="side"><button class="logo" data-go="#/">QINBLY</button>' +
+      it("home", "Início", "home", "#/") + it("search", "Buscar", "search", "#/search") + it("trending", "Em alta", "flame", "#/trending") +
+      it("inbox", "Mensagens", "msg", "#/inbox", badge("inbox", unread)) + it("notif", "Notificações", "bell", "#/notifications", badge("notif", notifN)) +
+      it("communities", "Comunidades", "groups", "#/communities") + it("market", "Mercado", "bag", "#/market") + it("saved", "Salvos", "save", "#/saved") +
+      it("new", "Criar", "plus", "#/new") +
+      '<button class="si ' + (tab === "me" ? "on" : "") + '" data-go="#/me" aria-label="Perfil">' + (me ? avatar(me.avatarUrl, me.displayName || me.username, "xs") : svg("user")) + '<span class="lbl">Perfil</span></button>' +
+      '<button class="si more" data-moremenu aria-label="Mais">' + svg("menu") + '<span class="lbl">Mais</span></button></aside>';
+  }
+  function bottomNav(tab) {
+    function b(id, label, icon, href) { return '<button data-go="' + href + '" class="' + (tab === id ? "on" : "") + '" aria-label="' + label + '">' + svg(icon) + label + (id === "inbox" ? badge("inbox", unread) : "") + "</button>"; }
+    return '<nav class="nav"><div class="in">' + b("home", "Início", "home", "#/") + b("communities", "Comunidades", "groups", "#/communities") + b("new", "Criar", "plus", "#/new") + b("inbox", "Mensagens", "msg", "#/inbox") + b("me", "Perfil", "user", "#/me") + "</div></nav>";
+  }
+  var RC = { t: 0, sug: [], tags: [] };
+  function fillRcol() {
+    var r = document.getElementById("rcol"), me = cur(); if (!r || !me) return;
+    function draw() {
+      r.innerHTML = '<div class="racc"><a href="#/me" class="ring">' + avatar(me.avatarUrl, me.displayName || me.username) + '</a><div class="t"><b>@' + esc(me.username) + "</b><small>" + esc(me.displayName) + '</small></div><button class="link" data-accounts>Trocar</button></div>' +
+        (RC.sug.length ? '<div class="rh">Sugestões para você</div>' + RC.sug.slice(0, 5).map(function (u) {
+          return '<div class="racc"><a href="#/u/' + esc(u.username) + '">' + avatar(u.avatarUrl, u.displayName || u.username, "s") + '</a><div class="t"><b><a href="#/u/' + esc(u.username) + '">' + esc(u.username) + "</a></b><small>" + esc(u.displayName) + '</small></div><button class="link" data-follow="' + u.id + '">Seguir</button></div>';
+        }).join("") : "") +
+        (RC.tags.length ? '<div class="rh">Em alta</div><div class="tags">' + RC.tags.slice(0, 6).map(function (t) { return '<a href="#/tag/' + encodeURIComponent(t.tag) + '" class="tg">#' + esc(t.tag) + "<small>" + t.posts + " publ.</small></a>"; }).join("") + "</div>" : "") +
+        '<div class="rf"><a href="baixar.html">Baixar o app</a> · <a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos</a><br>QINBLY</div>';
+    }
+    draw();
+    if (Date.now() - RC.t > 300000) {
+      RC.t = Date.now();
+      Promise.all([api("/api/users/suggested").catch(function () { return { users: [] }; }), api("/api/hashtags/trending").catch(function () { return { tags: [] }; })])
+        .then(function (a) { RC.sug = a[0].users || []; RC.tags = a[1].tags || []; draw(); });
+    }
   }
   function top(title, opts) {
     opts = opts || {};
@@ -172,7 +212,11 @@
       '<h1 class="' + (opts.brand ? "brand" : "") + '">' + title + "</h1>" + (opts.right || "") + "</header>";
   }
   function spin() { return '<div class="spin"><i></i></div>'; }
-  function setView(html, tab, cls) { $app.innerHTML = '<main class="view ' + (cls || "") + '">' + html + "</main>" + (tab ? nav(tab) : ""); window.scrollTo(0, 0); }
+  function setView(html, tab, cls) {
+    cls = cls || "";
+    $app.innerHTML = '<div class="layout">' + side(tab) + '<main class="view ' + cls + '">' + html + '</main><aside class="rcol" id="rcol"></aside></div>' + (/noNav/.test(cls) ? "" : bottomNav(tab));
+    fillRcol(); window.scrollTo(0, 0);
+  }
 
   /* ---------- publicações ---------- */
   var POSTS = {};
@@ -336,30 +380,50 @@
     }).catch(function () { var b = document.getElementById("gb"); if (b) b.innerHTML = '<span class="link" style="font-size:12px">Google indisponível agora. Use e-mail e senha.</span>'; });
   }
 
-  var feedBefore = null;
-  function viewFeed() {
-    setView(top("QINBLY", { brand: true }) + '<div id="st"></div><div id="fd">' + spin() + "</div>", "home");
-    api("/api/stories").then(function (j) {
-      var tray = (j.tray || []).filter(function (t) { return t.mine || (t.stories && t.stories.length); });
-      if (!tray.length) return;
-      window.__tray = tray;
-      document.getElementById("st").innerHTML = '<div class="stories">' + tray.map(function (t, i) {
-        return '<button class="story" data-story="' + i + '"><span class="ring ' + (t.hasUnseen ? "new" : "") + '">' + avatar(t.avatarUrl, t.displayName || t.username) + "</span><span>" + (t.mine ? "Seu story" : esc(t.username)) + "</span></button>";
-      }).join("") + "</div>";
-    }).catch(function () { /* stories são opcionais */ });
+  var FEED = [], feedTab = "Descobrir", feedBefore = null, feedMore = false;
+  var FTABS = ["Descobrir", "Seguindo", "Em alta", "Vídeos"];
+  function hot(p) { return (p.likes || 0) * 2 + (p.comments || 0) * 3 + (p.reposts || 0) * 3; }
+  function feedList() {
+    var l = FEED;
+    if (feedTab === "Seguindo") l = l.filter(function (p) { return p.isFollowing; });
+    else if (feedTab === "Vídeos") l = l.filter(function (p) { return p.mediaType === "video"; });
+    else if (feedTab === "Em alta") { var lim = Date.now() - 7 * 86400000; l = l.filter(function (p) { return Date.parse(p.createdAt) > lim; }).sort(function (x, y) { return hot(y) - hot(x); }).slice(0, 30); }
+    return l;
+  }
+  function viewFeed(tab) {
+    if (tab) feedTab = tab;
+    var mob = '<header class="top mob"><h1 class="brand">QINBLY</h1><button class="ib" data-go="#/search" aria-label="Buscar">' + svg("search") + '</button><button class="ib" data-go="#/notifications" aria-label="Notificações">' + svg("bell") + badge("notif", notifN) + '</button><button class="ib" data-moremenu aria-label="Menu">' + svg("menu") + "</button></header>";
+    setView(mob + '<div id="st"></div><div class="ftabs">' + FTABS.map(function (t) { return '<button data-ftab="' + t + '" class="' + (t === feedTab ? "on" : "") + '">' + t + "</button>"; }).join("") + '</div><div id="fd">' + spin() + "</div>", tab ? "trending" : "home");
+    loadStories();
+    if (FEED.length) drawFeed();
     loadFeed(true);
   }
-  function loadFeed(first) {
+  function loadStories() {
+    api("/api/stories").then(function (j) {
+      var tray = (j.tray || []).filter(function (t) { return t.mine || (t.stories && t.stories.length); });
+      window.__tray = tray;
+      var el = document.getElementById("st"); if (!el) return;
+      el.innerHTML = '<div class="stories">' + tray.map(function (t, i) {
+        return '<div class="story"><button class="ring ' + (t.hasUnseen ? "new" : "") + '" data-story="' + i + '" aria-label="Ver story">' + avatar(t.avatarUrl, t.displayName || t.username) + "</button>" +
+          (t.mine ? '<button class="plus" data-addstory aria-label="Criar story">+</button>' : "") + "<span>" + (t.mine ? "Seu story" : esc(t.username)) + "</span></div>";
+      }).join("") + "</div>";
+    }).catch(function () { /* stories são opcionais */ });
+  }
+  function drawFeed() {
     var fd = document.getElementById("fd"); if (!fd) return;
-    api("/api/posts?limit=20" + (first || !feedBefore ? "" : "&before=" + encodeURIComponent(feedBefore))).then(function (j) {
+    var l = feedList();
+    var empty = { "Descobrir": "Ainda não há publicações. Toque em Criar e publique a primeira.", "Seguindo": "Siga pessoas para ver as publicações delas aqui.", "Em alta": "Nada em alta nos últimos 7 dias.", "Vídeos": "Ainda não há vídeos." }[feedTab];
+    fd.innerHTML = l.length ? l.map(postHTML).join("") : '<div class="empty">' + empty + "</div>";
+    if (feedMore) fd.insertAdjacentHTML("beforeend", '<button class="more" data-more>Carregar mais</button>');
+  }
+  function loadFeed(first) {
+    api("/api/posts?limit=40" + (first || !feedBefore ? "" : "&before=" + encodeURIComponent(feedBefore))).then(function (j) {
       var ps = j.posts || [];
-      if (first) fd.innerHTML = "";
-      var more = fd.querySelector(".more"); if (more) more.remove();
-      if (first && !ps.length) { fd.innerHTML = '<div class="empty">Ainda não há publicações. Toque em Criar e publique a primeira.</div>'; return; }
-      fd.insertAdjacentHTML("beforeend", ps.map(postHTML).join(""));
+      FEED = first ? ps : FEED.concat(ps);
       if (ps.length) feedBefore = ps[ps.length - 1].createdAt;
-      if (ps.length >= 20) fd.insertAdjacentHTML("beforeend", '<button class="more" data-more>Carregar mais</button>');
-    }).catch(function (e) { if (first) fd.innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; else onErr(e); });
+      feedMore = ps.length >= 40;
+      drawFeed();
+    }).catch(function (e) { var fd = document.getElementById("fd"); if (first && !FEED.length && fd) fd.innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; else onErr(e); });
   }
 
   function viewPost(id) {
@@ -481,7 +545,7 @@
       document.getElementById("ib").innerHTML = cs.length ? cs.map(function (c) {
         return '<button class="row" data-chat="' + esc(c.username) + '">' + avatar(c.avatarUrl, c.displayName || c.username) + '<span class="t"><b>' + esc(c.displayName || c.username) + "</b><small>" + esc(c.body) + '</small></span><span class="meta">' + ago(c.createdAt) + "</span>" + (c.unreadCount ? '<span class="dot">' + c.unreadCount + "</span>" : "") + "</button>";
       }).join("") : '<div class="empty">Nenhuma conversa ainda. Toque na lupa para procurar alguém.</div>';
-      var nb = document.querySelector(".nav .badge"); if (nb) nb.remove();
+      paintBadges();
     }).catch(onErr);
   }
   function findPeople() {
@@ -502,12 +566,12 @@
   function viewChat(name) {
     var me = cur(), last = "";
     setView(top("@" + esc(name), { back: true }) + '<div class="chat" id="ch">' + spin() + "</div>" +
-      '<div class="composer"><form class="in" id="cf"><textarea id="mi" rows="1" maxlength="10000" placeholder="Mensagem…"></textarea><button class="send" type="submit">Enviar</button></form></div>', "", "noNav");
+      '<div class="composer"><form class="in" id="cf"><textarea id="mi" rows="1" maxlength="10000" placeholder="Mensagem…"></textarea><button class="send" type="submit">Enviar</button></form></div>', "inbox", "noNav chatv");
     function show(list) {
       var sig = list.map(function (m) { return m.id; }).join();
       if (sig === last) return; last = sig;
       var ch = document.getElementById("ch"); if (!ch) return;
-      var stick = (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 120 || !ch.dataset.done;
+      var stick = (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 160 || !ch.dataset.done;
       ch.dataset.done = "1";
       ch.innerHTML = list.length ? list.map(function (m) {
         var txt = typeof m.body === "string" && !/^qinbly:/.test(m.body) ? esc(m.body) : "<i>Mensagem especial (foto, áudio, figurinha ou enquete). Abra no app para ver.</i>";
@@ -540,12 +604,166 @@
       '<button class="row" data-drop="' + activeId + '"><span class="t"><b style="color:var(--danger)">Sair desta conta</b></span></button>');
   }
 
+  /* ---------- buscar, em alta por assunto, salvos ---------- */
+  function postsInto(id, posts, empty) {
+    var el = document.getElementById(id); if (!el) return;
+    el.innerHTML = posts.length ? posts.map(postHTML).join("") : '<div class="empty">' + empty + "</div>";
+  }
+  function userRow(u) {
+    return '<a class="row" href="#/u/' + esc(u.username) + '">' + avatar(u.avatarUrl, u.displayName || u.username) + '<span class="t"><b>' + esc(u.displayName || u.username) + (u.verified ? " " + VERIFIED : "") + "</b><small>@" + esc(u.username) + (u.bio ? " · " + esc(u.bio) : "") + "</small></span></a>";
+  }
+  function viewSearch(prefill) {
+    setView(top("Buscar") + '<div style="padding:12px 16px"><input class="inp" id="q" placeholder="Pessoas, publicações e #assuntos" autocomplete="off" value="' + esc(prefill || "") + '"></div><div id="sr"></div>', "search");
+    var inp = document.getElementById("q"), t;
+    function run() {
+      var q = inp.value.trim(), sr = document.getElementById("sr"); if (!sr) return;
+      if (!q) { sr.innerHTML = RC.tags.length ? '<div class="sect">Em alta</div>' + RC.tags.map(function (g) { return '<a class="row" href="#/tag/' + encodeURIComponent(g.tag) + '"><span class="t"><b>#' + esc(g.tag) + "</b><small>" + g.posts + " publicações</small></span></a>"; }).join("") : ""; return; }
+      sr.innerHTML = spin();
+      api("/api/search?q=" + encodeURIComponent(q)).then(function (j) {
+        var h = "";
+        if ((j.users || []).length) h += '<div class="sect">Pessoas</div>' + j.users.map(userRow).join("");
+        if ((j.tags || []).length) h += '<div class="sect">Assuntos</div>' + j.tags.map(function (g) { return '<a class="row" href="#/tag/' + encodeURIComponent(g.tag) + '"><span class="t"><b>#' + esc(g.tag) + "</b><small>" + g.posts + " publicações</small></span></a>"; }).join("");
+        if ((j.posts || []).length) h += '<div class="sect">Publicações</div>' + j.posts.map(postHTML).join("");
+        sr.innerHTML = h || '<div class="empty">Nada encontrado para “' + esc(q) + "”.</div>";
+      }).catch(function (e) { sr.innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
+    }
+    inp.addEventListener("input", function () { clearTimeout(t); t = setTimeout(run, 300); });
+    run(); if (!prefill) inp.focus();
+  }
+  function viewTag(tag) {
+    setView(top("#" + esc(tag), { back: true }) + '<div id="tp">' + spin() + "</div>", "search");
+    api("/api/hashtags/" + encodeURIComponent(tag)).then(function (j) { postsInto("tp", j.posts || [], "Nenhuma publicação com esse assunto."); }).catch(function (e) { document.getElementById("tp").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
+  }
+  function viewSaved() {
+    setView(top("Salvos") + '<div id="sv">' + spin() + "</div>", "saved");
+    api("/api/me/saved").then(function (j) { postsInto("sv", j.posts || [], "Você ainda não salvou nada. Toque no marcador de uma publicação para guardar."); }).catch(function (e) { document.getElementById("sv").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
+  }
+
+  /* ---------- notificações ---------- */
+  var NOTIF_TEXT = { verification_approved: "Sua conta foi verificada! Parabéns.", verification_rejected: "Seu pedido de verificação não foi aprovado.", follow: "começou a seguir você", follow_request: "pediu para seguir você", follow_accepted: "aceitou seu pedido de seguir", like: "curtiu sua publicação", comment: "comentou na sua publicação", mention: "mencionou você em uma publicação", mention_comment: "mencionou você em um comentário", tag: "marcou você em uma publicação", reply: "respondeu ao seu comentário", message: "enviou uma mensagem" };
+  function viewNotifs() {
+    setView(top("Notificações") + '<div id="nt">' + spin() + "</div>", "notif");
+    api("/api/notifications").then(function (j) {
+      var l = j.notifications || [];
+      document.getElementById("nt").innerHTML = l.length ? l.map(function (n) {
+        var a = n.actor || {}, href = /^(like|comment|mention|mention_comment|tag|reply)$/.test(n.kind) && n.entityId ? "#/post/" + n.entityId : n.kind === "message" ? "#/chat/" + esc(a.username) : a.username ? "#/u/" + esc(a.username) : "#/";
+        return '<a class="row" href="' + href + '">' + avatar(a.avatarUrl, a.displayName || a.username) + '<span class="t"><b style="font-weight:400">' + (a.username ? "<b style='font-weight:600'>" + esc(a.username) + "</b> " : "") + esc(NOTIF_TEXT[n.kind] || "tem uma novidade para você") + "</b><small>" + ago(n.createdAt) + "</small></span>" + (n.readAt ? "" : '<span class="dot" style="min-width:10px;height:10px;padding:0"></span>') + "</a>";
+      }).join("") : '<div class="empty">Nenhuma notificação ainda.</div>';
+      if (l.some(function (n) { return !n.readAt; })) api("/api/notifications/read", { method: "POST", body: {} }).then(function () { notifN = 0; paintBadges(); }).catch(function () { });
+    }).catch(function (e) { document.getElementById("nt").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
+  }
+
+  /* ---------- comunidades ---------- */
+  var comTab = "mine";
+  function comRow(c) {
+    return '<div class="row" style="padding:0 16px 0 0"><a class="row" href="#/community/' + c.id + '"><span class="av" style="font-size:20px">' + esc(c.emoji) + '</span><span class="t"><b>' + esc(c.name) + "</b><small>" + c.members + " membro" + (c.members === 1 ? "" : "s") + (c.description ? " · " + esc(c.description) : "") + "</small></span></a>" +
+      (c.isOwner ? "" : '<button class="sb ' + (c.joined ? "" : "pri") + '" style="flex:none;width:84px" data-joincom="' + c.id + '">' + (c.joined ? "Sair" : "Entrar") + "</button>") + "</div>";
+  }
+  function viewCommunities() {
+    setView(top("Comunidades", { right: '<button class="ib" data-newcom aria-label="Criar comunidade">' + svg("plus") + "</button>" }) + '<div class="ftabs"><button data-ctab="mine" class="' + (comTab === "mine" ? "on" : "") + '">Minhas</button><button data-ctab="discover" class="' + (comTab === "discover" ? "on" : "") + '">Descobrir</button><button data-ctab="trending" class="' + (comTab === "trending" ? "on" : "") + '">Em alta</button></div><div id="cl">' + spin() + "</div>", "communities");
+    api("/api/communities?filter=" + comTab).then(function (j) {
+      var l = j.communities || [];
+      document.getElementById("cl").innerHTML = l.length ? l.map(comRow).join("") : '<div class="empty">' + (comTab === "mine" ? "Você ainda não participa de nenhuma comunidade. Veja a aba Descobrir ou crie a sua." : "Nenhuma comunidade por aqui ainda.") + "</div>";
+    }).catch(function (e) { document.getElementById("cl").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
+  }
+  function newCommunity() {
+    var s = sheet("Criar comunidade", '<div class="form"><label class="fld">Ícone (um emoji)<input class="inp" id="ce" maxlength="4" value="👥"></label><label class="fld">Nome<input class="inp" id="cn" maxlength="60"></label><label class="fld">Descrição<textarea class="inp" id="cd" maxlength="500"></textarea></label><div class="err" id="cer"></div><button class="btn" id="cs">Criar</button></div>');
+    s.querySelector("#cs").addEventListener("click", function () {
+      var b = this; b.disabled = true;
+      api("/api/communities", { method: "POST", body: { name: s.querySelector("#cn").value, description: s.querySelector("#cd").value, emoji: s.querySelector("#ce").value } })
+        .then(function (j) { closeSheet(); location.hash = "#/community/" + j.community.id; })
+        .catch(function (e) { s.querySelector("#cer").textContent = e.message; b.disabled = false; });
+    });
+  }
+  function viewCommunity(id) {
+    var me = cur(), last = "";
+    setView(top("Comunidade", { back: true }) + '<div id="ch0">' + spin() + '</div><div class="chat" id="ch"></div><div class="composer" id="cc" hidden><form class="in" id="cf"><textarea id="mi" rows="1" maxlength="10000" placeholder="Escreva para a comunidade…"></textarea><button class="send" type="submit">Enviar</button></form></div>', "communities", "noNav chatv");
+    function load() {
+      api("/api/communities/" + id).then(function (j) {
+        var c = j.community, h = document.getElementById("ch0"); if (!h) return;
+        h.innerHTML = '<div class="ptop"><span class="av l" style="font-size:32px">' + esc(c.emoji) + '</span><div class="pname"><h2>' + esc(c.name) + "</h2><span class=\"at\">" + c.members + " membro" + (c.members === 1 ? "" : "s") + " · criada por @" + esc(c.ownerUsername) + "</span></div>" + (c.isOwner ? "" : '<button class="sb ' + (c.joined ? "" : "pri") + '" style="flex:none;width:84px" data-joincom="' + c.id + '" data-stay>' + (c.joined ? "Sair" : "Entrar") + "</button>") + "</div>" + (c.description ? '<div class="bio">' + linkify(c.description) + "</div>" : "");
+        document.getElementById("cc").hidden = !c.joined;
+        var sig = (j.posts || []).map(function (m) { return m.id; }).join(); if (sig === last) return; last = sig;
+        var ch = document.getElementById("ch"), stick = (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 160 || !ch.dataset.done; ch.dataset.done = "1";
+        ch.innerHTML = (j.posts || []).length ? j.posts.map(function (m) {
+          var a = m.author || {}, txt = typeof m.body === "string" && !/^qinbly:/.test(m.body) ? linkify(m.body) : "<i>Mensagem especial. Abra no app para ver.</i>";
+          return '<div class="msg ' + (m.mine ? "me" : "") + '">' + (m.mine ? "" : "<b style='font-size:12px'>" + esc(a.username) + "</b><br>") + txt + "<small>" + ago(m.createdAt) + "</small></div>";
+        }).join("") : '<div class="empty">Ninguém escreveu ainda.</div>';
+        if (stick) window.scrollTo(0, document.body.scrollHeight);
+      }).catch(function (e) { var h = document.getElementById("ch0"); if (h) h.innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
+    }
+    load(); timers.push(setInterval(load, 6000));
+    document.getElementById("cf").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var inp = document.getElementById("mi"), t = inp.value.trim(); if (!t) return; inp.value = "";
+      api("/api/communities/" + id + "/posts", { method: "POST", body: { body: t } }).then(load).catch(function (x) { inp.value = t; onErr(x); });
+    });
+  }
+
+  /* ---------- mercado ---------- */
+  var MK_CATS = [["Tudo", ""], ["Vendas", "venda"], ["Doações", "doacao"], ["Achados", "achado,perdido"], ["Eventos", "evento"], ["Serviços", "servico"], ["Avisos", "aviso"]];
+  var MK_LABEL = { venda: "Venda", doacao: "Doação", achado: "Achado", perdido: "Perdido", evento: "Evento", servico: "Serviço", aviso: "Aviso" };
+  var mkCat = 0, mkCity = LS.get("qb_city", "");
+  var OLD_PUB = "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/";
+  function photoUrl(p) { if (!p) return ""; if (p.indexOf(OLD_PUB) === 0) p = p.slice(OLD_PUB.length); return /^https?:/.test(p) ? p : HOST + "/storage/v1/object/public/post-media/" + p; }
+  var MK = {};
+  function viewMarket() {
+    setView(top("Mercado") + '<div class="chips">' + MK_CATS.map(function (c, i) { return '<button data-mk="' + i + '" class="' + (i === mkCat ? "on" : "") + '">' + c[0] + "</button>"; }).join("") + '</div><div style="padding:0 16px 8px"><input class="inp" id="city" placeholder="Filtrar por cidade (opcional)" value="' + esc(mkCity) + '"></div><div id="ml">' + spin() + "</div>", "market");
+    var ci = document.getElementById("city"), t;
+    ci.addEventListener("input", function () { clearTimeout(t); t = setTimeout(function () { mkCity = ci.value.trim(); LS.set("qb_city", mkCity); load(); }, 400); });
+    function load() {
+      var kinds = MK_CATS[mkCat][1], q = "/rest/v1/marketplace_listings?select=id,user_id,kind,title,description,price,extra,photos,city,created_at,profiles!marketplace_listings_user_id_fkey(username,display_name)&order=created_at.desc&limit=60";
+      if (kinds) q += "&kind=in.(" + kinds + ")";
+      if (mkCity) q += "&city=ilike.*" + encodeURIComponent(mkCity.replace(/[,()*]/g, " ")) + "*";
+      call(HOST + q).then(function (l) {
+        var ml = document.getElementById("ml"); if (!ml) return;
+        if (!Array.isArray(l)) l = [];
+        l.forEach(function (x) { MK[x.id] = x; });
+        ml.innerHTML = l.length ? l.map(function (x) {
+          var ph = (x.photos || [])[0], pr = x.price != null && x.price !== "" ? Number(x.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "";
+          return '<button class="row" data-listing="' + x.id + '"><span class="av" style="width:64px;height:64px;border-radius:10px;' + (ph ? "background-image:url('" + safeUrl(photoUrl(ph)) + "')" : "") + '"></span><span class="t"><b>' + esc(x.title) + "</b><small>" + (pr ? pr + " · " : "") + esc(MK_LABEL[x.kind] || "Aviso") + (x.city ? " · " + esc(x.city) : "") + " · " + ago(x.created_at) + "</small></span></button>";
+        }).join("") : '<div class="empty">Nada por aqui' + (mkCity ? " em " + esc(mkCity) : "") + " ainda.</div>";
+      }).catch(function (e) { var ml = document.getElementById("ml"); if (ml) ml.innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
+    }
+    load();
+  }
+  function openListing(id) {
+    var x = MK[id]; if (!x) return;
+    var p = x.profiles || {}, pr = x.price != null && x.price !== "" ? Number(x.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "";
+    sheet(x.title, '<div class="gal">' + (x.photos || []).map(function (u) { return '<img src="' + safeUrl(photoUrl(u)) + '" alt="">'; }).join("") + '</div><div style="padding:12px 16px"><b style="font-size:20px">' + pr + "</b><div style='color:var(--muted);font-size:12px;margin:4px 0 8px'>" + esc(MK_LABEL[x.kind] || "Aviso") + (x.city ? " · " + esc(x.city) : "") + "</div>" + (x.description ? "<div class='cap' style='padding:0'>" + linkify(x.description) + "</div>" : "") + (x.extra ? "<div style='color:var(--muted);font-size:14px;margin-top:8px'>" + esc(x.extra) + "</div>" : "") + "</div>" +
+      (p.username ? '<a class="row" href="#/u/' + esc(p.username) + '"><span class="t"><b>' + esc(p.display_name || p.username) + "</b><small>@" + esc(p.username) + '</small></span></a><div style="padding:8px 16px 16px"><button class="btn" data-chat="' + esc(p.username) + '">Falar com o vendedor</button></div>' : ""));
+  }
+
+  /* ---------- mais, criar story ---------- */
+  function moreMenu() {
+    sheet("Mais",
+      '<button class="row" data-accounts><span class="t"><b>Trocar de conta</b><small>@' + esc(cur() ? cur().username : "") + "</small></span></button>" +
+      '<a class="row" href="#/saved"><span class="t"><b>Salvos</b></span></a>' +
+      '<a class="row" href="baixar.html"><span class="t"><b>Baixar o app para Android</b><small>Instalar o QINBLY no celular</small></span></a>' +
+      '<button class="row" data-install><span class="t"><b>Instalar no iPhone</b><small>Como adicionar à Tela de Início</small></span></button>' +
+      '<a class="row" href="privacidade.html"><span class="t"><b>Privacidade</b></span></a><a class="row" href="termos.html"><span class="t"><b>Termos de uso</b></span></a>' +
+      '<button class="row" data-drop="' + activeId + '"><span class="t"><b style="color:var(--danger)">Sair desta conta</b></span></button>');
+  }
+  function addStory() {
+    var f = document.createElement("input"); f.type = "file"; f.accept = "image/*,video/*";
+    f.addEventListener("change", function () {
+      var file = f.files[0]; if (!file) return;
+      var isVid = file.type.indexOf("video/") === 0;
+      if ((isVid ? VID_OK : IMG_OK).indexOf(file.type) < 0) return toast("Esse tipo de arquivo não é aceito.");
+      toast("Enviando story…");
+      (isVid ? Promise.resolve(file) : shrink(file)).then(function (b) { return upload(b, "story_media"); })
+        .then(function (path) { return api("/api/stories", { method: "POST", body: { mediaFileId: path, mediaType: isVid ? "video" : "image" } }); })
+        .then(function () { toast("Story publicado por 24 horas."); loadStories(); }).catch(onErr);
+    });
+    f.click();
+  }
+
   /* ---------- cliques (uma escuta só para o app inteiro) ---------- */
   function toggleFollow(id, name) {
-    api("/api/users/" + id + "/follow", { method: "POST", body: {} }).then(function () { if (name) viewProfile(name); else { toast("Seguindo."); Object.keys(POSTS).forEach(function (k) { if (POSTS[k].authorId === id) { POSTS[k].isFollowing = true; repaint(k); } }); } }).catch(onErr);
+    api("/api/users/" + id + "/follow", { method: "POST", body: {} }).then(function () { if (name) viewProfile(name); else { toast("Seguindo."); RC.sug = RC.sug.filter(function (u) { return u.id !== id; }); fillRcol(); Object.keys(POSTS).forEach(function (k) { if (POSTS[k].authorId === id) { POSTS[k].isFollowing = true; repaint(k); } }); } }).catch(onErr);
   }
   document.addEventListener("click", function (e) {
-    var t = e.target.closest("[data-go],[data-back],[data-like],[data-save],[data-comments],[data-share],[data-vote],[data-follow],[data-open],[data-story],[data-more],[data-settings],[data-accounts],[data-edit],[data-shareprofile],[data-chat],[data-find],[data-switch],[data-drop],[data-addacc],[data-install],[data-mode]");
+    var t = e.target.closest("[data-go],[data-back],[data-like],[data-save],[data-comments],[data-share],[data-vote],[data-follow],[data-open],[data-story],[data-more],[data-settings],[data-accounts],[data-edit],[data-shareprofile],[data-chat],[data-find],[data-switch],[data-drop],[data-addacc],[data-install],[data-mode],[data-moremenu],[data-ftab],[data-ctab],[data-joincom],[data-newcom],[data-mk],[data-listing],[data-addstory]");
     if (!t) return;
     var d = t.dataset;
     if (d.go) { if (location.hash === d.go) render(); else location.hash = d.go; return; }
@@ -557,7 +775,7 @@
     if (d.vote) { var pv = d.vote.split(":"); api("/api/posts/" + pv[0] + "/vote", { method: "POST", body: { optionIndex: Number(pv[1]) } }).then(function () { return api("/api/posts/" + pv[0]); }).then(function (j) { POSTS[pv[0]] = j.post; repaint(pv[0]); }).catch(onErr); return; }
     if (d.follow) return toggleFollow(d.follow, d.profile);
     if (d.open) { location.hash = "#/post/" + d.open; return; }
-    if (d.story !== undefined) { var en = (window.__tray || [])[Number(d.story)]; if (en && en.stories && en.stories.length) openStories(en); else toast("Para criar um story, use o app por enquanto."); return; }
+    if (d.story !== undefined) { var en = (window.__tray || [])[Number(d.story)]; if (en && en.stories && en.stories.length) openStories(en); else addStory(); return; }
     if (t.hasAttribute("data-more")) { loadFeed(false); return; }
     if (t.hasAttribute("data-settings")) return settingsSheet();
     if (t.hasAttribute("data-accounts")) return accountsSheet();
@@ -570,6 +788,14 @@
     if (t.hasAttribute("data-addacc")) { closeSheet(); location.hash = "#/login?add"; return; }
     if (t.hasAttribute("data-install")) { sheet("Instalar no iPhone", '<div style="padding:0 20px 20px;font-size:16px;line-height:1.6">1. Abra esta página no <b>Safari</b>.<br>2. Toque no botão de compartilhar (quadrado com seta para cima).<br>3. Escolha <b>Adicionar à Tela de Início</b>.<br>4. Abra o ícone QINBLY como um app.</div>'); return; }
     if (d.mode) { viewLogin(d.mode); return; }
+    if (t.hasAttribute("data-moremenu")) return moreMenu();
+    if (d.ftab) { feedTab = d.ftab; document.querySelectorAll(".ftabs button").forEach(function (b) { b.classList.toggle("on", b.dataset.ftab === feedTab); }); drawFeed(); return; }
+    if (d.ctab) { comTab = d.ctab; viewCommunities(); return; }
+    if (d.joincom) { api("/api/communities/" + d.joincom + "/join", { method: "POST", body: {} }).then(function () { if (t.hasAttribute("data-stay")) viewCommunity(d.joincom); else viewCommunities(); }).catch(onErr); return; }
+    if (t.hasAttribute("data-newcom")) return newCommunity();
+    if (d.mk !== undefined) { mkCat = Number(d.mk); viewMarket(); return; }
+    if (d.listing) return openListing(d.listing);
+    if (t.hasAttribute("data-addstory")) return addStory();
   });
 
   /* ---------- rotas ---------- */
@@ -580,6 +806,14 @@
     if (parts[0] === "login") return viewLogin("login");
     var r = parts[0] || "home";
     if (r === "home") return viewFeed();
+    if (r === "trending") return viewFeed("Em alta");
+    if (r === "search") return viewSearch();
+    if (r === "notifications") return viewNotifs();
+    if (r === "communities") return viewCommunities();
+    if (r === "community" && parts[1]) return viewCommunity(parts[1]);
+    if (r === "market") return viewMarket();
+    if (r === "saved") return viewSaved();
+    if (r === "tag" && parts[1]) return viewTag(decodeURIComponent(parts[1]));
     if (r === "new") return viewNew();
     if (r === "inbox") return viewInbox();
     if (r === "me") return viewProfile("me");
@@ -592,15 +826,13 @@
   window.addEventListener("hashchange", render);
   render();
 
-  /* contador de mensagens novas na barra de baixo */
+  /* contadores de mensagens e notificações novas */
   function pollUnread() {
     if (!cur() || document.hidden) return;
-    api("/api/inbox").then(function (j) {
-      var n = (j.conversations || []).reduce(function (s, c) { return s + (c.unreadCount || 0); }, 0);
-      if (n !== unread) { unread = n; var b = document.querySelector('.nav button[data-go="#/inbox"]'); if (b) { var old = b.querySelector(".badge"); if (old) old.remove(); if (n) b.insertAdjacentHTML("beforeend", '<span class="badge">' + (n > 99 ? "99+" : n) + "</span>"); } }
-    }).catch(function () { });
+    api("/api/inbox").then(function (j) { unread = (j.conversations || []).reduce(function (n, c) { return n + (c.unreadCount || 0); }, 0); paintBadges(); }).catch(function () { });
+    api("/api/notifications").then(function (j) { notifN = (j.notifications || []).filter(function (n) { return !n.readAt; }).length; paintBadges(); }).catch(function () { });
   }
-  setInterval(pollUnread, 30000);
+  setInterval(pollUnread, 30000); setTimeout(pollUnread, 1500);
 
   if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () { }); }); }
 })();
