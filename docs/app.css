@@ -1,10 +1,10 @@
 /* QINBLY web — mesmos tamanhos de letra do app: 24 / 20 / 18 / 16 / 14 / 12 / 11 */
 :root{
-  --bg:#16161a;--surface:#1f2024;--line:rgba(255,255,255,.1);--text:#f2f4f8;--muted:#9a9eab;
+  --bg:#171719;--surface:#262628;--line:#2E2E30;--text:#f2f4f8;--muted:#9a9eab;
   --accent:#2F68E0;--brand:#7C4DFF;--danger:#ff6b6b;--nav:58px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.45 Roboto,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:16px/1.45 Roboto,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
 body{overscroll-behavior-y:none}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 input,textarea{font:inherit;color:var(--text)}
@@ -298,7 +298,7 @@ textarea.inp{min-height:120px;resize:vertical}
 .lc b{margin-right:6px}
 
 /* ===== tema claro, texto maior, menos animação ===== */
-[data-theme=light]{--bg:#ffffff;--surface:#f2f3f6;--line:rgba(0,0,0,.12);--text:#14151a;--muted:#6a6e7a}
+[data-theme=light]{--bg:#F6F6F7;--surface:#E4E6EB;--line:#DADADD;--text:#14151a;--muted:#6a6e7a}
 [data-theme=light] .row:active,[data-theme=light] .ib:active{background:rgba(0,0,0,.06)}
 [data-theme=light] .msg{background:#e8eaee;color:#14151a}
 [data-theme=light] .msg.me{background:var(--accent);color:#fff}
@@ -346,3 +346,67 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 .tagged{padding:2px 16px 4px;font-size:12px;color:var(--muted)}
 .tagged a{color:var(--accent)}
 .grid a{display:block;aspect-ratio:1;background:#2a2c33 center/cover}
+
+
+/* ===== visual igual ao do app Android ===== */
+.apphd{padding-left:4px;gap:0;border-bottom:.5px solid var(--line)}
+.apphd .brandg{flex:1;text-align:center;font-size:24px;font-weight:900;letter-spacing:1px;background:linear-gradient(90deg,#7C4DFF,#FF4F9A);-webkit-background-clip:text;background-clip:text;color:transparent;margin:0}
+.apphd .hr{display:flex}
+.brandg{background:linear-gradient(90deg,#7C4DFF,#FF4F9A);-webkit-background-clip:text;background-clip:text;color:transparent!important;font-weight:900}
+.side .logo.brandg{font-size:24px;letter-spacing:1px}
+@media(min-width:700px){.side .logo::before{background:linear-gradient(135deg,#7C4DFF,#FF4F9A);-webkit-background-clip:text;background-clip:text;color:transparent}}
+.ib{color:var(--text)}
+.ib .badge,.ib .dotn{position:absolute}
+
+/* abas do feed: ícone sobre o texto, linha de 3px embaixo */
+.ftabs.ic{overflow-x:auto;scrollbar-width:none;top:52px}
+.ftabs.ic::-webkit-scrollbar{display:none}
+.ftabs.ic button{flex:1 0 auto;min-width:64px;height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0 10px;font-size:12px;border-bottom:3px solid transparent;color:var(--muted);white-space:nowrap}
+.ftabs.ic button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ftabs.ic button.on{color:var(--text);border-bottom-color:#7C4DFF;font-weight:600}
+@media(min-width:700px){.ftabs.ic{top:0}}
+
+/* stories: bolha de 88px, anel roxo→rosa */
+.stories{gap:14px;padding:12px 16px}
+.story{width:88px;gap:5px;font-size:12px;color:var(--text)}
+.story span{max-width:88px;text-align:center}
+.ring2{width:88px;height:88px;border-radius:50%;padding:3px;display:inline-flex;align-items:center;justify-content:center;background:var(--line);flex:none}
+.ring2.new{background:linear-gradient(135deg,#7C4DFF,#FF4F9A)}
+.ring2.seen{background:#55555a}
+.ring2.none{background:transparent}
+.ring2 .av{width:80px;height:80px;border:3px solid var(--bg);font-size:24px}
+.story .plus{top:58px;left:50%;margin-left:12px;width:26px;height:26px;border-radius:50%;background:#7C4DFF;color:#fff;border:2px solid var(--bg);display:flex;align-items:center;justify-content:center;padding:0}
+.story .plus svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.6;stroke-linecap:round}
+.story .note{position:absolute;top:-4px;left:50%;transform:translateX(-30%);max-width:80px;background:var(--surface);border-radius:12px;padding:2px 8px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:1}
+.story{padding-top:8px}
+
+/* post: tela inteira, plano, sem cartão */
+.post{padding:14px 0 2px;border-bottom:.5px solid var(--line)}
+.ph{gap:12px}
+.ph .ring{padding:2px;background:transparent}
+.ph .ring.new{background:linear-gradient(135deg,#7C4DFF,#FF4F9A)}
+.ph .ring .av,.av.m{width:52px;height:52px;font-size:18px}
+.ph .ring .av{border:2px solid var(--bg)}
+.ph b{font-size:16px}
+.ph small{font-size:14px}
+.cap{font-size:16px;padding-top:10px}
+.acts{padding:6px 8px 4px;justify-content:space-between;max-width:420px}
+.act{padding:10px 8px;font-size:14px;color:var(--text)}
+.act svg{width:24px;height:24px}
+.act[data-like].on svg,.act.on[data-like] svg{fill:#E53935;stroke:#E53935}
+.act.rp.on{color:#4CAF50}
+.act.rp.on svg{stroke:#4CAF50}
+.act.sv.on svg{fill:#FFD54F;stroke:#FFD54F}
+
+/* barra de baixo do app */
+.nav{border-top:.5px solid var(--line)}
+.nav .in{max-width:none}
+.nav button{color:var(--text);font-size:12px;gap:3px;position:relative;height:100%}
+.nav button .ni{display:flex}
+.nav button svg{stroke-width:1.8}
+.nav button.on::after{content:"";position:absolute;left:25%;right:25%;bottom:0;height:3px;border-radius:2px;background:var(--text)}
+.nav button.on svg{stroke-width:2.2}
+.nav button.mk .mkc{width:48px;height:34px;border-radius:17px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.nav button.mk .mkc svg{width:22px;height:22px;fill:none;stroke-width:3;stroke-linecap:round}
+.nav button.mk.on::after{display:none}
+.nav .badge{background:#2F68E0}

@@ -13,6 +13,17 @@
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[c]; }); }
   function safeUrl(u) { return /^https?:\/\//i.test(u || "") ? esc(u).replace(/&apos;/g, "%27").replace(/\(/g, "%28").replace(/\)/g, "%29") : ""; }
   function toast(t) { $toast.textContent = t; $toast.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(function () { $toast.classList.remove("on"); }, 2800); }
+
+  var APK_URL = "https://github.com/hernandesslr-svg/QINBLY/releases/latest/download/qinbly-release.apk";
+  var installEvt = null;
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); installEvt = e; });
+  window.addEventListener("appinstalled", function () { installEvt = null; toast("App instalado."); });
+  function installNow() {
+    if (installEvt) { var ev = installEvt; installEvt = null; ev.prompt(); return; }
+    if (/Android/i.test(navigator.userAgent)) { location.href = APK_URL; return; }
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) { sheet("Instalar no iPhone", '<div style="padding:0 20px 20px;font-size:16px;line-height:1.6">O iPhone não deixa instalar com um toque. Toque em <b>Compartilhar</b> (quadrado com seta) e escolha <b>Adicionar à Tela de Início</b>.</div>'); return; }
+    location.href = APK_URL;
+  }
   function ago(iso) {
     var s = Math.max(1, (Date.now() - Date.parse(iso)) / 1000);
     if (s < 60) return "agora";
@@ -49,6 +60,12 @@
     groups: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.9.3 5 2.6 5 5.8"/>',
     bag: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
     menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+    add: '<path d="M12 5v14M5 12h14"/>',
+    spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18 16l.7 1.8 1.8.7-1.8.7L18 21l-.7-1.8-1.8-.7 1.8-.7z"/>',
+    play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/>',
+    sensors: '<circle cx="12" cy="12" r="2"/><path d="M7.8 7.8a6 6 0 000 8.4M16.2 7.8a6 6 0 010 8.4M4.9 4.9a10 10 0 000 14.2M19.1 4.9a10 10 0 010 14.2"/>',
+    pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 005 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+    repeat: '<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
     dots: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>'
   };
@@ -179,7 +196,7 @@
   function side(tab) {
     function it(id, label, icon, href, extra) { return '<button class="si ' + (tab === id ? "on" : "") + '" data-go="' + href + '" aria-label="' + label + '">' + svg(icon) + '<span class="lbl">' + label + "</span>" + (extra || "") + "</button>"; }
     var me = cur();
-    return '<aside class="side"><button class="logo" data-go="#/">QINBLY</button>' +
+    return '<aside class="side"><button class="logo brandg" data-go="#/">QINBLY</button>' +
       it("home", "Início", "home", "#/") + it("search", "Buscar", "search", "#/search") + it("trending", "Em alta", "flame", "#/trending") +
       it("inbox", "Mensagens", "msg", "#/inbox", badge("inbox", unread)) + it("notif", "Notificações", "bell", "#/notifications", badge("notif", notifN)) +
       it("communities", "Comunidades", "groups", "#/communities") + it("market", "Mercado", "bag", "#/market") + it("saved", "Salvos", "save", "#/saved") +
@@ -188,7 +205,7 @@
       '<button class="si more" data-moremenu aria-label="Mais">' + svg("menu") + '<span class="lbl">Mais</span></button></aside>';
   }
   function bottomNav(tab) {
-    function b(id, label, icon, href) { return '<button data-go="' + href + '" class="' + (tab === id ? "on" : "") + '" aria-label="' + label + '">' + svg(icon) + label + (id === "inbox" ? badge("inbox", unread) : "") + "</button>"; }
+    function b(id, label, icon, href) { return '<button data-go="' + href + '" class="' + (tab === id ? "on" : "") + (id === "new" ? " mk" : "") + '" aria-label="' + label + '">' + (id === "new" ? '<span class="mkc"><svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="gq" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7C4DFF"/><stop offset="1" stop-color="#FF4F9A"/></linearGradient></defs><path d="M12 5v14M5 12h14" stroke="url(#gq)"/></svg></span>' : '<span class="ni">' + svg(icon) + "</span>") + label + (id === "inbox" ? badge("inbox", unread) : "") + "</button>"; }
     return '<nav class="nav"><div class="in">' + b("home", "Início", "home", "#/") + b("communities", "Comunidades", "groups", "#/communities") + b("new", "Criar", "plus", "#/new") + b("inbox", "Mensagens", "msg", "#/inbox") + b("me", "Perfil", "user", "#/me") + "</div></nav>";
   }
   var RC = { t: 0, sug: [], tags: [] };
@@ -243,14 +260,15 @@
     }
     var cap = (p.mediaType !== "text" && p.mediaType !== "poll" && p.caption) || (p.mediaType === "poll" ? p.caption : "");
     return '<article class="post" data-post="' + p.id + '">' +
-      '<div class="ph"><a href="#/u/' + esc(a.username) + '" class="ring">' + avatar(a.avatarUrl, a.displayName || a.username, "s") + "</a>" +
+      '<div class="ph"><a href="#/u/' + esc(a.username) + '" class="ring ' + ((window.__unseen || {})[String(a.username).toLowerCase()] ? "new" : "") + '" data-u="' + esc(String(a.username).toLowerCase()) + '">' + avatar(a.avatarUrl, a.displayName || a.username, "m") + "</a>" +
       '<div class="who"><b><a href="#/u/' + esc(a.username) + '">' + esc(a.displayName || a.username) + "</a>" + (a.verified ? VERIFIED : "") + "</b><small>@" + esc(a.username) + " · " + ago(p.createdAt) + (p.visibility === "private" ? " · privado" : "") + "</small></div>" +
       (!mine && !p.isFollowing && me ? '<button class="sb" style="flex:none;width:76px" data-follow="' + p.authorId + '">Seguir</button>' : "") + '<button class="ib" data-pmenu="' + p.id + '" aria-label="Mais opções">' + svg("dots") + "</button></div>" +
       (cap ? '<div class="cap">' + linkify(cap) + "</div>" : "") + media + ((p.taggedUsers && p.taggedUsers.length) ? '<div class="tagged">Com ' + p.taggedUsers.map(function (u) { return '<a href="#/u/' + esc(u) + '">@' + esc(u) + "</a>"; }).join(", ") + "</div>" : "") +
       '<div class="acts"><button class="act ' + (p.likedByMe ? "on" : "") + '" data-like="' + p.id + '" aria-label="Curtir">' + svg("heart") + (p.likes || "") + "</button>" +
       '<button class="act" data-comments="' + p.id + '" aria-label="Comentários">' + svg("comment") + (p.comments || "") + "</button>" +
-      '<button class="act" data-share="' + p.id + '" aria-label="Compartilhar">' + svg("send") + "</button><span class=\"sp\"></span>" +
-      '<button class="act sv ' + (p.savedByMe ? "on" : "") + '" data-save="' + p.id + '" aria-label="Salvar">' + svg("save") + "</button></div></article>";
+      '<button class="act rp ' + (p.repostedByMe ? "on" : "") + '" data-repost="' + p.id + '" aria-label="Repostar">' + svg("repeat") + (p.reposts || "") + "</button>" +
+      '<button class="act sv ' + (p.savedByMe ? "on" : "") + '" data-save="' + p.id + '" aria-label="Salvar">' + svg("save") + "</button>" +
+      '<button class="act" data-share="' + p.id + '" aria-label="Enviar">' + svg("send") + "</button></div></article>";
   }
   function repaint(id) {
     var el = document.querySelector('[data-post="' + id + '"]');
@@ -365,7 +383,7 @@
       '<div class="alt">' + (reg ? 'Já tem conta? <button data-mode="login">Entrar</button>' : 'Não tem conta? <button data-mode="register">Criar conta</button>') + "</div>" +
       (add && accounts.length ? '<div class="alt"><button data-back>Cancelar</button></div>' : "") +
       '<div class="alt" style="font-size:12px">Entrou no app só com o Google? Defina uma senha em Configurações, no app, para usar aqui.</div>' +
-      '<div class="alt" style="font-size:12px"><a class="link" href="baixar.html">Baixar o app para Android</a></div>' + (ios ? '<div class="alt" style="font-size:12px">Para instalar no iPhone: toque em compartilhar e depois em “Adicionar à Tela de Início”.</div>' : "") +
+      '<div class="alt" style="font-size:12px"><button class="link" data-install>Baixar o app</button></div>' +
       "</main>";
     initGoogle();
     var ue = $app.querySelector("#u");
@@ -410,7 +428,9 @@
   }
 
   var FEED = [], feedTab = "Descobrir", feedBefore = null, feedMore = false;
-  var FTABS = ["Descobrir", "Seguindo", "Em alta", "Vídeos", "Perto de mim", "Lives"];
+  var FTABS = ["Descobrir", "Seguindo", "Em alta", "Vídeos", "Lives", "Perto de mim"];
+  var FTAB_IC = { "Descobrir": "spark", "Seguindo": "groups", "Em alta": "flame", "Vídeos": "play", "Lives": "sensors", "Perto de mim": "pin" };
+  function shortPlace() { var p = LS.get("qb_place", ""); if (!p) return ""; var a = p.split(","), c = a[0].trim(), st = (a[1] || "").trim(); return c + (st.length === 2 ? ", " + st : ""); }
   function hot(p) { return (p.likes || 0) * 2 + (p.comments || 0) * 3 + (p.reposts || 0) * 3; }
   function feedList() {
     var hp = lget("hposts", []), l = FEED.filter(function (p) { return !isHidden(p) && hp.indexOf(p.id) < 0; });
@@ -421,8 +441,8 @@
   }
   function viewFeed(tab) {
     if (tab) feedTab = tab;
-    var mob = '<header class="top mob"><h1 class="brand">QINBLY</h1><button class="ib" data-go="#/search" aria-label="Buscar">' + svg("search") + '</button><button class="ib" data-go="#/notifications" aria-label="Notificações">' + svg("bell") + badge("notif", notifN) + '</button><button class="ib" data-moremenu aria-label="Menu">' + svg("menu") + "</button></header>";
-    setView(mob + '<div id="st"></div><div class="ftabs">' + FTABS.map(function (t) { return '<button data-ftab="' + t + '" class="' + (t === feedTab ? "on" : "") + '">' + t + "</button>"; }).join("") + '</div><div id="fd">' + spin() + "</div>", tab ? "trending" : "home");
+    var mob = '<header class="top mob apphd"><button class="ib" data-moremenu aria-label="Menu e configurações">' + svg("menu") + '</button><h1 class="brandg">QINBLY</h1><div class="hr"><button class="ib" data-go="#/search" aria-label="Buscar">' + svg("search") + '</button><button class="ib" data-go="#/market" aria-label="Mercado e avisos">' + svg("bag") + '</button><button class="ib" data-go="#/notifications" aria-label="Notificações">' + svg("bell") + badge("notif", notifN) + "</button></div></header>";
+    setView(mob + '<div class="ftabs ic">' + FTABS.map(function (t) { return '<button data-ftab="' + t + '" class="' + (t === feedTab ? "on" : "") + '">' + svg(FTAB_IC[t]) + "<span>" + (t === "Perto de mim" && shortPlace() ? esc(shortPlace()) : t) + "</span></button>"; }).join("") + '</div><div id="st"' + (feedTab === "Descobrir" ? "" : " hidden") + '></div><div id="fd">' + spin() + "</div>", tab ? "trending" : "home");
     loadStories();
     if (FEED.length) drawFeed();
     loadFeed(true);
@@ -432,9 +452,12 @@
       var tray = (j.tray || []).filter(function (t) { return t.mine || (t.stories && t.stories.length) || t.note; });
       window.__tray = tray;
       var el = document.getElementById("st"); if (!el) return;
+      window.__unseen = {}; tray.forEach(function (t) { if (!t.mine && t.hasUnseen) window.__unseen[String(t.username).toLowerCase()] = 1; });
+      document.querySelectorAll(".post .ring[data-u]").forEach(function (r) { r.classList.toggle("new", !!window.__unseen[r.dataset.u]); });
       el.innerHTML = '<div class="stories">' + tray.map(function (t, i) {
-        return '<div class="story">' + (t.note ? '<span class="note">' + esc(t.note.body) + "</span>" : "") + '<button class="ring ' + (t.hasUnseen ? "new" : "") + '" data-story="' + i + '" aria-label="Ver story">' + avatar(t.avatarUrl, t.displayName || t.username) + "</button>" +
-          (t.mine ? '<button class="plus" data-addstory aria-label="Criar story">+</button>' : "") + "<span>" + (t.mine ? "Seu story" : esc(t.username)) + "</span></div>";
+        var has = t.stories && t.stories.length, cls = !has ? "none" : t.hasUnseen ? "new" : "seen";
+        return '<div class="story">' + (t.note ? '<span class="note">' + esc(t.note.body) + "</span>" : "") + '<button class="ring2 ' + cls + '" data-story="' + i + '" aria-label="Ver story">' + avatar(t.avatarUrl, t.displayName || t.username) + "</button>" +
+          (t.mine ? '<button class="plus" data-addstory aria-label="Criar story">' + svg("add") + "</button>" : "") + "<span>" + (t.mine ? "Seu story" : esc(t.displayName || t.username)) + "</span></div>";
       }).join("") + "</div>";
     }).catch(function () { /* stories são opcionais */ });
   }
@@ -679,8 +702,8 @@
   }
   function settingsSheet() {
     sheet("Configurações",
-      '<a class="row" href="baixar.html"><span class="t"><b>Baixar o app para Android</b><small>Instalar o QINBLY no celular</small></span></a>' +
-      '<button class="row" data-install><span class="t"><b>Instalar no iPhone</b><small>Como adicionar à Tela de Início</small></span></button>' +
+      '' +
+      '<button class="row" data-install><span class="t"><b>Instalar o app</b><small>Instala direto no celular</small></span></button>' +
       '<a class="row" href="privacidade.html"><span class="t"><b>Privacidade</b></span></a>' +
       '<a class="row" href="termos.html"><span class="t"><b>Termos de uso</b></span></a>' +
       '<button class="row" data-drop="' + activeId + '"><span class="t"><b style="color:var(--danger)">Sair desta conta</b></span></button>');
@@ -812,8 +835,8 @@
       '<a class="row" href="#/settings"><span class="t"><b>Configurações</b><small>Conta, privacidade, tema e mais</small></span></a>' +
       '<button class="row" data-invite><span class="t"><b>Convidar amigos</b><small>Compartilhe o link do QINBLY</small></span></button>' +
       '<a class="row" href="#/golive"><span class="t"><b>Transmitir ao vivo</b></span></a>' +
-      '<a class="row" href="baixar.html"><span class="t"><b>Baixar o app para Android</b><small>Instalar o QINBLY no celular</small></span></a>' +
-      '<button class="row" data-install><span class="t"><b>Instalar no iPhone</b><small>Como adicionar à Tela de Início</small></span></button>' +
+      '' +
+      '<button class="row" data-install><span class="t"><b>Instalar o app</b><small>Instala direto no celular</small></span></button>' +
       '<a class="row" href="privacidade.html"><span class="t"><b>Privacidade</b></span></a><a class="row" href="termos.html"><span class="t"><b>Termos de uso</b></span></a>' +
       '<button class="row" data-drop="' + activeId + '"><span class="t"><b style="color:var(--danger)">Sair desta conta</b></span></button>');
   }
@@ -1758,7 +1781,7 @@
     api("/api/users/" + id + "/follow", { method: "POST", body: {} }).then(function () { if (name) viewProfile(name); else { toast("Seguindo."); RC.sug = RC.sug.filter(function (u) { return u.id !== id; }); fillRcol(); Object.keys(POSTS).forEach(function (k) { if (POSTS[k].authorId === id) { POSTS[k].isFollowing = true; repaint(k); } }); } }).catch(onErr);
   }
   document.addEventListener("click", function (e) {
-    var t = e.target.closest("[data-go],[data-back],[data-like],[data-save],[data-comments],[data-share],[data-vote],[data-follow],[data-open],[data-story],[data-more],[data-settings],[data-accounts],[data-edit],[data-shareprofile],[data-chat],[data-find],[data-switch],[data-drop],[data-addacc],[data-install],[data-mode],[data-moremenu],[data-ftab],[data-ctab],[data-joincom],[data-newcom],[data-mk],[data-listing],[data-addstory],[data-pmenu],[data-pact],[data-newwith],[data-locon],[data-nrefresh],[data-notice],[data-invite],[data-forgot],[data-cvote],[data-golive],[data-stat],[data-umenu],[data-newlisting]");
+    var t = e.target.closest("[data-go],[data-back],[data-like],[data-save],[data-comments],[data-share],[data-vote],[data-follow],[data-open],[data-story],[data-more],[data-settings],[data-accounts],[data-edit],[data-shareprofile],[data-chat],[data-find],[data-switch],[data-drop],[data-addacc],[data-install],[data-mode],[data-moremenu],[data-ftab],[data-ctab],[data-joincom],[data-newcom],[data-mk],[data-listing],[data-addstory],[data-pmenu],[data-pact],[data-repost],[data-newwith],[data-locon],[data-nrefresh],[data-notice],[data-invite],[data-forgot],[data-cvote],[data-golive],[data-stat],[data-umenu],[data-newlisting]");
     if (!t) return;
     var d = t.dataset;
     if (d.go) { if (location.hash === d.go) render(); else location.hash = d.go; return; }
@@ -1782,10 +1805,10 @@
     if (d.switch) { activeId = d.switch; save(); closeSheet(); goto("#/"); return; }
     if (d.drop) { var was = d.drop === activeId; dropAccount(d.drop); closeSheet(); goto(accounts.length ? "#/" : "#/login"); return; }
     if (t.hasAttribute("data-addacc")) { closeSheet(); location.hash = "#/login?add"; return; }
-    if (t.hasAttribute("data-install")) { sheet("Instalar no iPhone", '<div style="padding:0 20px 20px;font-size:16px;line-height:1.6">1. Abra esta página no <b>Safari</b>.<br>2. Toque no botão de compartilhar (quadrado com seta para cima).<br>3. Escolha <b>Adicionar à Tela de Início</b>.<br>4. Abra o ícone QINBLY como um app.</div>'); return; }
+    if (t.hasAttribute("data-install")) { installNow(); return; }
     if (d.mode) { viewLogin(d.mode); return; }
     if (t.hasAttribute("data-moremenu")) return moreMenu();
-    if (d.ftab) { feedTab = d.ftab; document.querySelectorAll(".ftabs button").forEach(function (b) { b.classList.toggle("on", b.dataset.ftab === feedTab); }); drawFeed(); return; }
+    if (d.ftab) { feedTab = d.ftab; document.querySelectorAll(".ftabs button").forEach(function (b) { b.classList.toggle("on", b.dataset.ftab === feedTab); }); var stb = el("st"); if (stb) stb.hidden = feedTab !== "Descobrir"; drawFeed(); return; }
     if (d.ctab) { comTab = d.ctab; viewCommunities(); return; }
     if (d.joincom) { api("/api/communities/" + d.joincom + "/join", { method: "POST", body: {} }).then(function () { if (t.hasAttribute("data-stay")) viewCommunity(d.joincom); else viewCommunities(); }).catch(onErr); return; }
     if (t.hasAttribute("data-newcom")) return newCommunity();
@@ -1798,6 +1821,7 @@
     if (d.notice) return noticeSheet(d.notice);
     if (t.hasAttribute("data-invite")) return inviteFriends();
     if (t.hasAttribute("data-forgot")) return forgotSheet();
+    if (d.repost) { var rq = POSTS[d.repost]; if (!rq) return; if (!cur()) { location.hash = "#/login"; return; } api("/api/posts/" + d.repost + "/repost", { method: "POST", body: {} }).then(function (r) { rq.repostedByMe = !!r.reposted; rq.reposts = Math.max(0, (rq.reposts || 0) + (r.reposted ? 1 : -1)); repaint(d.repost); toast(r.reposted ? "Repostado." : "Repostagem desfeita."); }).catch(onErr); return; }
     if (d.pmenu) return postMenu(d.pmenu);
     if (d.pact) { var pa = d.pact.split(":"); closeSheet(); return postAction(pa[0], pa[1]); }
     if (d.cvote) { var cv = d.cvote.split(":"); call(HOST + "/api/chat-polls/" + cv[0] + "/vote", { method: "POST", body: { optionIndex: Number(cv[1]) } }).then(function () { toast("Voto registrado."); if (window.__reload) window.__reload(); }).catch(onErr); return; }
