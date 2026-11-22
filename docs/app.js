@@ -64,6 +64,11 @@
     photo: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/>',
     cal: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
     edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+    gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8h14v-8M12 8c-2.5 0-4.5-1-4.5-3S10 3 12 8zm0 0c2.5 0 4.5-1 4.5-3S14 3 12 8z"/>',
+    tool: '<path d="M14.7 6.3a4 4 0 00-5 5L4 17l3 3 5.7-5.7a4 4 0 005-5l-2.4 2.4-2.3-.7-.7-2.3z"/>',
+    mega: '<path d="M3 10v4l3 .5L13 19V5L6 9.5z"/><path d="M17 9a4 4 0 010 6"/>',
+    adduser: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0113 0M19 8v6M16 11h6"/>',
+    download: '<path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/>',
     spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18 16l.7 1.8 1.8.7-1.8.7L18 21l-.7-1.8-1.8-.7 1.8-.7z"/>',
     play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/>',
     sensors: '<circle cx="12" cy="12" r="2"/><path d="M7.8 7.8a6 6 0 000 8.4M16.2 7.8a6 6 0 010 8.4M4.9 4.9a10 10 0 000 14.2M19.1 4.9a10 10 0 010 14.2"/>',
@@ -858,17 +863,38 @@
   function photoUrl(p) { if (!p) return ""; if (p.indexOf(OLD_PUB) === 0) p = p.slice(OLD_PUB.length); return /^https?:/.test(p) ? p : HOST + "/storage/v1/object/public/post-media/" + p; }
   var MK = {};
   /* ---------- mais, criar story ---------- */
+  /* Menu dos três tracinhos: tela cheia "Atalhos", igual ao app */
+  function closeShortcuts() { var o = document.getElementById("scr"); if (o) o.remove(); document.removeEventListener("keydown", scrEsc); }
+  function scrEsc(e) { if (e.key === "Escape") closeShortcuts(); }
   function moreMenu() {
-    sheet("Mais",
-      '<button class="row" data-accounts><span class="t"><b>Trocar de conta</b><small>@' + esc(cur() ? cur().username : "") + "</small></span></button>" +
-      '<a class="row" href="#/saved"><span class="t"><b>Salvos</b></span></a>' +
-      '<a class="row" href="#/settings"><span class="t"><b>Configurações</b><small>Conta, privacidade, tema e mais</small></span></a>' +
-      '<button class="row" data-invite><span class="t"><b>Convidar amigos</b><small>Compartilhe o link do QINBLY</small></span></button>' +
-      '<a class="row" href="#/golive"><span class="t"><b>Transmitir ao vivo</b></span></a>' +
-      '' +
-      '<button class="row" data-install><span class="t"><b>Instalar o app</b><small>Instala direto no celular</small></span></button>' +
-      '<a class="row" href="privacidade.html"><span class="t"><b>Privacidade</b></span></a><a class="row" href="termos.html"><span class="t"><b>Termos de uso</b></span></a>' +
-      '<button class="row" data-drop="' + activeId + '"><span class="t"><b style="color:var(--danger)">Sair desta conta</b></span></button>');
+    closeShortcuts();
+    var me = cur();
+    function item(ic, act, title, sub) { return '<button class="sci" data-sc="' + act + '">' + svg(ic) + '<span class="t"><b>' + title + "</b>" + (sub ? "<small>" + sub + "</small>" : "") + "</span></button>"; }
+    function lab(t) { return '<div class="scl">' + t + "</div>"; }
+    var o = document.createElement("div"); o.id = "scr"; o.className = "scr";
+    o.innerHTML = '<div class="scw"><div class="sch"><button class="ib" data-sc="close" aria-label="Voltar">' + svg("back") + "</button><h2>Atalhos</h2></div>" +
+      (me ? '<button class="scp" data-sc="profile">' + avatar(me.avatarUrl, me.displayName || me.username) + '<span class="t"><b>' + esc(me.username) + "</b><small>Ver meu perfil</small></span></button>" : "") +
+      lab("EXPLORAR") + item("play", "tab:Vídeos", "Vídeos", "Curtos e longos") + item("flame", "tab:Em alta", "Em alta", "O que está bombando") + item("sensors", "tab:Lives", "Lives", "Transmissões ao vivo") + item("pin", "tab:Perto de mim", "Perto de mim", "Gente da sua cidade") +
+      lab("NA SUA CIDADE") + item("bag", "mk:1", "Mercado", "Compre e venda perto de você") + item("gift", "mk:2", "Doações", "Dê e ganhe coisas") + item("search", "mk:3", "Achados", "Achei algo, perdi algo") + item("cal", "mk:4", "Eventos", "O que vai rolar na cidade") + item("tool", "mk:5", "Serviços", "Quem faz o quê") + item("mega", "mk:6", "Avisos", "Recados do bairro") +
+      lab("SEUS ESPAÇOS") + item("groups", "go:#/communities", "Comunidades", "Seus grupos") + item("save", "go:#/saved", "Salvos", "Publicações que você guardou") + item("adduser", "invite", "Convidar amigos", "Compartilhe o QINBLY") + item("sensors", "go:#/golive", "Transmitir ao vivo", "Comece uma live agora") +
+      '<div class="scg"></div>' + item("gear", "go:#/settings", "Configurações", "Conta, privacidade, tela e mais") + item("groups", "accounts", "Trocar de conta", me ? "@" + esc(me.username) : "") + item("download", "install", "Instalar o app", "Instala direto no celular") +
+      '<div class="scf"><a href="privacidade.html">Privacidade</a><a href="termos.html">Termos de uso</a></div>' +
+      '<button class="sci out" data-sc="drop">' + svg("x") + '<span class="t"><b>Sair desta conta</b></span></button></div>';
+    document.body.appendChild(o);
+    document.addEventListener("keydown", scrEsc);
+    o.addEventListener("click", function (e) {
+      var t = e.target.closest("[data-sc]"); if (!t) return; var k = t.dataset.sc;
+      closeShortcuts();
+      if (k === "close") return;
+      if (k === "profile") { location.hash = "#/me"; return; }
+      if (k === "accounts") return accountsSheet();
+      if (k === "install") return installNow();
+      if (k === "drop") return dropAccount(activeId);
+      if (k === "invite") return inviteFriends();
+      if (k.indexOf("go:") === 0) { location.hash = k.slice(3); return; }
+      if (k.indexOf("mk:") === 0) { mkCat = Number(k.slice(3)); if (location.hash === "#/market") viewMarket(); else location.hash = "#/market"; return; }
+      if (k.indexOf("tab:") === 0) { feedTab = k.slice(4); if (location.hash === "#/" || location.hash === "" || location.hash === "#") render(); else location.hash = "#/"; return; }
+    });
   }
   /* =====================================================================
      Recursos completos: menu do post, mensagens com mídia, enquetes,

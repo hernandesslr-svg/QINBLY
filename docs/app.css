@@ -485,3 +485,22 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 .msgb{flex:1;height:46px;border-radius:24px;border:1px solid #2F68E0;color:#2F68E0;font-size:15px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px}
 [data-theme=light] .pill{background:#E8F0FF;color:#2558C4}
 @media(min-width:700px){.hls,.ptabs{max-width:470px;margin-left:auto;margin-right:auto}.pgrid{max-width:470px;margin:0 auto}.pown,.pbio,.pc,.pfb{max-width:470px;margin-left:auto;margin-right:auto}.pbio,.pown{width:100%}}
+
+/* ===== menu "Atalhos" em tela cheia (igual ao app) ===== */
+.scr{position:fixed;inset:0;z-index:90;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.scw{max-width:640px;margin:0 auto;padding:env(safe-area-inset-top) 0 calc(24px + env(safe-area-inset-bottom))}
+.sch{display:flex;align-items:center;gap:4px;padding:8px}
+.sch h2{margin:0;font-size:20px;font-weight:500}
+.scp,.sci{display:flex;align-items:center;gap:18px;width:100%;padding:11px 20px;text-align:left;color:var(--text)}
+.scp{gap:16px;padding:12px 20px}
+.scp .av{width:56px;height:56px;font-size:20px}
+.sci>svg{width:26px;height:26px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.scr .t{display:flex;flex-direction:column;min-width:0}
+.scr .t b{font-size:16px;font-weight:500}
+.scr .t small{font-size:11px;color:var(--muted);margin-top:1px}
+.scl{font-size:11px;font-weight:500;letter-spacing:1px;color:var(--muted);padding:22px 20px 6px}
+.scg{height:18px}
+.sci.out{color:var(--danger)}
+.scf{display:flex;gap:18px;padding:14px 20px 4px;font-size:12px}
+.scf a{color:var(--muted)}
+.sci:active,.scp:active{background:var(--surface)}
