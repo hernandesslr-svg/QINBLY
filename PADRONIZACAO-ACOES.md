@@ -1035,3 +1035,18 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 ## Editar perfil: categorias sem cores
 - Saíram as cores diferentes de cada categoria. As escolhidas aparecem numa faixa "Escolhidas", na cor principal do app, cada uma com um X para tirar.
 - As demais ficam agrupadas por assunto (Criação e mídia, Estilo de vida, Esporte e saúde, Negócios e aprender, Hobbies) em pílulas cinza claras, sem contorno e sem ícone. O limite continua em 5.
+
+## Padrão de letras do aplicativo (todas as telas)
+Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `fontSize` e no tema:
+| Tamanho | Peso | Uso |
+|---|---|---|
+| 24 | semibold | título de tela |
+| 20 | semibold | nome no perfil, título de janela |
+| 18 | semibold | números (seguidores, curtidas) |
+| 16 | semibold/médio | nome no feed, seções, botões grandes, título de item das configurações |
+| 14 | regular | texto corrido: legenda, comentário, bio, mensagem |
+| 12 | regular | @, horário, local, abas, rótulos e descrições em cinza |
+| 11 | regular | menor tamanho (avisos mínimos) |
+- Tamanhos decorativos (contagem regressiva da live etc.) ficam fora da tabela.
+- A redução geral de 10% (`QINBLY_TEXT_SCALE = 0.9`) foi removida (agora 1.0); era o que deixava muitas letras pequenas demais. "Letras grandes" nas configurações continua multiplicando por cima.
+- Ao criar uma tela nova, usar um destes tamanhos (ou `MaterialTheme.typography`, que já segue a tabela).

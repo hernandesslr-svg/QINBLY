@@ -90,7 +90,7 @@ internal fun QinblyFileBubble(url: String, name: String, accent: Color, textColo
 internal fun QinblyChatPollBubble(poll: QinblyApi.ChatPoll, accent: Color, textColor: Color, onVote: (Int) -> Unit) {
     val total = poll.votes.sum()
     Column(Modifier.widthIn(min = 200.dp, max = 260.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(poll.question, color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+        Text(poll.question, color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
         poll.options.forEachIndexed { i, option ->
             val count = poll.votes.getOrElse(i) { 0 }
             val share = if (total > 0) count.toFloat() / total else 0f

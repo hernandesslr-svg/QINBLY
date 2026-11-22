@@ -62,7 +62,7 @@ internal fun QinblyChatSharedMedia(
                 IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = textColor) }
                 Column {
                     Text("Mídia, links e documentos", color = textColor, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                    Text("Conversa com @${name.removePrefix("@")}", color = secondary, fontSize = 13.sp)
+                    Text("Conversa com @${name.removePrefix("@")}", color = secondary, fontSize = 14.sp)
                 }
             }
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -82,10 +82,10 @@ internal fun QinblyChatSharedMedia(
                     items(links) { (u, _) -> Text(u, color = accent, fontSize = 14.sp, maxLines = 2, modifier = Modifier.fillMaxWidth().clickable { open(u) }.padding(horizontal = 20.dp, vertical = 12.dp)) }
                 }
                 2 -> if (docs.isEmpty()) Empty("Nenhum documento compartilhado ainda.", secondary) else LazyColumn(Modifier.fillMaxSize()) {
-                    items(docs) { d -> Text(d.fileName.ifBlank { "Documento" }, color = textColor, fontSize = 15.sp, maxLines = 1, modifier = Modifier.fillMaxWidth().clickable { open(d.fileUrl) }.padding(horizontal = 20.dp, vertical = 14.dp)) }
+                    items(docs) { d -> Text(d.fileName.ifBlank { "Documento" }, color = textColor, fontSize = 16.sp, maxLines = 1, modifier = Modifier.fillMaxWidth().clickable { open(d.fileUrl) }.padding(horizontal = 20.dp, vertical = 14.dp)) }
                 }
                 else -> if (audios.isEmpty()) Empty("Nenhum áudio compartilhado ainda.", secondary) else LazyColumn(Modifier.fillMaxSize()) {
-                    items(audios) { a -> Text("Mensagem de voz · ${a.audioSeconds}s", color = textColor, fontSize = 15.sp, modifier = Modifier.fillMaxWidth().clickable { open(a.audioUrl) }.padding(horizontal = 20.dp, vertical = 14.dp)) }
+                    items(audios) { a -> Text("Mensagem de voz · ${a.audioSeconds}s", color = textColor, fontSize = 16.sp, modifier = Modifier.fillMaxWidth().clickable { open(a.audioUrl) }.padding(horizontal = 20.dp, vertical = 14.dp)) }
                 }
             }
         }
@@ -101,5 +101,5 @@ internal fun QinblyChatSharedMedia(
 
 @Composable
 private fun Empty(text: String, color: Color) {
-    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.TopCenter) { Text(text, color = color, fontSize = 15.sp) }
+    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.TopCenter) { Text(text, color = color, fontSize = 16.sp) }
 }

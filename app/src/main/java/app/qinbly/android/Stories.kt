@@ -150,7 +150,7 @@ internal fun QinblyStoryMenu(
                     item { Square(Icons.Outlined.MusicNote, "Música") { step = "music" } }
                     item { Square(Icons.Outlined.Groups, "Story coletivo") { step = "collab" } }
                 }
-                Text("Galeria", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 8.dp))
+                Text("Galeria", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 8.dp))
                 androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
                     androidx.compose.foundation.lazy.grid.GridCells.Fixed(3), modifier = Modifier.weight(1f).fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = qinblyNavBarPadding()),
                     horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -237,7 +237,7 @@ internal fun QinblyStoryMenu(
 
 @Composable
 private fun MenuRow(text: String, accent: Color, onClick: () -> Unit) {
-    Text(text, color = accent, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+    Text(text, color = accent, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onClick() }.padding(vertical = 12.dp, horizontal = 4.dp))
 }
 
@@ -575,7 +575,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                                 }
                             }
                         }
-                        Text("Visualizações", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = if (recent.isNotEmpty()) 4.dp else 0.dp))
+                        Text("Visualizações", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = if (recent.isNotEmpty()) 4.dp else 0.dp))
                     }
                 }
             }
@@ -720,10 +720,10 @@ internal fun QinblyStoryMessageBar(username: String, fieldBg: Color, hintColor: 
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(Modifier.weight(1f).clip(RoundedCornerShape(26.dp)).background(fieldBg).padding(horizontal = 18.dp, vertical = 14.dp)) {
-            if (draft.isEmpty()) Text("Enviar mensagem…", color = hintColor, fontSize = 15.sp)
+            if (draft.isEmpty()) Text("Enviar mensagem…", color = hintColor, fontSize = 16.sp)
             androidx.compose.foundation.text.BasicTextField(
                 draft, { draft = it.take(1000) },
-                textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 15.sp),
+                textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 16.sp),
                 cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.White), maxLines = 3,
                 modifier = Modifier.fillMaxWidth().onFocusChanged { onFocus(it.isFocused) }
             )
@@ -786,7 +786,7 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
                 }
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(v.displayName.ifBlank { v.username }, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(v.displayName.ifBlank { v.username }, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(sub + " · " + qinblyAgo(v.viewedAt), color = Color(0xFF8E87A8), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 if (v.username in likedBy) QinblyIconOf(QinblyIcon.Favorite, Color(0xFFE5484D), 20.dp)
@@ -815,7 +815,7 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
             }
             if (list.isNotEmpty()) item {
                 Column(Modifier.fillMaxWidth().padding(top = 18.dp)) {
-                    Text("Quando viram", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                    Text("Quando viram", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                     Row(Modifier.fillMaxWidth().height(90.dp).padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
                         for (i in 0 until 12) {
                             val h = (4 + 76f * buckets[i] / maxB).dp
@@ -830,11 +830,11 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
                 }
                 androidx.compose.material3.HorizontalDivider(Modifier.padding(top = 14.dp), color = line)
             }
-            if (list.isEmpty()) item { Text("Ninguém viu ainda.", color = Color(0xFFF2F4F8), fontSize = 15.sp, modifier = Modifier.padding(vertical = 24.dp)) }
+            if (list.isEmpty()) item { Text("Ninguém viu ainda.", color = Color(0xFFF2F4F8), fontSize = 16.sp, modifier = Modifier.padding(vertical = 24.dp)) }
             else {
                 item { Row(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 4.dp)) {
-                    Text("Quem viu", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                    Text("${list.size} pessoa" + if (list.size > 1) "s" else "", color = Color(0xFF6E6E78), fontSize = 13.sp)
+                    Text("Quem viu", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                    Text("${list.size} pessoa" + if (list.size > 1) "s" else "", color = Color(0xFF6E6E78), fontSize = 14.sp)
                 } }
                 items(list, key = { it.username }) { v ->
                     Person(v, if (near(v)) "Sua cidade" else cities[v.username]?.substringBefore(",") ?: "Cidade não informada")

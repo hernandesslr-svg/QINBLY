@@ -113,7 +113,7 @@ internal fun QinblyLiveCapsule(name: String, avatarUrl: String, likes: Int, foll
     ) {
         QinblyLiveAvatar(name, avatarUrl, 36.dp, Color(0xFFD4537E))
         Column {
-            Text(name, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 13.sp, maxLines = 1)
+            Text(name, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp, maxLines = 1)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(QinblyIcon.Favorite, null, tint = Color(0xFFF26B6B), modifier = Modifier.size(11.dp))
                 Spacer(Modifier.width(3.dp))

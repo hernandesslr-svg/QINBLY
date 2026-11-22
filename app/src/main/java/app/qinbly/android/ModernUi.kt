@@ -189,8 +189,8 @@ internal fun QinblyCountrySheet(options: List<String>, selected: String, onPick:
     val shown = options.filter { query.isBlank() || it.contains(query.trim(), ignoreCase = true) }
     QinblyFullScreen("País", onDismiss, background = QiblyTheme.background, contentColor = QiblyTheme.text, scroll = false) {
         Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).clip(RoundedCornerShape(24.dp)).background(QiblyTheme.soft).padding(horizontal = 16.dp, vertical = 12.dp)) {
-            if (query.isEmpty()) Text("Buscar país", color = QiblyTheme.secondary, fontSize = 15.sp)
-            BasicTextField(query, { query = it.take(40) }, singleLine = true, textStyle = TextStyle(color = QiblyTheme.text, fontSize = 15.sp), cursorBrush = SolidColor(QiblyTheme.text), modifier = Modifier.fillMaxWidth())
+            if (query.isEmpty()) Text("Buscar país", color = QiblyTheme.secondary, fontSize = 16.sp)
+            BasicTextField(query, { query = it.take(40) }, singleLine = true, textStyle = TextStyle(color = QiblyTheme.text, fontSize = 16.sp), cursorBrush = SolidColor(QiblyTheme.text), modifier = Modifier.fillMaxWidth())
         }
         LazyColumn(Modifier.weight(1f).fillMaxWidth().padding(top = 6.dp, start = 16.dp, end = 16.dp)) {
             if (query.isBlank()) item {

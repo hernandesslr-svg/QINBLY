@@ -174,7 +174,7 @@ internal fun QinblyTextStoryComposer(onDismiss: () -> Unit, onPublished: () -> U
                 @Composable fun Tool(on: Boolean, onClick: () -> Unit, content: @Composable () -> Unit) {
                     Box(Modifier.size(42.dp).clip(CircleShape).background(if (on) Color.White else Color(0x44000000)).clickable { onClick() }, contentAlignment = Alignment.Center) { content() }
                 }
-                Tool(showFonts, { showFonts = !showFonts; if (showFonts) showEmojis = false }) { Text("Aa", color = if (showFonts) Color(0xFF26215C) else Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp) }
+                Tool(showFonts, { showFonts = !showFonts; if (showFonts) showEmojis = false }) { Text("Aa", color = if (showFonts) Color(0xFF26215C) else Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp) }
                 Tool(showBgs, { showBgs = !showBgs }) { QinblyIconOf(QinblyIcon.Palette, Color.White, 22.dp) }
                 Tool(false, { align = (align + 1) % 3 }) { QinblyIconOf(when (align) { 0 -> QinblyIcon.FormatAlignLeft; 2 -> QinblyIcon.FormatAlignRight; else -> QinblyIcon.FormatAlignCenter }, Color.White, 22.dp) }
                 Tool(showEmojis, { showEmojis = !showEmojis; if (showEmojis) showFonts = false }) { QinblyIconOf(QinblyIcon.EmojiEmotions, Color.White, 22.dp) }
@@ -284,7 +284,7 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
                     }
                     Column(Modifier.clip(RoundedCornerShape(18.dp)).background(Color(0xFF262628)).padding(horizontal = 14.dp, vertical = 8.dp)) {
                         Text(c.displayName.ifBlank { c.username }, color = Color(0xFF7FA6F2), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                        if (c.body == QINBLY_VOICE) Text("▶  Ouvir mensagem de voz", color = Color.White, fontSize = 15.sp, modifier = Modifier.clickable { playVoice(c.id) }) else Text(c.body, color = Color.White, fontSize = 15.sp)
+                        if (c.body == QINBLY_VOICE) Text("▶  Ouvir mensagem de voz", color = Color.White, fontSize = 16.sp, modifier = Modifier.clickable { playVoice(c.id) }) else Text(c.body, color = Color.White, fontSize = 16.sp)
                     }
                 }
             }
@@ -355,14 +355,14 @@ internal fun QinblyStoryReplyBar(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (recording) {
                         Box(Modifier.weight(1f).clip(RoundedCornerShape(26.dp)).background(Color(0xFF3A2236)).padding(horizontal = 18.dp, vertical = 15.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(10.dp).clip(CircleShape).background(Color(0xFFE5484D))); Text("  Gravando… (até 30 s)", color = Color.White, fontSize = 15.sp) }
+                            Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(10.dp).clip(CircleShape).background(Color(0xFFE5484D))); Text("  Gravando… (até 30 s)", color = Color.White, fontSize = 16.sp) }
                         }
                         Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF2E2E30)).clickable { stopRec(false) }, contentAlignment = Alignment.Center) { QinblyCloseIcon(Color.White, 21.dp) }
                         Box(Modifier.size(46.dp).clip(CircleShape).background(accent).clickable { stopRec(true) }, contentAlignment = Alignment.Center) { QinblySendIcon(Color.White, 21.dp) }
                     } else {
                         Box(Modifier.weight(1f).clip(RoundedCornerShape(26.dp)).background(fieldBg).padding(horizontal = 18.dp, vertical = 13.dp)) {
-                            if (draft.isEmpty()) Text(if (collab) "Adicionar ao story…" else "Comentar no story…", color = hintColor, fontSize = 15.sp)
-                            BasicTextField(value = draft, onValueChange = { draft = it.take(500) }, textStyle = TextStyle(color = Color.White, fontSize = 15.sp),
+                            if (draft.isEmpty()) Text(if (collab) "Adicionar ao story…" else "Comentar no story…", color = hintColor, fontSize = 16.sp)
+                            BasicTextField(value = draft, onValueChange = { draft = it.take(500) }, textStyle = TextStyle(color = Color.White, fontSize = 16.sp),
                                 cursorBrush = SolidColor(Color.White), maxLines = 4, modifier = Modifier.fillMaxWidth().onFocusChanged { onFocus(it.isFocused) })
                         }
                         if (draft.isBlank()) Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF2E2E30)).clickable {

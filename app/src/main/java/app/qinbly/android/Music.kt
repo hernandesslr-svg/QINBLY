@@ -166,8 +166,8 @@ private fun QinblyMusicRow(m: QinblyMusic, playing: String, onToggle: () -> Unit
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { onPick() }.padding(vertical = 8.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF3A3260)), contentAlignment = Alignment.Center) { QinblyIconOf(QinblyIcon.MusicNote, Color(0xFF7FA6F2), 22.dp) }
         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-            Text(m.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(m.artist, color = Color(0xFFF2F4F8), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(m.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(m.artist, color = Color(0xFFF2F4F8), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF262628)).clickable { onToggle() }, contentAlignment = Alignment.Center) {
             QinblyIconOf(if (playing == m.url) QinblyIcon.Pause else QinblyIcon.PlayArrow, Color.White, 20.dp)
@@ -199,13 +199,13 @@ internal fun QinblyMusicPicker(onPick: (QinblyMusic) -> Unit, onDismiss: () -> U
     val freeMatches = remember(q) { if (q.isBlank()) emptyList() else qinblyFreeTracks.flatMap { it.second }.filter { it.title.contains(q, ignoreCase = true) } }
     QinblyFullScreen("Adicionar música", onDismiss, scroll = false) {
         Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).clip(RoundedCornerShape(24.dp)).background(Color(0xFF262628)).padding(horizontal = 16.dp, vertical = 12.dp)) {
-            if (query.isEmpty()) Text(if (freeOnly) "Buscar nas músicas livres" else "Buscar música ou artista", color = Color(0xFF8E87A8), fontSize = 15.sp)
-            BasicTextField(query, { query = it.take(60) }, singleLine = true, textStyle = TextStyle(color = Color.White, fontSize = 15.sp), cursorBrush = SolidColor(Color.White), modifier = Modifier.fillMaxWidth())
+            if (query.isEmpty()) Text(if (freeOnly) "Buscar nas músicas livres" else "Buscar música ou artista", color = Color(0xFF8E87A8), fontSize = 16.sp)
+            BasicTextField(query, { query = it.take(60) }, singleLine = true, textStyle = TextStyle(color = Color.White, fontSize = 16.sp), cursorBrush = SolidColor(Color.White), modifier = Modifier.fillMaxWidth())
         }
         val listModifier = Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp, start = 16.dp, end = 16.dp)
         if (q.isBlank()) {
             LazyColumn(listModifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                item { Text("Músicas livres do Qinbly. Toque no play pra ouvir e na linha pra escolher.", color = Color(0xFFF2F4F8), fontSize = 13.sp, modifier = Modifier.padding(vertical = 8.dp)) }
+                item { Text("Músicas livres do Qinbly. Toque no play pra ouvir e na linha pra escolher.", color = Color(0xFFF2F4F8), fontSize = 14.sp, modifier = Modifier.padding(vertical = 8.dp)) }
                 qinblyFreeTracks.forEach { (group, tracks) ->
                     item(key = "h-$group") { Text(group, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)) }
                     items(tracks, key = { it.url }) { m -> QinblyMusicRow(m, playing, { playing = if (playing == m.url) "" else m.url }) { playing = ""; onPick(m) } }

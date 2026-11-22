@@ -161,7 +161,7 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                 Column(Modifier.fillMaxSize().statusBarsPadding()) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable { onDismiss() }, contentAlignment = Alignment.Center) { QinblyCloseIcon(Color.White, 22.dp) }
-                        Text("Recentes", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f).padding(end = 40.dp))
+                        Text("Recentes", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f).padding(end = 40.dp))
                     }
                     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         @Composable fun Chip(label: String, onClick: () -> Unit, mod: Modifier) {
@@ -169,7 +169,7 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     val ic = when { label.startsWith("📷") -> QinblyIcon.PhotoCamera; label.startsWith("Aa") -> QinblyIcon.TextFields; else -> null }
                                     if (ic != null) { QinblyIconOf(ic, Color.White, 20.dp); Spacer(Modifier.width(8.dp)) }
-                                    Text(label.substringAfter("  "), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                                    Text(label.substringAfter("  "), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                                 }
                             }
                         }
@@ -179,7 +179,7 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                     Spacer(Modifier.size(10.dp))
                     if (!granted) {
                         Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text("Permita o acesso às suas fotos para escolher daqui.", color = Color(0xFFF2F4F8), fontSize = 15.sp)
+                            Text("Permita o acesso às suas fotos para escolher daqui.", color = Color(0xFFF2F4F8), fontSize = 16.sp)
                             Text("Permitir acesso", color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFF2F68E0))
                                 .clickable { permissionLauncher.launch(if (Build.VERSION.SDK_INT >= 33) arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES, android.Manifest.permission.READ_MEDIA_VIDEO) else arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)) }.padding(horizontal = 22.dp, vertical = 11.dp))
                             Text("Escolher pela galeria do celular", color = Color(0xFF7FA6F2), modifier = Modifier.clickable { systemPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }.padding(8.dp))
@@ -214,8 +214,8 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                     Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Color(0xFF262628)).padding(start = 18.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.weight(1f).padding(vertical = 8.dp)) {
-                                if (caption.isEmpty()) Text("Adicionar legenda…", color = Color(0xFF8E87A8), fontSize = 15.sp)
-                                BasicTextField(value = caption, onValueChange = { caption = it.take(300) }, textStyle = TextStyle(color = Color.White, fontSize = 15.sp), cursorBrush = SolidColor(Color.White), maxLines = 3, modifier = Modifier.fillMaxWidth())
+                                if (caption.isEmpty()) Text("Adicionar legenda…", color = Color(0xFF8E87A8), fontSize = 16.sp)
+                                BasicTextField(value = caption, onValueChange = { caption = it.take(300) }, textStyle = TextStyle(color = Color.White, fontSize = 16.sp), cursorBrush = SolidColor(Color.White), maxLines = 3, modifier = Modifier.fillMaxWidth())
                             }
                             Box(Modifier.size(36.dp).clip(CircleShape).background(if (music != null) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = false; showMusic = true }, contentAlignment = Alignment.Center) { QinblyIconOf(QinblyIcon.MusicNote, Color.White, 22.dp) }
                             Box(Modifier.size(36.dp).clip(CircleShape).background(if (showEmojis) Color(0x44FFFFFF) else Color.Transparent).clickable { showEmojis = !showEmojis }, contentAlignment = Alignment.Center) { QinblyIconOf(QinblyIcon.EmojiEmotions, Color.White, 22.dp) }

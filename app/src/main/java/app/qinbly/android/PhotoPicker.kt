@@ -112,7 +112,7 @@ private fun QinblyPhotoPickerDialog(
         Column(Modifier.fillMaxSize().background(Color(0xFF171719)).statusBarsPadding().padding(bottom = qinblyNavBarPadding())) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0x22FFFFFF)).clickable { onClose() }, contentAlignment = Alignment.Center) { QinblyCloseIcon(Color.White, 22.dp) }
-                Text(if (multi && selected.isNotEmpty()) "${selected.size} selecionada(s)" else "Escolher foto", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 17.sp,
+                Text(if (multi && selected.isNotEmpty()) "${selected.size} selecionada(s)" else "Escolher foto", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp,
                     modifier = Modifier.weight(1f).padding(horizontal = 12.dp))
                 if (multi) Text("Pronto", color = if (selected.isEmpty()) Color(0x66FFFFFF) else Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
                     modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (selected.isEmpty()) Color(0x22FFFFFF) else Color(0xFF2F68E0))
@@ -146,13 +146,13 @@ private fun QinblyPhotoPickerDialog(
                 }
                 if (!granted) item(span = { GridItemSpan(maxLineSpan) }) {
                     Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("Permita o acesso às suas fotos para escolher daqui.", color = Color(0xFFF2F4F8), fontSize = 15.sp)
+                        Text("Permita o acesso às suas fotos para escolher daqui.", color = Color(0xFFF2F4F8), fontSize = 16.sp)
                         Text("Permitir acesso", color = Color.White, fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFF2F68E0)).clickable { permissionLauncher.launch(perms) }.padding(horizontal = 20.dp, vertical = 10.dp))
                     }
                 }
             }
-            Text("Ver todas as fotos", color = Color(0xFF7FA6F2), fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
+            Text("Ver todas as fotos", color = Color(0xFF7FA6F2), fontWeight = FontWeight.SemiBold, fontSize = 16.sp,
                 modifier = Modifier.fillMaxWidth().clickable { openSystem() }.padding(vertical = 14.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }

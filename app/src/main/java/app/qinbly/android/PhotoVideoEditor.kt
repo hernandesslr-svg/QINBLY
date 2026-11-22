@@ -356,7 +356,7 @@ internal fun QinblyPhotoVideoEditor(
 private fun PvChip(label: String, active: Boolean, onClick: () -> Unit) {
     Box(
         Modifier.clip(RoundedCornerShape(16.dp)).background(if (active) PvBlue else Color(0xFF2B2F36)).clickable { onClick() }.padding(horizontal = 14.dp, vertical = 8.dp)
-    ) { Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
+    ) { Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
 }
 
 @Composable
@@ -367,7 +367,7 @@ private fun PvTool(modifier: Modifier, icon: ImageVector, label: String, active:
         verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
         Icon(icon, contentDescription = label, tint = Color.White, modifier = Modifier.size(23.dp))
-        Text(label, color = Color.White, fontSize = 10.sp, maxLines = 1)
+        Text(label, color = Color.White, fontSize = 11.sp, maxLines = 1)
     }
 }
 

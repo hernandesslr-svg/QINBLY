@@ -270,7 +270,7 @@ internal fun QinblyFullScreen(
                         drawPath(path, contentColor, style = androidx.compose.ui.graphics.drawscope.Stroke(w * 0.1f, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
                     }
                 }
-                Text(title, color = contentColor, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(start = 4.dp))
+                Text(title, color = contentColor, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(start = 4.dp))
             }
             val body = Modifier.weight(1f).fillMaxWidth()
             val bottom = if (imeOpen) 0.dp else nav
@@ -291,7 +291,7 @@ internal fun QinblyBottomPanel(title: String, onDismiss: () -> Unit, content: @C
 @Composable
 private fun BigButton(text: String, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(modifier.clip(RoundedCornerShape(28.dp)).background(color).clickable { onClick() }.padding(vertical = 17.dp), contentAlignment = Alignment.Center) {
-        Text(text, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+        Text(text, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -299,8 +299,8 @@ private fun BigButton(text: String, color: Color, modifier: Modifier = Modifier,
 @Composable
 internal fun QinblyPillField(value: String, onChange: (String) -> Unit, hint: String, modifier: Modifier = Modifier, maxLines: Int = 1) {
     Box(modifier.clip(RoundedCornerShape(26.dp)).background(FieldBg).padding(horizontal = 20.dp, vertical = 16.dp)) {
-        if (value.isEmpty()) Text(hint, color = Color(0xFF8E87A8), fontSize = 17.sp)
-        BasicTextField(value, onChange, textStyle = TextStyle(color = Color.White, fontSize = 17.sp), cursorBrush = SolidColor(Color.White), maxLines = maxLines, modifier = Modifier.fillMaxWidth())
+        if (value.isEmpty()) Text(hint, color = Color(0xFF8E87A8), fontSize = 16.sp)
+        BasicTextField(value, onChange, textStyle = TextStyle(color = Color.White, fontSize = 16.sp), cursorBrush = SolidColor(Color.White), maxLines = maxLines, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -372,7 +372,7 @@ internal fun QinblyStickerPacksDialog(accent: Color, onDismiss: () -> Unit, onNo
         Text("Publique as suas figurinhas como um pacote e adicione as da comunidade.", color = Color(0xFFF2F4F8), fontSize = 16.sp)
         QinblyPillField(name, { name = it.take(40) }, "Nome do meu pacote", Modifier.fillMaxWidth())
         BigButton("Publicar meu pacote", accent, Modifier.fillMaxWidth()) { publish() }
-        Text("Publicar usa todas as suas figurinhas atuais.", color = Color(0xFF8E87A8), fontSize = 13.sp)
+        Text("Publicar usa todas as suas figurinhas atuais.", color = Color(0xFF8E87A8), fontSize = 14.sp)
         val list = packs
         if (list == null) Text("Carregando…", color = Color(0xFFF2F4F8), fontSize = 16.sp)
         else if (list.isEmpty()) Text("Nenhum pacote ainda. Seja o primeiro!", color = Color(0xFFF2F4F8), fontSize = 16.sp)
@@ -383,7 +383,7 @@ internal fun QinblyStickerPacksDialog(accent: Color, onDismiss: () -> Unit, onNo
                         Text(p.name, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
                         Text("por @${p.owner} • ${p.paths.size} figurinhas", color = Color(0xFFF2F4F8), fontSize = 14.sp)
                     }
-                    Text("Adicionar", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(accent).clickable { add(p) }.padding(horizontal = 16.dp, vertical = 10.dp))
+                    Text("Adicionar", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(accent).clickable { add(p) }.padding(horizontal = 16.dp, vertical = 10.dp))
                 }
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(p.paths.take(8)) { path -> AsyncImage(model = STICKER_BASE + path, contentDescription = null, modifier = Modifier.size(64.dp)) }
@@ -472,7 +472,7 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
                         })
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(n.optString("body"), color = Color.White, fontSize = 15.sp, maxLines = 4, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                        Text(n.optString("body"), color = Color.White, fontSize = 16.sp, maxLines = 4, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     }
                     val cnt = n.optJSONArray("neighborhood_comments")?.optJSONObject(0)?.optInt("count") ?: 0
                     Row(verticalAlignment = Alignment.CenterVertically) { QinblyIconOf(QinblyIcon.ChatBubbleOutline, secondary, 16.dp); Text(if (cnt == 0) "  Comentar" else if (cnt == 1) "  1 comentário" else "  $cnt comentários", color = secondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
@@ -576,7 +576,7 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                 Text(n.optString("body"), color = Color.White, fontSize = 16.sp)
                 val all = comments
                 val tops = all?.filter { it.optString("parent_id").let { x -> x.isBlank() || x == "null" } }.orEmpty()
-                Text(if (all == null) "Carregando comentários…" else if (all.isEmpty()) "Nenhum comentário ainda. Seja o primeiro." else "${all.size} comentário" + (if (all.size > 1) "s" else ""), color = Color(0xFFB4B4BC), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Text(if (all == null) "Carregando comentários…" else if (all.isEmpty()) "Nenhum comentário ainda. Seja o primeiro." else "${all.size} comentário" + (if (all.size > 1) "s" else ""), color = Color(0xFFB4B4BC), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 @Composable fun Bubble(c: JSONObject, small: Boolean) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.size(if (small) 24.dp else 30.dp).clip(CircleShape).background(Color(0xFF3A3A3E)), contentAlignment = Alignment.Center) {
@@ -591,7 +591,7 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                                 .padding(horizontal = 12.dp, vertical = 8.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(nameOf(c), color = Color(0xFF7FA6F2), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                                    if (c.optString("user_id") == noticeOwner) Text("autor", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 6.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF2F68E0)).padding(horizontal = 6.dp, vertical = 1.dp))
+                                    if (c.optString("user_id") == noticeOwner) Text("autor", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 6.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF2F68E0)).padding(horizontal = 6.dp, vertical = 1.dp))
                                     Text(" • " + qinblyAgo(c.optString("created_at")), color = Color(0xFF8E87A8), fontSize = 11.sp)
                                 }
                                 Text(mentionText(c.optString("body"), Color(0xFF7FA6F2)), color = Color.White, fontSize = 14.sp)
