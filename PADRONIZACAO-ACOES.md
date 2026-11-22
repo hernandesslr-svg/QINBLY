@@ -1084,3 +1084,8 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Comentário: avatar de 36, nome e horário na mesma linha, texto 15, "Responder" pequeno e cinza, coração pequeno à direita com o número.
 - Respostas recuadas (avatar 26, texto 14), sem linha lateral e sem tracinho. Fechadas por padrão: "Ver N respostas ▾". Ao abrir, mostram 3; embaixo ficam lado a lado "Ver mais N ▾" (de 10 em 10) e "Ocultar ▴". Ao responder alguém, todas as respostas aparecem.
 - Todos os comentários ficam na mesma lista, sem "ver mais comentários" e sem botões de ordenar.
+
+## Notificações do app (som)
+- Canal novo `qinbly_social_v2` (importância alta, som padrão de notificação, vibração e luz). O canal antigo podia estar mudo e o Android não deixa o app alterar um canal já criado.
+- A permissão de notificação (Android 13+) volta a ser pedida, no máximo uma vez por dia, enquanto não for liberada. Antes só era pedida na primeira abertura, no meio de várias outras.
+- Limite conhecido: com o app fechado, os avisos chegam por consulta periódica (no melhor caso a cada ~15 min). Aviso na hora, com o app fechado, só com push de verdade (Firebase).

@@ -584,8 +584,17 @@ internal fun qinblyNotificationText(kind: String): String = when (kind) {
 internal fun qinblyNotify(context: android.content.Context, title: String, text: String, id: Int) {
     try {
         val manager = context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+        val soundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
         if (android.os.Build.VERSION.SDK_INT >= 26) {
-            manager.createNotificationChannel(android.app.NotificationChannel("qinbly_social", "Novidades", android.app.NotificationManager.IMPORTANCE_DEFAULT))
+            // Canal novo (v2): importância alta, com som e vibração explícitos. Um canal antigo mudo não pode ser alterado pelo app.
+            val channel = android.app.NotificationChannel("qinbly_social_v2", "Novidades e mensagens", android.app.NotificationManager.IMPORTANCE_HIGH).apply {
+                description = "Curtidas, comentários, seguidores e mensagens"
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 250, 150, 250)
+                enableLights(true)
+                setSound(soundUri, android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION).setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+            }
+            manager.createNotificationChannel(channel)
         }
         if (android.os.Build.VERSION.SDK_INT >= 33 &&
             androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -594,12 +603,18 @@ internal fun qinblyNotify(context: android.content.Context, title: String, text:
             context, 0, android.content.Intent(context, MainActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP),
             android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
         )
-        val notification = androidx.core.app.NotificationCompat.Builder(context, "qinbly_social")
+        val notification = androidx.core.app.NotificationCompat.Builder(context, "qinbly_social_v2")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(text)
+            .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText(text))
             .setContentIntent(open)
             .setAutoCancel(true)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+            .setCategory(androidx.core.app.NotificationCompat.CATEGORY_SOCIAL)
+            .setDefaults(androidx.core.app.NotificationCompat.DEFAULT_ALL)
+            .setSound(soundUri)
+            .setOnlyAlertOnce(false)
             .build()
         manager.notify(id, notification)
     } catch (_: Exception) { }
@@ -6781,6 +6796,17 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             val missing = wanted.filter { androidx.core.content.ContextCompat.checkSelfPermission(context, it) != android.content.pm.PackageManager.PERMISSION_GRANTED }
             prefs.edit().putBoolean("permissions_asked_v2", true).apply()
             if (missing.isNotEmpty()) startupPermissions.launch(missing.toTypedArray())
+        }
+    }
+    val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    LaunchedEffect(Unit) {
+        if (android.os.Build.VERSION.SDK_INT >= 33 && androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            val last = prefs.getLong("notif_perm_asked_at", 0L)
+            if (System.currentTimeMillis() - last > 24L * 60 * 60 * 1000) {
+                prefs.edit().putLong("notif_perm_asked_at", System.currentTimeMillis()).apply()
+                kotlinx.coroutines.delay(1500)
+                notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
         }
     }
     var selectedFeedTab by rememberKept("feed.tab", "Descobrir")
