@@ -1053,3 +1053,12 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 
 ## Configurações: saiu "Mercado e avisos"
 - A linha "Mercado e avisos" foi removida da lista de Configurações. O Mercado e os Avisos continuam acessíveis pelo ícone da cestinha no início e pelo menu do Mercado; só o atalho nas configurações saiu.
+
+## Versão web do QINBLY (iPhone e navegador)
+- O site de baixar (`docs/index.html`) agora tem a seção **Baixe o QINBLY** com dois blocos: **Android** (APK da última versão, como antes) e **iPhone** (abre a versão web e mostra como adicionar à Tela de Início pelo Safari). O botão do topo virou "Abrir o app".
+- A versão web fica em `docs/app/` (`index.html`, `app.css`, `app.js`, `manifest.webmanifest`, `sw.js`, ícones). É um site instalável (PWA), sem biblioteca externa e sem etapa de build. O app Android **não foi alterado**.
+- Usa o MESMO servidor do app (`https://qinbly.pages.dev`): mesmas contas, publicações, curtidas, comentários, perfis e mensagens. Login por e-mail ou nome de usuário e senha; criar conta; trocar de conta pelo @ do perfil (as sessões ficam só neste aparelho e renovam sozinhas).
+- Fase 1 (pronta): login/cadastro, feed com stories (ver), publicar texto com fundo colorido, fotos (até 10) e vídeo, curtir, salvar, compartilhar, comentar, votar em enquete, perfil (mesmo layout do app: foto, nome, @ com seta, números, Editar/Compartilhar ou Seguir/Mensagem, grade), editar perfil e foto, mensagens de texto (atualizam a cada 5 s) e busca de pessoas.
+- Fase 2 (não feita): criar story, comunidades, lives, notificações, mercado, fotos/áudios/figurinhas em mensagens, entrar com Google (precisa liberar o endereço do site no Google Cloud).
+- Letras: mesma escala do app (24/20/18/16/14/12/11). Barra de baixo: Início, Criar, Mensagens, Perfil.
+- Quem entrou só com o Google no app precisa definir uma senha em Configurações para entrar na versão web.
