@@ -290,11 +290,13 @@
       '<label class="fld">' + (reg ? "E-mail" : "E-mail ou nome de usuário") + '<input class="inp" id="e" autocapitalize="none" autocomplete="' + (reg ? "email" : "username") + '" ' + (reg ? 'type="email"' : "") + "></label>" +
       '<label class="fld">Senha<input class="inp" id="p" type="password" autocomplete="' + (reg ? "new-password" : "current-password") + '"></label>' +
       '<div class="err" id="er"></div><button class="btn" id="go" type="submit">' + (reg ? "Criar conta" : "Entrar") + "</button></form>" +
+      '<div class="alt" style="margin:16px 0 8px">ou</div><div id="gb" style="display:flex;justify-content:center;min-height:44px"></div><div class="err" id="ger" style="text-align:center"></div>' +
       '<div class="alt">' + (reg ? 'Já tem conta? <button data-mode="login">Entrar</button>' : 'Não tem conta? <button data-mode="register">Criar conta</button>') + "</div>" +
       (add && accounts.length ? '<div class="alt"><button data-back>Cancelar</button></div>' : "") +
       '<div class="alt" style="font-size:12px">Entrou no app só com o Google? Defina uma senha em Configurações, no app, para usar aqui.</div>' +
       '<div class="alt" style="font-size:12px"><a class="link" href="baixar.html">Baixar o app para Android</a></div>' + (ios ? '<div class="alt" style="font-size:12px">Para instalar no iPhone: toque em compartilhar e depois em “Adicionar à Tela de Início”.</div>' : "") +
       "</main>";
+    initGoogle();
     var f = $app.querySelector("#lf"), er = $app.querySelector("#er"), go = $app.querySelector("#go");
     f.addEventListener("submit", function (e) {
       e.preventDefault(); er.textContent = ""; go.disabled = true;
@@ -305,6 +307,33 @@
       req.then(function (j) { if (!j.token) throw new Error("Não foi possível entrar agora."); putAccount(j); goto("#/"); })
         .catch(function (x) { er.textContent = x.message; go.disabled = false; });
     });
+  }
+
+  var GOOGLE_ID = "491553779497-bsgfj74l57u0gffi68jv6131joso0o5u.apps.googleusercontent.com";
+  var gsiLoading = null;
+  function loadGsi() {
+    if (window.google && google.accounts && google.accounts.id) return Promise.resolve();
+    if (!gsiLoading) gsiLoading = new Promise(function (ok, bad) {
+      var sc = document.createElement("script"); sc.src = "https://accounts.google.com/gsi/client"; sc.async = true; sc.onload = ok; sc.onerror = function () { gsiLoading = null; bad(new Error("gsi")); };
+      document.head.appendChild(sc);
+    });
+    return gsiLoading;
+  }
+  function initGoogle() {
+    var box = document.getElementById("gb"); if (!box) return;
+    loadGsi().then(function () {
+      var b = document.getElementById("gb"); if (!b) return;
+      google.accounts.id.initialize({
+        client_id: GOOGLE_ID, ux_mode: "popup", auto_select: false,
+        callback: function (r) {
+          var er = document.getElementById("ger"); if (er) er.textContent = "";
+          call(API + "/api/auth/google", { method: "POST", anon: true, body: { idToken: r.credential } })
+            .then(function (j) { if (!j.token) throw new Error("Não foi possível entrar com o Google agora."); putAccount(j); goto("#/"); })
+            .catch(function (x) { var e2 = document.getElementById("ger"); if (e2) e2.textContent = x.message; });
+        }
+      });
+      google.accounts.id.renderButton(b, { theme: "filled_black", size: "large", shape: "pill", text: "continue_with", locale: "pt-BR", width: Math.min(300, b.clientWidth || 300) });
+    }).catch(function () { var b = document.getElementById("gb"); if (b) b.innerHTML = '<span class="link" style="font-size:12px">Google indisponível agora. Use e-mail e senha.</span>'; });
   }
 
   var feedBefore = null;
