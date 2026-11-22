@@ -1031,3 +1031,7 @@ Regra: tudo que a pessoa usa ou escolhe numa conta vale só naquela conta; só o
 - Os números (Publicações, Seguindo, Seguidores) ficam soltos, sem cartão. Logo abaixo, dois botões pequenos lado a lado: **Editar perfil** e **Compartilhar perfil**.
 - As abas ganharam um sublinhado fino na aba ativa e um divisor embaixo.
 - **Troca de conta** agora fica no perfil: a seta ao lado do @ abre uma folha de baixo com as contas salvas (conta atual marcada), "Adicionar outra conta" e, ao segurar uma conta, a opção de remover do aparelho. A linha "Alternar entre suas contas" saiu das configurações.
+
+## Editar perfil: categorias sem cores
+- Saíram as cores diferentes de cada categoria. As escolhidas aparecem numa faixa "Escolhidas", na cor principal do app, cada uma com um X para tirar.
+- As demais ficam agrupadas por assunto (Criação e mídia, Estilo de vida, Esporte e saúde, Negócios e aprender, Hobbies) em pílulas cinza claras, sem contorno e sem ícone. O limite continua em 5.

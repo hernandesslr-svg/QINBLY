@@ -10018,8 +10018,6 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     val availableCategories = listOf("Criador de conteúdo", "Lifestyle", "Viagens 🌎", "Games 🎮", "Beleza 💄", "Moda", "Fitness", "Música", "Arte", "Fotografia", "Tecnologia", "Gastronomia", "Humor", "Educação", "Esportes", "Natureza", "Academia 🏋️", "Musculação 💪", "Corrida 🏃", "Dança 💃", "Saúde e bem-estar", "Nutrição 🥗", "Yoga 🧘", "Pets 🐾", "Família", "Maternidade", "Empreendedorismo", "Negócios", "Finanças", "Carros 🚗", "Motos 🏍️", "Cinema 🎬", "Livros 📚", "DIY e artesanato", "Decoração", "Jardinagem 🌱", "Ciência", "Comédia", "Futebol ⚽", "Culinária 🍳")
     val categoryPrefix = "✦ "
     val initialCategoryLine = initialBio.lineSequence().firstOrNull().orEmpty()
-    // Uma cor diferente para cada categoria (mesma ordem da lista acima), usada com transparência nos chips.
-    val categoryColors = listOf(Color(0xFFE53935), Color(0xFFFB8C00), Color(0xFFFDD835), Color(0xFF7CB342), Color(0xFF2E7D32), Color(0xFF00897B), Color(0xFF00ACC1), Color(0xFF1E88E5), Color(0xFF3949AB), Color(0xFF8E24AA), Color(0xFFD81B60), Color(0xFF6D4C41), Color(0xFF546E7A), Color(0xFFFF7043), Color(0xFFC0CA33), Color(0xFF80CBC4), Color(0xFF81D4FA), Color(0xFF5E35B1), Color(0xFFF06292), Color(0xFFA1887F), Color(0xFF004D40), Color(0xFFB71C1C), Color(0xFFFFB300), Color(0xFF0D47A1), Color(0xFFAED581), Color(0xFFCE93D8), Color(0xFFFF8A65), Color(0xFF827717), Color(0xFF00E5FF), Color(0xFF9FA8DA), Color(0xFFAD1457), Color(0xFFFFE082), Color(0xFFBF360C), Color(0xFF3E2723), Color(0xFFFFAB91), Color(0xFF9E9E9E), Color(0xFF212121), Color(0xFF00BFA5), Color(0xFFAEEA00), Color(0xFFE1BEE7))
     val storedCategories = if (initialCategoryLine.startsWith(categoryPrefix)) initialCategoryLine.removePrefix(categoryPrefix).split(" • ").filter { it in availableCategories } else emptyList()
     var selectedCategories by rememberKept("editprofile.categories", storedCategories)
     var bio by rememberKept("editprofile.bio", (if (storedCategories.isNotEmpty()) initialBio.substringAfter('\n', "") else initialBio).lineSequence().filterNot { it.startsWith(countryPrefix) }.joinToString("\n").trim())
@@ -10147,28 +10145,47 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                 if (countryMenuExpanded) QinblyCountrySheet(countryOptions, selectedCountry, { selectedCountry = it; countryMenuExpanded = false }, { countryMenuExpanded = false })
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("CATEGORIAS", color = Muted, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
+                Text("Categorias", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
                 Text("${selectedCategories.size} de 5", color = QinblyBrand.Accent, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.labelMedium)
             }
-            Text("Escolha até 5 categorias para aparecerem abaixo do seu nome.", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                availableCategories.forEachIndexed { index, category ->
-                    val selected = category in selectedCategories
-                    val tint = categoryColors[index % categoryColors.size]
-                    androidx.compose.material3.FilterChip(
-                        selected = selected,
-                        onClick = { selectedCategories = if (selected) selectedCategories - category else if (selectedCategories.size < 5) selectedCategories + category else selectedCategories },
-                        label = { Text(qinblyCategoryName(category), color = RemoteAppearance.screenTextColor) },
-                        leadingIcon = { Icon(qinblyCategoryIcon(category), contentDescription = null, tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(17.dp)) },
-                        trailingIcon = if (selected) ({ Icon(Icons.Default.Check, contentDescription = null, tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(16.dp)) }) else null,
-                        shape = RoundedCornerShape(16.dp),
-                        // Cor transparente: fundo e contorno com a cor da categoria; selecionada fica mais forte, com contorno cheio.
-                        border = BorderStroke(if (selected) 2.dp else 1.dp, tint.copy(alpha = if (selected) 1f else 0.55f)),
-                        colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
-                            containerColor = tint.copy(alpha = 0.16f),
-                            selectedContainerColor = tint.copy(alpha = 0.5f)
-                        )
-                    )
+            Text("Aparecem abaixo do seu nome.", color = RemoteAppearance.screenSecondaryTextColor, fontSize = 11.sp)
+            val pillBg = if (QiblyTheme.dark) Color(0x17FFFFFF) else QiblyTheme.soft
+            val categoryGroups = listOf(
+                "Criação e mídia" to listOf("Criador de conteúdo", "Arte", "Fotografia", "Música", "Cinema", "Humor", "Comédia", "Livros", "Games"),
+                "Estilo de vida" to listOf("Lifestyle", "Viagens", "Moda", "Beleza", "Gastronomia", "Culinária", "Pets", "Família", "Maternidade", "Decoração", "Jardinagem", "Natureza", "DIY e artesanato"),
+                "Esporte e saúde" to listOf("Fitness", "Academia", "Musculação", "Corrida", "Yoga", "Nutrição", "Saúde e bem-estar", "Dança", "Esportes", "Futebol"),
+                "Negócios e aprender" to listOf("Tecnologia", "Educação", "Ciência", "Empreendedorismo", "Negócios", "Finanças"),
+                "Hobbies" to listOf("Carros", "Motos")
+            )
+            val groupedNames = categoryGroups.flatMap { it.second }
+            val categoryByName = availableCategories.associateBy { qinblyCategoryName(it) }
+            fun toggleCategory(category: String) {
+                selectedCategories = if (category in selectedCategories) selectedCategories - category else if (selectedCategories.size < 5) selectedCategories + category else selectedCategories
+            }
+            if (selectedCategories.isNotEmpty()) {
+                Text("Escolhidas", color = RemoteAppearance.screenSecondaryTextColor, fontSize = 11.sp)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    selectedCategories.forEach { category ->
+                        Row(Modifier.clip(RoundedCornerShape(15.dp)).background(QinblyBrand.Accent).clickable { toggleCategory(category) }.padding(horizontal = 11.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(qinblyCategoryName(category), color = Color.White, fontSize = 12.sp)
+                            Spacer(Modifier.width(5.dp))
+                            Icon(Icons.Default.Close, contentDescription = "Tirar", tint = Color.White, modifier = Modifier.size(12.dp))
+                        }
+                    }
+                }
+                Box(Modifier.fillMaxWidth().height(0.5.dp).background(QiblyTheme.border))
+            }
+            val leftovers = availableCategories.filter { qinblyCategoryName(it) !in groupedNames }
+            (categoryGroups.map { (title, names) -> title to names.mapNotNull { categoryByName[it] } } + listOf("Outras" to leftovers)).forEach { (title, items) ->
+                val shown = items.filter { it !in selectedCategories }
+                if (shown.isNotEmpty()) {
+                    Text(title, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        shown.forEach { category ->
+                            Text(qinblyCategoryName(category), color = RemoteAppearance.screenTextColor, fontSize = 12.sp,
+                                modifier = Modifier.clip(RoundedCornerShape(15.dp)).background(pillBg).clickable { toggleCategory(category) }.padding(horizontal = 11.dp, vertical = 6.dp))
+                        }
+                    }
                 }
             }
             if (error.isNotBlank()) Text(error, color = Pink, style = MaterialTheme.typography.bodySmall)
