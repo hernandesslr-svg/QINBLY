@@ -293,7 +293,7 @@
       '<div class="alt">' + (reg ? 'Já tem conta? <button data-mode="login">Entrar</button>' : 'Não tem conta? <button data-mode="register">Criar conta</button>') + "</div>" +
       (add && accounts.length ? '<div class="alt"><button data-back>Cancelar</button></div>' : "") +
       '<div class="alt" style="font-size:12px">Entrou no app só com o Google? Defina uma senha em Configurações, no app, para usar aqui.</div>' +
-      (ios ? '<div class="alt" style="font-size:12px">Para instalar no iPhone: toque em compartilhar e depois em “Adicionar à Tela de Início”.</div>' : "") +
+      '<div class="alt" style="font-size:12px"><a class="link" href="baixar.html">Baixar o app para Android</a></div>' + (ios ? '<div class="alt" style="font-size:12px">Para instalar no iPhone: toque em compartilhar e depois em “Adicionar à Tela de Início”.</div>' : "") +
       "</main>";
     var f = $app.querySelector("#lf"), er = $app.querySelector("#er"), go = $app.querySelector("#go");
     f.addEventListener("submit", function (e) {
@@ -504,10 +504,10 @@
   }
   function settingsSheet() {
     sheet("Configurações",
-      '<a class="row" href="../#baixar"><span class="t"><b>Baixar o app para Android</b><small>Instalar o QINBLY no celular</small></span></a>' +
+      '<a class="row" href="baixar.html"><span class="t"><b>Baixar o app para Android</b><small>Instalar o QINBLY no celular</small></span></a>' +
       '<button class="row" data-install><span class="t"><b>Instalar no iPhone</b><small>Como adicionar à Tela de Início</small></span></button>' +
-      '<a class="row" href="../privacidade.html"><span class="t"><b>Privacidade</b></span></a>' +
-      '<a class="row" href="../termos.html"><span class="t"><b>Termos de uso</b></span></a>' +
+      '<a class="row" href="privacidade.html"><span class="t"><b>Privacidade</b></span></a>' +
+      '<a class="row" href="termos.html"><span class="t"><b>Termos de uso</b></span></a>' +
       '<button class="row" data-drop="' + activeId + '"><span class="t"><b style="color:var(--danger)">Sair desta conta</b></span></button>');
   }
 

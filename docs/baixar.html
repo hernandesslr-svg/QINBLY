@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QINBLY · Rede social para Android e iPhone</title>
+<meta name="description" content="QINBLY: publicações, stories, comunidades, mensagens e mercado num só lugar. Baixe grátis para Android ou use a versão web no iPhone.">
+<meta name="theme-color" content="#ffffff">
+<meta property="og:title" content="QINBLY · Rede social para Android e iPhone">
+<meta property="og:description" content="Publicações, stories, comunidades, mensagens e mercado num só lugar. Grátis no Android e no iPhone.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%237C4DFF'/%3E%3Ctext x='32' y='45' font-size='36' font-family='Arial' font-weight='700' fill='white' text-anchor='middle'%3EQ%3C/text%3E%3C/svg%3E">
+<style>
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#14151a;background:#fff}
+a{color:inherit}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid #ececf2}
+.nav{display:flex;align-items:center;gap:22px;height:64px}
+.brand{font-weight:700;font-size:20px;letter-spacing:1.5px;color:#7C4DFF;text-decoration:none;margin-right:auto}
+.nav a.l{text-decoration:none;color:#3a3d49;font-size:15px}
+.nav a.l:hover{color:#14151a}
+.btn{display:inline-block;background:#2F68E0;color:#fff;text-decoration:none;font-weight:600;border-radius:12px;padding:12px 22px;border:0;font-size:16px;cursor:pointer;font-family:inherit}
+.btn:hover{background:#2759c4}
+.btn.sm{padding:9px 16px;font-size:14px;border-radius:10px}
+.btn.white{background:#fff;color:#14151a}
+.btn.white:hover{background:#eef0f6}
+.hero{background:#f5f7ff;padding:64px 0 0;overflow:hidden}
+.hero .grid{display:grid;grid-template-columns:1.05fr 1fr;gap:32px;align-items:end}
+.hero h1{font-size:46px;line-height:1.1;margin:0 0 16px;font-weight:700;letter-spacing:-.5px}
+.hero p.lead{font-size:19px;color:#4a4e5c;margin:0 0 26px;max-width:520px}
+.hero .copy{padding-bottom:64px}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.btn.white-o{background:#fff;color:#14151a;border:1px solid #cfd2dc}
+.btn.white-o:hover{background:#eef0f6}
+.meta{margin-top:12px;font-size:14px;color:#5b6070}
+.phones{display:flex;justify-content:center;align-items:flex-end;gap:14px}
+.phone{width:150px;border:5px solid #14151a;border-bottom:0;border-radius:26px 26px 0 0;background:#171719;color:#f2f4f8;overflow:hidden;font-size:9px;line-height:1.35}
+.phone.c{width:168px;height:330px}.phone.s{height:280px}
+.ph-h{padding:10px 10px 6px;font-weight:700;color:#7C4DFF;letter-spacing:1px;font-size:11px}
+.stories{display:flex;gap:6px;padding:0 10px 8px}
+.stories i{width:26px;height:26px;border-radius:50%;border:2px solid #2F68E0;background:#33343a;display:block}
+.card{margin:0 8px 8px;background:#262628;border-radius:10px;padding:8px}
+.card .r{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.av{width:18px;height:18px;border-radius:50%;background:#4a4c55;display:block}
+.img{height:70px;border-radius:8px;background:#3a3d5c}
+.ln{height:5px;border-radius:3px;background:#3a3b40;margin:4px 0}
+.pf{text-align:center;padding-top:14px}
+.pf .big{width:58px;height:58px;border-radius:50%;background:#4a4c55;margin:0 auto 6px}
+.stats{display:flex;justify-content:space-around;margin:10px 8px}
+.stats b{display:block;font-size:12px}
+.tabs{display:flex;justify-content:space-around;padding:6px 0;border-top:1px solid #2e2e30;margin-top:6px}
+.gridp{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px}
+.gridp i{aspect-ratio:1;background:#33355a;display:block}
+.gridp i:nth-child(2n){background:#2b3a5e}
+.gridp i:nth-child(3n){background:#3b3353}
+.chat{padding:10px}
+.b{max-width:75%;padding:6px 9px;border-radius:12px;margin-bottom:6px;background:#2e2e30}
+.b.me{margin-left:auto;background:#2F68E0;color:#fff}
+section{padding:72px 0}
+h2{font-size:32px;line-height:1.2;margin:0 0 10px;text-align:center;letter-spacing:-.3px}
+.sub{text-align:center;color:#5b6070;margin:0 auto 38px;max-width:560px}
+.feats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.f{border:1px solid #e3e5ec;border-radius:16px;padding:22px}
+.f svg{width:28px;height:28px;stroke:#2F68E0;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.f h3{margin:12px 0 4px;font-size:17px}
+.f p{margin:0;color:#5b6070;font-size:15px}
+.dl{background:#14151a;color:#fff;text-align:center}
+.dl p{color:#c9ccd6;margin:0 auto 24px;max-width:520px}
+.dl h2{color:#fff}
+.plat{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;max-width:860px;margin:0 auto;text-align:left}
+.pl{background:#1e2028;border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:12px}
+.pl h3{margin:0;font-size:20px}
+.pl .d{color:#c9ccd6;font-size:14px}
+.pl .btn{text-align:center}
+.pl ol{margin:4px 0 0;padding-left:20px;color:#d8dbe6;font-size:14px;line-height:1.6}
+.dl p.fine{margin:24px auto 0;font-size:14px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:860px;margin:36px auto 0;text-align:left}
+.st{background:#1e2028;border-radius:14px;padding:18px}
+.st b{display:inline-flex;width:28px;height:28px;border-radius:50%;background:#2F68E0;align-items:center;justify-content:center;font-size:14px;margin-bottom:8px}
+.st span{display:block;color:#d8dbe6;font-size:15px}
+.fb{background:#f5f7ff}
+form{max-width:560px;margin:0 auto}
+textarea{width:100%;min-height:150px;border:1px solid #cfd2dc;border-radius:12px;padding:14px;font:inherit;resize:vertical;background:#fff;color:#14151a}
+textarea:focus{outline:2px solid #2F68E0;outline-offset:1px;border-color:#2F68E0}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.note{font-size:14px;color:#5b6070;margin:10px 0 18px;text-align:center}
+.cnt{font-size:13px;color:#7a7f8e;text-align:right;margin-top:4px}
+.msg{margin-top:16px;text-align:center;font-weight:600;min-height:24px}
+.msg.ok{color:#1c7a3d}.msg.err{color:#b3261e}
+footer{padding:28px 0;text-align:center;color:#6b7080;font-size:14px;border-top:1px solid #ececf2}
+footer a{margin:0 8px}
+@media(max-width:860px){
+.hero{padding-top:36px}
+.hero .grid{grid-template-columns:1fr}
+.hero .copy{padding-bottom:28px;text-align:center}
+.cta{justify-content:center}
+.hero p.lead{margin-left:auto;margin-right:auto}
+.hero h1{font-size:34px}
+.feats{grid-template-columns:repeat(2,1fr)}
+.steps{grid-template-columns:1fr}
+.plat{grid-template-columns:1fr}
+.nav a.l{display:none}
+section{padding:52px 0}
+h2{font-size:26px}
+}
+@media(max-width:420px){.feats{grid-template-columns:1fr}.phone{width:110px}.phone.c{width:128px;height:290px}.phone.s{height:250px}}
+</style>
+</head>
+<body>
+
+<header>
+<div class="wrap nav">
+<a class="brand" href="#topo">QINBLY</a>
+<a class="l" href="#recursos">Recursos</a>
+<a class="l" href="#baixar">Baixar</a>
+<a class="l" href="#feedback">Feedback</a>
+<a class="btn sm" href="./">Abrir o app</a>
+</div>
+</header>
+
+<main id="topo">
+<div class="hero">
+<div class="wrap grid">
+<div class="copy">
+<h1>Uma rede social feita para conversar de verdade</h1>
+<p class="lead">Publicações, stories, comunidades, mensagens e mercado num só lugar. Grátis no Android e no iPhone.</p>
+<div class="cta"><a class="btn" href="https://github.com/hernandesslr-svg/QINBLY/releases/latest/download/qinbly-release.apk">Baixar para Android</a><a class="btn white-o" href="./">Abrir no iPhone ou no navegador</a></div>
+<div class="meta" id="versao">Android 8 ou mais novo · iPhone pela versão web</div>
+</div>
+<div class="phones" aria-hidden="true">
+<div class="phone s">
+<div class="ph-h">QINBLY</div>
+<div class="stories"><i></i><i></i><i></i><i></i></div>
+<div class="card"><div class="r"><span class="av"></span><span class="ln" style="width:50px;margin:0"></span></div><div class="img"></div><div class="ln" style="width:80%"></div></div>
+<div class="card"><div class="r"><span class="av"></span><span class="ln" style="width:42px;margin:0"></span></div><div class="ln" style="width:90%"></div><div class="ln" style="width:60%"></div></div>
+</div>
+<div class="phone c">
+<div class="pf"><div class="big"></div><b style="font-size:12px">Seu perfil</b><div style="color:#c9cdd8">@usuario</div></div>
+<div class="stats"><div><b>6</b>Publicações</div><div><b>128</b>Seguidores</div><div><b>94</b>Seguindo</div></div>
+<div class="tabs"><span>▦</span><span>▶</span><span>▣</span><span>⚑</span></div>
+<div class="gridp"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+</div>
+<div class="phone s">
+<div class="ph-h">Mensagens</div>
+<div class="chat">
+<div class="b">Viu o story de hoje?</div>
+<div class="b me">Vi! Ficou demais</div>
+<div class="b">Vamos marcar sábado</div>
+<div class="b me">Combinado</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<section id="recursos">
+<div class="wrap">
+<h2>O que você faz no QINBLY</h2>
+<p class="sub">Tudo o que você precisa para acompanhar quem importa e achar gente com os mesmos interesses.</p>
+<div class="feats">
+<div class="f"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.7"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg><h3>Publicações e stories</h3><p>Fotos, vídeos e momentos do dia, com quem você escolher.</p></div>
+<div class="f"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.9.3 5 2.6 5 5.8"/></svg><h3>Comunidades</h3><p>Grupos por assunto e interesse para trocar ideia.</p></div>
+<div class="f"><svg viewBox="0 0 24 24"><path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></svg><h3>Mensagens</h3><p>Conversas com figurinhas, fotos, áudios e enquetes.</p></div>
+<div class="f"><svg viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9"/><path d="M4 9v11h16V9"/><path d="M4 9c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3"/></svg><h3>Mercado</h3><p>Compre e venda perto de você, na sua cidade.</p></div>
+</div>
+</div>
+</section>
+
+<section class="dl" id="baixar">
+<div class="wrap">
+<h2>Baixe o QINBLY</h2>
+<p>Grátis, no Android e no iPhone. As próximas atualizações do app Android saem de dentro do próprio app.</p>
+<div class="plat">
+<div class="pl">
+<h3>Android</h3>
+<span class="d">Aplicativo completo, instalado direto do arquivo (APK).</span>
+<a class="btn white" href="https://github.com/hernandesslr-svg/QINBLY/releases/latest/download/qinbly-release.apk">Baixar para Android</a>
+<ol><li>Toque em Baixar e abra o arquivo quando terminar.</li><li>Se o Android pedir, permita instalar apps desta fonte.</li><li>Toque em Instalar e abra o QINBLY.</li></ol>
+</div>
+<div class="pl">
+<h3>iPhone</h3>
+<span class="d">Versão web do app, instalada pelo Safari. Não precisa da App Store.</span>
+<a class="btn white" href="./">Abrir o QINBLY</a>
+<ol><li>Abra esta página no Safari e toque em Abrir o QINBLY.</li><li>Toque em compartilhar (quadrado com seta para cima) e em “Adicionar à Tela de Início”.</li><li>Abra o ícone QINBLY e entre na sua conta.</li></ol>
+</div>
+</div>
+<p class="fine">A versão web usa a mesma conta do app Android. Lives, câmera, stories e notificações ainda funcionam só no app Android.</p>
+</div>
+</section>
+
+<section class="fb" id="feedback">
+<div class="wrap">
+<h2>Achou um erro? Tem uma ideia?</h2>
+<p class="sub">Conte para a gente. Ajuda a melhorar o app.</p>
+<form id="form" novalidate>
+<label for="mensagem" class="hp" style="position:absolute">Mensagem</label>
+<textarea id="mensagem" name="mensagem" maxlength="2000" placeholder="Escreva aqui sua sugestão, o erro ou o bug que encontrou, e em que tela aconteceu…" required></textarea>
+<div class="cnt"><span id="cnt">0</span>/2000</div>
+<input class="hp" type="text" id="website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+<p class="note">Junto vão o modelo do aparelho e do navegador, sem dados pessoais. Não pedimos nome nem contato.</p>
+<div style="text-align:center"><button class="btn" type="submit" id="enviar">Enviar feedback</button></div>
+<div class="msg" id="msg" role="status" aria-live="polite"></div>
+</form>
+</div>
+</section>
+</main>
+
+<footer>
+<div class="wrap">
+QINBLY · <a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos de uso</a>
+</div>
+</footer>
+
+<script>
+(function(){
+  var API = "https://jqomgrdlocdqaarfqkay.supabase.co/functions/v1/site-feedback";
+  var ta = document.getElementById("mensagem"), cnt = document.getElementById("cnt");
+  ta.addEventListener("input", function(){ cnt.textContent = ta.value.length; });
+
+  fetch("https://api.github.com/repos/hernandesslr-svg/QINBLY/releases/latest", {headers:{"Accept":"application/vnd.github+json"}})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(j){
+      if(!j || !j.tag_name) return;
+      var d = j.published_at ? new Date(j.published_at).toLocaleDateString("pt-BR") : "";
+      document.getElementById("versao").textContent = "Versão " + j.tag_name.replace(/^v/, "") + (d ? " · atualizada em " + d : "") + " · Android 8 ou mais novo · iPhone pela versão web";
+    }).catch(function(){});
+
+  var form = document.getElementById("form"), msg = document.getElementById("msg"), btn = document.getElementById("enviar");
+  function show(text, cls){ msg.textContent = text; msg.className = "msg " + cls; }
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    var text = ta.value.trim();
+    if(text.length < 5){ show("Escreva um pouco mais para a gente entender.", "err"); ta.focus(); return; }
+    btn.disabled = true; show("Enviando…", "");
+    fetch(API, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({message: text, website: document.getElementById("website").value})
+    }).then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ return {ok: r.ok && j.ok, error: j.error}; }); })
+    .then(function(res){
+      if(res.ok){ show("Recebemos seu feedback. Obrigado por ajudar!", "ok"); ta.value = ""; cnt.textContent = "0"; }
+      else { show(res.error || "Não foi possível enviar agora. Tente de novo.", "err"); }
+    }).catch(function(){ show("Sem conexão. Confira a internet e tente de novo.", "err"); })
+    .then(function(){ btn.disabled = false; });
+  });
+})();
+</script>
+</body>
+</html>
