@@ -3582,6 +3582,12 @@ private object QinblyCache {
         context.getSharedPreferences("qinbly_profile_snapshot", android.content.Context.MODE_PRIVATE).edit().clear().apply()
         context.getSharedPreferences("qbly_local_cache", android.content.Context.MODE_PRIVATE).edit().remove("feed_posts_v2").apply()
     }
+    /** Publicação apagada some de todas as cópias em memória (feed, meu perfil e perfis já abertos). */
+    fun forgetPost(id: String) {
+        feed = feed.filterNot { it.id == id }
+        own = own?.let { o -> if (o.posts.any { it.id == id }) o.copy(posts = o.posts.filterNot { it.id == id }, postsCount = maxOf(0, o.postsCount - 1)) else o }
+        profiles.keys.toList().forEach { k -> profiles[k]?.let { (info, list) -> profiles[k] = info to list.filterNot { it.id == id } } }
+    }
     fun profileKey(username: String): String = username.removePrefix("@").trim().lowercase()
 }
 
@@ -5169,7 +5175,7 @@ private fun QinblyPostMenu(
                     if (token.isNullOrBlank()) onNotice("Entre na sua conta para excluir esta publicação.")
                     else Thread {
                         try {
-                            QinblyApi.deletePost(token, post.id)
+                            QinblyApi.deletePost(token, post.id); QinblyCache.forgetPost(post.id)
                             android.os.Handler(android.os.Looper.getMainLooper()).post {
                                 onPostsTransform { list -> list.filterNot { it.id == post.id } }
                                 onNotice("Publicação excluída.")
@@ -5360,7 +5366,7 @@ private fun QinblyEditCaptionDialog(
                     if (token.isNullOrBlank()) onNotice("Entre na sua conta para excluir esta publicação.")
                     else Thread {
                         try {
-                            QinblyApi.deletePost(token, post.id)
+                            QinblyApi.deletePost(token, post.id); QinblyCache.forgetPost(post.id)
                             android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice("Publicação excluída."); onDeleted(); onDismiss() }
                         } catch (e: Exception) {
                             android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível excluir a publicação.") }
@@ -8234,8 +8240,12 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
         AlertDialog(
             onDismissRequest = { confirmDeleteConv = null },
             title = { Text("Apagar conversa?") },
-            text = { Text("A conversa some da sua lista neste aparelho e volta se chegar uma mensagem nova. As mensagens continuam com a outra pessoa.") },
-            confirmButton = { TextButton(onClick = { prefs.edit().putString("inbox_hidden_" + cv.username, cv.createdAt).apply(); inboxPrefsTick++; confirmDeleteConv = null }) { Text("Apagar", color = Color(0xFFE5484D)) } },
+            text = { Text("A conversa e as mensagens somem só para você, em todos os aparelhos, e não voltam. A outra pessoa continua vendo.") },
+            confirmButton = { TextButton(onClick = {
+                prefs.edit().putString("inbox_hidden_" + cv.username, cv.createdAt).apply(); inboxPrefsTick++; confirmDeleteConv = null
+                val delToken = prefs.getString("token", null)
+                if (!delToken.isNullOrBlank()) Thread { try { QinblyApi.hideConversation(delToken, cv.username) } catch (_: Exception) { } }.start()
+            }) { Text("Apagar", color = Color(0xFFE5484D)) } },
             dismissButton = { TextButton(onClick = { confirmDeleteConv = null }) { Text("Cancelar") } }
         )
     }
@@ -8855,7 +8865,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                     }, QinblyBrand.Accent, QiblyTheme.card, QiblyTheme.text,
                     onDismiss = { menuMessage = null },
                     onCanceled = { id -> messages = messages.filterNot { it.id == id } },
-                    onHide = { id -> hiddenMsgIds = hiddenMsgIds + id; context.getSharedPreferences(qinblyAccountFile(context, "qinbly_hidden"), android.content.Context.MODE_PRIVATE).edit().putStringSet("ids", hiddenMsgIds).apply() },
+                    onHide = { id -> hiddenMsgIds = hiddenMsgIds + id; context.getSharedPreferences(qinblyAccountFile(context, "qinbly_hidden"), android.content.Context.MODE_PRIVATE).edit().putStringSet("ids", hiddenMsgIds).apply(); val hideToken = prefs.getString("token", null); if (!hideToken.isNullOrBlank()) Thread { try { QinblyApi.hideMessages(hideToken, listOf(id)) } catch (_: Exception) { } }.start() },
                     onReport = { id -> menuMessage = null; reportingMessageId = id },
                     onReply = { replyingTo = it },
                     onTogglePin = { id ->
@@ -8881,13 +8891,17 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
         shape = RoundedCornerShape(28.dp),
                     onDismissRequest = { showClearConfirm = false },
                     title = { Text("Limpar conversa?") },
-                    text = { Text("O servidor atual não oferece exclusão de mensagens. Esta ação limpa apenas a visualização; as mensagens voltarão quando a conversa for recarregada.") },
+                    text = { Text("As mensagens somem só para você, em todos os aparelhos, e não voltam. A outra pessoa continua vendo.") },
                     confirmButton = {
                         TextButton(onClick = {
                             messages = emptyList()
                             showClearConfirm = false
-                            onNotice("Visualização limpa; as mensagens continuam no servidor.")
-                        }) { Text("Limpar visualização", color = Pink) }
+                            val clearToken = prefs.getString("token", null)
+                            if (!clearToken.isNullOrBlank()) Thread {
+                                try { QinblyApi.hideConversation(clearToken, recipientUsername); android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice("Conversa limpa.") } }
+                                catch (e: Exception) { android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice("Não consegui limpar no servidor agora. Tente de novo.") } }
+                            }.start() else onNotice("Entre na sua conta para limpar a conversa.")
+                        }) { Text("Limpar conversa", color = Pink) }
                     },
                     dismissButton = { TextButton(onClick = { showClearConfirm = false }) { Text("Cancelar") } },
                     containerColor = Panel, titleContentColor = QiblyTheme.text, textContentColor = Muted

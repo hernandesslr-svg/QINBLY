@@ -399,6 +399,20 @@ object QinblyApi {
 
     fun deletePost(token: String, postId: String) {
         request("DELETE", "/api/posts/" + postId, JSONObject(), token)
+        forgetCachedPost(postId)
+    }
+
+    /** Publicação apagada não pode reaparecer ao abrir o app sem internet: tira também da cópia guardada no aparelho. */
+    private fun forgetCachedPost(postId: String) {
+        val ctx = applicationContext ?: return
+        try {
+            val sp = ctx.getSharedPreferences("qbly_local_cache", Context.MODE_PRIVATE)
+            val raw = sp.getString("feed_posts_v2", null) ?: return
+            val arr = org.json.JSONArray(raw)
+            val out = org.json.JSONArray()
+            for (i in 0 until arr.length()) { if (arr.optJSONObject(i)?.optString("id") != postId) out.put(arr.get(i)) }
+            sp.edit().putString("feed_posts_v2", out.toString()).apply()
+        } catch (_: Exception) { }
     }
 
     // ---- Comunidade: bloquear, denunciar, excluir conta ----
@@ -553,6 +567,25 @@ object QinblyApi {
             if (status !in 200..299) throw IllegalStateException("Não foi possível cancelar o envio (HTTP $status).")
             if ((try { org.json.JSONArray(text).length() } catch (_: Exception) { 0 }) == 0) throw IllegalStateException("Só quem enviou pode cancelar o envio.")
         } finally { c.disconnect() }
+    }
+
+    /** "Apagar para mim" de verdade: o servidor guarda e nunca mais devolve essas mensagens a esta conta (vale em qualquer aparelho). */
+    fun hideMessages(token: String, ids: List<String>) {
+        val clean = ids.filter { it.isNotBlank() }.distinct()
+        clean.chunked(200).forEach { part ->
+            val arr = org.json.JSONArray()
+            part.forEach { arr.put(JSONObject().put("message_id", it)) }
+            rest(token, "POST", "message_hides?on_conflict=user_id,message_id", arr.toString(), "resolution=merge-duplicates,return=minimal")
+        }
+    }
+
+    /** Limpa/apaga a conversa inteira só para esta conta. A outra pessoa continua vendo. */
+    fun hideConversation(token: String, username: String) {
+        repeat(20) {
+            val ids = getMessages(token, username).map { it.id }
+            if (ids.isEmpty()) return
+            hideMessages(token, ids)
+        }
     }
 
     fun reportContent(token: String, targetType: String, targetId: String, reason: String) {
