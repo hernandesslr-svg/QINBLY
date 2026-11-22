@@ -938,7 +938,7 @@
     if (act === "archive") return api("/api/posts/" + id + "/archive", { method: "POST", body: {} }).then(function () { FEED = FEED.filter(function (x) { return x.id !== id; }); toast("Arquivada."); var el = document.querySelector('[data-post="' + id + '"]'); if (el) el.remove(); }).catch(onErr);
     if (act === "vis") return api("/api/posts/" + id, { method: "PATCH", body: { visibility: p.visibility === "private" ? "public" : "private" } }).then(function (j) { POSTS[id] = j.post; repaint(id); toast("Visibilidade alterada."); }).catch(onErr);
     if (act === "del") return confirmSheet("Excluir publicação?", "Isso não pode ser desfeito.", "Excluir", true, function () {
-      api("/api/posts/" + id, { method: "DELETE" }).then(function () { FEED = FEED.filter(function (x) { return x.id !== id; }); toast("Publicação excluída."); var el = document.querySelector('[data-post="' + id + '"]'); if (el) el.remove(); else history.back(); }).catch(onErr);
+      api("/api/posts/" + id, { method: "DELETE" }).then(function () { FEED = FEED.filter(function (x) { return x.id !== id; }); toast("Publicação excluída."); var hp3 = lget("hposts", []); hp3.push(id); lset("hposts", hp3); delete POSTS[id]; var el = document.querySelector('[data-post="' + id + '"]'); if (el) el.remove(); else history.back(); }).catch(onErr);
     });
     if (act === "edit") {
       var s = sheet("Editar legenda", '<div class="form"><textarea class="inp" id="ec" maxlength="5000"></textarea>' + err("eer") + '<button class="btn" id="es">Salvar</button></div>');
@@ -1308,6 +1308,16 @@
   function lk(name) { var m = cur(); return "qb_" + (m ? m.id : "x") + "_" + name; }
   function lget(name, d) { return LS.get(lk(name), d); }
   function lset(name, v) { LS.set(lk(name), v); }
+  /* apagar mensagem "para mim" de verdade: fica guardado no servidor e vale em todos os aparelhos */
+  function hideMsgsServer(ids) {
+    ids = (ids || []).filter(Boolean); if (!ids.length) return Promise.resolve();
+    return call(HOST + "/rest/v1/message_hides?on_conflict=user_id,message_id", { method: "POST", body: ids.map(function (i) { return { message_id: i }; }), headers: { Prefer: "resolution=merge-duplicates,return=minimal" } });
+  }
+  function hideConversationServer(peerId) {
+    var me = cur(); if (!me || !peerId) return Promise.resolve();
+    return call(HOST + "/rest/v1/messages?select=id&or=(and(sender_id.eq." + me.id + ",recipient_id.eq." + peerId + "),and(sender_id.eq." + peerId + ",recipient_id.eq." + me.id + "))&limit=5000").then(function (r) { return hideMsgsServer((Array.isArray(r) ? r : []).map(function (x) { return x.id; })); });
+  }
+  function peerOf(list) { var me = cur(), m = (list || [])[0]; return m && me ? (m.senderId === me.id ? m.recipientId : m.senderId) : ""; }
   function chatPref(u) { return (lget("chats", {}) || {})[String(u).toLowerCase()] || {}; }
   function setChatPref(u, patch) { var all = lget("chats", {}) || {}, k = String(u).toLowerCase(); all[k] = Object.assign(all[k] || {}, patch); lset("chats", all); }
   function myCity() { return LS.get("qb_city", "") || LS.get("qb_place", ""); }
@@ -1418,9 +1428,9 @@
       else if (k === "fwd") forwardSheet(rawBody(m));
       else if (k === "pin") ctx.pin(m);
       else if (k === "cancel") confirmSheet("Cancelar envio?", "A mensagem some para as duas pessoas.", "Cancelar envio", true, function () {
-        call(HOST + "/rest/v1/messages?id=eq." + m.id, { method: "DELETE", headers: { Prefer: "return=representation" } }).then(function (r) { if (Array.isArray(r) && !r.length) throw new Error("Só quem enviou pode cancelar o envio."); toast("Envio cancelado."); ctx.reload(); }).catch(function (x) { toast(x.message || "Não foi possível cancelar o envio."); });
+        call(HOST + "/rest/v1/messages?id=eq." + m.id, { method: "DELETE", headers: { Prefer: "return=representation" } }).then(function (r) { if (Array.isArray(r) && !r.length) throw new Error("Só quem enviou pode cancelar o envio."); toast("Envio cancelado."); var gh = lget("hmsgs", []); gh.push(m.id); lset("hmsgs", gh); ctx.repaint(); }).catch(function (x) { toast(x.message || "Não foi possível cancelar o envio."); });
       });
-      else if (k === "hide") { var h = lget("hmsgs", []); h.push(m.id); lset("hmsgs", h); toast("Mensagem apagada só para você."); ctx.repaint(); }
+      else if (k === "hide") { var h = lget("hmsgs", []); h.push(m.id); lset("hmsgs", h); ctx.repaint(); (m.senderId ? hideMsgsServer([m.id]) : Promise.resolve()).then(function () { toast("Mensagem apagada só para você."); }).catch(function () { toast("Apagada aqui, mas não consegui salvar no servidor."); }); }
       else if (k === "del") ctx.remove(m);
       else if (k === "report") reportSheet("message", m.id);
     });
@@ -1507,8 +1517,8 @@
       else if (k === "pin") { setChatPref(name, { pin: !pf.pin }); toast(pf.pin ? "Conversa desafixada." : "Conversa fixada."); }
       else if (k === "mute") { setChatPref(name, { mute: !pf.mute }); toast(pf.mute ? "Notificações reativadas." : "Notificações silenciadas."); }
       else if (k === "profile") location.hash = "#/u/" + name;
-      else if (k === "clear") confirmSheet("Limpar conversa?", "As mensagens somem só para você, neste navegador.", "Limpar", true, function () { setChatPref(name, { cleared: new Date().toISOString() }); ctx.repaint(); toast("Conversa limpa."); });
-      else if (k === "del") confirmSheet("Apagar conversa?", "Ela some da sua lista até chegar uma mensagem nova.", "Apagar", true, function () { setChatPref(name, { cleared: new Date().toISOString(), hiddenAt: new Date().toISOString() }); toast("Conversa apagada."); location.hash = "#/inbox"; });
+      else if (k === "clear") confirmSheet("Limpar conversa?", "As mensagens somem só para você. A outra pessoa continua vendo.", "Limpar", true, function () { setChatPref(name, { cleared: new Date().toISOString() }); ctx.repaint(); hideConversationServer(peerOf(ctx.msgs ? ctx.msgs() : [])).then(function () { toast("Conversa limpa."); }).catch(function () { toast("Limpa aqui, mas não consegui salvar no servidor."); }); });
+      else if (k === "del") confirmSheet("Apagar conversa?", "Ela some da sua lista e as mensagens não voltam. A outra pessoa continua vendo.", "Apagar", true, function () { setChatPref(name, { cleared: new Date().toISOString(), hiddenAt: new Date().toISOString() }); hideConversationServer(peerOf(ctx.msgs ? ctx.msgs() : [])).then(function () { toast("Conversa apagada."); }).catch(function () { toast("Apagada aqui, mas não consegui salvar no servidor."); }).then(function () { location.hash = "#/inbox"; }); });
       else api("/api/users/" + enc(name)).then(function (j) {
         if (k === "report") reportSheet("user", j.user.id);
         else confirmSheet("Bloquear @" + name + "?", "Vocês deixam de ver as publicações e mensagens um do outro.", "Bloquear", true, function () { api("/api/users/" + j.user.id + "/block", { method: "POST", body: {} }).then(function () { toast("Conta bloqueada."); location.hash = "#/inbox"; }).catch(onErr); });

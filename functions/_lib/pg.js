@@ -165,8 +165,9 @@ const policies = (U, NOW) => {
     marketplace_listings: { select: `(user_id = ${U} OR (expires_at > ${lit(NOW)} AND ${canSee("marketplace_listings.user_id")}))`, insert: (v) => `${v("user_id")} = ${U}`, update: own("user_id"), delete: own("user_id") },
     marketplace_saves: { auth: true, select: own("user_id"), insert: (v) => `${v("user_id")} = ${U}`, delete: own("user_id") },
     message_post_attachments: { auth: true, select: msgMine("message_post_attachments.message_id"), insert: (v) => `EXISTS (SELECT 1 FROM messages m WHERE m.id = ${v("message_id")} AND m.sender_id = ${U}) AND ${postPublic(v("post_id"))}` },
+    message_hides: { auth: true, select: own("user_id"), insert: (v) => `${v("user_id")} = ${U} AND ${msgMine(v("message_id"))}`, delete: own("user_id") },
     message_reactions: { auth: true, select: msgMine("message_reactions.message_id"), insert: (v) => `${v("user_id")} = ${U} AND ${msgMine(v("message_id"))}`, update: own("user_id"), delete: own("user_id") },
-    messages: { auth: true, select: `(sender_id = ${U} OR recipient_id = ${U})`, insert: (v) => `${v("sender_id")} = ${U}`, update: own("recipient_id"), delete: own("sender_id") },
+    messages: { auth: true, select: `((sender_id = ${U} OR recipient_id = ${U}) AND NOT EXISTS (SELECT 1 FROM message_hides mh WHERE mh.message_id = messages.id AND mh.user_id = ${U}))`, insert: (v) => `${v("sender_id")} = ${U}`, update: own("recipient_id"), delete: own("sender_id") },
     neighborhood_comments: { auth: true, select: `EXISTS (SELECT 1 FROM neighborhood_notices n WHERE n.id = neighborhood_comments.notice_id)`, insert: (v) => `${v("user_id")} = ${U} AND EXISTS (SELECT 1 FROM neighborhood_notices n WHERE n.id = ${v("notice_id")})`, update: own("user_id"), delete: `(user_id = ${U} OR EXISTS (SELECT 1 FROM neighborhood_notices n WHERE n.id = neighborhood_comments.notice_id AND n.user_id = ${U}))` },
     neighborhood_notices: { select: `(expires_at > ${lit(NOW)} AND ${canSee("neighborhood_notices.user_id")})`, insert: (v) => `${v("user_id")} = ${U}`, delete: own("user_id") },
     notes: { select: `(user_id = ${U} OR (expires_at > ${lit(NOW)} AND ${canSee("notes.user_id")}))`, insert: (v) => `${v("user_id")} = ${U}`, update: own("user_id"), delete: own("user_id") },
@@ -203,7 +204,7 @@ const policies = (U, NOW) => {
     weekly_challenges: { auth: true, select: ALL },
   };
 };
-const UID_DEFAULT = { chat_polls: "creator_id", chat_poll_votes: "user_id", post_tags: "tagged_by", user_stickers: "owner_id", live_comments: "user_id", stories: "user_id", story_views: "viewer_id", notes: "user_id", message_reactions: "user_id", neighborhood_notices: "user_id", time_capsules: "from_user", sticker_packs: "owner_id", story_contributions: "user_id", marketplace_listings: "user_id", marketplace_saves: "user_id", neighborhood_comments: "user_id", story_mutes: "user_id" };
+const UID_DEFAULT = { chat_polls: "creator_id", chat_poll_votes: "user_id", post_tags: "tagged_by", user_stickers: "owner_id", live_comments: "user_id", stories: "user_id", story_views: "viewer_id", notes: "user_id", message_reactions: "user_id", message_hides: "user_id", neighborhood_notices: "user_id", time_capsules: "from_user", sticker_packs: "owner_id", story_contributions: "user_id", marketplace_listings: "user_id", marketplace_saves: "user_id", neighborhood_comments: "user_id", story_mutes: "user_id" };
 const OWNER_COL = { posts: "user_id", comments: "user_id", messages: "sender_id", profiles: "id", communities: "owner_id", marketplace_listings: "user_id", notes: "user_id", stories: "user_id" };
 
 // ---------- cascata ao apagar (o banco antigo usava ON DELETE CASCADE) ----------
@@ -212,7 +213,7 @@ const CASCADE = {
   comments: [["comment_likes", "comment_id"]],
   stories: [["story_views", "story_id"], ["story_likes", "story_id"], ["story_comments", "story_id"], ["story_contributions", "story_id"]],
   communities: [["community_members", "community_id"], ["community_messages", "community_id"], ["community_posts", "community_id"]],
-  messages: [["message_reactions", "message_id"], ["message_post_attachments", "message_id"]],
+  messages: [["message_hides", "message_id"], ["message_reactions", "message_id"], ["message_post_attachments", "message_id"]],
   marketplace_listings: [["marketplace_saves", "listing_id"]],
   sticker_packs: [["sticker_pack_items", "pack_id"]],
   neighborhood_notices: [["neighborhood_comments", "notice_id"]],

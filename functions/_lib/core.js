@@ -45,6 +45,7 @@ let secretCache = null;
 const getSecret = async (env) => {
   if (secretCache) return secretCache;
   await env.DB.exec("CREATE TABLE IF NOT EXISTS app_secrets (k TEXT PRIMARY KEY, v TEXT NOT NULL)");
+  await env.DB.exec("CREATE TABLE IF NOT EXISTS message_hides (user_id TEXT NOT NULL, message_id TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')), PRIMARY KEY (user_id, message_id))");
   let row = await env.DB.prepare("SELECT v FROM app_secrets WHERE k='jwt'").first();
   if (!row) {
     const fresh = b64u(crypto.getRandomValues(new Uint8Array(48)));
