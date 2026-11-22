@@ -9541,7 +9541,6 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     else Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(16.dp))
                 }
-                if (profileVerified) Box(Modifier.align(Alignment.BottomEnd)) { QinblyVerifiedBadge(20.dp) }
             }
             Column(Modifier.weight(1f).padding(start = 14.dp)) {
                 Row(Modifier.clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {

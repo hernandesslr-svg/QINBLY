@@ -525,7 +525,7 @@
       var stats = '<div class="pst"><div><b>' + (posts.length || u.posts_count || 0) + '</b><span>Publicações</span></div><button data-stat="following"><b>' + (u.following || 0) + '</b><span>Seguindo</span></button><button data-stat="followers"><b>' + (u.followers || 0) + "</b><span>Seguidores</span></button></div>";
       var head;
       if (own) {
-        head = '<div class="pown"><div class="pav"><span class="pring ' + (unseen ? "new" : "") + '">' + avatar(u.avatarUrl, shown, "l") + "</span>" + (u.verified ? '<i class="pvf">' + VERIFIED + "</i>" : "") + '</div><div class="pn"><button class="nm" data-edit><span>' + esc(shown) + "</span>" + (u.verified ? VERIFIED : "") + '</button><button class="at" data-accounts>@' + esc(u.username) + svg("chev") + "</button></div></div>" +
+        head = '<div class="pown"><div class="pav"><span class="pring ' + (unseen ? "new" : "") + '">' + avatar(u.avatarUrl, shown, "l") + "</span>" + "" + '</div><div class="pn"><button class="nm" data-edit><span>' + esc(shown) + "</span>" + (u.verified ? VERIFIED : "") + '</button><button class="at" data-accounts>@' + esc(u.username) + svg("chev") + "</button></div></div>" +
           '<div class="pbio">' + (cats ? cats : "") + (bio.desc ? "<p>" + linkify(bio.desc) + "</p>" : (cats ? "" : '<p class="mut">Adicione uma descrição ao seu perfil</p>')) + (meta ? '<div class="pmeta">' + meta + "</div>" : "") + stats +
           '<div class="pbt"><button class="pill" data-edit>' + svg("edit") + 'Editar perfil</button><button class="pill" data-shareprofile="' + esc(u.username) + '">' + svg("send") + "Compartilhar perfil</button></div></div>";
       } else {
