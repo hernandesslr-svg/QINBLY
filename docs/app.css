@@ -504,3 +504,28 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 .scf{display:flex;gap:18px;padding:14px 20px 4px;font-size:12px}
 .scf a{color:var(--muted)}
 .sci:active,.scp:active{background:var(--surface)}
+
+/* ===== comentários e respostas (esboço aprovado) ===== */
+.cm2{display:flex;gap:10px;padding:10px 16px 2px;align-items:flex-start}
+.cm2 .av{width:36px;height:36px;font-size:14px}
+.cm2 .b{flex:1;min-width:0}
+.cm2 .l1{display:flex;align-items:baseline;gap:6px}
+.cm2 .l1 b{font-size:14px;font-weight:600}
+.cm2 .l1 small{font-size:12px;color:var(--muted)}
+.cm2 .tx{font-size:15px;margin-top:2px;white-space:pre-wrap;word-wrap:break-word}
+.cm2 .ac{display:flex;gap:16px;margin-top:5px}
+.cm2 .ac button{font-size:12px;font-weight:500;color:var(--muted)}
+.cm2 .lk{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:28px;color:var(--muted);font-size:11px;padding:2px 0}
+.cm2 .lk svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8}
+.cm2 .lk.on{color:#E53935}
+.cm2 .lk.on svg{fill:#E53935;stroke:#E53935}
+.cm2.sub{padding:8px 16px 2px 60px}
+.cm2.sub .av{width:26px;height:26px;font-size:11px}
+.cm2.sub .l1 b{font-size:13px}
+.cm2.sub .tx{font-size:14px;margin-top:1px}
+.cm2.sub .lk svg{width:16px;height:16px}
+.cm2 .tx a{color:#3F67E0}
+.rtg{display:flex;align-items:center;gap:18px;padding:8px 16px 12px 60px}
+.rtg button{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;color:var(--muted)}
+.rtg svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rtg button[data-rhide] svg{transform:rotate(180deg)}

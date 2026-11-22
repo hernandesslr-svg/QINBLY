@@ -4257,6 +4257,7 @@ private fun QinblyCommentsDialog(
     var commentDraft by remember(post.id) { mutableStateOf("") }
     var replyTo by remember(post.id) { mutableStateOf<QinblyApi.CommentSummary?>(null) }
     val expandedThreads = remember(post.id) { mutableStateListOf<String>() }
+    val replyShown = remember(post.id) { androidx.compose.runtime.mutableStateMapOf<String, Int>() }
     var menuFor by remember(post.id) { mutableStateOf<String?>(null) }
     var editingComment by remember(post.id) { mutableStateOf<QinblyApi.CommentSummary?>(null) }
     var reportingComment by remember(post.id) { mutableStateOf<QinblyApi.CommentSummary?>(null) }
@@ -4403,7 +4404,9 @@ private fun QinblyCommentsDialog(
                         // Fio: cada comentário seguido das suas respostas (um nível).
                         // Respostas ficam escondidas até a pessoa tocar em "Ver respostas".
                         val threaded = comments.filter { it.parentId.isBlank() }.sortedWith(compareByDescending<QinblyApi.CommentSummary> { it.likes }.thenByDescending { it.createdAt }).flatMap { top ->
-                            listOf(top) + if (top.id in expandedThreads) comments.filter { it.parentId == top.id } else emptyList()
+                            val reps = comments.filter { it.parentId == top.id }
+                            val shownN = if (top.id in expandedThreads) (replyShown[top.id] ?: 3).coerceAtMost(reps.size) else 0
+                            listOf<Any>(top) + reps.take(shownN) + (if (reps.isNotEmpty()) listOf<Any>("footer:" + top.id) else emptyList())
                         } + comments.filter { it.parentId.isNotBlank() && comments.none { c -> c.id == it.parentId } }
                         val commentsBg = if (post.mediaType == "text" && post.caption.isNotBlank()) qinblyTextBgBrush(post.textBg) else null
                         if (commentsBg != null) item(key = "post-preview") {
@@ -4416,13 +4419,34 @@ private fun QinblyCommentsDialog(
                                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                             }
                         }
-                        items(threaded, key = { it.id }) { comment ->
+                        items(threaded, key = { if (it is String) it else (it as QinblyApi.CommentSummary).id }) { entry ->
+                          if (entry is String) {
+                            val footTop = entry.removePrefix("footer:")
+                            val footReps = comments.count { it.parentId == footTop }
+                            val footOpen = footTop in expandedThreads
+                            val footShown = if (footOpen) (replyShown[footTop] ?: 3).coerceAtMost(footReps) else 0
+                            val footLeft = footReps - footShown
+                            Row(Modifier.fillMaxWidth().padding(start = 46.dp, top = 8.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                                if (!footOpen) {
+                                    Text("Ver $footReps " + (if (footReps == 1) "resposta" else "respostas") + " ▾", color = RemoteAppearance.commentSecondaryTextColor, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.clickable { expandedThreads.add(footTop); replyShown[footTop] = 3 })
+                                } else {
+                                    if (footLeft > 0) Text("Ver mais ${minOf(10, footLeft)} ▾", color = RemoteAppearance.commentSecondaryTextColor, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.clickable { replyShown[footTop] = footShown + 10 })
+                                    Text("Ocultar ▴", color = RemoteAppearance.commentSecondaryTextColor, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.clickable { expandedThreads.remove(footTop); replyShown.remove(footTop) })
+                                }
+                            }
+                            HorizontalDivider(color = RemoteAppearance.commentDividerColor)
+                          } else {
+                            val comment = entry as QinblyApi.CommentSummary
+                            val isReply = comment.parentId.isNotBlank()
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(start = if (comment.parentId.isNotBlank()) 44.dp else 0.dp, top = 14.dp, bottom = 14.dp),
+                                modifier = Modifier.fillMaxWidth().padding(start = if (isReply) 46.dp else 0.dp, top = if (isReply) 8.dp else 12.dp, bottom = 4.dp),
                                 verticalAlignment = Alignment.Top
                             ) {
                                 Box(
-                                    modifier = Modifier.size(48.dp).clip(CircleShape)
+                                    modifier = Modifier.size(if (isReply) 26.dp else 36.dp).clip(CircleShape)
                                         .background(RemoteAppearance.commentInputBackgroundColor),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -4430,10 +4454,10 @@ private fun QinblyCommentsDialog(
                                         comment.displayName.ifBlank { comment.username }.ifBlank { "U" }.take(1).uppercase(),
                                         color = RemoteAppearance.commentTextColor,
                                         fontWeight = FontWeight.SemiBold,
-                                        fontSize = 18.sp
+                                        fontSize = if (isReply) 11.sp else 14.sp
                                     )
                                 }
-                                Column(modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).combinedClickable(onClick = {}, onLongClick = { menuFor = comment.id }).padding(start = 14.dp, end = 8.dp)) {
+                                Column(modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).combinedClickable(onClick = {}, onLongClick = { menuFor = comment.id }).padding(start = 10.dp, end = 8.dp)) {
                                     val isMine = comment.username.equals(me, ignoreCase = true)
                                     val canDelete = isMine || activePost.username.equals(me, ignoreCase = true)
                                     DropdownMenu(expanded = menuFor == comment.id, onDismissRequest = { menuFor = null }) {
@@ -4461,22 +4485,25 @@ private fun QinblyCommentsDialog(
                                         })
                                         if (!isMine) DropdownMenuItem(text = { Text("Denunciar comentário", color = Color(0xFFD33B3B)) }, leadingIcon = { QinblyMenuIcon("Denunciar comentário") }, onClick = { menuFor = null; reportingComment = comment })
                                     }
-                                    Text(
-                                        comment.displayName.ifBlank { comment.username }.ifBlank { "Usuário" },
-                                        color = RemoteAppearance.commentTextColor,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 16.sp
-                                    )
-                                    Text(if (comment.createdAt.isBlank()) "agora" else postRelativeTime(comment.createdAt, System.currentTimeMillis()), color = RemoteAppearance.commentSecondaryTextColor, fontSize = 14.sp, modifier = Modifier.padding(top = 2.dp))
+                                    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(
+                                            comment.displayName.ifBlank { comment.username }.ifBlank { "Usuário" },
+                                            color = RemoteAppearance.commentTextColor,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = if (isReply) 13.sp else 14.sp,
+                                            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false)
+                                        )
+                                        Text(if (comment.createdAt.isBlank()) "agora" else postRelativeTime(comment.createdAt, System.currentTimeMillis()), color = RemoteAppearance.commentSecondaryTextColor, fontSize = 12.sp)
+                                    }
                                     val commentSticker = QinblyStickers.idOf(comment.body)
                                     if (comment.stickerUrl.isNotBlank()) Box(Modifier.padding(top = 8.dp).combinedClickable(onClick = {}, onLongClick = { menuFor = comment.id })) { AsyncImage(model = comment.stickerUrl, contentDescription = "Figurinha", modifier = Modifier.size(96.dp)) }
                                     else if (commentSticker != null) Box(Modifier.padding(top = 8.dp).combinedClickable(onClick = {}, onLongClick = { menuFor = comment.id })) { QinblyStickerView(commentSticker, 96.dp) }
-                                    else QinblyRichText(comment.body, RemoteAppearance.commentTextColor, Modifier.padding(top = 8.dp), fontSize = 16.sp, onLongClick = { menuFor = comment.id })
-                                    Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                                    else QinblyRichText(comment.body, RemoteAppearance.commentTextColor, Modifier.padding(top = 2.dp), fontSize = if (isReply) 14.sp else 15.sp, onLongClick = { menuFor = comment.id })
+                                    Row(Modifier.padding(top = 5.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                                         Text(
                                             "Responder",
-                                            color = RemoteAppearance.commentTextColor,
-                                            fontSize = 14.sp,
+                                            color = RemoteAppearance.commentSecondaryTextColor,
+                                            fontSize = 12.sp,
                                             fontWeight = FontWeight.Medium,
                                             modifier = Modifier.clickable {
                                                 replyTo = comment
@@ -4484,21 +4511,9 @@ private fun QinblyCommentsDialog(
                                                 commentDraft = "@${comment.username} "
                                                 val topId = comment.parentId.ifBlank { comment.id }
                                                 if (topId !in expandedThreads) expandedThreads.add(topId)
+                                                replyShown[topId] = Int.MAX_VALUE
                                             }
                                         )
-                                        if (comment.parentId.isBlank()) {
-                                            val replyCount = comments.count { it.parentId == comment.id }
-                                            if (replyCount > 0) {
-                                                val open = comment.id in expandedThreads
-                                                Text(
-                                                    (if (open) "Ocultar respostas" else if (replyCount == 1) "Ver 1 resposta" else "Ver $replyCount respostas") + if (open) " ▴" else " ▾",
-                                                    color = QinblyBrand.Accent,
-                                                    fontSize = 14.sp,
-                                                    fontWeight = FontWeight.Medium,
-                                                    modifier = Modifier.clickable { if (open) expandedThreads.remove(comment.id) else expandedThreads.add(comment.id) }
-                                                )
-                                            }
-                                        }
                                     }
                                 }
                                 val cLiked = commentLikeState[comment.id] ?: comment.likedByMe
@@ -4520,11 +4535,12 @@ private fun QinblyCommentsDialog(
                                         }.start()
                                     }.padding(horizontal = 6.dp, vertical = 4.dp)
                                 ) {
-                                    Icon(if (cLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Curtir comentário", tint = if (cLiked) QinblyBrand.Liked else RemoteAppearance.commentTextColor, modifier = Modifier.size(22.dp))
-                                    if (cCount > 0) Text(cCount.toString(), color = RemoteAppearance.commentSecondaryTextColor, fontSize = 12.sp)
+                                    Icon(if (cLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Curtir comentário", tint = if (cLiked) QinblyBrand.Liked else RemoteAppearance.commentSecondaryTextColor, modifier = Modifier.size(if (isReply) 17.dp else 20.dp))
+                                    if (cCount > 0) Text(cCount.toString(), color = RemoteAppearance.commentSecondaryTextColor, fontSize = 11.sp)
                                 }
                             }
-                            HorizontalDivider(color = RemoteAppearance.commentDividerColor)
+                            if (!isReply && comments.none { it.parentId == comment.id }) HorizontalDivider(color = RemoteAppearance.commentDividerColor)
+                          }
                         }
                         if (comments.isEmpty() && !commentsLoading) {
                             item {

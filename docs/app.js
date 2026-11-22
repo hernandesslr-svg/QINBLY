@@ -296,18 +296,30 @@
     var s = sheet("Comentários", spin(),
       '<div id="rp" class="rpl" hidden></div><form class="cin" id="cf"><input id="ci" maxlength="2000" placeholder="Adicione um comentário…" autocomplete="off"><button type="submit">Enviar</button></form>');
     var box = s.querySelector(".body"), list = [];
+    var openN = {};
     function one(c, sub) {
       var a = c.author || {}, mine = me && a.id === me.id;
-      return '<div class="cm ' + (sub ? "sub" : "") + '"><a href="#/u/' + esc(a.username) + '">' + avatar(a.avatarUrl, a.displayName || a.username, "s") + '</a><div class="b"><b>' + esc(a.username) + "</b>" + (/^qinbly:sticker:/.test(c.body) ? '<img class="mstk" style="width:90px;height:90px" src="' + safeUrl(HOST + "/storage/v1/object/public/post-media/" + c.body.slice(15)) + '" alt="Figurinha">' : linkify(c.body)) + "<small>" + ago(c.createdAt) + (c.editedAt ? " · editado" : "") + ' · <button data-crep="' + c.id + ":" + esc(a.username) + '">Responder</button>' + (mine ? ' · <button data-cedit="' + c.id + '">Editar</button> · <button data-cdel="' + c.id + '">Apagar</button>' : ' · <button data-crpt="' + c.id + '">Denunciar</button>') + '</small></div><button class="act ' + (c.likedByMe ? "on" : "") + '" data-clike="' + c.id + '" aria-label="Curtir">' + svg("heart") + (c.likes || "") + "</button></div>";
+      var body = /^qinbly:sticker:/.test(c.body) ? '<img class="mstk" style="width:90px;height:90px" src="' + safeUrl(HOST + "/storage/v1/object/public/post-media/" + c.body.slice(15)) + '" alt="Figurinha">' : linkify(c.body);
+      return '<div class="cm2 ' + (sub ? "sub" : "") + '"><a href="#/u/' + esc(a.username) + '">' + avatar(a.avatarUrl, a.displayName || a.username, "s") + '</a><div class="b"><div class="l1"><b>' + esc(a.username) + "</b><small>" + ago(c.createdAt) + (c.editedAt ? " · editado" : "") + '</small></div><div class="tx">' + body + '</div><div class="ac"><button data-crep="' + c.id + ":" + esc(a.username) + '">Responder</button>' +
+        (mine ? '<button data-cedit="' + c.id + '">Editar</button><button data-cdel="' + c.id + '">Apagar</button>' : '<button data-crpt="' + c.id + '">Denunciar</button>') + '</div></div><button class="lk ' + (c.likedByMe ? "on" : "") + '" data-clike="' + c.id + '" aria-label="Curtir">' + svg("heart") + (c.likes ? "<span>" + c.likes + "</span>" : "") + "</button></div>";
     }
     function draw() {
       var top = list.filter(function (c) { return !c.parentId; }), h = "";
-      top.forEach(function (c) { h += one(c, false); list.filter(function (r) { return r.parentId === c.id; }).forEach(function (r) { h += one(r, true); }); });
+      top.forEach(function (c) {
+        h += one(c, false);
+        var reps = list.filter(function (r) { return r.parentId === c.id; }); if (!reps.length) return;
+        var n = Math.min(openN[c.id] || 0, reps.length), left = reps.length - n;
+        if (!n) { h += '<div class="rtg"><button data-rmore="' + c.id + '">Ver ' + reps.length + (reps.length === 1 ? " resposta" : " respostas") + svg("chev") + "</button></div>"; return; }
+        reps.slice(0, n).forEach(function (r) { h += one(r, true); });
+        h += '<div class="rtg">' + (left > 0 ? '<button data-rmore="' + c.id + '">Ver mais ' + Math.min(10, left) + svg("chev") + "</button>" : "") + '<button data-rhide="' + c.id + '">Ocultar' + svg("chev") + "</button></div>";
+      });
       box.innerHTML = h || '<div class="empty">Nenhum comentário ainda. Seja o primeiro.</div>';
     }
     api("/api/posts/" + id + "/comments").then(function (j) { list = j.comments || []; draw(); }).catch(function (e) { box.innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
     s.addEventListener("click", function (e) {
-      var t = e.target.closest("[data-crep],[data-cdel],[data-clike],[data-crpt],[data-cedit]"); if (!t) return; e.stopPropagation();
+      var t = e.target.closest("[data-crep],[data-cdel],[data-clike],[data-crpt],[data-cedit],[data-rmore],[data-rhide]"); if (!t) return; e.stopPropagation();
+      if (t.dataset.rmore) { var rid = t.dataset.rmore, tot = list.filter(function (r) { return r.parentId === rid; }).length; openN[rid] = openN[rid] ? Math.min(tot, openN[rid] + 10) : Math.min(tot, 3); draw(); return; }
+      if (t.dataset.rhide) { openN[t.dataset.rhide] = 0; draw(); return; }
       if (t.dataset.crep) { var a = t.dataset.crep.split(":"); reply = a[0]; var r = s.querySelector("#rp"); r.hidden = false; r.textContent = "Respondendo a @" + a[1] + " (toque para cancelar)"; s.querySelector("#ci").value = "@" + a[1] + " "; s.querySelector("#ci").focus(); }
       else if (t.dataset.cedit) { var cc = list.filter(function (c) { return c.id === t.dataset.cedit; })[0]; editing = cc.id; var r2 = s.querySelector("#rp"); r2.hidden = false; r2.textContent = "Editando comentário (toque para cancelar)"; s.querySelector("#ci").value = cc.body; s.querySelector("#ci").focus(); }
       else if (t.dataset.cdel) api("/api/comments/" + t.dataset.cdel, { method: "DELETE" }).then(function () { list = list.filter(function (c) { return c.id !== t.dataset.cdel && c.parentId !== t.dataset.cdel; }); draw(); if (POSTS[id]) { POSTS[id].comments = Math.max(0, (POSTS[id].comments || 1) - 1); repaint(id); } }).catch(onErr);
@@ -322,7 +334,7 @@
       inp.disabled = true;
       if (editing) { var eid = editing; api("/api/comments/" + eid, { method: "PATCH", body: { body: t } }).then(function () { list.forEach(function (c) { if (c.id === eid) { c.body = t; c.editedAt = new Date().toISOString(); } }); draw(); inp.value = ""; editing = null; s.querySelector("#rp").hidden = true; }).catch(onErr).then(function () { inp.disabled = false; inp.focus(); }); return; }
       api("/api/posts/" + id + "/comments", { method: "POST", body: { body: t, parentId: reply || undefined } }).then(function (j) {
-        list.push(j.comment); draw(); inp.value = ""; reply = null; s.querySelector("#rp").hidden = true; box.scrollTop = box.scrollHeight; if (POSTS[id]) { POSTS[id].comments = (POSTS[id].comments || 0) + 1; repaint(id); }
+        list.push(j.comment); if (j.comment.parentId) openN[j.comment.parentId] = list.filter(function (r) { return r.parentId === j.comment.parentId; }).length; draw(); inp.value = ""; reply = null; s.querySelector("#rp").hidden = true; box.scrollTop = box.scrollHeight; if (POSTS[id]) { POSTS[id].comments = (POSTS[id].comments || 0) + 1; repaint(id); }
       }).catch(onErr).then(function () { inp.disabled = false; inp.focus(); });
     });
   }

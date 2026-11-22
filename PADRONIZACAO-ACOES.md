@@ -1079,3 +1079,8 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - O service worker (`sw.js`, cache v6) deixou de guardar respostas da API; só guarda a casca do app. Antes, uma falha de rede podia mostrar uma lista antiga com o que já foi apagado.
 - Aplicativo Android: "Apagar para mim", "Limpar conversa" e "Apagar conversa" agora também gravam no servidor (`message_hides`) e não voltam mais; antes só valiam no aparelho (a tela de limpar dizia que as mensagens voltavam). Excluir publicação tira a publicação também das cópias guardadas (feed, meu perfil, perfis abertos e a cópia offline).
 - Menu dos três tracinhos do site agora é a tela cheia "Atalhos", igual ao app: seta de voltar, seu perfil, e os blocos EXPLORAR (Vídeos, Em alta, Lives, Perto de mim), NA SUA CIDADE (Mercado, Doações, Achados, Eventos, Serviços, Avisos) e SEUS ESPAÇOS (Comunidades, Salvos, Convidar amigos, Transmitir ao vivo), mais Configurações, Trocar de conta, Instalar o app e Sair.
+
+## Comentários e respostas (site e app)
+- Comentário: avatar de 36, nome e horário na mesma linha, texto 15, "Responder" pequeno e cinza, coração pequeno à direita com o número.
+- Respostas recuadas (avatar 26, texto 14), sem linha lateral e sem tracinho. Fechadas por padrão: "Ver N respostas ▾". Ao abrir, mostram 3; embaixo ficam lado a lado "Ver mais N ▾" (de 10 em 10) e "Ocultar ▴". Ao responder alguém, todas as respostas aparecem.
+- Todos os comentários ficam na mesma lista, sem "ver mais comentários" e sem botões de ordenar.
