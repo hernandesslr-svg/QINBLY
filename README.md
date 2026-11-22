@@ -1,9 +1,9 @@
 # QINBLY
 
-> ## 🌐 Site oficial: **https://hernandesslr-svg.github.io/QINBLY/**
+> ## 🌐 Site oficial: **https://qinbly.pages.dev/**
 > Baixe o aplicativo para Android, veja o que ele faz e envie sugestões ou erros pelo site.
 >
-> [**Abrir o site**](https://hernandesslr-svg.github.io/QINBLY/) · [Baixar o APK mais recente](https://github.com/hernandesslr-svg/QINBLY/releases/latest/download/qinbly-release.apk) · [Todas as versões](https://github.com/hernandesslr-svg/QINBLY/releases)
+> [**Abrir o site**](https://qinbly.pages.dev/) · [Baixar o APK mais recente](https://github.com/hernandesslr-svg/QINBLY/releases/latest/download/qinbly-release.apk) · [Todas as versões](https://github.com/hernandesslr-svg/QINBLY/releases)
 
 ---
 
