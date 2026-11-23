@@ -1113,3 +1113,9 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Repostar: duas setas em círculo (redondinho).
 - Enviar: avião de papel largo, com bico e asas arredondados (desenho próprio, igual no app e no site).
 - Site: `sw.js` passou para `qinbly-web-v11` para o navegador pegar a mudança.
+
+## Avisos com o app fechado (serviço em segundo plano)
+- Antes: só uma tarefa agendada (a cada ~15 min, quando o Android deixava; em Samsung quase nunca com o app fechado). Agora: `QinblyNotifyService`, serviço em primeiro plano com aviso discreto fixo ("Recebendo seus avisos", sem som, recolhido), que consulta novidades e versão nova do app a cada ~40 s.
+- Liga ao abrir o app, ao entrar numa conta e ao ligar o celular/atualizar o app (`QinblyBootReceiver`). Para sozinho se sair da conta ou desligar "Notificações".
+- O app pede uma vez, depois das notificações, para rodar sem economia de bateria (sem isso o Android pode dormir o serviço). Recusou: pergunta de novo só depois de 3 dias.
+- Continua a tarefa agendada como reserva. Push instantâneo de verdade (Firebase/FCM) segue possível no futuro; exige projeto Firebase.

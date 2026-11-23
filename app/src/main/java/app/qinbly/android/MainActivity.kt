@@ -382,7 +382,7 @@ private fun RoundedPaperPlaneIcon(tint: Color = Color.White) {
 class MainActivity : ComponentActivity() {
     // Segundo plano: tudo que toca (vídeo, música, áudio) pausa quando o app sai da tela e retoma ao voltar.
     override fun onStop() { QinblyPlayback.pauseAll(); super.onStop() }
-    override fun onStart() { super.onStart(); QinblyPlayback.resumeAll() }
+    override fun onStart() { super.onStart(); QinblyPlayback.resumeAll(); QinblyNotifyService.start(applicationContext) }
     // Teclas de volume (aumentar ou diminuir): avisam os vídeos mudos para ligarem o som (o sistema continua tratando a tecla normalmente).
     override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
         if (QinblyCameraKeys.active && (event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN)) {
@@ -1932,6 +1932,8 @@ private fun QinblyApp() {
     val appPrefs = remember { appContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     var loggedInUser by remember { mutableStateOf(appPrefs.getString("username", "") ?: "") }
     QinblyDeepLinkHost(appPrefs, loggedInUser) { notice = it }
+    // Entrou numa conta (ou trocou): liga/religa o serviço de avisos em segundo plano.
+    LaunchedEffect(loggedInUser) { if (loggedInUser.isNotBlank()) QinblyNotifyService.start(appContext) }
     QinblyTagHost(appPrefs, loggedInUser) { notice = it }
     LaunchedEffect(QinblyTagNav.profile) {
         QinblyTagNav.profile?.let { publicProfileUsername = it; QinblyTagNav.profile = null }
@@ -6841,6 +6843,23 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
             }
         }
+    }
+    // Para os avisos chegarem com o app fechado, o Android precisa deixar o QINBLY rodar em segundo plano sem economia de bateria.
+    // Pede uma vez (de novo só depois de 3 dias, se a pessoa recusar), depois de a permissão de notificações estar resolvida.
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(9000)
+        try {
+            val power = context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+            val notifOk = android.os.Build.VERSION.SDK_INT < 33 || androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            val last = prefs.getLong("battery_opt_asked_at", 0L)
+            if (notifOk && !power.isIgnoringBatteryOptimizations(context.packageName) && System.currentTimeMillis() - last > 3L * 24 * 60 * 60 * 1000) {
+                prefs.edit().putLong("battery_opt_asked_at", System.currentTimeMillis()).apply()
+                context.startActivity(
+                    android.content.Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                        .setData(android.net.Uri.parse("package:" + context.packageName))
+                )
+            }
+        } catch (_: Exception) { }
     }
     var selectedFeedTab by rememberKept("feed.tab", "Descobrir")
     var emAltaPeriod by rememberKept("feed.period", "Hoje")
