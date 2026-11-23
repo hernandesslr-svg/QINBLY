@@ -1106,3 +1106,10 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - A notificação do sistema agora leva o tipo, a publicação e o @ da pessoa. Ao tocar: mensagem abre a conversa; curtida, marcação e menção abrem a publicação; comentário e resposta abrem a publicação já com os comentários; seguidor e "aceitou seu pedido" abrem o perfil; pedido de seguir, verificação e avisos abrem a lista de notificações; atualização abre a tela de atualizar.
 - Cada aviso tem seu próprio código de toque (antes todos usavam o mesmo e um podia sobrescrever o outro).
 - A lista de Notificações dentro do app usa o mesmo caminho (antes curtida e comentário abriam só o perfil).
+
+## Barra de botões da publicação (app e site)
+- Ordem: curtir, comentar, repostar, enviar, e o salvar na ponta direita.
+- Curtir: coração cheio e vermelho quando curtido. Salvar: marcador cheio e amarelo quando salvo.
+- Repostar: duas setas em círculo (redondinho).
+- Enviar: avião de papel largo, com bico e asas arredondados (desenho próprio, igual no app e no site).
+- Site: `sw.js` passou para `qinbly-web-v11` para o navegador pegar a mudança.

@@ -325,70 +325,57 @@ private val Muted: Color get() = if (QiblyTheme.dark) Color(0xFFF2F4F8) else Col
 
 @androidx.compose.runtime.Composable
 private fun RepostVerifiedIcon(verified: Boolean, tint: Color = Color.White) {
+    // Repostar: duas setas em círculo (redondinho), grade 24x24, contorno arredondado.
     androidx.compose.foundation.Canvas(modifier = Modifier.size(24.dp)) {
-        val sx = size.width / 28f
-        val sy = size.height / 28f
         val stroke = androidx.compose.ui.graphics.drawscope.Stroke(
-            width = 2.2.dp.toPx(),
+            width = 2.1f,
             cap = androidx.compose.ui.graphics.StrokeCap.Round,
             join = androidx.compose.ui.graphics.StrokeJoin.Round
         )
-        val arrows = androidx.compose.ui.graphics.Path().apply {
-            moveTo(5f * sx, 13f * sy)
-            lineTo(5f * sx, 9f * sy)
-            quadraticTo(5f * sx, 5f * sy, 9f * sx, 5f * sy)
-            lineTo(23f * sx, 5f * sy)
-            moveTo(18f * sx, 1.5f * sy)
-            lineTo(23f * sx, 5f * sy)
-            lineTo(18f * sx, 9f * sy)
-            moveTo(23f * sx, 15f * sy)
-            lineTo(23f * sx, 19f * sy)
-            quadraticTo(23f * sx, 23f * sy, 19f * sx, 23f * sy)
-            lineTo(5f * sx, 23f * sy)
-            moveTo(10f * sx, 19f * sy)
-            lineTo(5f * sx, 23f * sy)
-            lineTo(10f * sx, 26.5f * sy)
-        }
-        drawPath(arrows, tint, style = stroke)
-        if (verified) {
-            val check = androidx.compose.ui.graphics.Path().apply {
-                moveTo(10f * sx, 14f * sy)
-                lineTo(13f * sx, 17f * sy)
-                lineTo(19f * sx, 11f * sy)
+        val arrows = androidx.compose.ui.graphics.vector.PathParser()
+            .parsePathString("M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4")
+            .toPath()
+        withTransform({ scale(size.width / 24f, size.width / 24f, pivot = androidx.compose.ui.geometry.Offset.Zero) }) {
+            drawPath(arrows, tint, style = stroke)
+            if (verified) {
+                val check = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(9f, 12.4f); lineTo(11.2f, 14.6f); lineTo(15f, 10.4f)
+                }
+                drawPath(check, Color(0xFF00E676), style = stroke)
             }
-            drawPath(check, Color(0xFF00E676), style = stroke)
         }
     }
 }
 
 @androidx.compose.runtime.Composable
 private fun RoundedPaperPlaneIcon(tint: Color = Color.White) {
-    // Ícone próprio do QINBLY em grade 24x24, contorno 2dp e cantos suaves.
-    androidx.compose.foundation.Canvas(modifier = Modifier.size(24.dp)) {
-        val x = size.width / 24f
-        val y = size.height / 24f
+    // Avião de papel do QINBLY: asas largas e todas as pontas arredondadas (bico e as duas asas). Grade 26x24, contorno 2.
+    androidx.compose.foundation.Canvas(modifier = Modifier.size(width = 26.dp, height = 24.dp)) {
         val outline = androidx.compose.ui.graphics.Path().apply {
-            moveTo(3.8f * x, 5.0f * y)
-            lineTo(19.4f * x, 5.0f * y)
-            quadraticTo(21.7f * x, 5.0f * y, 20.5f * x, 7.2f * y)
-            lineTo(12.8f * x, 20.0f * y)
-            quadraticTo(11.3f * x, 22.0f * y, 10.7f * x, 19.4f * y)
-            lineTo(8.9f * x, 12.6f * y)
-            lineTo(3.0f * x, 7.2f * y)
-            quadraticTo(1.6f * x, 5.7f * y, 3.8f * x, 5.0f * y)
+            moveTo(6.14f, 8.94f)
+            lineTo(19.49f, 4.0f)
+            quadraticTo(23.8f, 2.4f, 22.49f, 6.81f)
+            lineTo(19.19f, 17.97f)
+            quadraticTo(18.0f, 22.0f, 15.6f, 18.56f)
+            lineTo(13.83f, 16.02f)
+            quadraticTo(12.0f, 13.4f, 8.94f, 12.46f)
+            lineTo(6.22f, 11.63f)
+            quadraticTo(2.2f, 10.4f, 6.14f, 8.94f)
             close()
         }
+        val fold = androidx.compose.ui.graphics.Path().apply {
+            moveTo(12.6f, 13.9f)
+            lineTo(20.8f, 5.2f)
+        }
         val stroke = androidx.compose.ui.graphics.drawscope.Stroke(
-            width = 2.dp.toPx(),
+            width = 2f,
             cap = androidx.compose.ui.graphics.StrokeCap.Round,
             join = androidx.compose.ui.graphics.StrokeJoin.Round
         )
-        drawPath(outline, tint, style = stroke)
-        val fold = androidx.compose.ui.graphics.Path().apply {
-            moveTo(8.9f * x, 12.6f * y)
-            lineTo(17.5f * x, 8.0f * y)
+        withTransform({ scale(size.width / 26f, size.width / 26f, pivot = androidx.compose.ui.geometry.Offset.Zero) }) {
+            drawPath(outline, tint, style = stroke)
+            drawPath(fold, tint, style = stroke)
         }
-        drawPath(fold, Color.White, style = stroke)
     }
 }
 

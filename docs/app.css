@@ -390,7 +390,8 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 .ph b{font-size:16px}
 .ph small{font-size:14px}
 .cap{font-size:16px;padding-top:10px}
-.acts{padding:6px 8px 4px;justify-content:space-between;max-width:420px}
+.acts{padding:6px 8px 4px;justify-content:flex-start;gap:6px;max-width:420px}
+.act.sv{margin-left:auto}
 .act{padding:10px 8px;font-size:14px;color:var(--text)}
 .act svg{width:24px;height:24px}
 .act[data-like].on svg,.act.on[data-like] svg{fill:#E53935;stroke:#E53935}

@@ -46,7 +46,7 @@
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>',
     heart: '<path d="M12 20s-7-4.5-9-9.2C1.7 6.6 5.5 3.5 9 5.5c1.3.7 2.3 1.8 3 3 .7-1.2 1.7-2.3 3-3 3.5-2 7.3 1.1 6 5.3-2 4.7-9 9.2-9 9.2z"/>',
     comment: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
-    send: '<path d="M21 3L3 10.5l7 2.5 2.5 7L21 3z"/><path d="M10 13l11-10"/>',
+    send: '<path d="M5.67 8.94 L17.99 4.0 Q21.97 2.4 20.76 6.81 L17.71 17.97 Q16.62 22.0 14.4 18.56 L12.77 16.02 Q11.08 13.4 8.25 12.46 L5.74 11.63 Q2.03 10.4 5.67 8.94 Z"/><path d="M11.63 13.9 L19.2 5.2"/>',
     save: '<path d="M6 3h12v18l-6-4-6 4z"/>',
     back: '<path d="M15 5l-7 7 7 7"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
@@ -73,7 +73,7 @@
     play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/>',
     sensors: '<circle cx="12" cy="12" r="2"/><path d="M7.8 7.8a6 6 0 000 8.4M16.2 7.8a6 6 0 010 8.4M4.9 4.9a10 10 0 000 14.2M19.1 4.9a10 10 0 010 14.2"/>',
     pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 005 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
-    repeat: '<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/>',
+    repeat: '<path d="M20 11a8.1 8.1 0 0 0-15.5-2m-.5-4v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
     dots: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>'
   };
@@ -275,8 +275,8 @@
       '<div class="acts"><button class="act ' + (p.likedByMe ? "on" : "") + '" data-like="' + p.id + '" aria-label="Curtir">' + svg("heart") + (p.likes || "") + "</button>" +
       '<button class="act" data-comments="' + p.id + '" aria-label="Comentários">' + svg("comment") + (p.comments || "") + "</button>" +
       '<button class="act rp ' + (p.repostedByMe ? "on" : "") + '" data-repost="' + p.id + '" aria-label="Repostar">' + svg("repeat") + (p.reposts || "") + "</button>" +
-      '<button class="act sv ' + (p.savedByMe ? "on" : "") + '" data-save="' + p.id + '" aria-label="Salvar">' + svg("save") + "</button>" +
-      '<button class="act" data-share="' + p.id + '" aria-label="Enviar">' + svg("send") + "</button></div></article>";
+      '<button class="act" data-share="' + p.id + '" aria-label="Enviar">' + svg("send") + "</button>" +
+      '<button class="act sv ' + (p.savedByMe ? "on" : "") + '" data-save="' + p.id + '" aria-label="Salvar">' + svg("save") + "</button>" + "</div></article>";
   }
   function repaint(id) {
     var el = document.querySelector('[data-post="' + id + '"]');
