@@ -142,7 +142,8 @@ const policies = (U, NOW) => {
   const storyOwner = (col) => `EXISTS (SELECT 1 FROM stories s WHERE s.id = ${col} AND s.user_id = ${U})`;
   const msgMine = (col) => `EXISTS (SELECT 1 FROM messages m WHERE m.id = ${col} AND (m.sender_id = ${U} OR m.recipient_id = ${U}))`;
   const comPublicOrOwner = (col) => `EXISTS (SELECT 1 FROM communities c WHERE c.id = ${col} AND (c.visibility = 'public' OR c.owner_id = ${U}))`;
-  const isMember = (col) => `EXISTS (SELECT 1 FROM community_members m WHERE m.community_id = ${col} AND m.user_id = ${U})`;
+  const isMember = (col) => `EXISTS (SELECT 1 FROM community_members m WHERE m.community_id = ${col} AND m.user_id = ${U} AND m.role <> 'pending')`;
+  const isComAdmin = (col) => `EXISTS (SELECT 1 FROM community_members a WHERE a.community_id = ${col} AND a.user_id = ${U} AND a.role = 'admin')`;
   const isOwner = (col) => `EXISTS (SELECT 1 FROM communities c WHERE c.id = ${col} AND c.owner_id = ${U})`;
   const own = (c) => `${c} = ${U}`;
   const ALL = "1=1";
@@ -154,7 +155,7 @@ const policies = (U, NOW) => {
     comment_likes: { select: `(user_id = ${U} OR EXISTS (SELECT 1 FROM comments c WHERE c.id = comment_likes.comment_id))`, insert: (v) => `${v("user_id")} = ${U}`, delete: own("user_id") },
     comments: { select: postPublic("comments.post_id"), insert: (v) => `${v("user_id")} = ${U} AND ${postPublic(v("post_id"))}`, update: own("user_id"), delete: own("user_id") },
     communities: { auth: true, select: `(visibility = 'public' OR owner_id = ${U} OR ${isMember("communities.id")})`, insert: (v) => `${v("owner_id")} = ${U}`, update: own("owner_id"), delete: own("owner_id") },
-    community_members: { auth: true, select: `(${comPublicOrOwner("community_members.community_id")} OR user_id = ${U})`, insert: (v) => `${v("user_id")} = ${U} AND ${v("role")} = 'member' AND EXISTS (SELECT 1 FROM communities c WHERE c.id = ${v("community_id")} AND c.visibility = 'public')`, delete: own("user_id") },
+    community_members: { auth: true, select: `(${comPublicOrOwner("community_members.community_id")} OR user_id = ${U})`, insert: (v) => `${v("user_id")} = ${U} AND ${v("role")} IN ('member','pending') AND EXISTS (SELECT 1 FROM communities c WHERE c.id = ${v("community_id")} AND c.visibility = 'public')`, update: `(${isOwner("community_members.community_id")} OR ${isComAdmin("community_members.community_id")})`, delete: `(user_id = ${U} OR ${isOwner("community_members.community_id")} OR ${isComAdmin("community_members.community_id")})` },
     community_messages: { auth: true, select: `(${comPublicOrOwner("community_messages.community_id")} OR ${isMember("community_messages.community_id")})`, insert: (v) => `${v("user_id")} = ${U} AND (${isMember(v("community_id"))} OR ${isOwner(v("community_id"))})`, delete: `(user_id = ${U} OR ${isOwner("community_messages.community_id")})` },
     community_posts: { auth: true, select: `(${comPublicOrOwner("community_posts.community_id")} AND ${postPublic("community_posts.post_id")})`, insert: (v) => `EXISTS (SELECT 1 FROM posts p WHERE p.id = ${v("post_id")} AND p.user_id = ${U} AND p.visibility='public') AND (${isOwner(v("community_id"))} OR (EXISTS (SELECT 1 FROM communities c WHERE c.id = ${v("community_id")} AND c.visibility='public') AND ${isMember(v("community_id"))}))` },
     content_reports: { auth: true, select: own("reporter_id"), insert: (v) => `${v("reporter_id")} = ${U}` },

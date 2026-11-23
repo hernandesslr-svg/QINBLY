@@ -92,6 +92,12 @@ import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
@@ -2268,6 +2274,7 @@ private fun QinblyApp() {
                     3 -> Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("Comunidades", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                         IconButton(onClick = { showSearchDialog = true }) { Icon(Icons.Default.Search, contentDescription = "Pesquisar lives e pessoas", tint = QiblyTheme.text) }
+                        if (QinblyCommunitiesUi.hasMine) IconButton(onClick = { QinblyCommunitiesUi.createRequest++ }) { Icon(Icons.Default.Add, contentDescription = "Criar comunidade", tint = QiblyTheme.text) }
                         IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Menu, contentDescription = "Abrir menu e configurações", tint = QiblyTheme.text) }
                     }
                      else -> Unit
@@ -3644,6 +3651,12 @@ private data class OwnProfileSnapshot(
     val avatarUrl: String, val profilePhotoUrl: String, val originalCoverUrl: String,
     val frame: Int, val joined: String, val posts: List<QinblyApi.PostSummary>
 )
+
+/** Ponte entre o cabeçalho (botão +) e a tela de Comunidades. */
+internal object QinblyCommunitiesUi {
+    var hasMine by androidx.compose.runtime.mutableStateOf(false)
+    var createRequest by androidx.compose.runtime.mutableIntStateOf(0)
+}
 
 private object QinblyCache {
     var feed: List<QinblyApi.PostSummary> = emptyList()
@@ -7390,6 +7403,15 @@ private fun CommunitiesPage(onNotice: (String) -> Unit) {
     var openId by rememberKept<String?>("comm.openId", null)
     var reload by remember { mutableIntStateOf(0) }
     val filterKey = when (selected) { "Minhas" -> "mine"; "Em alta" -> "trending"; else -> "discover" }
+    LaunchedEffect(Unit) { QinblyCache.communities["Minhas"]?.let { QinblyCommunitiesUi.hasMine = it.isNotEmpty() } }
+    // Botão + do cabeçalho (aparece depois da primeira comunidade) abre a criação.
+    var seenCreateRequest by remember { mutableIntStateOf(QinblyCommunitiesUi.createRequest) }
+    LaunchedEffect(QinblyCommunitiesUi.createRequest) {
+        if (QinblyCommunitiesUi.createRequest != seenCreateRequest) {
+            seenCreateRequest = QinblyCommunitiesUi.createRequest
+            if (!prefs.getString("token", null).isNullOrBlank()) showCreate = true else onNotice("Entre na sua conta para participar de comunidades.")
+        }
+    }
 
     LaunchedEffect(selected, reload) {
         list = QinblyCache.communities[selected] ?: emptyList()
@@ -7398,7 +7420,7 @@ private fun CommunitiesPage(onNotice: (String) -> Unit) {
         Thread {
             try {
                 val result = QinblyApi.getCommunities(filterKey, token)
-                mainHandler.post { QinblyCache.communities[selected] = result; list = result; loading = false }
+                mainHandler.post { QinblyCache.communities[selected] = result; list = result; loading = false; if (filterKey == "mine") QinblyCommunitiesUi.hasMine = result.isNotEmpty() }
             } catch (e: Exception) {
                 mainHandler.post { loading = false; onNotice(e.message ?: "Não foi possível carregar as comunidades.") }
             }
@@ -7417,9 +7439,10 @@ private fun CommunitiesPage(onNotice: (String) -> Unit) {
         list = list.map { if (it.id == c.id) it.copy(joined = optimistic, members = (it.members + if (optimistic) 1 else -1).coerceAtLeast(0)) else it }
         Thread {
             try {
-                val (joined, members) = QinblyApi.toggleCommunityJoin(token, c.id)
+                val (joined, members, pending) = QinblyApi.toggleCommunityJoin(token, c.id)
                 mainHandler.post {
-                    list = list.map { if (it.id == c.id) it.copy(joined = joined, members = members) else it }
+                    if (pending) onNotice("Pedido enviado. O dono precisa aprovar.")
+                    list = list.map { if (it.id == c.id) it.copy(joined = joined, members = members, pending = pending) else it }
                     QinblyCache.communities.clear()
                     if (selected == "Minhas" && !joined) list = list.filterNot { it.id == c.id }
                 }
@@ -7443,17 +7466,19 @@ private fun CommunitiesPage(onNotice: (String) -> Unit) {
             }
         }
         Spacer(Modifier.height(12.dp))
-        Button(
-            onClick = { if (requireLogin() != null) showCreate = true },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(22.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
-        ) {
-            Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text("Criar comunidade", fontWeight = FontWeight.SemiBold)
+        if (!QinblyCommunitiesUi.hasMine) {
+            Button(
+                onClick = { if (requireLogin() != null) showCreate = true },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(22.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Criar comunidade", fontWeight = FontWeight.SemiBold)
+            }
+            Spacer(Modifier.height(12.dp))
         }
-        Spacer(Modifier.height(12.dp))
         if (loading && list.isEmpty()) {
             Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = QinblyBrand.Accent) }
         } else if (list.isEmpty()) {
@@ -7468,7 +7493,7 @@ private fun CommunitiesPage(onNotice: (String) -> Unit) {
             LazyColumn(Modifier.fillMaxSize()) {
                 items(list, key = { it.id }) { c ->
                     Row(Modifier.fillMaxWidth().clickable { openId = c.id }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        QinblyCommunityAvatar(c.name, 48.dp)
+                        QinblyCommunityAvatar(c.name, 48.dp, c.avatarUrl)
                         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                             Text(c.name, color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                             if (c.description.isNotBlank()) Text(c.description, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
@@ -7478,8 +7503,10 @@ private fun CommunitiesPage(onNotice: (String) -> Unit) {
                             Text("Sua", color = QinblyBrand.Accent, style = MaterialTheme.typography.labelMedium)
                         } else if (c.joined) {
                             OutlinedButton(onClick = { toggleJoin(c) }) { Text("Participando", color = RemoteAppearance.screenSecondaryTextColor) }
+                        } else if (c.pending) {
+                            OutlinedButton(onClick = { toggleJoin(c) }) { Text("Pedido enviado", color = RemoteAppearance.screenSecondaryTextColor) }
                         } else {
-                            Button(onClick = { toggleJoin(c) }, colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)) { Text("Entrar") }
+                            Button(onClick = { toggleJoin(c) }, colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)) { Text(if (c.joinMode == "approval") "Pedir" else "Entrar") }
                         }
                     }
                     HorizontalDivider(color = RemoteAppearance.screenSecondaryTextColor.copy(alpha = 0.15f))
@@ -7611,10 +7638,103 @@ private fun qinblyNameColor(username: String): Color {
 }
 
 /** Foto da comunidade; enquanto não houver foto, círculo azul com a letra inicial do nome. */
+/** Tela "Editar comunidade": abre na hora com os dados que o app já tem; só o Salvar fala com o servidor. */
 @Composable
-private fun QinblyCommunityAvatar(name: String, diameter: Dp) {
+private fun QinblyEditCommunityScreen(
+    community: QinblyApi.CommunitySummary,
+    onBack: () -> Unit,
+    onSave: (org.json.JSONObject, Uri?) -> Unit
+) {
+    var name by remember { mutableStateOf(community.name) }
+    var description by remember { mutableStateOf(community.description) }
+    var joinMode by remember { mutableStateOf(community.joinMode) }
+    var writeMode by remember { mutableStateOf(community.writeMode) }
+    var rules by remember { mutableStateOf(community.rules) }
+    var showRulesField by remember { mutableStateOf(false) }
+    var photoUri by remember { mutableStateOf<Uri?>(null) }
+    val photoPicker = rememberQinblyPhotoLauncher { uri -> if (uri != null) photoUri = uri }
+    val valid = name.trim().length >= 3
+    @Composable
+    fun ChoiceCard(title: String, subtitle: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: Boolean, last: Boolean, onClick: () -> Unit) {
+        Column {
+            Row(Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 12.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(if (selected) QinblyBrand.Accent.copy(alpha = 0.18f) else QiblyTheme.soft), contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, tint = if (selected) QinblyBrand.Accent else QiblyTheme.secondary, modifier = Modifier.size(19.dp))
+                }
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text(title, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                    Text(subtitle, color = QiblyTheme.secondary, fontSize = 12.sp)
+                }
+                if (selected) Box(Modifier.size(22.dp).clip(CircleShape).background(QinblyBrand.Accent), contentAlignment = Alignment.Center) { Icon(Icons.Default.Check, contentDescription = "Selecionado", tint = Color.White, modifier = Modifier.size(15.dp)) }
+                else Box(Modifier.size(22.dp).clip(CircleShape).border(1.5.dp, QiblyTheme.border, CircleShape))
+            }
+            if (!last) HorizontalDivider(color = QiblyTheme.border)
+        }
+    }
+    Column(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
+            Text("Editar comunidade", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+        }
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Spacer(Modifier.height(8.dp))
+            Box(Modifier.size(96.dp).clickable { photoPicker.launch("image/*") }, contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxSize().clip(CircleShape).background(QinblyBrand.Accent), contentAlignment = Alignment.Center) {
+                    if (photoUri != null) AsyncImage(model = photoUri, contentDescription = "Nova foto", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    else if (community.avatarUrl.isNotBlank()) AsyncImage(model = community.avatarUrl, contentDescription = "Foto da comunidade", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    else Text(name.trim().take(1).uppercase().ifBlank { "Q" }, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 38.sp)
+                }
+                Box(Modifier.align(Alignment.BottomEnd).size(32.dp).clip(CircleShape).background(QinblyBrand.Accent).border(2.dp, QiblyTheme.background, CircleShape), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = Color.White, modifier = Modifier.size(17.dp))
+                }
+            }
+            Text("Trocar foto", color = QinblyBrand.Accent, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp).clickable { photoPicker.launch("image/*") })
+            Text("NOME", color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 4.dp))
+            OutlinedTextField(value = name, onValueChange = { name = it.take(40) }, singleLine = true, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth(),
+                supportingText = { Text("${name.length}/40", modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.End) })
+            Text("DESCRIÇÃO", color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp))
+            OutlinedTextField(value = description, onValueChange = { description = it.take(300) }, minLines = 2, maxLines = 4, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Sobre o que é a comunidade?") })
+            Text("QUEM PODE ENTRAR", color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 6.dp))
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(QiblyTheme.card)) {
+                ChoiceCard("Qualquer um", "Entra direto", Icons.Outlined.Public, joinMode == "open", false) { joinMode = "open" }
+                ChoiceCard("Com aprovação", "Você aceita cada pedido", Icons.Outlined.Lock, joinMode == "approval", true) { joinMode = "approval" }
+            }
+            Text("QUEM PODE ESCREVER", color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 6.dp))
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(QiblyTheme.card)) {
+                ChoiceCard("Todos", "Todo membro escreve", Icons.Outlined.Groups, writeMode == "all", false) { writeMode = "all" }
+                ChoiceCard("Só admins", "Os outros só leem", Icons.Outlined.Shield, writeMode == "admins", true) { writeMode = "admins" }
+            }
+            Column(Modifier.fillMaxWidth().padding(top = 18.dp).clip(RoundedCornerShape(16.dp)).background(QiblyTheme.card)) {
+                Row(Modifier.fillMaxWidth().clickable { showRulesField = !showRulesField }.padding(horizontal = 12.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.Description, contentDescription = null, tint = QiblyTheme.secondary)
+                    Text("Regras da comunidade", color = QiblyTheme.text, modifier = Modifier.weight(1f).padding(start = 12.dp), fontSize = 15.sp)
+                    Icon(if (showRulesField) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight, contentDescription = null, tint = QiblyTheme.secondary)
+                }
+                if (showRulesField) OutlinedTextField(value = rules, onValueChange = { rules = it.take(2000) }, minLines = 4, maxLines = 8, shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp), placeholder = { Text("Escreva as regras para os membros") })
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+        Button(
+            onClick = {
+                val f = org.json.JSONObject().put("name", name.trim()).put("description", description.trim()).put("joinMode", joinMode).put("writeMode", writeMode).put("rules", rules.trim())
+                onSave(f, photoUri)
+            },
+            enabled = valid,
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(52.dp)
+        ) { Text("Salvar", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp) }
+        Spacer(Modifier.height(12.dp))
+    }
+}
+
+@Composable
+private fun QinblyCommunityAvatar(name: String, diameter: Dp, imageUrl: String = "") {
     Box(Modifier.size(diameter).clip(CircleShape).background(QinblyBrand.Accent), contentAlignment = Alignment.Center) {
-        Text(name.trim().take(1).uppercase().ifBlank { "Q" }, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = (diameter.value * 0.42f).sp)
+        if (imageUrl.isNotBlank()) AsyncImage(model = imageUrl, contentDescription = "Foto da comunidade", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+        else Text(name.trim().take(1).uppercase().ifBlank { "Q" }, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = (diameter.value * 0.42f).sp)
     }
 }
 
@@ -7634,6 +7754,10 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
     var showReport by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showInfo by remember { mutableStateOf(false) }
+    var showEdit by remember { mutableStateOf(false) }
+    var showInfoMenu by remember { mutableStateOf(false) }
+    var showRules by remember { mutableStateOf(false) }
+    var memberTarget by remember { mutableStateOf<QinblyApi.CommunityMember?>(null) }
     var showEmoji by remember { mutableStateOf(false) }
     BackHandler(enabled = showEmoji) { showEmoji = false }
     val cKb = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
@@ -7784,8 +7908,8 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
         if (token.isNullOrBlank()) { onNotice("Entre na sua conta para participar de comunidades."); return }
         Thread {
             try {
-                val (joined, members) = QinblyApi.toggleCommunityJoin(token, c.id)
-                mainHandler.post { community = c.copy(joined = joined, members = members); onChanged() }
+                val (joined, members, pending) = QinblyApi.toggleCommunityJoin(token, c.id)
+                mainHandler.post { community = c.copy(joined = joined, members = members, pending = pending); if (pending) onNotice("Pedido enviado. O dono precisa aprovar."); onChanged() }
             } catch (e: Exception) { mainHandler.post { onNotice(e.message ?: "Não foi possível atualizar.") } }
         }.start()
     }
@@ -7795,7 +7919,24 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
             context.startActivity(Intent.createChooser(share, "Compartilhar comunidade"))
         } catch (_: Exception) { onNotice("Não foi possível abrir o compartilhamento neste aparelho.") }
     }
-    BackHandler { if (showInfo) showInfo = false else onDismiss() }
+    fun memberAction(m: QinblyApi.CommunityMember, action: String) {
+        val token = prefs.getString("token", null)
+        if (token.isNullOrBlank()) { onNotice("Entre na sua conta."); return }
+        Thread {
+            try {
+                QinblyApi.communityMemberAction(token, communityId, m.userId, action)
+                mainHandler.post { refresh++; onChanged() }
+            } catch (e: Exception) { mainHandler.post { onNotice(e.message ?: "Não foi possível concluir.") } }
+        }.start()
+    }
+    fun copyCommunityLink(c: QinblyApi.CommunitySummary) {
+        try {
+            val cm = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            cm.setPrimaryClip(android.content.ClipData.newPlainText("Link da comunidade", "https://qinbly.pages.dev/#/community/" + c.id))
+            onNotice("Link copiado.")
+        } catch (_: Exception) { onNotice("Não foi possível copiar o link.") }
+    }
+    BackHandler { if (showEdit) showEdit = false else if (showInfo) showInfo = false else onDismiss() }
 
     QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnClickOutside = false), lift = true) {
         Surface(Modifier.fillMaxSize(), color = QiblyTheme.background) {
@@ -7806,16 +7947,50 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                     if (loading) Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = QinblyBrand.Accent) }
                     else Text("Comunidade não encontrada.", color = QiblyTheme.secondary, modifier = Modifier.padding(16.dp))
                 }
+            } else if (showEdit) {
+                QinblyEditCommunityScreen(
+                    community = c,
+                    onBack = { showEdit = false },
+                    onSave = { fields, photoUri ->
+                        showEdit = false
+                        val token = prefs.getString("token", null)
+                        if (token.isNullOrBlank()) { onNotice("Entre na sua conta."); return@QinblyEditCommunityScreen }
+                        // Aparece na hora; o servidor confirma em seguida.
+                        community = c.copy(
+                            name = fields.optString("name", c.name), description = fields.optString("description", c.description),
+                            joinMode = fields.optString("joinMode", c.joinMode), writeMode = fields.optString("writeMode", c.writeMode), rules = fields.optString("rules", c.rules)
+                        )
+                        Thread {
+                            try {
+                                val f = org.json.JSONObject(fields.toString())
+                                if (photoUri != null) f.put("avatarFileId", QinblyApi.uploadCommunityPhoto(context, token, photoUri))
+                                val updated = QinblyApi.updateCommunity(token, c.id, f)
+                                mainHandler.post { community = updated.copy(memberList = c.memberList); onChanged(); onNotice("Comunidade salva.") }
+                            } catch (e: Exception) { mainHandler.post { refresh++; onNotice(e.message ?: "Não foi possível salvar a comunidade.") } }
+                        }.start()
+                    }
+                )
             } else if (showInfo) {
                 Column(Modifier.fillMaxSize().statusBarsPadding()) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = { showInfo = false }) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
-                        Text("Dados da comunidade", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                        Text("Dados da comunidade", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, modifier = Modifier.weight(1f))
+                        Box {
+                            IconButton(onClick = { showInfoMenu = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Mais opções", tint = QiblyTheme.text) }
+                            DropdownMenu(expanded = showInfoMenu, onDismissRequest = { showInfoMenu = false }) {
+                                if (c.isOwner) DropdownMenuItem(text = { Text("Editar comunidade") }, leadingIcon = { Icon(Icons.Outlined.Edit, null) }, onClick = { showInfoMenu = false; showEdit = true })
+                                DropdownMenuItem(text = { Text("Copiar link") }, leadingIcon = { Icon(Icons.Outlined.Link, null) }, onClick = { showInfoMenu = false; copyCommunityLink(c) })
+                                DropdownMenuItem(text = { Text("Regras") }, leadingIcon = { Icon(Icons.Outlined.Description, null) }, onClick = { showInfoMenu = false; showRules = true })
+                                DropdownMenuItem(text = { Text("Denunciar") }, leadingIcon = { Icon(Icons.Outlined.Flag, null) }, onClick = { showInfoMenu = false; showReport = true })
+                                if (c.isOwner) DropdownMenuItem(text = { Text("Excluir comunidade", color = Color(0xFFD92D20)) }, leadingIcon = { Icon(Icons.Outlined.DeleteOutline, null, tint = Color(0xFFD92D20)) }, onClick = { showInfoMenu = false; confirmDelete = true })
+                                else if (c.joined) DropdownMenuItem(text = { Text("Sair da comunidade", color = Color(0xFFD92D20)) }, leadingIcon = { Icon(Icons.Outlined.Logout, null, tint = Color(0xFFD92D20)) }, onClick = { showInfoMenu = false; confirmLeave = true })
+                            }
+                        }
                     }
                     androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
                         item {
                             Column(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                QinblyCommunityAvatar(c.name, 96.dp)
+                                QinblyCommunityAvatar(c.name, 96.dp, c.avatarUrl)
                                 Text(c.name, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, modifier = Modifier.padding(top = 10.dp))
                                 Text("Comunidade · " + (if (c.members == 1) "1 membro" else "${c.members} membros"), color = QiblyTheme.secondary, fontSize = 14.sp)
                                 Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
@@ -7830,10 +8005,10 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                                             }.padding(6.dp),
                                             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
-                                            Box(Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(QinblyBrand.Accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-                                                Icon(icon, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(24.dp))
+                                            Box(Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(QiblyTheme.soft), contentAlignment = Alignment.Center) {
+                                                Icon(icon, contentDescription = null, tint = QiblyTheme.text, modifier = Modifier.size(24.dp))
                                             }
-                                            Text(label, color = QinblyBrand.Accent, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                            Text(label, color = QiblyTheme.text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                         }
                                     }
                                 }
@@ -7843,30 +8018,30 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                             Text("DESCRIÇÃO", color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 4.dp))
                             Text(c.description, color = QiblyTheme.text, modifier = Modifier.padding(horizontal = 16.dp))
                         }
+                        val myUsername = prefs.getString("username", "").orEmpty()
+                        val pendingList = if (c.isAdmin) c.memberList.filter { it.role == "pending" } else emptyList()
+                        if (pendingList.isNotEmpty()) {
+                            item { Text("PEDIDOS PARA ENTRAR", color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 16.dp, top = 18.dp, bottom = 4.dp)) }
+                            items(pendingList, key = { "p" + it.userId }) { m ->
+                                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    QiblyAccountAvatar(m.username, m.avatarUrl, 40.dp) { QinblyTagNav.profile = m.username }
+                                    Text(m.displayName.ifBlank { "@" + m.username }, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp).weight(1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                    TextButton(onClick = { memberAction(m, "reject") }) { Text("Recusar", color = QiblyTheme.secondary) }
+                                    Button(onClick = { memberAction(m, "approve") }, colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)) { Text("Aceitar") }
+                                }
+                            }
+                        }
                         item {
                             Text((if (c.members == 1) "1 MEMBRO" else "${c.members} MEMBROS"), color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 16.dp, top = 18.dp, bottom = 4.dp))
                         }
-                        val ownerFirst = (if (c.ownerUsername.isNotBlank()) listOf(c.ownerUsername) else emptyList()) +
-                            posts.map { it.username }.filter { it != c.ownerUsername }.distinct()
-                        items(ownerFirst) { u ->
-                            val p = posts.firstOrNull { it.username == u }
-                            Row(Modifier.fillMaxWidth().clickable { QinblyTagNav.profile = u }.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                QiblyAccountAvatar(u, p?.avatarUrl ?: "", 40.dp) { QinblyTagNav.profile = u }
-                                Text(p?.displayName?.ifBlank { u } ?: "@$u", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp).weight(1f))
-                                if (u == c.ownerUsername) Text("Dono", color = QinblyBrand.Accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.border(1.dp, QinblyBrand.Accent, RoundedCornerShape(8.dp)).padding(horizontal = 7.dp, vertical = 2.dp))
-                            }
-                        }
-                        item {
-                            Text("A lista completa de membros chega com a atualização do servidor.", color = QiblyTheme.secondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-                            HorizontalDivider(color = QiblyTheme.border)
-                            if (!c.isOwner && c.joined) Row(Modifier.fillMaxWidth().clickable { confirmLeave = true }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Outlined.Logout, contentDescription = null, tint = Color(0xFFD92D20)); Text("Sair da comunidade", color = Color(0xFFD92D20), modifier = Modifier.padding(start = 14.dp))
-                            }
-                            if (c.isOwner) Row(Modifier.fillMaxWidth().clickable { confirmDelete = true }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Outlined.DeleteOutline, contentDescription = null, tint = Color(0xFFD92D20)); Text("Excluir comunidade", color = Color(0xFFD92D20), modifier = Modifier.padding(start = 14.dp))
-                            }
-                            Row(Modifier.fillMaxWidth().clickable { showReport = true }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Outlined.Flag, contentDescription = null, tint = QiblyTheme.text); Text("Denunciar comunidade", color = QiblyTheme.text, modifier = Modifier.padding(start = 14.dp))
+                        val shown = c.memberList.filter { it.role != "pending" }
+                        items(shown, key = { "m" + it.userId }) { m ->
+                            val canManage = c.isAdmin && m.role != "owner" && !m.username.equals(myUsername, true)
+                            Row(Modifier.fillMaxWidth().clickable { if (canManage) memberTarget = m else QinblyTagNav.profile = m.username }.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                QiblyAccountAvatar(m.username, m.avatarUrl, 40.dp) { if (canManage) memberTarget = m else QinblyTagNav.profile = m.username }
+                                Text(m.displayName.ifBlank { "@" + m.username }, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp).weight(1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                val badge = when (m.role) { "owner" -> "Dono"; "admin" -> "Admin"; else -> "" }
+                                if (badge.isNotEmpty()) Text(badge, color = QinblyBrand.Accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.border(1.dp, QinblyBrand.Accent, RoundedCornerShape(8.dp)).padding(horizontal = 7.dp, vertical = 2.dp))
                             }
                         }
                     }
@@ -7877,7 +8052,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                     Row(Modifier.fillMaxWidth().background(QiblyTheme.card).padding(horizontal = 4.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
                         Row(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable { showInfo = true }.padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                            QinblyCommunityAvatar(c.name, 40.dp)
+                            QinblyCommunityAvatar(c.name, 40.dp, c.avatarUrl)
                             Column(Modifier.padding(start = 10.dp)) {
                                 Text(c.name, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                                 Text(if (c.members == 1) "1 membro" else "${c.members} membros", color = QiblyTheme.secondary, fontSize = 12.sp)
@@ -7949,7 +8124,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                             }
                         }
                     }
-                    if (c.joined || c.isOwner) {
+                    if ((c.joined || c.isOwner) && (c.writeMode != "admins" || c.isAdmin)) {
                         if (showAttach) {
                             val attachOptions = listOf(
                                 Triple("Documento", Icons.Outlined.Description, Color(0xFF5B6CF0)),
@@ -8030,12 +8205,39 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                                 }, onNotice = onNotice,
                                 modifier = Modifier.fillMaxWidth().height(300.dp).background(QiblyTheme.background).padding(10.dp))
                         }
+                    } else if (c.joined || c.isOwner) {
+                        Text("Só admins podem escrever nesta comunidade.", color = QiblyTheme.secondary, fontSize = 13.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(16.dp))
+                    } else if (c.pending) {
+                        Text("Pedido enviado. Quando o dono aprovar, você já pode conversar.", color = QiblyTheme.secondary, fontSize = 13.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(16.dp))
                     } else {
                         Button(onClick = { toggleJoin(c) }, shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent), modifier = Modifier.fillMaxWidth().padding(12.dp).height(50.dp)) {
-                            Text("Entrar na comunidade", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                            Text(if (c.joinMode == "approval") "Pedir para entrar" else "Entrar na comunidade", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                         }
                     }
                 }
+            }
+            memberTarget?.let { m ->
+                AlertDialog(
+                    onDismissRequest = { memberTarget = null },
+                    title = { Text(m.displayName.ifBlank { "@" + m.username }) },
+                    text = {
+                        Column {
+                            TextButton(onClick = { memberTarget = null; QinblyTagNav.profile = m.username }) { Text("Ver perfil") }
+                            if (c?.isOwner == true && m.role == "member") TextButton(onClick = { memberTarget = null; memberAction(m, "admin") }) { Text("Tornar admin") }
+                            if (c?.isOwner == true && m.role == "admin") TextButton(onClick = { memberTarget = null; memberAction(m, "member") }) { Text("Remover de admin") }
+                            if (m.role == "member" || c?.isOwner == true) TextButton(onClick = { memberTarget = null; memberAction(m, "remove") }) { Text("Remover da comunidade", color = Color(0xFFD92D20)) }
+                        }
+                    },
+                    confirmButton = { TextButton(onClick = { memberTarget = null }) { Text("Fechar") } }
+                )
+            }
+            if (showRules && c != null) {
+                AlertDialog(
+                    onDismissRequest = { showRules = false },
+                    title = { Text("Regras da comunidade") },
+                    text = { Text(c.rules.ifBlank { "O dono ainda não escreveu as regras." }, modifier = Modifier.verticalScroll(rememberScrollState())) },
+                    confirmButton = { TextButton(onClick = { showRules = false }) { Text("Fechar") } }
+                )
             }
             if (confirmDelete && c != null) {
                 AlertDialog(

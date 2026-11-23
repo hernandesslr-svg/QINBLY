@@ -222,16 +222,21 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
     };
     const previewOf = (raw: string) => raw.startsWith("qinbly:img:") ? "📷 Foto" : raw.startsWith("qinbly:audio:") ? "🎤 Mensagem de voz" : raw.startsWith("qinbly:file:") ? "📎 Documento" : raw.startsWith("qinbly:sticker:") ? "Figurinha" : raw.startsWith("qinbly:poll:") ? "📊 Enquete" : raw;
     const communityDto = (c: any, members: any[], owner: any) => {
-      const mine = members.filter((m) => m.community_id === c.id);
+      const all = members.filter((m) => m.community_id === c.id);
+      const mine = all.filter((m) => m.role !== "pending");
+      const meRow = viewerId ? all.find((m) => m.user_id === viewerId) : null;
+      const isOwnerNow = !!viewerId && c.owner_id === viewerId;
       return {
-        id: c.id, name: c.name, description: c.description || "", emoji: c.emoji || "👥",
+        id: c.id, name: c.name, description: c.description || "", emoji: c.emoji || "👥", avatarUrl: pub(c.avatar_path),
         ownerUsername: owner?.username || "", members: mine.length + (mine.some((m) => m.user_id === c.owner_id) ? 0 : 1),
-        joined: !!viewerId && (c.owner_id === viewerId || mine.some((m) => m.user_id === viewerId)), isOwner: !!viewerId && c.owner_id === viewerId,
+        joined: isOwnerNow || (!!meRow && meRow.role !== "pending"), isOwner: isOwnerNow,
+        isAdmin: isOwnerNow || meRow?.role === "admin", pending: !!meRow && meRow.role === "pending",
+        joinMode: c.join_mode || "open", writeMode: c.write_mode || "all", rules: c.rules || "",
       };
     };
     const listCommunities = async (filter: string) => {
       const rows = (await rest(`communities?select=*&order=created_at.desc&limit=100`)) || [];
-      const members = rows.length ? (await rest(`community_members?community_id=in.(${inList(rows.map((r: any) => r.id))})&select=community_id,user_id`)) || [] : [];
+      const members = rows.length ? (await rest(`community_members?community_id=in.(${inList(rows.map((r: any) => r.id))})&select=community_id,user_id,role`)) || [] : [];
       const owners = await profilesByIds(rows.map((r: any) => r.owner_id));
       let list = rows.map((c: any) => communityDto(c, members, owners.get(c.owner_id)));
       if (filter === "mine") list = list.filter((c: any) => c.joined);
@@ -801,11 +806,40 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
       const row = (await ins("communities", { owner_id: id, name, description: String(body.description || "").trim().slice(0, 500), emoji: String(body.emoji || "👥").slice(0, 8) || "👥", visibility: "public" }))?.[0];
       return reply({ community: communityDto(row, [], await me()) }, 201);
     }
+    const memM = path.match(/^\/api\/communities\/([0-9a-f-]{36})\/members\/([0-9a-f-]{36})$/i);
+    if (memM && method === "POST") {
+      const me_ = need(), cid = memM[1], uid = memM[2];
+      const c = await canUseCommunity(cid);
+      const mem = (await rest(`community_members?community_id=eq.${cid}&select=user_id,role`)) || [];
+      const myRole = c.owner_id === me_ ? "owner" : mem.find((m: any) => m.user_id === me_)?.role;
+      if (myRole !== "owner" && myRole !== "admin") return reply({ error: "Só o dono ou os admins podem fazer isso." }, 403);
+      if (uid === c.owner_id) return reply({ error: "O dono da comunidade não pode ser alterado." }, 400);
+      const target = mem.find((m: any) => m.user_id === uid);
+      if (!target) return reply({ error: "Essa pessoa não está na comunidade." }, 404);
+      const action = String(body.action || "");
+      if (action === "approve") {
+        if (target.role !== "pending") return reply({ ok: true });
+        await rest(`community_members?community_id=eq.${cid}&user_id=eq.${uid}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ role: "member" }) });
+        return reply({ ok: true });
+      }
+      if (action === "reject" || action === "remove") {
+        if (target.role === "admin" && myRole !== "owner") return reply({ error: "Só o dono pode remover um admin." }, 403);
+        await rest(`community_members?community_id=eq.${cid}&user_id=eq.${uid}`, { method: "DELETE" });
+        return reply({ ok: true });
+      }
+      if (action === "admin" || action === "member") {
+        if (myRole !== "owner") return reply({ error: "Só o dono pode escolher os admins." }, 403);
+        if (target.role === "pending") return reply({ error: "Aprove a pessoa primeiro." }, 400);
+        await rest(`community_members?community_id=eq.${cid}&user_id=eq.${uid}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ role: action }) });
+        return reply({ ok: true });
+      }
+      return reply({ error: "Ação inválida." }, 400);
+    }
     const comM = path.match(/^\/api\/communities\/([0-9a-f-]{36})(?:\/(join|posts)(?:\/([0-9a-f-]{36}))?)?$/i);
     if (comM) {
       const cid = comM[1], sub = comM[2], postId = comM[3];
       const c = await canUseCommunity(cid);
-      const members = (await rest(`community_members?community_id=eq.${cid}&select=community_id,user_id`)) || [];
+      const members = (await rest(`community_members?community_id=eq.${cid}&select=community_id,user_id,role`)) || [];
       const owner = (await profilesByIds([c.owner_id])).get(c.owner_id);
       const dto = communityDto(c, members, owner);
       if (method === "GET" && !sub) {
@@ -813,9 +847,44 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
         rows.reverse();
         const profiles = await profilesByIds(rows.map((r: any) => r.user_id));
         const dec = await decodeMarks(rows);
-        return reply({ community: dto, posts: rows.map((r: any) => ({ id: r.id, createdAt: r.created_at, mine: r.user_id === viewerId, author: authorDto(profiles.get(r.user_id)), ...dec(r) })) });
+        const canSeePending = dto.isAdmin;
+        const memberIds = [c.owner_id, ...members.filter((m: any) => m.role !== "pending" || canSeePending).map((m: any) => m.user_id)];
+        const memberProfiles = await profilesByIds(memberIds);
+        const seenIds = new Set<string>();
+        const memberList = memberIds.filter((u: string) => !seenIds.has(u) && seenIds.add(u)).map((u: string) => {
+          const role = u === c.owner_id ? "owner" : (members.find((m: any) => m.user_id === u)?.role || "member");
+          return { userId: u, role, ...authorDto(memberProfiles.get(u)) };
+        });
+        return reply({ community: dto, memberList, posts: rows.map((r: any) => ({ id: r.id, createdAt: r.created_at, mine: r.user_id === viewerId, author: authorDto(profiles.get(r.user_id)), ...dec(r) })) });
       }
       const id = need();
+      if (method === "PATCH" && !sub) {
+        if (c.owner_id !== id) return reply({ error: "Só quem criou a comunidade pode editá-la." }, 403);
+        const patch: any = {};
+        if (body.name !== undefined) {
+          const n = String(body.name).trim();
+          if (n.length < 2 || n.length > 60) return reply({ error: "O nome precisa ter entre 2 e 60 caracteres." }, 400);
+          patch.name = n;
+        }
+        if (body.description !== undefined) patch.description = String(body.description).trim().slice(0, 500);
+        if (body.rules !== undefined) patch.rules = String(body.rules).trim().slice(0, 2000);
+        if (body.joinMode !== undefined) { if (!["open", "approval"].includes(String(body.joinMode))) return reply({ error: "Tipo de entrada inválido." }, 400); patch.join_mode = String(body.joinMode); }
+        if (body.writeMode !== undefined) { if (!["all", "admins"].includes(String(body.writeMode))) return reply({ error: "Opção de escrita inválida." }, 400); patch.write_mode = String(body.writeMode); }
+        if (body.avatarFileId !== undefined) {
+          const fid = String(body.avatarFileId);
+          if (!safeObjectPath(fid) || !fid.startsWith(`${id}/avatar/`)) return reply({ error: "Arquivo inválido para esta conta." }, 403);
+          if (!(await getStoredObjectInfo(fid))) return reply({ error: "A foto ainda não foi enviada. Tente de novo." }, 422);
+          patch.avatar_path = fid;
+        }
+        if (!Object.keys(patch).length) return reply({ community: dto });
+        try {
+          const rows = await rest(`communities?id=eq.${cid}&owner_id=eq.${id}&select=*`, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify(patch) });
+          return reply({ community: communityDto(rows?.[0] || { ...c, ...patch }, members, owner) });
+        } catch (e) {
+          if (String(e).includes("UNIQUE") || String(e).includes("duplicate")) return reply({ error: "Já existe uma comunidade com esse nome." }, 409);
+          throw e;
+        }
+      }
       if (method === "DELETE" && !sub) {
         if (c.owner_id !== id) return reply({ error: "Só quem criou a comunidade pode excluí-la." }, 403);
         await rest(`communities?id=eq.${cid}&owner_id=eq.${id}`, { method: "DELETE" });
@@ -823,15 +892,17 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
       }
       if (method === "POST" && sub === "join") {
         if (c.owner_id === id) return reply({ joined: true, members: dto.members });
-        const existing = members.some((m: any) => m.user_id === id);
-        if (existing) { await rest(`community_members?community_id=eq.${cid}&user_id=eq.${id}`, { method: "DELETE" }); return reply({ joined: false, members: Math.max(dto.members - 1, 1) }); }
-        await ins("community_members", { community_id: cid, user_id: id, role: "member" }, "return=minimal", "");
-        return reply({ joined: true, members: dto.members + 1 });
+        const existing = members.find((m: any) => m.user_id === id);
+        if (existing) { await rest(`community_members?community_id=eq.${cid}&user_id=eq.${id}`, { method: "DELETE" }); return reply({ joined: false, pending: false, members: Math.max(dto.members - (existing.role === "pending" ? 0 : 1), 1) }); }
+        const approval = (c.join_mode || "open") === "approval";
+        await ins("community_members", { community_id: cid, user_id: id, role: approval ? "pending" : "member" }, "return=minimal", "");
+        return reply({ joined: !approval, pending: approval, members: approval ? dto.members : dto.members + 1 });
       }
       if (method === "POST" && sub === "posts") {
         const text = String(body.body || "").trim();
         if (!text || text.length > 10000) return reply({ error: "A mensagem precisa ter entre 1 e 10000 caracteres." }, 400);
         if (!dto.joined) return reply({ error: "Entre na comunidade para participar da conversa." }, 403);
+        if ((c.write_mode || "all") === "admins" && !dto.isAdmin) return reply({ error: "Só admins podem escrever nesta comunidade." }, 403);
         const row = (await ins("community_messages", { community_id: cid, user_id: id, body: text }))?.[0];
         const dec = await decodeMarks([row]);
         return reply({ post: { id: row.id, createdAt: row.created_at, mine: true, author: authorDto(await me()), ...dec(row) } }, 201);

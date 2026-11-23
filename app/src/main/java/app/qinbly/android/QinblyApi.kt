@@ -647,9 +647,13 @@ object QinblyApi {
         return r.optString("message", "Se existir uma conta com esses dados, enviamos o link para criar uma nova senha.")
     }
 
+    data class CommunityMember(val userId: String, val username: String, val displayName: String, val avatarUrl: String, val role: String)
     data class CommunitySummary(
         val id: String, val name: String, val description: String, val emoji: String,
-        val ownerUsername: String, val members: Int, val joined: Boolean, val isOwner: Boolean
+        val ownerUsername: String, val members: Int, val joined: Boolean, val isOwner: Boolean,
+        val avatarUrl: String = "", val isAdmin: Boolean = false, val pending: Boolean = false,
+        val joinMode: String = "open", val writeMode: String = "all", val rules: String = "",
+        val memberList: List<CommunityMember> = emptyList()
     )
     data class CommunityPost(
         val id: String, val body: String, val createdAt: String,
@@ -662,7 +666,9 @@ object QinblyApi {
     private fun parseCommunity(o: JSONObject) = CommunitySummary(
         id = o.optString("id"), name = o.optString("name"), description = o.optString("description"),
         emoji = o.optString("emoji", "👥").ifBlank { "👥" }, ownerUsername = o.optString("ownerUsername"),
-        members = o.optInt("members"), joined = o.optBoolean("joined"), isOwner = o.optBoolean("isOwner")
+        members = o.optInt("members"), joined = o.optBoolean("joined"), isOwner = o.optBoolean("isOwner"),
+        avatarUrl = o.optString("avatarUrl"), isAdmin = o.optBoolean("isAdmin"), pending = o.optBoolean("pending"),
+        joinMode = o.optString("joinMode", "open").ifBlank { "open" }, writeMode = o.optString("writeMode", "all").ifBlank { "all" }, rules = o.optString("rules")
     )
 
     /** filter: "mine", "trending" ou "discover". */
@@ -673,7 +679,12 @@ object QinblyApi {
 
     fun getCommunity(id: String, token: String?): Pair<CommunitySummary, List<CommunityPost>> {
         val r = request("GET", "/api/communities/" + id, null, token)
-        val community = parseCommunity(r.optJSONObject("community") ?: throw IllegalStateException("Comunidade não encontrada."))
+        val ml = r.optJSONArray("memberList")
+        val list = if (ml == null) emptyList() else (0 until ml.length()).mapNotNull { i ->
+            val o = ml.optJSONObject(i) ?: return@mapNotNull null
+            CommunityMember(o.optString("userId"), o.optString("username"), o.optString("displayName"), o.optString("avatarUrl"), o.optString("role", "member"))
+        }
+        val community = parseCommunity(r.optJSONObject("community") ?: throw IllegalStateException("Comunidade não encontrada.")).copy(memberList = list)
         val arr = r.optJSONArray("posts")
         val posts = if (arr == null) emptyList() else (0 until arr.length()).mapNotNull { i ->
             val o = arr.optJSONObject(i) ?: return@mapNotNull null
@@ -692,9 +703,45 @@ object QinblyApi {
     }
 
     /** Entra/sai. Retorna (participando, total de membros). */
-    fun toggleCommunityJoin(token: String, id: String): Pair<Boolean, Int> {
+    fun toggleCommunityJoin(token: String, id: String): Triple<Boolean, Int, Boolean> {
         val r = request("POST", "/api/communities/" + id + "/join", JSONObject(), token)
-        return r.optBoolean("joined") to r.optInt("members")
+        return Triple(r.optBoolean("joined"), r.optInt("members"), r.optBoolean("pending"))
+    }
+
+    /** Dono edita a comunidade: só os campos presentes em [fields] mudam. Devolve a comunidade atualizada. */
+    fun updateCommunity(token: String, id: String, fields: JSONObject): CommunitySummary {
+        val r = request("PATCH", "/api/communities/" + id, fields, token)
+        return parseCommunity(r.optJSONObject("community") ?: throw IllegalStateException("Não foi possível salvar a comunidade."))
+    }
+
+    /** Envia a foto da comunidade e devolve o código do arquivo para usar em [updateCommunity] (avatarFileId). */
+    fun uploadCommunityPhoto(context: Context, token: String, uri: Uri): String {
+        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: throw IllegalStateException("Não foi possível ler a imagem selecionada.")
+        require(bytes.isNotEmpty() && bytes.size <= 25 * 1024 * 1024) { "A imagem deve ter até 25 MB." }
+        val contentType = when (context.contentResolver.getType(uri)) { "image/png" -> "image/png"; "image/webp" -> "image/webp"; else -> "image/jpeg" }
+        val fileName = "community-" + System.currentTimeMillis() + "." + (if (contentType == "image/png") "png" else if (contentType == "image/webp") "webp" else "jpg")
+        val upload = request("POST", "/api/files/upload-url", JSONObject().put("fileName", fileName).put("contentType", contentType).put("sizeBytes", bytes.size).put("category", "avatar"), token)
+        val fileId = upload.optJSONObject("file")?.optString("id").orEmpty()
+        val uploadUrl = upload.optString("uploadUrl")
+        if (fileId.isBlank() || uploadUrl.isBlank()) throw IllegalStateException("Resposta de upload inválida.")
+        val connection = (URL(uploadUrl).openConnection() as HttpURLConnection).apply {
+            requestMethod = "PUT"; connectTimeout = 20000; readTimeout = 60000; doOutput = true
+            setRequestProperty("Content-Type", contentType)
+            setRequestProperty("apikey", BuildConfig.SUPABASE_PUBLISHABLE_KEY)
+            setRequestProperty("Authorization", "Bearer $token")
+            setFixedLengthStreamingMode(bytes.size)
+        }
+        try {
+            connection.outputStream.use { it.write(bytes) }
+            if (connection.responseCode !in 200..299) throw IllegalStateException("Não foi possível enviar a foto (HTTP ${connection.responseCode}).")
+        } finally { connection.disconnect() }
+        request("POST", "/api/files/$fileId/complete", JSONObject(), token)
+        return fileId
+    }
+
+    /** approve, reject, remove, admin ou member (dono/admins). */
+    fun communityMemberAction(token: String, id: String, userId: String, action: String) {
+        request("POST", "/api/communities/" + id + "/members/" + userId, JSONObject().put("action", action), token)
     }
 
     fun addCommunityPost(token: String, id: String, body: String) {

@@ -1159,3 +1159,10 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 
 ## Conversa da comunidade: barra de escrever acima dos botões do celular
 - Mesmo ajuste da "Nova comunidade": `decorFitsSystemWindows = false` + `lift = true`; removido o `navigationBarsPadding()` duplicado da conversa e da tela "Dados da comunidade".
+
+## Comunidades: +, três pontinhos, editar, aprovação, admins
+- Lista: depois da primeira comunidade o botão grande "Criar comunidade" some e entra um **+** (sem círculo) no cabeçalho, entre a lupa e o menu (`QinblyCommunitiesUi`).
+- Dados da comunidade: três pontinhos (dono: Editar comunidade, Copiar link, Regras, Denunciar, Excluir; membro: Copiar link, Regras, Denunciar, Sair). Silenciar/Compartilhar em cinza. Lista de membros vem do servidor (`memberList`); dono/admin toca num membro para tornar admin, remover etc.; pedidos de entrada aparecem com Aceitar/Recusar.
+- Editar comunidade (abre na hora, salva em segundo plano): foto, nome, descrição, quem pode entrar (qualquer um / com aprovação), quem pode escrever (todos / só admins), regras.
+- Servidor: colunas novas `communities.join_mode/write_mode/rules` (já aplicadas no D1), `PATCH /api/communities/:id`, `POST /api/communities/:id/members/:userId` (approve/reject/remove/admin/member), entrada com aprovação (`role='pending'`), "só admins" respeitado ao enviar mensagem.
+- O site ainda não tem essas telas (continua entrando/saindo como antes; em comunidades com aprovação o pedido fica pendente).
