@@ -95,12 +95,11 @@ class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(co
             } catch (_: Exception) { }
         }
 
+        /** Só o básico: curtida e comentário/resposta. Seguidor, menção, marcação etc. não geram aviso na barra. */
         private fun kindAllowed(sp: android.content.SharedPreferences, kind: String): Boolean = when (kind) {
             "like" -> sp.getBoolean("setting_notice_likes", true)
             "comment", "reply" -> sp.getBoolean("setting_notice_comments", true)
-            "mention", "mention_comment", "tag" -> sp.getBoolean("setting_notice_mentions", true)
-            "follow", "follow_request", "follow_accepted" -> sp.getBoolean("setting_notice_followers", true)
-            else -> sp.getBoolean("setting_notice_system", true)
+            else -> false
         }
 
         private fun isAppInForeground(ctx: Context): Boolean {

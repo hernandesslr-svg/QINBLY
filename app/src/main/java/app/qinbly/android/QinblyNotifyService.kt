@@ -22,6 +22,12 @@ class QinblyNotifyService : Service() {
 
     /** Cada chamada (abrir o app, alarme, reinício do sistema) faz uma consulta e agenda a próxima. */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Desligado: sem aviso fixo na barra. Um alarme antigo que ainda dispare só encerra o serviço.
+        stopSelf()
+        return START_NOT_STICKY
+    }
+
+    private fun legacyOnStartCommand(intent: Intent?): Int {
         try {
             startAsForeground("Recebendo seus avisos")
         } catch (_: Exception) {
@@ -118,12 +124,18 @@ class QinblyNotifyService : Service() {
         private const val NOTIFICATION_ID = 7010
         private const val POLL_MS = 40_000L
 
-        /** Liga o serviço se a pessoa está logada e com as notificações ligadas. Chamar de novo é seguro. */
+        /**
+         * O serviço fixo foi desligado de propósito: ele obrigava o Android a mostrar um aviso permanente na barra.
+         * Chamar isto limpa o que uma versão antiga deixou (serviço, alarme e aviso fixo). Os avisos com o app fechado
+         * vêm da verificação periódica do sistema (QinblyNotifyWorker).
+         */
         fun start(context: Context) {
             try {
-                val prefs = context.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
-                if (prefs.getString("token", null).isNullOrBlank() || !prefs.getBoolean("setting_notifications", true)) return
-                androidx.core.content.ContextCompat.startForegroundService(context, Intent(context, QinblyNotifyService::class.java))
+                context.stopService(Intent(context, QinblyNotifyService::class.java))
+                (context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager).cancel(
+                    PendingIntent.getService(context, 7003, Intent(context, QinblyNotifyService::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+                )
+                (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
             } catch (_: Exception) { }
         }
     }

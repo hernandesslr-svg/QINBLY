@@ -1142,3 +1142,9 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 ## Velocidade: fotos e feed
 - Servidor: fotos (até 6 MB) passam a sair do cache da borda da Cloudflare (`caches.default`) em vez de consultar o R2 a cada abertura. Vídeos seguem direto do R2.
 - App: `getPosts` não faz mais a chamada extra `/api/auth/me` antes de buscar o feed (o `request()` já renova token vencido). Uma ida a menos ao servidor em toda abertura/atualização do feed.
+
+## Só notificação básica; sem aviso fixo
+- Serviço em primeiro plano desligado (acabou o aviso fixo "Recebendo seus avisos"). `QinblyNotifyService.start()` agora só limpa serviço/alarme/aviso que uma versão antiga deixou.
+- Tirado o pedido de "sem restrição de bateria" e o aviso "QINBLY atualizado" (o app ainda reabre sozinho depois de atualizar).
+- Notifica só: curtida, comentário/resposta, mensagem e nova versão do app. Seguidor, menção, marcação etc. não geram aviso na barra (continuam no sino dentro do app).
+- Com o app fechado, quem busca é a verificação periódica do Android (WorkManager, ~15 min, o Android pode atrasar). Para aviso na hora: push do Firebase.

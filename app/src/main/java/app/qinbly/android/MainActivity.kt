@@ -6874,23 +6874,6 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             }
         }
     }
-    // Para os avisos chegarem com o app fechado, o Android precisa deixar o QINBLY rodar em segundo plano sem economia de bateria.
-    // Pede uma vez (de novo só depois de 3 dias, se a pessoa recusar), depois de a permissão de notificações estar resolvida.
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(9000)
-        try {
-            val power = context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
-            val notifOk = android.os.Build.VERSION.SDK_INT < 33 || androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            val last = prefs.getLong("battery_opt_asked_at", 0L)
-            if (notifOk && !power.isIgnoringBatteryOptimizations(context.packageName) && System.currentTimeMillis() - last > 3L * 24 * 60 * 60 * 1000) {
-                prefs.edit().putLong("battery_opt_asked_at", System.currentTimeMillis()).apply()
-                context.startActivity(
-                    android.content.Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                        .setData(android.net.Uri.parse("package:" + context.packageName))
-                )
-            }
-        } catch (_: Exception) { }
-    }
     var selectedFeedTab by rememberKept("feed.tab", "Descobrir")
     var emAltaPeriod by rememberKept("feed.period", "Hoje")
     var reelsOpen by remember { mutableStateOf(resumeFeedReels.value.also { resumeFeedReels.value = false }) }
