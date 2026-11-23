@@ -1962,3 +1962,59 @@
 
   if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () { }); }); }
 })();
+
+/* Legenda longa no feed: 4 linhas e "… mais" no fim da última; toque abre tudo ("menos" recolhe). */
+(function () {
+  var LINES = 4;
+  function lineH(el) {
+    var cs = getComputedStyle(el), l = parseFloat(cs.lineHeight);
+    return isNaN(l) ? parseFloat(cs.fontSize) * 1.4 : l;
+  }
+  function span(cls, txt) { var s = document.createElement("span"); s.className = cls; s.textContent = txt; return s; }
+  function renderCut(el, k) {
+    var full = el._full, left = k;
+    el.textContent = "";
+    var nodes = full.childNodes;
+    for (var i = 0; i < nodes.length && left > 0; i++) {
+      var n = nodes[i], len = n.textContent.length;
+      if (len <= left) { el.appendChild(n.cloneNode(true)); left -= len; }
+      else { var c = n.cloneNode(true); (c.nodeType === 3 ? c : c.firstChild).textContent = n.textContent.slice(0, left); el.appendChild(c); left = 0; break; }
+    }
+    var last = el.lastChild;
+    if (last && last.nodeType === 3) last.textContent = last.textContent.replace(/\s+$/, "");
+    el.appendChild(document.createTextNode("… "));
+    el.appendChild(span("cx-more", "mais"));
+  }
+  function renderFull(el) {
+    el.textContent = "";
+    var nodes = el._full.childNodes;
+    for (var i = 0; i < nodes.length; i++) el.appendChild(nodes[i].cloneNode(true));
+    el.appendChild(document.createTextNode("  "));
+    el.appendChild(span("cx-less", "menos"));
+  }
+  function collapse(el) {
+    if (el.getAttribute("data-cx") || el.offsetParent === null) return;
+    el.setAttribute("data-cx", "1");
+    var limit = lineH(el) * LINES + 2;
+    if (el.scrollHeight <= limit) return;
+    el._full = el.cloneNode(true);
+    var lo = 0, hi = el.textContent.length;
+    while (lo < hi) {
+      var mid = Math.ceil((lo + hi) / 2);
+      renderCut(el, mid);
+      if (el.scrollHeight <= limit) lo = mid; else hi = mid - 1;
+    }
+    el._k = lo;
+    renderCut(el, lo);
+  }
+  function scan() { var l = document.querySelectorAll(".post .cap:not([data-cx])"); for (var i = 0; i < l.length; i++) collapse(l[i]); }
+  var raf = 0;
+  new MutationObserver(function () { if (!raf) raf = requestAnimationFrame(function () { raf = 0; scan(); }); }).observe(document.documentElement, { childList: true, subtree: true });
+  document.addEventListener("click", function (e) {
+    var t = e.target && e.target.closest ? e.target.closest(".cx-more,.cx-less") : null;
+    if (!t) return;
+    e.preventDefault(); e.stopPropagation();
+    var el = t.parentNode;
+    if (t.className === "cx-more") renderFull(el); else renderCut(el, el._k);
+  }, true);
+})();

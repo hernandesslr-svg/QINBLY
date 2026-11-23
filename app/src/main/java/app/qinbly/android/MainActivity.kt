@@ -970,8 +970,86 @@ private fun QinblyFeedCaption(caption: String, modifier: Modifier = Modifier) {
     val legend = remember(caption) { qinblySplitCaption(caption).first }
     if (legend.isBlank()) return
     Column(modifier) {
-        QinblyRichText(legend, RemoteAppearance.feedTextColor, fontSize = 16.sp)
+        QinblyCollapsibleText(legend, RemoteAppearance.feedTextColor, fontSize = 16.sp)
     }
+}
+
+/** Texto do card do feed: mostra 4 linhas e "… mais" no fim da última; tocando abre tudo (com "menos" no fim). */
+@Composable
+private fun QinblyCollapsibleText(
+    text: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+    fontSize: androidx.compose.ui.unit.TextUnit = 16.sp,
+    collapsedLines: Int = 4
+) {
+    var expanded by remember(text) { mutableStateOf(false) }
+    var overflowed by remember(text) { mutableStateOf(false) }
+    var cutAt by remember(text) { mutableIntStateOf(-1) }
+    val muted = QiblyTheme.secondary
+    val link = QinblyBrand.Mention
+    val collapsed = !expanded && cutAt >= 0 && cutAt < text.length
+    val annotated = remember(text, expanded, cutAt, color, link, muted) {
+        androidx.compose.ui.text.buildAnnotatedString {
+            val shown = if (collapsed) text.substring(0, cutAt).trimEnd() else text
+            val rx = Regex("([#@])([\\p{L}\\p{N}_.]{2,30})")
+            var last = 0
+            for (match in rx.findAll(shown)) {
+                var token = match.value
+                if (token.endsWith(".")) token = token.trimEnd('.')
+                if (token.length < 3) continue
+                append(shown.substring(last, match.range.first))
+                pushStringAnnotation(tag = token.take(1), annotation = token.drop(1))
+                pushStyle(androidx.compose.ui.text.SpanStyle(color = link, fontWeight = FontWeight.SemiBold))
+                append(token)
+                pop()
+                pop()
+                last = match.range.first + token.length
+            }
+            append(shown.substring(last))
+            if (collapsed) {
+                append("\u2026 ")
+                pushStringAnnotation(tag = "more", annotation = "1")
+                pushStyle(androidx.compose.ui.text.SpanStyle(color = muted, fontWeight = FontWeight.SemiBold))
+                append("mais")
+                pop()
+                pop()
+            } else if (expanded && overflowed) {
+                append("  ")
+                pushStringAnnotation(tag = "less", annotation = "1")
+                pushStyle(androidx.compose.ui.text.SpanStyle(color = muted, fontWeight = FontWeight.SemiBold))
+                append("menos")
+                pop()
+                pop()
+            }
+        }
+    }
+    androidx.compose.foundation.text.ClickableText(
+        text = annotated,
+        modifier = modifier,
+        maxLines = if (expanded) Int.MAX_VALUE else collapsedLines,
+        overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+        style = androidx.compose.ui.text.TextStyle(color = color, fontSize = fontSize, lineHeight = fontSize * 1.35f),
+        onTextLayout = { layout ->
+            if (!expanded && layout.hasVisualOverflow) {
+                overflowed = true
+                if (cutAt < 0) {
+                    val line = (collapsedLines - 1).coerceAtMost(layout.lineCount - 1)
+                    val end = layout.getLineEnd(line, visibleEnd = true)
+                    val wide = layout.getLineRight(line) > layout.size.width * 0.6f
+                    cutAt = (if (wide) end - 10 else end).coerceAtLeast(0)
+                } else if (cutAt > 0) {
+                    cutAt = (cutAt - 4).coerceAtLeast(0)
+                }
+            }
+        },
+        onClick = { offset ->
+            if (annotated.getStringAnnotations("more", offset, offset).isNotEmpty()) expanded = true
+            else if (annotated.getStringAnnotations("less", offset, offset).isNotEmpty()) expanded = false
+            else annotated.getStringAnnotations("#", offset, offset).firstOrNull()?.let { QinblyTagNav.tag = it.item }
+                ?: annotated.getStringAnnotations("@", offset, offset).firstOrNull()?.let { QinblyTagNav.profile = it.item }
+        }
+    )
 }
 
 /** Legenda sobre o vídeo no visualizador: só a legenda; as hashtags ficam salvas mas escondidas. */
