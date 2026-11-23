@@ -1101,3 +1101,8 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 
 ## Ícone das notificações
 - A barra de status mostrava o "i" genérico do Android. Agora usa `ic_stat_qinbly` (silhueta branca do logo: anel com estrela) nas notificações de novidades, mensagens, atualização e "QINBLY atualizado".
+
+## Tocar na notificação abre direto no assunto (app)
+- A notificação do sistema agora leva o tipo, a publicação e o @ da pessoa. Ao tocar: mensagem abre a conversa; curtida, marcação e menção abrem a publicação; comentário e resposta abrem a publicação já com os comentários; seguidor e "aceitou seu pedido" abrem o perfil; pedido de seguir, verificação e avisos abrem a lista de notificações; atualização abre a tela de atualizar.
+- Cada aviso tem seu próprio código de toque (antes todos usavam o mesmo e um podia sobrescrever o outro).
+- A lista de Notificações dentro do app usa o mesmo caminho (antes curtida e comentário abriam só o perfil).

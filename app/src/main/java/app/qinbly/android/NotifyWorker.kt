@@ -38,7 +38,7 @@ class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(co
                 if (n.id in told) continue
                 told += n.id
                 if (!firstRun && shown < 3 && kindAllowed(prefs, n.kind)) {
-                    qinblyNotify(ctx, n.actorDisplayName.ifBlank { n.actorUsername.ifBlank { "Qinbly" } }, qinblyNotificationText(n.kind), n.id.hashCode())
+                    qinblyNotify(ctx, n.actorDisplayName.ifBlank { n.actorUsername.ifBlank { "Qinbly" } }, qinblyNotificationText(n.kind), n.id.hashCode(), n.kind, n.entityId, n.actorUsername)
                     shown++
                 }
             }
@@ -49,7 +49,7 @@ class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(co
                     if (key in told) continue
                     told += key
                     if (!firstRun && shown < 3) {
-                        qinblyNotify(ctx, c.displayName.ifBlank { c.username }, c.body.take(80).ifBlank { "Nova mensagem" }, key.hashCode())
+                        qinblyNotify(ctx, c.displayName.ifBlank { c.username }, c.body.take(80).ifBlank { "Nova mensagem" }, key.hashCode(), "message", "", c.username)
                         shown++
                     }
                 }

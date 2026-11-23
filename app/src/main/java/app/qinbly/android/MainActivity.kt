@@ -581,7 +581,7 @@ internal fun qinblyNotificationText(kind: String): String = when (kind) {
 }
 
 /** Notificação do sistema para novidades (aparece enquanto o app está aberto ou ainda em memória). */
-internal fun qinblyNotify(context: android.content.Context, title: String, text: String, id: Int) {
+internal fun qinblyNotify(context: android.content.Context, title: String, text: String, id: Int, kind: String = "", entityId: String = "", actor: String = "") {
     try {
         val manager = context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
         val soundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
@@ -599,8 +599,12 @@ internal fun qinblyNotify(context: android.content.Context, title: String, text:
         if (android.os.Build.VERSION.SDK_INT >= 33 &&
             androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
         ) return
+        // Ao tocar, o app abre direto no assunto da notificação (mensagem, publicação, perfil...). Código único por aviso para um não sobrescrever o outro.
+        val tapIntent = android.content.Intent(context, MainActivity::class.java)
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            .putExtra("qinbly_kind", kind).putExtra("qinbly_entity", entityId).putExtra("qinbly_actor", actor)
         val open = android.app.PendingIntent.getActivity(
-            context, 0, android.content.Intent(context, MainActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            context, id, tapIntent,
             android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
         )
         val notification = androidx.core.app.NotificationCompat.Builder(context, "qinbly_social_v2")
@@ -1127,10 +1131,22 @@ private fun QinblyTagHost(prefs: android.content.SharedPreferences, currentUsern
     }
 }
 
+/** Toque numa notificação do sistema: o que ela era e onde o app deve abrir. */
+private class QinblyNotifTap(val kind: String, val entityId: String, val actor: String)
+
 private object QinblyDeepLink {
     var postId by mutableStateOf<String?>(null)
+    /** Abrir os comentários junto com a publicação (notificações de comentário e resposta). */
+    var openComments = false
+    var notifTap by mutableStateOf<QinblyNotifTap?>(null)
     private val postPattern = Regex("post/([0-9a-fA-F-]{36})")
     fun handle(intent: android.content.Intent?) {
+        val kind = intent?.getStringExtra("qinbly_kind")
+        if (kind != null) {
+            notifTap = QinblyNotifTap(kind, intent.getStringExtra("qinbly_entity").orEmpty(), intent.getStringExtra("qinbly_actor").orEmpty())
+            // Consumido: reabrir a tela (girar, voltar do segundo plano) não repete o toque.
+            intent.removeExtra("qinbly_kind"); intent.removeExtra("qinbly_entity"); intent.removeExtra("qinbly_actor")
+        }
         val data = intent?.data?.toString() ?: return
         postPattern.find(data)?.groupValues?.get(1)?.let { postId = it }
     }
@@ -1146,9 +1162,13 @@ private fun QinblyDeepLinkHost(prefs: android.content.SharedPreferences, current
         Thread {
             try {
                 val loaded = QinblyApi.getPost(id)
-                android.os.Handler(android.os.Looper.getMainLooper()).post { post = loaded }
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    post = loaded
+                    if (QinblyDeepLink.openComments) { QinblyDeepLink.openComments = false; commentTarget = loaded }
+                }
             } catch (e: Exception) {
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    QinblyDeepLink.openComments = false
                     QinblyDeepLink.postId = null
                     QinblyResume.backOnClose = null
                     onNotice(e.message ?: "Não foi possível abrir esta publicação.")
@@ -2073,6 +2093,33 @@ private fun QinblyApp() {
         }
     }
     BackHandler { handleBack() }
+    // Para onde cada notificação leva (igual Instagram/TikTok): mensagem -> conversa; curtida -> publicação;
+    // comentário/resposta -> publicação com os comentários abertos; seguidor -> perfil; pedido de seguir/outros -> lista de notificações.
+    // fromList = tocou dentro da tela de Notificações (o voltar retorna para ela); false = tocou na notificação do sistema.
+    val openNotificationTarget: (String, String, String, Boolean) -> Unit = { kind, entityId, actor, fromList ->
+        if (!fromList) {
+            showAccountSwitcher = false; showSearchDialog = false; profileStat = ""; showEditProfilePhoto = false
+            showSettings = false; showEditProfile = false; showNotifications = false
+            publicProfileUsername = ""; messageRecipient = ""
+        }
+        when {
+            kind == "message" && actor.isNotBlank() -> { messageRecipient = actor; tab = 1 }
+            kind in setOf("like", "comment", "reply", "mention", "mention_comment", "tag") && entityId.isNotBlank() -> {
+                if (fromList) QinblyResume.backOnClose = { handleBack() }
+                QinblyDeepLink.openComments = kind == "comment" || kind == "reply" || kind == "mention_comment"
+                QinblyDeepLink.postId = entityId
+            }
+            (kind == "follow" || kind == "follow_accepted") && actor.isNotBlank() -> publicProfileUsername = actor
+            kind == "follow_request" || kind.startsWith("verification") -> showNotifications = true
+            actor.isNotBlank() -> publicProfileUsername = actor
+            else -> showNotifications = true
+        }
+    }
+    LaunchedEffect(QinblyDeepLink.notifTap) {
+        val tap = QinblyDeepLink.notifTap ?: return@LaunchedEffect
+        QinblyDeepLink.notifTap = null
+        openNotificationTarget(tap.kind, tap.entityId, tap.actor, false)
+    }
     MaterialTheme(
         colorScheme = if (QiblyTheme.dark)
             darkColorScheme(primary = QinblyBrand.AccentLight, secondary = QinblyBrand.AccentLight, background = QiblyTheme.background, surface = QiblyTheme.card, onBackground = QiblyTheme.text, onSurface = QiblyTheme.text)
@@ -2255,15 +2302,7 @@ private fun QinblyApp() {
                         onBack = handleBack,
                         onOpen = { notification ->
                             showNotifications = false
-                            if (notification.kind == "message" && notification.actorUsername.isNotBlank()) {
-                                messageRecipient = notification.actorUsername
-                                tab = 1
-                            } else if ((notification.kind == "mention" || notification.kind == "mention_comment" || notification.kind == "tag") && notification.entityId.isNotBlank()) {
-                                QinblyResume.backOnClose = { handleBack() }
-                                QinblyDeepLink.postId = notification.entityId
-                            } else if (notification.actorUsername.isNotBlank()) {
-                                publicProfileUsername = notification.actorUsername
-                            }
+                            openNotificationTarget(notification.kind, notification.entityId, notification.actorUsername, true)
                         },
                         onNotice = { notice = it }
                     )
@@ -6842,7 +6881,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                                 else -> sp.getBoolean("setting_notice_system", true)
                             }
                         }?.let { n ->
-                            qinblyNotify(context, n.actorDisplayName.ifBlank { n.actorUsername.ifBlank { QinblyBrand.Name } }, qinblyNotificationText(n.kind), n.id.hashCode())
+                            qinblyNotify(context, n.actorDisplayName.ifBlank { n.actorUsername.ifBlank { QinblyBrand.Name } }, qinblyNotificationText(n.kind), n.id.hashCode(), n.kind, n.entityId, n.actorUsername)
                         }
                     }
                     firstLoad = false
