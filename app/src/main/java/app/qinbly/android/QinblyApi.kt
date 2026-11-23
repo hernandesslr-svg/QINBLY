@@ -284,13 +284,8 @@ object QinblyApi {
     }
 
     fun getPosts(token: String? = null): List<PostSummary> {
-        var active = token ?: storedAccessToken()
-        // O feed aceita visitante: com a sessão vencida o servidor responde 200 só com o que é público (e o app nunca renovava).
-        // Confirmar a sessão antes faz o app renovar o token e o feed vir completo (inclusive contas privadas que você segue).
-        if (!active.isNullOrBlank()) {
-            try { request("GET", "/api/auth/me", null, active) } catch (_: Exception) { }
-            active = storedAccessToken() ?: active
-        }
+        // request() já renova o token vencido antes de enviar; não precisa gastar uma ida ao servidor só para confirmar a sessão.
+        val active = token ?: storedAccessToken()
         val response = request("GET", "/api/posts?limit=30", null, active)
         val result = parsePosts(response.optJSONArray("posts"))
         applicationContext?.let { cachePosts(it, response.optJSONArray("posts")) }

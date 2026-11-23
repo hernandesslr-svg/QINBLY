@@ -98,14 +98,14 @@ export async function handleAuthV1(req, env, subpath) {
 
 // ---------- /storage/v1 : envio e leitura de arquivos no R2 ----------
 const MAX_UPLOAD = 100 * 1024 * 1024;
-export async function handleStorage(req, env, subpath) {
+export async function handleStorage(req, env, subpath, waitUntil) {
   if (req.method === "OPTIONS") return preflight();
   // Leitura publica: object/public/post-media/<caminho>
   const pubMatch = subpath.match(/^object\/public\/post-media\/(.+)$/);
   if (pubMatch && (req.method === "GET" || req.method === "HEAD")) {
     const key = safeKey(decodeURIComponent(pubMatch[1]));
     if (!key) return new Response("Not found", { status: 404, headers: CORS });
-    return serveObject(req, env, key);
+    return serveObject(req, env, key, waitUntil);
   }
   // Envio: object/post-media/<caminho> (PUT ou POST) — so dentro da pasta do proprio usuario
   const putMatch = subpath.match(/^object\/post-media\/(.+)$/);
@@ -127,7 +127,22 @@ export async function handleStorage(req, env, subpath) {
   return reply({ message: "Rota de arquivos não encontrada.", statusCode: "404" }, 404);
 }
 const safeKey = (k) => (safeObjectPath(k) ? k : null);
-const serveObject = async (req, env, key) => {
+const EDGE_MAX = 6 * 1024 * 1024; // fotos entram no cache da borda da Cloudflare; vídeos grandes seguem direto do R2
+const serveObject = async (req, env, key, waitUntil) => {
+  const range = req.headers.get("range");
+  // Foto já vista por alguém perto de você sai do cache da borda: sem consultar o R2 e sem esperar.
+  const cacheable = req.method === "GET" && !range && typeof caches !== "undefined" && caches.default;
+  const cacheKey = cacheable ? new Request(new URL(req.url).origin + new URL(req.url).pathname, { method: "GET" }) : null;
+  if (cacheable) {
+    try { const hit = await caches.default.match(cacheKey); if (hit) return hit; } catch (_) {}
+  }
+  const res = await serveObjectRaw(req, env, key);
+  if (cacheable && res.status === 200 && Number(res.headers.get("Content-Length") || 0) <= EDGE_MAX && (res.headers.get("Content-Type") || "").startsWith("image/")) {
+    try { const put = caches.default.put(cacheKey, res.clone()); if (waitUntil) waitUntil(put); else await put; } catch (_) {}
+  }
+  return res;
+};
+const serveObjectRaw = async (req, env, key) => {
   const range = req.headers.get("range");
   const head = await env.FILES.head(key);
   if (!head) return new Response("Not found", { status: 404, headers: CORS });

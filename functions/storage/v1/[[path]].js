@@ -1,5 +1,5 @@
 import { handleStorage } from "../../_lib/extras.js";
-export async function onRequest({ request, env, params }) {
+export async function onRequest({ request, env, params, waitUntil }) {
   const parts = Array.isArray(params.path) ? params.path : [params.path].filter(Boolean);
-  return handleStorage(request, env, parts.join("/"));
+  return handleStorage(request, env, parts.join("/"), waitUntil);
 }

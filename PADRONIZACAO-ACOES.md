@@ -1138,3 +1138,7 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 
 ## Aviso fixo do serviço: texto parado
 - O aviso fixo ("QINBLY – Recebendo seus avisos") não é mais atualizado a cada consulta (a hora mudando fazia ele reaparecer toda hora). Ficou com texto fixo, importância mínima e oculto na tela de bloqueio. O Android exige um aviso fixo enquanto o serviço roda; o jeito de sumir de vez é o push do Firebase.
+
+## Velocidade: fotos e feed
+- Servidor: fotos (até 6 MB) passam a sair do cache da borda da Cloudflare (`caches.default`) em vez de consultar o R2 a cada abertura. Vídeos seguem direto do R2.
+- App: `getPosts` não faz mais a chamada extra `/api/auth/me` antes de buscar o feed (o `request()` já renova token vencido). Uma ida a menos ao servidor em toda abertura/atualização do feed.
