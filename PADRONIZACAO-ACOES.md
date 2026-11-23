@@ -1153,3 +1153,6 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - App: o feed é buscado ao abrir o app, ao voltar depois de 60 s ou mais em segundo plano, e ao puxar para atualizar. Não há consulta periódica enquanto a pessoa usa. Trocar de aba dentro de 60 s não busca de novo (`QinblyCache.feedAt`).
 - Abre na hora com o último feed salvo (cache-first). Se a pessoa já começou a rolar quando o feed novo chega, ele não troca a tela por cima (fica para a próxima vez); no topo ou em puxar-para-atualizar, troca e sobe ao topo.
 - Site: mesma regra (volta ao site depois de 1 min busca o feed; se já rolou, não troca a tela). `sw.js` cache v12.
+
+## Nova comunidade: botão "Criar comunidade" não fica mais atrás dos botões do celular
+- A janela agora usa o mesmo padrão das outras telas cheias (`decorFitsSystemWindows = false` + `lift = true` do `QinblyDialog`), que reserva o espaço da barra de navegação.

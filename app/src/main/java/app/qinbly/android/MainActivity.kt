@@ -7536,10 +7536,11 @@ private fun QinblyCreateCommunityDialog(onDismiss: () -> Unit, onCreate: (String
     BackHandler(enabled = !sending) { onDismiss() }
     QinblyDialog(
         onDismissRequest = { if (!sending) onDismiss() },
-        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnClickOutside = false),
+        lift = true
     ) {
         Surface(Modifier.fillMaxSize(), color = QiblyTheme.background) {
-            Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().padding(horizontal = 16.dp)) {
+            Column(Modifier.fillMaxSize().statusBarsPadding().imePadding().padding(horizontal = 16.dp)) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { if (!sending) onDismiss() }) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
                     Text("Nova comunidade", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
