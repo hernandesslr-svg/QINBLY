@@ -1135,3 +1135,6 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Ao abrir/voltar pro app (`onResume`) os avisos de curtida, comentário, seguidor e mensagem saem da barra (`qinblyClearSocialNotifications`); o aviso fixo do serviço e o de atualização ficam.
 - Com o app aberto não se cria mais aviso na barra (só o contador do sino); com o app fechado quem avisa é o serviço.
 - Aviso fixo do serviço trocou de id (7002 → 7010) porque colidia com o aviso de "app reiniciado após atualizar".
+
+## Aviso fixo do serviço: texto parado
+- O aviso fixo ("QINBLY – Recebendo seus avisos") não é mais atualizado a cada consulta (a hora mudando fazia ele reaparecer toda hora). Ficou com texto fixo, importância mínima e oculto na tela de bloqueio. O Android exige um aviso fixo enquanto o serviço roda; o jeito de sumir de vez é o push do Firebase.

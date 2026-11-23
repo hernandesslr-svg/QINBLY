@@ -42,9 +42,7 @@ class QinblyNotifyService : Service() {
                         cancelNext()
                         stopSelf()
                     } else {
-                        val result = try { QinblyNotifyWorker.pollOnce(applicationContext) } catch (_: Exception) { null }
-                        val hora = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
-                        updateStatus(if (result == null || result == androidx.work.ListenableWorker.Result.retry()) "Sem conexão com o servidor às $hora" else "Última verificação às $hora")
+                        try { QinblyNotifyWorker.pollOnce(applicationContext) } catch (_: Exception) { }
                         scheduleNext()
                     }
                 } catch (_: Exception) {
@@ -81,6 +79,7 @@ class QinblyNotifyService : Service() {
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MIN)
+            .setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_SECRET)
             .setCategory(androidx.core.app.NotificationCompat.CATEGORY_SERVICE)
             .build()
     }
@@ -92,10 +91,6 @@ class QinblyNotifyService : Service() {
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
-    }
-
-    private fun updateStatus(text: String) {
-        try { (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(NOTIFICATION_ID, buildNotification(text)) } catch (_: Exception) { }
     }
 
     private fun nextIntent(): PendingIntent =
