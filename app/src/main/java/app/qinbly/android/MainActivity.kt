@@ -383,6 +383,8 @@ class MainActivity : ComponentActivity() {
     // Segundo plano: tudo que toca (vídeo, música, áudio) pausa quando o app sai da tela e retoma ao voltar.
     override fun onStop() { QinblyPlayback.pauseAll(); super.onStop() }
     override fun onStart() { super.onStart(); QinblyPlayback.resumeAll(); QinblyNotifyService.start(applicationContext) }
+    /** Como nas outras redes: ao abrir/voltar pro app, os avisos de curtida, comentário e mensagem saem da barra. */
+    override fun onResume() { super.onResume(); qinblyClearSocialNotifications(applicationContext) }
     // Teclas de volume (aumentar ou diminuir): avisam os vídeos mudos para ligarem o som (o sistema continua tratando a tecla normalmente).
     override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
         if (QinblyCameraKeys.active && (event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN)) {
@@ -568,6 +570,18 @@ internal fun qinblyNotificationText(kind: String): String = when (kind) {
 }
 
 /** Notificação do sistema para novidades (aparece enquanto o app está aberto ou ainda em memória). */
+/** Tira da barra os avisos do QINBLY (curtidas, comentários, mensagens...). Mantém o aviso fixo do serviço e o de atualização. */
+internal fun qinblyClearSocialNotifications(context: android.content.Context) {
+    try {
+        val manager = context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+        if (android.os.Build.VERSION.SDK_INT >= 23) {
+            for (n in manager.activeNotifications) {
+                if (n.id != 7010 && n.id != 7001 && n.id != 7002) manager.cancel(n.id)
+            }
+        }
+    } catch (_: Exception) { }
+}
+
 internal fun qinblyNotify(context: android.content.Context, title: String, text: String, id: Int, kind: String = "", entityId: String = "", actor: String = "") {
     try {
         val manager = context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
@@ -6892,20 +6906,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     val loaded = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getNotifications(token) }
                     val seenIds = context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount().getStringSet("notif_seen_ids", emptySet()).orEmpty()
                     val newUnread = loaded.count { it.readAt.isBlank() && it.kind != "message" && it.id !in seenIds }
-                    if (!firstLoad && newUnread > unreadNotifications) {
-                        loaded.firstOrNull { it.readAt.isBlank() && it.kind != "message" }?.takeIf { n ->
-                            val sp = context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount()
-                            sp.getBoolean("setting_notifications", true) && when (n.kind) {
-                                "like" -> sp.getBoolean("setting_notice_likes", true)
-                                "comment", "reply" -> sp.getBoolean("setting_notice_comments", true)
-                                "mention", "mention_comment", "tag" -> sp.getBoolean("setting_notice_mentions", true)
-                                "follow", "follow_request", "follow_accepted" -> sp.getBoolean("setting_notice_followers", true)
-                                else -> sp.getBoolean("setting_notice_system", true)
-                            }
-                        }?.let { n ->
-                            qinblyNotify(context, n.actorDisplayName.ifBlank { n.actorUsername.ifBlank { QinblyBrand.Name } }, qinblyNotificationText(n.kind), n.id.hashCode(), n.kind, n.entityId, n.actorUsername)
-                        }
-                    }
+                    // Com o app aberto não cria aviso na barra (o contador do sino já mostra); quem avisa é o serviço com o app fechado.
                     firstLoad = false
                     unreadNotifications = newUnread
                 } catch (_: Exception) {

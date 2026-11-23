@@ -120,7 +120,7 @@ class QinblyNotifyService : Service() {
 
     companion object {
         private const val CHANNEL = "qinbly_background"
-        private const val NOTIFICATION_ID = 7002
+        private const val NOTIFICATION_ID = 7010
         private const val POLL_MS = 40_000L
 
         /** Liga o serviço se a pessoa está logada e com as notificações ligadas. Chamar de novo é seguro. */

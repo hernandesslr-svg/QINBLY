@@ -1130,3 +1130,8 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Qualquer ação que exige conta (curtir, comentar, salvar, repostar, seguir, enviar, mensagem, criar...) agora abre um aviso por baixo da tela: "Entre para curtir/comentar/..." com botão grande "Entrar" e "Agora não". É feito num ponto só: toda mensagem "Entre na sua conta para..." é trocada por esse aviso.
 - "Entrar" abre a tela de entrar/criar conta; ao entrar (ou cancelar) a pessoa volta para a aba onde estava.
 - Site: já exige login para abrir, então não precisa do aviso.
+
+## Avisos: somem ao abrir, sem aviso duplicado com o app aberto
+- Ao abrir/voltar pro app (`onResume`) os avisos de curtida, comentário, seguidor e mensagem saem da barra (`qinblyClearSocialNotifications`); o aviso fixo do serviço e o de atualização ficam.
+- Com o app aberto não se cria mais aviso na barra (só o contador do sino); com o app fechado quem avisa é o serviço.
+- Aviso fixo do serviço trocou de id (7002 → 7010) porque colidia com o aviso de "app reiniciado após atualizar".
