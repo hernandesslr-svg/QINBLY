@@ -12,25 +12,53 @@ import android.os.IBinder
 
 /**
  * Avisos com o app fechado, quase na hora: um serviço em primeiro plano (com um aviso discreto fixo na barra)
- * que consulta novidades a cada ~40 segundos. Sem Firebase/Google é o jeito que o Android permite de não ser
+ * que consulta novidades a cada ~40 segundos (um alarme acorda o celular a cada consulta). Sem Firebase/Google é o jeito que o Android permite de não ser
  * dormido ou atrasado como acontece com tarefas agendadas. Para parar: desligar "Notificações" nas configurações do app.
  */
 class QinblyNotifyService : Service() {
-    @Volatile private var running = false
-    private var worker: Thread? = null
+    private val polling = java.util.concurrent.atomic.AtomicBoolean(false)
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    /** Cada chamada (abrir o app, alarme, reinício do sistema) faz uma consulta e agenda a próxima. */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startAsForeground()
-        if (worker?.isAlive != true) {
-            running = true
-            worker = Thread { loop() }.also { it.isDaemon = true; it.start() }
+        try {
+            startAsForeground("Recebendo seus avisos")
+        } catch (_: Exception) {
+            // Se o Android recusar o serviço fixo, não derruba o app: a tarefa agendada continua como reserva.
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        if (polling.compareAndSet(false, true)) {
+            Thread {
+                // Segura o processador acordado só durante a consulta (celular de tela apagada dorme e atrasa tudo).
+                val power = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+                val lock = power.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "qinbly:avisos").apply { setReferenceCounted(false) }
+                try {
+                    lock.acquire(60_000L)
+                    val prefs = applicationContext.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
+                    val token = prefs.getString("token", null)
+                    if (token.isNullOrBlank() || !prefs.getBoolean("setting_notifications", true)) {
+                        cancelNext()
+                        stopSelf()
+                    } else {
+                        val result = try { QinblyNotifyWorker.pollOnce(applicationContext) } catch (_: Exception) { null }
+                        val hora = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+                        updateStatus(if (result == null || result == androidx.work.ListenableWorker.Result.retry()) "Sem conexão com o servidor às $hora" else "Última verificação às $hora")
+                        scheduleNext()
+                    }
+                } catch (_: Exception) {
+                    scheduleNext()
+                } finally {
+                    if (lock.isHeld) lock.release()
+                    polling.set(false)
+                }
+            }.start()
         }
         return START_STICKY
     }
 
-    private fun startAsForeground() {
+    private fun buildNotification(text: String): Notification {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (android.os.Build.VERSION.SDK_INT >= 26) {
             // Importância mínima: sem som, sem ícone na tela de bloqueio, recolhida na barra.
@@ -43,17 +71,22 @@ class QinblyNotifyService : Service() {
             this, 7002, Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        val notification: Notification = androidx.core.app.NotificationCompat.Builder(this, CHANNEL)
+        return androidx.core.app.NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_qinbly)
             .setContentTitle("QINBLY")
-            .setContentText("Recebendo seus avisos")
+            .setContentText(text)
             .setContentIntent(open)
             .setOngoing(true)
             .setSilent(true)
+            .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MIN)
             .setCategory(androidx.core.app.NotificationCompat.CATEGORY_SERVICE)
             .build()
+    }
+
+    private fun startAsForeground(text: String) {
+        val notification = buildNotification(text)
         if (android.os.Build.VERSION.SDK_INT >= 34) {
             startForeground(NOTIFICATION_ID, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         } else {
@@ -61,22 +94,27 @@ class QinblyNotifyService : Service() {
         }
     }
 
-    private fun loop() {
-        while (running) {
-            val prefs = applicationContext.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
-            val token = prefs.getString("token", null)
-            if (token.isNullOrBlank() || !prefs.getBoolean("setting_notifications", true)) {
-                stopSelf()
-                break
-            }
-            try { QinblyNotifyWorker.pollOnce(applicationContext) } catch (_: Exception) { }
-            try { Thread.sleep(POLL_MS) } catch (_: InterruptedException) { break }
-        }
+    private fun updateStatus(text: String) {
+        try { (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(NOTIFICATION_ID, buildNotification(text)) } catch (_: Exception) { }
+    }
+
+    private fun nextIntent(): PendingIntent =
+        PendingIntent.getService(this, 7003, Intent(this, QinblyNotifyService::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+
+    /** Alarme que acorda o celular (mesmo em soneca) para a próxima consulta. */
+    private fun scheduleNext() {
+        try {
+            val alarms = getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+            alarms.setAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + POLL_MS, nextIntent())
+        } catch (_: Exception) { }
+    }
+
+    private fun cancelNext() {
+        try { (getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager).cancel(nextIntent()) } catch (_: Exception) { }
     }
 
     override fun onDestroy() {
-        running = false
-        worker?.interrupt()
+        cancelNext()
         super.onDestroy()
     }
 

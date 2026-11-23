@@ -1119,3 +1119,8 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Liga ao abrir o app, ao entrar numa conta e ao ligar o celular/atualizar o app (`QinblyBootReceiver`). Para sozinho se sair da conta ou desligar "Notificações".
 - O app pede uma vez, depois das notificações, para rodar sem economia de bateria (sem isso o Android pode dormir o serviço). Recusou: pergunta de novo só depois de 3 dias.
 - Continua a tarefa agendada como reserva. Push instantâneo de verdade (Firebase/FCM) segue possível no futuro; exige projeto Firebase.
+
+### Ajuste do serviço de avisos (celular de tela apagada)
+- A espera entre consultas deixou de ser um `sleep` (que dorme junto com o celular). Agora cada consulta segura o processador acordado só por ela e agenda a próxima com `AlarmManager.setAndAllowWhileIdle`.
+- O aviso fixo mostra "Última verificação às HH:mm" (ou "Sem conexão com o servidor às HH:mm"): serve de prova de que o serviço está vivo.
+- Se o Android recusar ligar o serviço fixo, ele se desliga sem derrubar o app.
