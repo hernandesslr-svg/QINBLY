@@ -1905,13 +1905,20 @@ private fun QinblyApp() {
 
     var liked by remember { mutableStateOf(setOf<String>()) }
     var notice by remember { mutableStateOf("") }
+    // Quem não está logado e tenta curtir, comentar, salvar etc. recebe o aviso "Entre para..." com botão de entrar.
+    var loginPrompt by remember { mutableStateOf("") }
+    var loginReturnTab by remember { mutableIntStateOf(-1) }
     // O aviso do app nunca era desenhado em lugar nenhum: agora aparece como aviso do sistema, por cima de qualquer tela.
     val noticeContext = androidx.compose.ui.platform.LocalContext.current
     val lastNoticeAt = remember { longArrayOf(0L) }
     LaunchedEffect(notice) {
         if (notice.isNotBlank()) {
-            val now = System.currentTimeMillis()
-            if (now - lastNoticeAt[0] > 1500L) { lastNoticeAt[0] = now; qinblyToastNow(noticeContext, notice) }
+            if (notice.startsWith("Entre na sua conta")) {
+                loginPrompt = notice
+            } else {
+                val now = System.currentTimeMillis()
+                if (now - lastNoticeAt[0] > 1500L) { lastNoticeAt[0] = now; qinblyToastNow(noticeContext, notice) }
+            }
             notice = ""
         }
     }
@@ -1981,6 +1988,13 @@ private fun QinblyApp() {
     var nameFontStyle by remember { mutableStateOf(appPrefs.getString("name_font_style", "Padrão") ?: "Padrão") }
     var appFontStyle by remember { mutableStateOf(appPrefs.getString("app_font_style", "Padrão") ?: "Padrão") }
     var showEditProfile by remember { mutableStateOf(false) }
+    if (loginPrompt.isNotBlank()) {
+        QinblyLoginPrompt(
+            message = loginPrompt,
+            onEnter = { loginReturnTab = tab; loginPrompt = ""; showSettings = false; showAuth = true; tab = 4 },
+            onDismiss = { loginPrompt = "" }
+        )
+    }
     var showEditProfilePhoto by remember { mutableStateOf(false) }
     var profilePhotoRefreshKey by remember { mutableIntStateOf(0) }
     var showNotifications by remember { mutableStateOf(false) }
@@ -2364,6 +2378,8 @@ private fun QinblyApp() {
                             onSuccess = { username ->
                                 loggedInUser = username
                                 showAuth = false
+                                if (loginReturnTab in 0..3) tab = loginReturnTab
+                                loginReturnTab = -1
                                 notice = "Login realizado com sucesso!"
                                 val token = appPrefs.getString("token", null)
                                 if (!token.isNullOrBlank()) Thread {
@@ -2382,7 +2398,7 @@ private fun QinblyApp() {
                                     } catch (_: Exception) { }
                                 }.start()
                             },
-                            onCancel = { showAuth = false }
+                            onCancel = { showAuth = false; if (loginReturnTab in 0..3) tab = loginReturnTab; loginReturnTab = -1 }
                         )
                     } else ProfilePage(scrollToTopRequest = navTopRequest, username = loggedInUser, displayName = profileName, bio = profileBio, photoRefreshKey = profilePhotoRefreshKey, onNotice = { notice = it }, onStat = { stat ->
                         profileStat = stat
@@ -9647,6 +9663,21 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 }
             }
         }
+        if (username.isBlank()) {
+            // Sem conta: só um botão grande de Entrar (leva para entrar ou criar conta).
+            Button(
+                onClick = onAuth,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 22.dp).height(52.dp),
+                shape = RoundedCornerShape(26.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
+            ) { Text("Entrar", fontSize = 17.sp, fontWeight = FontWeight.SemiBold) }
+            Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 36.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Default.Person, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(40.dp))
+                Text("Entre para ver seu perfil", Modifier.padding(top = 8.dp), color = RemoteAppearance.screenTextColor, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                Text("Publique, salve e converse com a comunidade.", Modifier.padding(top = 4.dp), color = RemoteAppearance.screenSecondaryTextColor, fontSize = 14.sp)
+            }
+            return@Column
+        }
         Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 10.dp)) {
             if (shownBio.startsWith("✦ ")) {
                 QinblyCategoryLine(shownBio.substringBefore('\n').removePrefix("✦ "), RemoteAppearance.screenTextColor, RemoteAppearance.screenSecondaryTextColor, Modifier.fillMaxWidth(), compact = true)
@@ -11339,6 +11370,42 @@ private fun ProfileStatFlat(label: String, count: String, modifier: Modifier, on
     Column(modifier.clickable(onClick = onClick).padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(count, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = RemoteAppearance.screenTextColor)
         Text(label, fontSize = 12.sp, color = RemoteAppearance.screenSecondaryTextColor)
+    }
+}
+
+@Composable
+private fun QinblyLoginPrompt(message: String, onEnter: () -> Unit, onDismiss: () -> Unit) {
+    // "Entre na sua conta para curtir publicações." -> título "Entre para curtir" e texto com o resto.
+    val phrase = Regex("para (.+?)\\.?$").find(message.trim())?.groupValues?.get(1).orEmpty()
+    val verb = phrase.substringBefore(' ').trim()
+    val title = if (verb.isBlank()) "Entre para continuar" else "Entre para $verb"
+    val sub = if (phrase.isBlank()) "Entre ou crie sua conta para continuar." else "Entre ou crie sua conta para $phrase."
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        val none = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+        Box(Modifier.fillMaxSize().clickable(interactionSource = none, indication = null, onClick = onDismiss), contentAlignment = Alignment.BottomCenter) {
+            Column(
+                Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                    .background(QiblyTheme.card)
+                    .clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) { }
+                    .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(Modifier.width(38.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(Color(0x55888888)))
+                Box(Modifier.padding(top = 16.dp).size(54.dp).clip(CircleShape).background(if (verb == "curtir") Color(0x29FF4D4D) else Color(0x296D4AFF)), contentAlignment = Alignment.Center) {
+                    Icon(if (verb == "curtir") Icons.Default.Favorite else Icons.Default.Person, contentDescription = null, tint = if (verb == "curtir") Color(0xFFFF5A5A) else QinblyBrand.Accent, modifier = Modifier.size(28.dp))
+                }
+                Text(title, Modifier.padding(top = 10.dp), color = QiblyTheme.text, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+                Text(sub, Modifier.padding(top = 4.dp), color = QiblyTheme.secondary, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Button(
+                    onClick = onEnter,
+                    modifier = Modifier.fillMaxWidth().padding(top = 18.dp).height(50.dp),
+                    shape = RoundedCornerShape(26.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White)
+                ) { Text("Entrar", fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
+                TextButton(onClick = onDismiss, Modifier.padding(top = 4.dp)) { Text("Agora não", color = QiblyTheme.secondary) }
+            }
+        }
     }
 }
 

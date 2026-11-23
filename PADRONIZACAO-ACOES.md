@@ -1124,3 +1124,9 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - A espera entre consultas deixou de ser um `sleep` (que dorme junto com o celular). Agora cada consulta segura o processador acordado só por ela e agenda a próxima com `AlarmManager.setAndAllowWhileIdle`.
 - O aviso fixo mostra "Última verificação às HH:mm" (ou "Sem conexão com o servidor às HH:mm"): serve de prova de que o serviço está vivo.
 - Se o Android recusar ligar o serviço fixo, ele se desliga sem derrubar o app.
+
+## Sem conta: perfil só com "Entrar" e aviso nas ações (app)
+- Perfil sem conta: só o botão grande "Entrar" e o aviso "Entre para ver seu perfil" (sem contadores, abas, editar nem compartilhar).
+- Qualquer ação que exige conta (curtir, comentar, salvar, repostar, seguir, enviar, mensagem, criar...) agora abre um aviso por baixo da tela: "Entre para curtir/comentar/..." com botão grande "Entrar" e "Agora não". É feito num ponto só: toda mensagem "Entre na sua conta para..." é trocada por esse aviso.
+- "Entrar" abre a tela de entrar/criar conta; ao entrar (ou cancelar) a pessoa volta para a aba onde estava.
+- Site: já exige login para abrir, então não precisa do aviso.
