@@ -1156,3 +1156,6 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 
 ## Nova comunidade: botão "Criar comunidade" não fica mais atrás dos botões do celular
 - A janela agora usa o mesmo padrão das outras telas cheias (`decorFitsSystemWindows = false` + `lift = true` do `QinblyDialog`), que reserva o espaço da barra de navegação.
+
+## Conversa da comunidade: barra de escrever acima dos botões do celular
+- Mesmo ajuste da "Nova comunidade": `decorFitsSystemWindows = false` + `lift = true`; removido o `navigationBarsPadding()` duplicado da conversa e da tela "Dados da comunidade".

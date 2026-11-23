@@ -7797,7 +7797,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
     }
     BackHandler { if (showInfo) showInfo = false else onDismiss() }
 
-    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
+    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false, dismissOnClickOutside = false), lift = true) {
         Surface(Modifier.fillMaxSize(), color = QiblyTheme.background) {
             val c = community
             if (c == null) {
@@ -7807,7 +7807,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                     else Text("Comunidade não encontrada.", color = QiblyTheme.secondary, modifier = Modifier.padding(16.dp))
                 }
             } else if (showInfo) {
-                Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+                Column(Modifier.fillMaxSize().statusBarsPadding()) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = { showInfo = false }) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
                         Text("Dados da comunidade", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
@@ -7872,7 +7872,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                     }
                 }
             } else {
-                Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
+                Column(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
                     // Topo: voltar, foto, nome, membros, menu
                     Row(Modifier.fillMaxWidth().background(QiblyTheme.card).padding(horizontal = 4.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = QiblyTheme.text) }
