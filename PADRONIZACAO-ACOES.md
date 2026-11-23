@@ -1148,3 +1148,8 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Tirado o pedido de "sem restrição de bateria" e o aviso "QINBLY atualizado" (o app ainda reabre sozinho depois de atualizar).
 - Notifica só: curtida, comentário/resposta, mensagem e nova versão do app. Seguidor, menção, marcação etc. não geram aviso na barra (continuam no sino dentro do app).
 - Com o app fechado, quem busca é a verificação periódica do Android (WorkManager, ~15 min, o Android pode atrasar). Para aviso na hora: push do Firebase.
+
+## Feed: atualiza ao entrar/voltar/puxar (igual ao Instagram)
+- App: o feed é buscado ao abrir o app, ao voltar depois de 60 s ou mais em segundo plano, e ao puxar para atualizar. Não há consulta periódica enquanto a pessoa usa. Trocar de aba dentro de 60 s não busca de novo (`QinblyCache.feedAt`).
+- Abre na hora com o último feed salvo (cache-first). Se a pessoa já começou a rolar quando o feed novo chega, ele não troca a tela por cima (fica para a próxima vez); no topo ou em puxar-para-atualizar, troca e sobe ao topo.
+- Site: mesma regra (volta ao site depois de 1 min busca o feed; se já rolou, não troca a tela). `sw.js` cache v12.

@@ -3647,13 +3647,15 @@ private data class OwnProfileSnapshot(
 
 private object QinblyCache {
     var feed: List<QinblyApi.PostSummary> = emptyList()
+    /** Hora (ms) da última vez que o feed veio do servidor; evita buscar de novo ao só trocar de aba. */
+    var feedAt: Long = 0L
     var inbox: List<QinblyApi.InboxSummary> = emptyList()
     var own: OwnProfileSnapshot? = null
     val profiles = HashMap<String, Pair<org.json.JSONObject, List<QinblyApi.PostSummary>>>()
     val communities = HashMap<String, List<QinblyApi.CommunitySummary>>()
     /** Ao trocar/sair de conta, nada da conta anterior pode aparecer na próxima. */
     fun clear(context: android.content.Context) {
-        feed = emptyList()
+        feed = emptyList(); feedAt = 0L
         inbox = emptyList()
         own = null
         QinblyAvatarCache.clear()
@@ -6832,6 +6834,23 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     var loading by remember { mutableStateOf(posts.isEmpty()) }
     var refreshKey by remember { mutableIntStateOf(0) }
     var refreshingFeed by remember { mutableStateOf(false) }
+    // Atualização "silenciosa" (voltou ao app depois de um tempo): busca o feed novo sem rolar a lista para o topo.
+    var silentKey by remember { mutableIntStateOf(0) }
+    val feedListState = rememberKeptListState("feed.list")
+    val firstPhotoKey = remember { photoRefreshKey }
+    val feedLifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(feedLifecycle) {
+        var stoppedAt = 0L
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) stoppedAt = System.currentTimeMillis()
+            else if (event == androidx.lifecycle.Lifecycle.Event.ON_START && stoppedAt > 0L) {
+                if (System.currentTimeMillis() - stoppedAt >= 60_000L) silentKey++
+                stoppedAt = 0L
+            }
+        }
+        feedLifecycle.lifecycle.addObserver(observer)
+        onDispose { feedLifecycle.lifecycle.removeObserver(observer) }
+    }
     var commentPost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
     var sharePost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
     val openFeedComments: (QinblyApi.PostSummary) -> Unit = { target -> commentPost = target }
@@ -6952,18 +6971,29 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         "Em alta" -> allFeedPosts.filter { qinblyInPeriod(it, emAltaPeriod) }.sortedByDescending { qinblyHotScore(it) }.take(20)
         else -> feedTabPosts
     }
-    LaunchedEffect(refreshKey, photoRefreshKey) {
+    // Como o Instagram: o feed é buscado ao entrar no app, ao voltar depois de um tempo e ao puxar para atualizar. Nunca fica consultando enquanto a pessoa usa.
+    // Se a pessoa já começou a rolar quando o feed novo chega, ele não troca a tela por cima (fica guardado para a próxima vez).
+    val loadGate = remember { booleanArrayOf(true) }
+    LaunchedEffect(refreshKey, silentKey, photoRefreshKey) {
+        val force = refreshingFeed || photoRefreshKey != firstPhotoKey
+        val isFirst = loadGate[0]; loadGate[0] = false
+        if (isFirst && !force && posts.isNotEmpty() && System.currentTimeMillis() - QinblyCache.feedAt < 60_000L) { loading = false; return@LaunchedEffect }
         loading = posts.isEmpty()
         Thread {
             try {
                 val loaded = QinblyApi.getPosts(prefs.getString("token", null))
                 QinblyCache.feed = loaded
+                QinblyCache.feedAt = System.currentTimeMillis()
                 if (!prefs.getString("token", null).isNullOrBlank()) android.os.Handler(android.os.Looper.getMainLooper()).post { QinblyEngagement.learnFromPosts(prefs, loaded) }
-                android.os.Handler(android.os.Looper.getMainLooper()).post { posts = loaded; loading = false; refreshingFeed = false }
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    val atTop = feedListState.firstVisibleItemIndex == 0 && feedListState.firstVisibleItemScrollOffset < 60
+                    if (force || posts.isEmpty() || atTop) posts = loaded
+                    loading = false; refreshingFeed = false
+                }
             } catch (e: Exception) {
                 val cached = QinblyApi.getCachedPosts(context)
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
-                    if (cached.isNotEmpty()) posts = cached
+                    if (cached.isNotEmpty() && posts.isEmpty()) posts = cached
                     loading = false
                     refreshingFeed = false
                     onNotice(if (cached.isNotEmpty()) "Sem conexão: mostrando o último feed sincronizado." else (e.message ?: "Não foi possível carregar o feed."))
@@ -7133,7 +7163,6 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 }
             }
         } else {
-            val feedListState = rememberKeptListState("feed.list")
             // Ao voltar de um perfil, a lista continua onde estava: só rola para o topo quando a aba/atualização muda de verdade.
             var feedFirstRun by remember { mutableStateOf(true) }
             LaunchedEffect(refreshKey, selectedFeedTab) { if (feedFirstRun) feedFirstRun = false else feedListState.scrollToItem(0) }

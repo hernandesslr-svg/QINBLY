@@ -493,9 +493,12 @@
   function loadFeed(first) {
     api("/api/posts?limit=40" + (first || !feedBefore ? "" : "&before=" + encodeURIComponent(feedBefore))).then(function (j) {
       var ps = j.posts || [];
+      var jaRolou = first && FEED.length && window.scrollY > 120;
       FEED = first ? ps : FEED.concat(ps);
       if (ps.length) feedBefore = ps[ps.length - 1].createdAt;
       feedMore = ps.length >= 40;
+      /* Como o Instagram: se a pessoa já começou a rolar, o feed novo não troca a tela por cima (aparece na próxima vez). */
+      if (jaRolou) return;
       drawFeed();
     }).catch(function (e) { var fd = document.getElementById("fd"); if (first && !FEED.length && fd) fd.innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; else onErr(e); });
   }
@@ -1947,6 +1950,13 @@
     api("/api/inbox").then(function (j) { unread = (j.conversations || []).reduce(function (n, c) { return n + (c.unreadCount || 0); }, 0); paintBadges(); }).catch(function () { });
     api("/api/notifications").then(function (j) { notifN = (j.notifications || []).filter(function (n) { return !n.readAt; }).length; paintBadges(); }).catch(function () { });
   }
+  /* Voltou para o site depois de 1 minuto ou mais: busca o feed novo sozinho (sem ficar consultando enquanto usa). */
+  var hiddenAt = 0;
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) { hiddenAt = Date.now(); return; }
+    if (hiddenAt && Date.now() - hiddenAt >= 60000 && cur() && document.getElementById("fd") && window.scrollY < 120) loadFeed(true);
+    hiddenAt = 0;
+  });
   setInterval(pollUnread, 30000); setTimeout(pollUnread, 1500);
   setInterval(beat, 60000); setTimeout(beat, 3000);
 
