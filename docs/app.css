@@ -530,4 +530,5 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 .rtg button{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;color:var(--muted)}
 .rtg svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .rtg button[data-rhide] svg{transform:rotate(180deg)}
-.cx-more,.cx-less{color:var(--muted);font-weight:600;cursor:pointer}
+.cx-more,.cx-less{color:var(--muted);font-weight:400;cursor:pointer}
+.cx-less{display:block;margin-top:2px}

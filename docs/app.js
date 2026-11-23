@@ -1989,7 +1989,6 @@
     el.textContent = "";
     var nodes = el._full.childNodes;
     for (var i = 0; i < nodes.length; i++) el.appendChild(nodes[i].cloneNode(true));
-    el.appendChild(document.createTextNode("  "));
     el.appendChild(span("cx-less", "menos"));
   }
   function collapse(el) {
