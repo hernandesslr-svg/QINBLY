@@ -5230,9 +5230,8 @@ private fun QinblyPostCard(
                     }
                     QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
                 } else {
-                    QinblyRichText(qinblySplitCaption(post.caption).first.ifBlank { post.caption }, RemoteAppearance.feedTextColor, fontSize = 16.sp,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
-                        maxLines = 4)
+                    QinblyCollapsibleText(qinblySplitCaption(post.caption).first.ifBlank { post.caption }, RemoteAppearance.feedTextColor, fontSize = 16.sp,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp))
                 }
             }
             if (!(post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) && !(post.mediaType == "text" && post.caption.isNotBlank() && qinblyTextBgBrush(post.textBg) != null)) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
