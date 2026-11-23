@@ -986,7 +986,7 @@ private fun QinblyCollapsibleText(
     var expanded by remember(text) { mutableStateOf(false) }
     var overflowed by remember(text) { mutableStateOf(false) }
     var cutAt by remember(text) { mutableIntStateOf(-1) }
-    val muted = RemoteAppearance.feedSecondaryTextColor
+    val muted = RemoteAppearance.feedSecondaryTextColor.copy(alpha = 0.5f)
     val link = QinblyBrand.Mention
     val collapsed = !expanded && cutAt >= 0 && cutAt < text.length
     val annotated = remember(text, expanded, cutAt, color, link, muted) {
@@ -1015,12 +1015,13 @@ private fun QinblyCollapsibleText(
                 pop()
                 pop()
             } else if (expanded && overflowed) {
-                append("\n")
-                pushStringAnnotation(tag = "less", annotation = "1")
-                pushStyle(androidx.compose.ui.text.SpanStyle(color = muted, fontWeight = FontWeight.Normal))
-                append("menos")
-                pop()
-                pop()
+                withStyle(androidx.compose.ui.text.ParagraphStyle(textAlign = androidx.compose.ui.text.style.TextAlign.End)) {
+                    pushStringAnnotation(tag = "less", annotation = "1")
+                    pushStyle(androidx.compose.ui.text.SpanStyle(color = muted, fontWeight = FontWeight.Normal))
+                    append("menos")
+                    pop()
+                    pop()
+                }
             }
         }
     }
