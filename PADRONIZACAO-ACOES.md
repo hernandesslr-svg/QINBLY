@@ -1166,3 +1166,9 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Editar comunidade (abre na hora, salva em segundo plano): foto, nome, descrição, quem pode entrar (qualquer um / com aprovação), quem pode escrever (todos / só admins), regras.
 - Servidor: colunas novas `communities.join_mode/write_mode/rules` (já aplicadas no D1), `PATCH /api/communities/:id`, `POST /api/communities/:id/members/:userId` (approve/reject/remove/admin/member), entrada com aprovação (`role='pending'`), "só admins" respeitado ao enviar mensagem.
 - O site ainda não tem essas telas (continua entrando/saindo como antes; em comunidades com aprovação o pedido fica pendente).
+
+## Lista de membros da comunidade (onda 2)
+
+- Tela "Dados da comunidade": busca de membro no topo, "PEDIDOS PARA ENTRAR · n" (só admin/dono), "ADMINISTRADORES · n" (dono primeiro) e "MEMBROS · n".
+- Cada linha: foto, nome, etiqueta Dono/Admin na ponta direita e três pontinhos. Clicar e segurar na linha abre o mesmo menu.
+- Menu: Ver perfil, Tornar admin / Remover de admin (só dono), Remover da comunidade. Admin comum só gerencia membros comuns; ninguém gerencia a si mesmo nem o dono. Quem não pode gerenciar não vê os pontinhos.

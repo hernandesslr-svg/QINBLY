@@ -96,6 +96,8 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.PersonRemove
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.NotificationsOff
@@ -7730,6 +7732,37 @@ private fun QinblyEditCommunityScreen(
     }
 }
 
+/** Linha de membro: foto, nome, etiqueta Dono/Admin e três pontinhos; clicar e segurar abre o mesmo menu. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun QinblyMemberRow(
+    m: QinblyApi.CommunityMember, canManage: Boolean, menuOpen: Boolean, viewerIsOwner: Boolean,
+    onOpenMenu: (QinblyApi.CommunityMember) -> Unit, onCloseMenu: () -> Unit,
+    onProfile: (QinblyApi.CommunityMember) -> Unit, onAction: (QinblyApi.CommunityMember, String) -> Unit
+) {
+    Row(
+        Modifier.fillMaxWidth()
+            .background(if (menuOpen) QiblyTheme.soft else Color.Transparent)
+            .combinedClickable(onClick = { onProfile(m) }, onLongClick = { if (canManage) onOpenMenu(m) })
+            .padding(start = 16.dp, end = if (canManage) 4.dp else 16.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        QiblyAccountAvatar(m.username, m.avatarUrl, 40.dp) { onProfile(m) }
+        Text(m.displayName.ifBlank { "@" + m.username }, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp, end = 8.dp).weight(1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        val badge = when (m.role) { "owner" -> "Dono"; "admin" -> "Admin"; else -> "" }
+        if (badge.isNotEmpty()) Text(badge, color = QinblyBrand.Accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.border(1.dp, QinblyBrand.Accent, RoundedCornerShape(8.dp)).padding(horizontal = 7.dp, vertical = 2.dp))
+        if (canManage) Box {
+            IconButton(onClick = { onOpenMenu(m) }) { Icon(Icons.Default.MoreVert, contentDescription = "Opções", tint = QiblyTheme.secondary) }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = onCloseMenu) {
+                DropdownMenuItem(text = { Text("Ver perfil") }, leadingIcon = { Icon(Icons.Outlined.Person, null) }, onClick = { onCloseMenu(); onProfile(m) })
+                if (viewerIsOwner && m.role == "member") DropdownMenuItem(text = { Text("Tornar admin") }, leadingIcon = { Icon(Icons.Outlined.Shield, null) }, onClick = { onCloseMenu(); onAction(m, "admin") })
+                if (viewerIsOwner && m.role == "admin") DropdownMenuItem(text = { Text("Remover de admin") }, leadingIcon = { Icon(Icons.Outlined.Shield, null) }, onClick = { onCloseMenu(); onAction(m, "member") })
+                DropdownMenuItem(text = { Text("Remover da comunidade", color = Color(0xFFD92D20)) }, leadingIcon = { Icon(Icons.Outlined.PersonRemove, null, tint = Color(0xFFD92D20)) }, onClick = { onCloseMenu(); onAction(m, "remove") })
+            }
+        }
+    }
+}
+
 @Composable
 private fun QinblyCommunityAvatar(name: String, diameter: Dp, imageUrl: String = "") {
     Box(Modifier.size(diameter).clip(CircleShape).background(QinblyBrand.Accent), contentAlignment = Alignment.Center) {
@@ -7758,6 +7791,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
     var showInfoMenu by remember { mutableStateOf(false) }
     var showRules by remember { mutableStateOf(false) }
     var memberTarget by remember { mutableStateOf<QinblyApi.CommunityMember?>(null) }
+    var memberSearch by remember { mutableStateOf("") }
     var showEmoji by remember { mutableStateOf(false) }
     BackHandler(enabled = showEmoji) { showEmoji = false }
     val cKb = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
@@ -8019,9 +8053,18 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                             Text(c.description, color = QiblyTheme.text, modifier = Modifier.padding(horizontal = 16.dp))
                         }
                         val myUsername = prefs.getString("username", "").orEmpty()
+                        item {
+                            OutlinedTextField(
+                                value = memberSearch, onValueChange = { memberSearch = it }, singleLine = true,
+                                placeholder = { Text("Buscar membro", color = QiblyTheme.secondary) },
+                                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, tint = QiblyTheme.secondary) },
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp)
+                            )
+                        }
                         val pendingList = if (c.isAdmin) c.memberList.filter { it.role == "pending" } else emptyList()
                         if (pendingList.isNotEmpty()) {
-                            item { Text("PEDIDOS PARA ENTRAR", color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 16.dp, top = 18.dp, bottom = 4.dp)) }
+                            item { Text("PEDIDOS PARA ENTRAR · ${pendingList.size}", color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 16.dp, top = 18.dp, bottom = 4.dp)) }
                             items(pendingList, key = { "p" + it.userId }) { m ->
                                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                     QiblyAccountAvatar(m.username, m.avatarUrl, 40.dp) { QinblyTagNav.profile = m.username }
@@ -8031,19 +8074,24 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                                 }
                             }
                         }
-                        item {
-                            Text((if (c.members == 1) "1 MEMBRO" else "${c.members} MEMBROS"), color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 16.dp, top = 18.dp, bottom = 4.dp))
-                        }
-                        val shown = c.memberList.filter { it.role != "pending" }
-                        items(shown, key = { "m" + it.userId }) { m ->
-                            val canManage = c.isAdmin && m.role != "owner" && !m.username.equals(myUsername, true)
-                            Row(Modifier.fillMaxWidth().clickable { if (canManage) memberTarget = m else QinblyTagNav.profile = m.username }.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                QiblyAccountAvatar(m.username, m.avatarUrl, 40.dp) { if (canManage) memberTarget = m else QinblyTagNav.profile = m.username }
-                                Text(m.displayName.ifBlank { "@" + m.username }, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp).weight(1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                                val badge = when (m.role) { "owner" -> "Dono"; "admin" -> "Admin"; else -> "" }
-                                if (badge.isNotEmpty()) Text(badge, color = QinblyBrand.Accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.border(1.dp, QinblyBrand.Accent, RoundedCornerShape(8.dp)).padding(horizontal = 7.dp, vertical = 2.dp))
+                        val q = memberSearch.trim().lowercase()
+                        val visible = c.memberList.filter { it.role != "pending" && (q.isEmpty() || it.username.lowercase().contains(q) || it.displayName.lowercase().contains(q)) }
+                        val staff = visible.filter { it.role == "owner" || it.role == "admin" }.sortedBy { if (it.role == "owner") 0 else 1 }
+                        val regular = visible.filter { it.role != "owner" && it.role != "admin" }
+                        fun canManage(m: QinblyApi.CommunityMember) = c.isAdmin && m.role != "owner" && !m.username.equals(myUsername, true) && (c.isOwner || m.role == "member")
+                        if (staff.isNotEmpty()) {
+                            item { Text("ADMINISTRADORES · ${staff.size}", color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 16.dp, top = 18.dp, bottom = 4.dp)) }
+                            items(staff, key = { "s" + it.userId }) { m ->
+                                QinblyMemberRow(m, canManage(m), memberTarget?.userId == m.userId, c.isOwner, { memberTarget = it }, { memberTarget = null }, { QinblyTagNav.profile = it.username }, { mm, a -> memberAction(mm, a) })
                             }
                         }
+                        if (regular.isNotEmpty()) {
+                            item { Text("MEMBROS · ${regular.size}", color = QiblyTheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 16.dp, top = 18.dp, bottom = 4.dp)) }
+                            items(regular, key = { "m" + it.userId }) { m ->
+                                QinblyMemberRow(m, canManage(m), memberTarget?.userId == m.userId, c.isOwner, { memberTarget = it }, { memberTarget = null }, { QinblyTagNav.profile = it.username }, { mm, a -> memberAction(mm, a) })
+                            }
+                        }
+                        if (visible.isEmpty()) item { Text("Ninguém encontrado.", color = QiblyTheme.secondary, modifier = Modifier.padding(16.dp)) }
                     }
                 }
             } else {
@@ -8215,21 +8263,6 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                         }
                     }
                 }
-            }
-            memberTarget?.let { m ->
-                AlertDialog(
-                    onDismissRequest = { memberTarget = null },
-                    title = { Text(m.displayName.ifBlank { "@" + m.username }) },
-                    text = {
-                        Column {
-                            TextButton(onClick = { memberTarget = null; QinblyTagNav.profile = m.username }) { Text("Ver perfil") }
-                            if (c?.isOwner == true && m.role == "member") TextButton(onClick = { memberTarget = null; memberAction(m, "admin") }) { Text("Tornar admin") }
-                            if (c?.isOwner == true && m.role == "admin") TextButton(onClick = { memberTarget = null; memberAction(m, "member") }) { Text("Remover de admin") }
-                            if (m.role == "member" || c?.isOwner == true) TextButton(onClick = { memberTarget = null; memberAction(m, "remove") }) { Text("Remover da comunidade", color = Color(0xFFD92D20)) }
-                        }
-                    },
-                    confirmButton = { TextButton(onClick = { memberTarget = null }) { Text("Fechar") } }
-                )
             }
             if (showRules && c != null) {
                 AlertDialog(
