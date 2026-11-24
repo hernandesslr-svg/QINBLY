@@ -952,6 +952,7 @@
     } else {
       rows = '<button class="row" data-pact="hide:' + id + '"><span class="t"><b>Ocultar publicação</b></span></button><button class="row" data-pact="copy:' + id + '"><span class="t"><b>Copiar link</b></span></button>' + '<button class="row" data-pact="repost:' + id + '"><span class="t"><b>' + (p.repostedByMe ? "Desfazer repostagem" : "Repostar") + "</b></span></button>" + rows +
         '<button class="row" data-pact="report:' + id + '"><span class="t"><b>Denunciar</b></span></button>' +
+        '<button class="row" data-pact="mute:' + id + '"><span class="t"><b>Silenciar @' + esc((p.author || {}).username) + "</b></span></button>" +
         '<button class="row" data-pact="block:' + id + '"><span class="t"><b style="color:var(--danger)">Bloquear @' + esc((p.author || {}).username) + "</b></span></button>";
     }
     sheet("Publicação", rows);
@@ -972,6 +973,7 @@
     if (act === "hide") { var hp2 = lget("hposts", []); hp2.push(id); lset("hposts", hp2); FEED = FEED.filter(function (x) { return x.id !== id; }); var pe = document.querySelector('[data-post="' + id + '"]'); if (pe) pe.remove(); return toast("Publicação ocultada deste feed."); }
     if (act === "repost") return api("/api/posts/" + id + "/repost", { method: "POST", body: {} }).then(function (r) { p.repostedByMe = !!r.reposted; toast(r.reposted ? "Repostado." : "Repostagem desfeita."); }).catch(onErr);
     if (act === "report") return reportSheet("post", id);
+    if (act === "mute") return api("/api/users/" + p.authorId + "/mute", { method: "POST", body: {} }).then(function (r) { if (r.muted) { FEED = FEED.filter(function (x) { return x.authorId !== p.authorId; }); render(); } toast(r.muted ? "Você não verá mais as publicações dessa conta." : "Conta reativada."); }).catch(onErr);
     if (act === "block") return confirmSheet("Bloquear @" + (p.author || {}).username + "?", "Vocês deixam de ver as publicações um do outro.", "Bloquear", true, function () {
       api("/api/users/" + p.authorId + "/block", { method: "POST", body: {} }).then(function () { FEED = FEED.filter(function (x) { return x.authorId !== p.authorId; }); toast("Conta bloqueada."); render(); }).catch(onErr);
     });

@@ -1172,3 +1172,9 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Tela "Dados da comunidade": busca de membro no topo, "PEDIDOS PARA ENTRAR · n" (só admin/dono), "ADMINISTRADORES · n" (dono primeiro) e "MEMBROS · n".
 - Cada linha: foto, nome, etiqueta Dono/Admin na ponta direita e três pontinhos. Clicar e segurar na linha abre o mesmo menu.
 - Menu: Ver perfil, Tornar admin / Remover de admin (só dono), Remover da comunidade. Admin comum só gerencia membros comuns; ninguém gerencia a si mesmo nem o dono. Quem não pode gerenciar não vê os pontinhos.
+
+## Silenciar pessoas
+
+- Tabela D1 `user_mutes (user_id, muted_id, created_at)`; rotas `POST /api/users/:id/mute` (alterna) e `GET /api/users/me/mutes`.
+- `feedFilter` esconde bloqueados e silenciados do feed, hashtags e busca de publicações. Perfil, mensagens e stories não mudam.
+- App: "Silenciar @fulano" no menu da publicação; Configurações > Contas silenciadas desfaz. Site: opção no menu da publicação (lista de silenciados só no app por enquanto).

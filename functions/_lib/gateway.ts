@@ -143,6 +143,7 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
       return map;
     };
     const myBlocks = async (): Promise<string[]> => viewerId ? ((await rest(`user_blocks?blocker_id=eq.${viewerId}&select=blocked_id`)) || []).map((r: any) => r.blocked_id) : [];
+    const myMutes = async (): Promise<string[]> => viewerId ? ((await rest(`user_mutes?user_id=eq.${viewerId}&select=muted_id`)) || []).map((r: any) => r.muted_id) : [];
     const myFollowing = async (): Promise<Set<string>> => viewerId ? new Set(((await rest(`follows?follower_id=eq.${viewerId}&select=following_id`)) || []).map((r: any) => r.following_id)) : new Set();
 
     // ---------- Montagem de publicações ----------
@@ -182,8 +183,8 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
       });
     };
     const feedFilter = async () => {
-      const blocks = await myBlocks();
-      return "archived_at=is.null&or=(publish_at.is.null,publish_at.lte." + encodeURIComponent(new Date().toISOString()) + ")" + (blocks.length ? `&user_id=not.in.(${blocks.join(",")})` : "");
+      const hidden = (await Promise.all([myBlocks(), myMutes()])).flat();
+      return "archived_at=is.null&or=(publish_at.is.null,publish_at.lte." + encodeURIComponent(new Date().toISOString()) + ")" + (hidden.length ? `&user_id=not.in.(${hidden.join(",")})` : "");
     };
     const visiblePolls = (rows: any[]) => rows.filter((p) => p.media_type !== "poll" || (p.poll_expires_at && Date.parse(p.poll_expires_at) > Date.now()) || p.user_id === viewerId);
     const fileOwned = async (fileId: string, category: string) => {
@@ -368,6 +369,11 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
       const profiles = await profilesByIds((rows || []).map((r: any) => r.blocked_id));
       return reply({ blocks: (rows || []).map((r: any) => profiles.get(r.blocked_id)).filter(Boolean).map((p: any) => ({ id: p.id, username: p.username, displayName: p.display_name || "" })) });
     }
+    if (method === "GET" && path === "/api/users/me/mutes") {
+      const rows = await rest(`user_mutes?user_id=eq.${need()}&select=muted_id&order=created_at.desc`);
+      const profiles = await profilesByIds((rows || []).map((r: any) => r.muted_id));
+      return reply({ mutes: (rows || []).map((r: any) => profiles.get(r.muted_id)).filter(Boolean).map((p: any) => ({ id: p.id, username: p.username, displayName: p.display_name || "" })) });
+    }
     if (method === "GET" && path === "/api/users/me/export") {
       const id = need();
       const [posts, comments, messages, likes] = await Promise.all([
@@ -449,6 +455,15 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
       await ins("user_blocks", { blocker_id: viewerId, blocked_id: id }, "return=minimal", "");
       await rest(`follows?follower_id=eq.${viewerId}&following_id=eq.${id}`, { method: "DELETE" });
       return reply({ blocked: true });
+    }
+    const muteM = route("POST", /^\/api\/users\/([0-9a-f-]{36})\/mute$/i);
+    if (muteM) {
+      const id = muteM[1];
+      if (id === need()) return reply({ error: "Você não pode silenciar a própria conta." }, 400);
+      const existing = await rest(`user_mutes?user_id=eq.${viewerId}&muted_id=eq.${id}&select=muted_id`);
+      if (existing?.length) { await rest(`user_mutes?user_id=eq.${viewerId}&muted_id=eq.${id}`, { method: "DELETE" }); return reply({ muted: false }); }
+      await ins("user_mutes", { user_id: viewerId, muted_id: id }, "return=minimal", "");
+      return reply({ muted: true });
     }
     if (method === "POST" && path === "/api/reports") {
       const id = need();

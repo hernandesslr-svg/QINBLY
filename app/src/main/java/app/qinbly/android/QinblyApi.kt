@@ -426,6 +426,19 @@ object QinblyApi {
 
     fun blockByUsername(token: String, username: String): Boolean = toggleBlock(token, userIdOf(username, token))
 
+    fun muteByUsername(token: String, username: String): Boolean = toggleMute(token, userIdOf(username, token))
+
+    fun toggleMute(token: String, userId: String): Boolean =
+        request("POST", "/api/users/" + userId + "/mute", JSONObject(), token).optBoolean("muted")
+
+    fun getMutedUsers(token: String): List<BlockedUser> {
+        val list = request("GET", "/api/users/me/mutes", null, token).optJSONArray("mutes") ?: org.json.JSONArray()
+        return (0 until list.length()).mapNotNull { index ->
+            val b = list.optJSONObject(index) ?: return@mapNotNull null
+            BlockedUser(b.optString("id"), b.optString("username"), b.optString("displayName"))
+        }
+    }
+
     fun getBlockedUsers(token: String): List<BlockedUser> {
         val blocks = request("GET", "/api/users/me/blocks", null, token).optJSONArray("blocks") ?: org.json.JSONArray()
         return (0 until blocks.length()).mapNotNull { index ->

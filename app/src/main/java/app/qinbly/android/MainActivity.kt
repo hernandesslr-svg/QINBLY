@@ -5426,6 +5426,22 @@ private fun QinblyPostMenu(
                     onNotice("Publicação ocultada deste feed.")
                 })
                 DropdownMenuItem(text = { Text("Denunciar publicação") }, leadingIcon = { QinblyMenuIcon("Denunciar publicação") }, onClick = { expanded = false; onReport() })
+                DropdownMenuItem(text = { Text("Silenciar @" + post.username) }, leadingIcon = { Icon(Icons.Outlined.NotificationsOff, contentDescription = null, tint = QiblyTheme.text) }, onClick = {
+                    expanded = false
+                    val token = prefs.getString("token", null)
+                    if (token.isNullOrBlank()) onNotice("Entre na sua conta.")
+                    else Thread {
+                        try {
+                            if (post.authorId.isNotBlank()) QinblyApi.toggleMute(token, post.authorId) else QinblyApi.muteByUsername(token, post.username)
+                            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                onPostsTransform { list -> list.filterNot { it.username.equals(post.username, ignoreCase = true) } }
+                                onNotice("Você não verá mais as publicações de @" + post.username + ". Reative em Configurações > Contas silenciadas.")
+                            }
+                        } catch (e: Exception) {
+                            android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível silenciar agora.") }
+                        }
+                    }.start()
+                })
                 DropdownMenuItem(text = { Text("Bloquear @" + post.username) }, leadingIcon = { QinblyMenuIcon("Bloquear @" + post.username) }, onClick = { expanded = false; onBlock() })
             }
         }
@@ -8439,7 +8455,7 @@ internal fun ReportReasonDialog(title: String, onDismiss: () -> Unit, onSelect: 
 }
 
 @Composable
-private fun BlockedAccountsDialog(prefs: android.content.SharedPreferences, onDismiss: () -> Unit, onNotice: (String) -> Unit) {
+private fun BlockedAccountsDialog(prefs: android.content.SharedPreferences, onDismiss: () -> Unit, onNotice: (String) -> Unit, muted: Boolean = false) {
     var blocked by remember { mutableStateOf<List<QinblyApi.BlockedUser>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
@@ -8447,21 +8463,21 @@ private fun BlockedAccountsDialog(prefs: android.content.SharedPreferences, onDi
         if (token.isNullOrBlank()) loading = false
         else Thread {
             try {
-                val result = QinblyApi.getBlockedUsers(token)
+                val result = (if (muted) QinblyApi.getMutedUsers(token) else QinblyApi.getBlockedUsers(token))
                 android.os.Handler(android.os.Looper.getMainLooper()).post { blocked = result; loading = false }
             } catch (e: Exception) {
-                android.os.Handler(android.os.Looper.getMainLooper()).post { loading = false; onNotice(e.message ?: "Não foi possível carregar as contas bloqueadas.") }
+                android.os.Handler(android.os.Looper.getMainLooper()).post { loading = false; onNotice(e.message ?: (if (muted) "Não foi possível carregar as contas silenciadas." else "Não foi possível carregar as contas bloqueadas.")) }
             }
         }.start()
     }
     AlertDialog(
         shape = RoundedCornerShape(28.dp),
         onDismissRequest = onDismiss,
-        title = { Text("Contas bloqueadas") },
+        title = { Text(if (muted) "Contas silenciadas" else "Contas bloqueadas") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 if (loading) Text("Carregando…")
-                else if (blocked.isEmpty()) Text("Você não bloqueou ninguém.")
+                else if (blocked.isEmpty()) Text(if (muted) "Você não silenciou ninguém." else "Você não bloqueou ninguém.")
                 else blocked.forEach { user ->
                     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
@@ -8470,16 +8486,16 @@ private fun BlockedAccountsDialog(prefs: android.content.SharedPreferences, onDi
                         }
                         TextButton(onClick = {
                             val token = prefs.getString("token", null)
-                            if (token.isNullOrBlank()) onNotice("Entre na sua conta para desbloquear.")
+                            if (token.isNullOrBlank()) onNotice("Entre na sua conta para continuar.")
                             else Thread {
                                 try {
-                                    QinblyApi.toggleBlock(token, user.id)
-                                    android.os.Handler(android.os.Looper.getMainLooper()).post { blocked = blocked.filterNot { it.id == user.id }; onNotice("Usuário desbloqueado.") }
+                                    if (muted) QinblyApi.toggleMute(token, user.id) else QinblyApi.toggleBlock(token, user.id)
+                                    android.os.Handler(android.os.Looper.getMainLooper()).post { blocked = blocked.filterNot { it.id == user.id }; onNotice(if (muted) "Pessoa não está mais silenciada." else "Usuário desbloqueado.") }
                                 } catch (e: Exception) {
-                                    android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível desbloquear agora.") }
+                                    android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível concluir agora.") }
                                 }
                             }.start()
-                        }) { Text("Desbloquear", color = Pink) }
+                        }) { Text(if (muted) "Reativar" else "Desbloquear", color = Pink) }
                     }
                 }
             }
@@ -10915,6 +10931,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
     var cacheTick by remember { mutableIntStateOf(0) }
     val cacheSizeLabel = remember(cacheTick) { val b = runCatching { context.cacheDir.walkTopDown().filter { it.isFile }.sumOf { it.length() } }.getOrDefault(0L); if (b < 1024 * 1024) "${b / 1024} KB" else String.format(java.util.Locale.US, "%.1f MB", b / 1048576.0) }
     var showBlockedAccounts by remember { mutableStateOf(false) }
+    var showMutedAccounts by remember { mutableStateOf(false) }
     var showCredential by remember { mutableStateOf("") }
     var showLegal by remember { mutableStateOf("") }
     var showClearLocation by remember { mutableStateOf(false) }
@@ -10927,6 +10944,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
     var deleteConfirmText by remember { mutableStateOf("") }
     var deletingAccount by remember { mutableStateOf(false) }
     if (showBlockedAccounts) BlockedAccountsDialog(prefs = prefs, onDismiss = { showBlockedAccounts = false }, onNotice = onNotice)
+    if (showMutedAccounts) BlockedAccountsDialog(prefs = prefs, onDismiss = { showMutedAccounts = false }, onNotice = onNotice, muted = true)
     if (showDeleteAccount) {
         AlertDialog(
         shape = RoundedCornerShape(28.dp),
@@ -11157,6 +11175,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                     item { Text("ATIVIDADE", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 14.dp, bottom = 2.dp)) }
                     item { VideoPrefSwitch("Mostrar que estou online", "Você aparece na lista de pessoas online", "setting_activity_status", true, prefs, Icons.Outlined.Sensors) }
                     item { SettingsLink("Contas bloqueadas", "Gerenciar quem você bloqueou", Icons.Outlined.Block) { showBlockedAccounts = true } }
+                    item { SettingsLink("Contas silenciadas", "Quem você parou de ver no feed", Icons.Outlined.NotificationsOff) { showMutedAccounts = true } }
                 }
                 "location" -> {
                     item { VideoPrefSwitch("Usar minha localização", "Perto de mim, Mural e Mercado. Desligado, essas telas não pedem sua posição", "setting_location_enabled", true, prefs, Icons.Outlined.LocationOn) }

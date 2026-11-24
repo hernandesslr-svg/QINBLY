@@ -196,6 +196,7 @@ const policies = (U, NOW) => {
     story_mutes: { auth: true, select: own("user_id"), insert: (v) => `${v("user_id")} = ${U}`, update: own("user_id"), delete: own("user_id") },
     story_views: { auth: true, select: `(viewer_id = ${U} OR ${storyOwner("story_views.story_id")})`, insert: (v) => `${v("viewer_id")} = ${U}`, update: own("viewer_id") },
     time_capsules: { auth: true, select: `(from_user = ${U} OR (to_user = ${U} AND unlock_at <= ${lit(NOW)}))`, insert: (v) => `${v("from_user")} = ${U} AND ${v("unlock_at")} > ${lit(NOW)}`, update: `((to_user = ${U} AND unlock_at <= ${lit(NOW)}) OR (from_user = ${U} AND unlock_at <= ${lit(NOW)}))` },
+    user_mutes: { auth: true, select: own("user_id"), insert: (v) => `${v("user_id")} = ${U}`, delete: own("user_id") },
     user_blocks: { auth: true, select: own("blocker_id"), insert: (v) => `${v("blocker_id")} = ${U}`, delete: own("blocker_id") },
     user_documents: { auth: true, select: own("user_id"), insert: (v) => `${v("user_id")} = ${U} AND substr(${v("object_path")}, 1, 37) = ${U} || '/'`, update: own("user_id"), delete: own("user_id") },
     user_presence: { auth: true, select: ALL, insert: (v) => `${v("user_id")} = ${U}`, update: own("user_id"), delete: own("user_id") },
