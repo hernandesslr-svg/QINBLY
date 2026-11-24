@@ -218,10 +218,10 @@ internal fun QinblyNearbyHub(
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 12.dp, top = 6.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             if (onClose != null) Box(Modifier.size(44.dp).clip(CircleShape).clickable { onClose() }, contentAlignment = Alignment.Center) { QinblyBackIcon(textColor, 22.dp) }
-            Column(Modifier.size(44.dp).clip(CircleShape).clickable { showDrawer = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                for (i in 0 until 3) Box(Modifier.padding(vertical = 2.5.dp).size(width = 20.dp, height = 2.5.dp).clip(CircleShape).background(textColor))
-            }
-            Column(Modifier.weight(1f).padding(start = 4.dp)) {
+            // Título centralizado: a esquerda ganha um espaço do tamanho que sobra na direita (lupa + três tracinhos).
+            val rightW = if (mine == null && cat != "Avisos") 88.dp else 44.dp
+            Spacer(Modifier.width((rightW - (if (onClose != null) 44.dp else 0.dp)).coerceAtLeast(0.dp)))
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (mine != null) {
                     Text(if (mine == "doacao") "Minhas doações" else if (mine == "saved") "Anúncios salvos" else "Meus anúncios", color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                     Text("Toque nos três tracinhos para voltar", color = secondary, fontSize = 12.sp)
@@ -244,6 +244,9 @@ internal fun QinblyNearbyHub(
                     drawCircle(ic, radius = w * 0.34f, center = androidx.compose.ui.geometry.Offset(w * 0.42f, w * 0.42f), style = androidx.compose.ui.graphics.drawscope.Stroke(sw))
                     drawLine(ic, androidx.compose.ui.geometry.Offset(w * 0.66f, w * 0.66f), androidx.compose.ui.geometry.Offset(w * 0.92f, w * 0.92f), strokeWidth = sw, cap = androidx.compose.ui.graphics.StrokeCap.Round)
             }
+            }
+            Column(Modifier.size(44.dp).clip(CircleShape).clickable { showDrawer = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                for (i in 0 until 3) Box(Modifier.padding(vertical = 2.5.dp).size(width = 20.dp, height = 2.5.dp).clip(CircleShape).background(textColor))
             }
         }
         if (searching && mine == null && cat != "Avisos") Box(

@@ -1210,3 +1210,6 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Em alta (app e site): carrossel de cartões de canto a canto (um por vez, sem mostrar o próximo; bolinhas de posição dentro da imagem): "Mais curtido" (EM ALTA), "Mais comentado" e "Live em alta" (com etiqueta AO VIVO e espectadores; só aparece se houver live no ar; toque entra na live), período Hoje/Semana/Mês, assuntos em alta, "Top criadores" (3 cards com medalha 1/2/3 e curtidas somadas; toque abre o perfil) e "Vídeos em alta" com os 3 primeiros do ranking. Abaixo, "Publicações em alta" com os demais posts. Número do ranking em dourado, prata e bronze nos 3 primeiros.
 - "Ver todos" abre a tela "Vídeos em alta" (rota `#/trending/all` no site): voltar, lupa (busca por legenda ou @usuário), período, ordem (Mais curtidos / Mais comentados / Recentes) e lista numerada com miniatura, título, @usuário, curtidas e comentários. No app, cada linha tem os três pontinhos (Ver perfil, Compartilhar) e tocar no vídeo abre a tela cheia da aba Vídeos; voltar retorna ao Em alta.
 - Não há duração do vídeo na miniatura (a API ainda não devolve esse dado).
+
+## Topo do Mercado
+- No Mercado (e Doações, Achados, Eventos...), os três tracinhos foram para o canto direito, depois da lupa. O título e a cidade ficam centralizados no meio do topo (a seta de voltar continua na esquerda).
