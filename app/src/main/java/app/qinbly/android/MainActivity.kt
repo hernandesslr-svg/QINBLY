@@ -7004,7 +7004,7 @@ private fun QinblyPostThumb(post: QinblyApi.PostSummary, modifier: Modifier) {
 /** Em alta: cartão grande da tendência, período, assuntos, top criadores e o início do ranking de vídeos. */
 @Composable
 private fun QinblyEmAltaHeader(
-    period: String, onPeriod: (String) -> Unit, tags: List<String>, hero: QinblyApi.PostSummary?,
+    period: String, onPeriod: (String) -> Unit, hero: QinblyApi.PostSummary?,
     creators: List<Pair<QinblyApi.PostSummary, Int>>, hasVideos: Boolean, empty: Boolean,
     onOpen: (QinblyApi.PostSummary) -> Unit, onProfile: (String) -> Unit, onSeeAll: () -> Unit
 ) {
@@ -7036,15 +7036,6 @@ private fun QinblyEmAltaHeader(
                 Text(label, color = if (on) Color.White else RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
                     modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(if (on) QinblyBrand.Accent else QinblyBrand.Accent.copy(alpha = 0.10f))
                         .clickable { onPeriod(label) }.padding(horizontal = 16.dp, vertical = 8.dp))
-            }
-        }
-        if (tags.isNotEmpty()) {
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                tags.forEach { tag ->
-                    Text("#$tag", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
-                        modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(QinblyBrand.Accent.copy(alpha = 0.10f))
-                            .clickable { QinblyTagNav.tag = tag }.padding(horizontal = 12.dp, vertical = 6.dp))
-                }
             }
         }
         if (creators.isNotEmpty()) {
@@ -7576,7 +7567,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                         .map { (_, ps) -> ps.first() to ps.sumOf { QinblyEngagement.likeCount(it) } }
                         .sortedByDescending { it.second }.take(3)
                     QinblyEmAltaHeader(
-                        period = emAltaPeriod, onPeriod = { emAltaPeriod = it }, tags = qinblyTopHashtags(periodPosts),
+                        period = emAltaPeriod, onPeriod = { emAltaPeriod = it },
                         hero = displayedPosts.firstOrNull(), creators = creators,
                         hasVideos = displayedPosts.any { it.mediaType.equals("video", ignoreCase = true) && it.mediaUrl.isNotBlank() },
                         empty = displayedPosts.isEmpty(), onOpen = { openPostMedia(it) }, onProfile = onOpenProfile, onSeeAll = { showTrendingAll = true }

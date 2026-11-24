@@ -486,10 +486,6 @@
     var hm = safeUrl(h.mediaUrl) ? (h.mediaType === "video" ? '<video src="' + safeUrl(h.mediaUrl) + '#t=0.1" preload="metadata" muted playsinline></video>' : h.mediaType === "image" ? '<i style="background-image:url(\'' + safeUrl(h.mediaUrl) + '\')"></i>' : "") : "";
     out += '<a class="ahero" href="#/post/' + esc(h.id) + '">' + hm + '<span class="ahin"><span class="atag">' + svg("flame") + 'Tendência agora</span><strong>EM ALTA</strong><small>@' + esc(ha.username || "") + " · " + cntFmt(h.likes) + " curtidas</small></span></a>";
     out += periodChips("data-aperiod", altaPeriod);
-    var tc = {};
-    l.forEach(function (p) { (String(p.caption || "").match(/#[\p{L}\p{N}_]+/gu) || []).forEach(function (t) { t = t.slice(1).toLowerCase(); tc[t] = (tc[t] || 0) + 1; }); });
-    var tags = Object.keys(tc).sort(function (a, b) { return tc[b] - tc[a]; }).slice(0, 8);
-    if (tags.length) out += '<div class="atags">' + tags.map(function (t) { return '<a href="#/tag/' + encodeURIComponent(t) + '">#' + esc(t) + "</a>"; }).join("") + "</div>";
     var cm = {};
     l.forEach(function (p) { var a = p.author || {}, k = String(a.username || "").toLowerCase(); if (!k) return; (cm[k] = cm[k] || { a: a, n: 0 }).n += (p.likes || 0); });
     var cr = Object.keys(cm).map(function (k) { return cm[k]; }).sort(function (x, y) { return y.n - x.n; }).slice(0, 3);
