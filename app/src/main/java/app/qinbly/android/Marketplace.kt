@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items as staggeredItems
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,6 +53,21 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Smartphone
+import androidx.compose.material.icons.outlined.Laptop
+import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.TwoWheeler
+import androidx.compose.material.icons.outlined.PedalBike
+import androidx.compose.material.icons.outlined.Tv
+import androidx.compose.material.icons.outlined.SportsEsports
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Weekend
+import androidx.compose.material.icons.outlined.Kitchen
+import androidx.compose.material.icons.outlined.Checkroom
+import androidx.compose.material.icons.outlined.ChildCare
+import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Pets
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -88,6 +107,23 @@ private data class QinblyListing(
     val kind: String, val title: String, val description: String, val price: Double?, val extra: String,
     val photos: List<String>, val city: String, val createdAt: String
 )
+
+/** Categorias de produto do Mercado (só vendas). A categoria vai junto do estado no campo "extra": "Bom|carros". */
+private data class MarketCat(val key: String, val label: String, val short: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
+private val MI = androidx.compose.material.icons.Icons.Outlined
+private val marketProductCats = listOf(
+    MarketCat("celulares", "Celulares", "Celulares", MI.Smartphone), MarketCat("computadores", "Computadores", "Computad.", MI.Laptop),
+    MarketCat("carros", "Carros", "Carros", MI.DirectionsCar), MarketCat("motos", "Motos", "Motos", MI.TwoWheeler),
+    MarketCat("bicicletas", "Bicicletas", "Bicicletas", MI.PedalBike), MarketCat("eletronicos", "Eletrônicos", "Eletrôn.", MI.Tv),
+    MarketCat("games", "Games", "Games", MI.SportsEsports), MarketCat("pecas", "Peças", "Peças", MI.Settings),
+    MarketCat("casa", "Casa", "Casa", MI.Weekend), MarketCat("eletrodomesticos", "Eletrodom.", "Eletrodom.", MI.Kitchen),
+    MarketCat("roupas", "Roupas", "Roupas", MI.Checkroom), MarketCat("ferramentas", "Ferramentas", "Ferram.", MI.Build),
+    MarketCat("bebe", "Bebê", "Bebê", MI.ChildCare), MarketCat("livros", "Livros", "Livros", MI.MenuBook),
+    MarketCat("pets", "Pets", "Pets", MI.Pets), MarketCat("outros", "Outros", "Outros", MI.LocalOffer)
+)
+private val marketMainCats = marketProductCats.take(5)
+private fun listingState(l: QinblyListing): String = if (l.kind == "venda" || l.kind == "doacao") l.extra.substringBefore("|") else l.extra
+private fun listingCat(l: QinblyListing): String = if ("|" in l.extra) l.extra.substringAfter("|").ifBlank { "outros" } else "outros"
 
 private val marketCategories = listOf("Tudo", "Vendas", "Doações", "Achados", "Eventos", "Serviços", "Avisos")
 
@@ -179,6 +215,8 @@ internal fun QinblyNearbyHub(
     var info by remember { mutableStateOf<String?>(null) }
     var searching by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
+    var prodCat by remember { mutableStateOf<String?>(null) }
+    var showCatSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(refresh) {
         val token = prefs.getString("token", null) ?: return@LaunchedEffect
@@ -219,7 +257,7 @@ internal fun QinblyNearbyHub(
         Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 12.dp, top = 6.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             if (onClose != null) Box(Modifier.size(44.dp).clip(CircleShape).clickable { onClose() }, contentAlignment = Alignment.Center) { QinblyBackIcon(textColor, 22.dp) }
             // Título centralizado: a esquerda ganha um espaço do tamanho que sobra na direita (lupa + três tracinhos).
-            val rightW = if (mine == null && cat != "Avisos") 88.dp else 44.dp
+            val rightW = if (mine == null && cat != "Avisos") 132.dp else 44.dp
             Spacer(Modifier.width(if (onClose != null) rightW - 44.dp else rightW))
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (mine != null) {
@@ -245,6 +283,12 @@ internal fun QinblyNearbyHub(
                     drawLine(ic, androidx.compose.ui.geometry.Offset(w * 0.66f, w * 0.66f), androidx.compose.ui.geometry.Offset(w * 0.92f, w * 0.92f), strokeWidth = sw, cap = androidx.compose.ui.graphics.StrokeCap.Round)
             }
             }
+            if (mine == null && cat != "Avisos") Box(
+                Modifier.size(44.dp).clip(CircleShape).clickable {
+                    if (single) createKind = when (cat) { "Doações" -> "doacao"; "Achados" -> "achado"; "Eventos" -> "evento"; "Serviços" -> "servico"; else -> "venda" } else showMenu = true
+                },
+                contentAlignment = Alignment.Center
+            ) { QinblyIconOf(QinblyIcon.Add, textColor, 30.dp) }
             Column(Modifier.size(44.dp).clip(CircleShape).clickable { showDrawer = true }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 for (i in 0 until 3) Box(Modifier.padding(vertical = 2.5.dp).size(width = 20.dp, height = 2.5.dp).clip(CircleShape).background(textColor))
             }
@@ -258,6 +302,27 @@ internal fun QinblyNearbyHub(
                 textStyle = androidx.compose.ui.text.TextStyle(color = textColor, fontSize = 14.sp),
                 cursorBrush = androidx.compose.ui.graphics.SolidColor(textColor), modifier = Modifier.fillMaxWidth()
             )
+        }
+        if (single && cat == "Vendas" && mine == null) {
+            val sel = prodCat
+            val shown = if (sel != null && marketMainCats.none { it.key == sel }) marketMainCats.dropLast(1) + marketProductCats.first { it.key == sel } else marketMainCats
+            Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 8.dp)) {
+                for (c in shown) {
+                    val on = sel == c.key
+                    Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable { prodCat = if (on) null else c.key }.padding(vertical = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(Modifier.size(54.dp).clip(CircleShape).background(if (on) QiblyTheme.text else QiblyTheme.soft), contentAlignment = Alignment.Center) {
+                            QinblyIconOf(c.icon, if (on) QiblyTheme.background else textColor, 26.dp)
+                        }
+                        Text(c.short, color = if (on) textColor else secondary, fontSize = 12.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
+                    }
+                }
+                Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable { showCatSheet = true }.padding(vertical = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(Modifier.size(54.dp).clip(CircleShape).border(1.5.dp, secondary.copy(alpha = 0.6f), CircleShape), contentAlignment = Alignment.Center) {
+                        QinblyIconOf(MI.GridView, textColor, 26.dp)
+                    }
+                    Text("Ver mais", color = secondary, fontSize = 12.sp, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
+                }
+            }
         }
         if (mine == null && !single) LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(vertical = 6.dp)) {
             items(marketCategories) { name ->
@@ -289,7 +354,9 @@ internal fun QinblyNearbyHub(
                 QinblyNeighborhoodBoard(lat, lng, place, textColor, secondary, onRefreshLocation = onRefreshLocation, onNotice = onNotice, onOpenConversation = onOpenConversation)
             } else {
                 val q = query.trim()
-                val list = if (searching && q.isNotEmpty()) listings?.filter { it.title.contains(q, true) || it.description.contains(q, true) } else listings
+                val searched = if (searching && q.isNotEmpty()) listings?.filter { it.title.contains(q, true) || it.description.contains(q, true) } else listings
+                val storeMode = single && cat == "Vendas" && mine == null
+                val list = if (storeMode && prodCat != null) searched?.filter { listingCat(it) == prodCat } else searched
                 var pulling by remember { mutableStateOf(false) }
                 LaunchedEffect(listings, failed) { if (listings != null || failed) pulling = false }
                 androidx.compose.material3.pulltorefresh.PullToRefreshBox(
@@ -309,6 +376,9 @@ internal fun QinblyNearbyHub(
                         }
                         list.isEmpty() && searching && q.isNotEmpty() -> Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.Center) {
                             Text("Nada encontrado para \"$q\"", color = secondary, fontSize = 14.sp, modifier = Modifier.padding(top = 120.dp))
+                        }
+                        list.isEmpty() && storeMode && prodCat != null -> Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.Center) {
+                            Text("Nenhum anúncio em " + (marketProductCats.firstOrNull { it.key == prodCat }?.label ?: "esta categoria"), color = secondary, fontSize = 14.sp, modifier = Modifier.padding(top = 120.dp))
                         }
                         list.isEmpty() -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                             Box(Modifier.size(124.dp).clip(CircleShape).background(MarketBlue.copy(alpha = 0.22f)), contentAlignment = Alignment.Center) {
@@ -331,6 +401,12 @@ internal fun QinblyNearbyHub(
                                     }
                                 }
                             }
+                        }
+                        storeMode -> LazyVerticalStaggeredGrid(
+                            columns = StaggeredGridCells.Fixed(2), contentPadding = PaddingValues(start = 6.dp, end = 6.dp, top = 2.dp, bottom = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp), verticalItemSpacing = 6.dp, modifier = Modifier.fillMaxSize()
+                        ) {
+                            staggeredItems(list, key = { it.id }) { l -> StoreTile(l, textColor, secondary) { open = l } }
                         }
                         else -> LazyVerticalGrid(
                             columns = GridCells.Fixed(2), contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 16.dp),
@@ -361,6 +437,35 @@ internal fun QinblyNearbyHub(
         }
     }
 
+    if (showCatSheet) {
+        QinblyDialog(onDismissRequest = { showCatSheet = false }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
+            val noRipple = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+            Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = noRipple) { showCatSheet = false }) {
+                Column(
+                    Modifier.align(Alignment.BottomCenter).fillMaxWidth().clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).background(Color(0xFF1F1F21))
+                        .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { }
+                        .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 22.dp + qinblyNavBarPadding())
+                ) {
+                    Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 4.dp).clip(CircleShape).background(Color(0x4DFFFFFF)))
+                    Text("Todas as categorias", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 19.sp, modifier = Modifier.padding(top = 12.dp, bottom = 14.dp))
+                    for (rowCats in marketProductCats.chunked(4)) {
+                        Row(Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
+                            for (c in rowCats) {
+                                val on = prodCat == c.key
+                                Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable { prodCat = if (on) null else c.key; showCatSheet = false }, horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Box(Modifier.size(62.dp).clip(CircleShape).background(if (on) Color.White else Color(0xFF26262A)), contentAlignment = Alignment.Center) {
+                                        QinblyIconOf(c.icon, if (on) Color(0xFF0F0F11) else Color.White, 29.dp)
+                                    }
+                                    Text(c.label, color = Color.White, fontSize = 13.sp, maxLines = 1, modifier = Modifier.padding(top = 5.dp))
+                                }
+                            }
+                            repeat(4 - rowCats.size) { Spacer(Modifier.weight(1f)) }
+                        }
+                    }
+                }
+            }
+        }
+    }
     if (showDrawer) {
         QinblyDialog(onDismissRequest = { showDrawer = false }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
             Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { showDrawer = false }) {
@@ -487,10 +592,28 @@ internal fun QinblyNearbyHub(
     createKind?.let { k ->
         ListingForm(k, city, onDismiss = { createKind = null }, onPosted = { posted ->
             createKind = null
+            if (posted == "venda") prodCat = null
             cat = when (posted) { "venda" -> "Vendas"; "doacao" -> "Doações"; "achado", "perdido" -> "Achados"; "evento" -> "Eventos"; else -> "Serviços" }
             if (posted == "achado" || posted == "perdido") sub = posted
             refresh++
         }, onNotice = onNotice)
+    }
+}
+
+/** Cartão de loja do Mercado: foto de altura variada, título em 2 linhas, preço em destaque e só o tempo de publicação. */
+@Composable
+private fun StoreTile(l: QinblyListing, textColor: Color, secondary: Color, onClick: () -> Unit) {
+    val ratio = when (kotlin.math.abs(l.id.hashCode()) % 3) { 0 -> 0.8f; 1 -> 1f; else -> 1.2f }
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(QiblyTheme.card).clickable { onClick() }) {
+        Box(Modifier.fillMaxWidth().aspectRatio(ratio).background(QiblyTheme.soft)) {
+            if (l.photos.isNotEmpty()) AsyncImage(model = photoUrl(l.photos.first()), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            else Box(Modifier.fillMaxSize().background(kindColor(l.kind).copy(alpha = 0.55f)))
+        }
+        Column(Modifier.padding(horizontal = 9.dp, vertical = 8.dp)) {
+            Text(l.title, color = textColor, fontSize = 14.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(priceText(l), color = Color(0xFFFF4D6D), fontWeight = FontWeight.Medium, fontSize = 19.sp, maxLines = 1, modifier = Modifier.padding(top = 6.dp))
+            Text(qinblyAgo(l.createdAt), color = secondary, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+        }
     }
 }
 
@@ -562,7 +685,7 @@ private fun ListingDetail(
                     Text(l.title, color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
                     androidx.compose.foundation.layout.FlowRow(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(kindLabel(l.kind), color = Color(0xFFB5D4F4), fontSize = 12.sp, modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xFF0C447C)).padding(horizontal = 10.dp, vertical = 5.dp))
-                        if (l.extra.isNotBlank() && l.kind != "evento") Text("Estado: " + l.extra, color = Color(0xFFC0DD97), fontSize = 12.sp, modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xFF27500A)).padding(horizontal = 10.dp, vertical = 5.dp))
+                        if (listingState(l).isNotBlank() && l.kind != "evento") Text("Estado: " + listingState(l), color = Color(0xFFC0DD97), fontSize = 12.sp, modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xFF27500A)).padding(horizontal = 10.dp, vertical = 5.dp))
                         if (l.city.isNotBlank()) Row(Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xFF2E2E30)).padding(horizontal = 10.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                             MarketGlyph(Color(0xFFB4B2A9), 14.dp, "M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0", "M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z")
                             Text(l.city, color = Color(0xFFB4B2A9), fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
@@ -612,6 +735,7 @@ private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPos
     var desc by remember { mutableStateOf("") }
     var priceTxt by remember { mutableStateOf("") }
     var extra by remember { mutableStateOf(if (kind == "venda" || kind == "doacao") "Bom" else "") }
+    var prodCat by remember { mutableStateOf("") }
     val photos: SnapshotStateList<Uri> = remember { mutableStateListOf() }
     var posting by remember { mutableStateOf(false) }
     val picker = rememberQinblyMultiPhotoLauncher(6) { uris ->
@@ -631,13 +755,14 @@ private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPos
         if (needsPhoto && photos.isEmpty()) { onNotice("Adicione pelo menos uma foto."); return }
         val price = priceTxt.trim().replace(",", ".").toDoubleOrNull()
         if (kind == "venda" && price == null) { onNotice("Informe o preço."); return }
+        if (kind == "venda" && prodCat.isBlank()) { onNotice("Escolha a categoria do produto."); return }
         posting = true
         val picked = photos.toList()
         Thread {
             try {
                 val urls = picked.mapIndexed { i, u -> uploadMarketPhoto(context, token, uid, u, i) }
                 val body = JSONObject().put("kind", subKind).put("title", t.take(120)).put("description", desc.trim().take(2000))
-                    .put("extra", extra.trim().take(80)).put("photos", JSONArray(urls)).put("city", city)
+                    .put("extra", (if (kind == "venda") extra.trim().take(30) + "|" + prodCat else extra.trim().take(80))).put("photos", JSONArray(urls)).put("city", city)
                 if (hasPrice && price != null) body.put("price", price)
                 QinblyApi.rest(token, "POST", "marketplace_listings", body.toString(), "return=minimal")
                 marketMain { posting = false; onNotice("Publicado! Fica no ar por 7 dias."); onPosted(subKind) }
@@ -691,6 +816,21 @@ private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPos
                             val selected = extra == s
                             Text(s, color = if (selected) QiblyTheme.background else QiblyTheme.secondary, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, fontSize = 14.sp,
                                 modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(if (selected) QiblyTheme.text else QiblyTheme.soft).clickable { extra = s }.padding(horizontal = 18.dp, vertical = 9.dp))
+                        }
+                    }
+                }
+                if (kind == "venda") {
+                    Text("Categoria", color = QiblyTheme.secondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(marketProductCats) { c ->
+                            val selected = prodCat == c.key
+                            Row(
+                                Modifier.clip(RoundedCornerShape(18.dp)).background(if (selected) QiblyTheme.text else QiblyTheme.soft).clickable { prodCat = c.key }.padding(start = 10.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                QinblyIconOf(c.icon, if (selected) QiblyTheme.background else QiblyTheme.secondary, 20.dp)
+                                Text(c.label, color = if (selected) QiblyTheme.background else QiblyTheme.secondary, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, fontSize = 14.sp, modifier = Modifier.padding(start = 6.dp))
+                            }
                         }
                     }
                 }
