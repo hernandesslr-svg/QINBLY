@@ -1015,13 +1015,13 @@ private fun QinblyCollapsibleText(
                 pop()
                 pop()
             } else if (expanded && overflowed) {
-                withStyle(androidx.compose.ui.text.ParagraphStyle(textAlign = androidx.compose.ui.text.style.TextAlign.End)) {
-                    pushStringAnnotation(tag = "less", annotation = "1")
-                    pushStyle(androidx.compose.ui.text.SpanStyle(color = muted, fontWeight = FontWeight.Normal))
-                    append("menos")
-                    pop()
-                    pop()
-                }
+                pushStyle(androidx.compose.ui.text.ParagraphStyle(textAlign = androidx.compose.ui.text.style.TextAlign.End))
+                pushStringAnnotation(tag = "less", annotation = "1")
+                pushStyle(androidx.compose.ui.text.SpanStyle(color = muted, fontWeight = FontWeight.Normal))
+                append("menos")
+                pop()
+                pop()
+                pop()
             }
         }
     }
