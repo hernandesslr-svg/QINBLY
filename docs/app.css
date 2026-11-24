@@ -581,3 +581,7 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 @media(min-width:700px){
   .reels{height:calc(100vh - 60px);overflow-y:scroll;scroll-snap-type:y mandatory;overscroll-behavior:contain;background:#000;max-width:420px;margin:8px auto 0;border-radius:12px}
 }
+
+/* Botões do cartão do feed maiores (curtir, comentar, repostar, enviar, salvar) */
+.post .acts .act{font-size:15px;gap:5px}
+.post .acts .act svg{width:32px;height:32px}

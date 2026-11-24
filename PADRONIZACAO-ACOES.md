@@ -1202,3 +1202,6 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 
 ## Abrir vídeo pelo Início
 - Tocar num vídeo em Explorar, Seguindo, Em alta ou no ranking leva para a aba Vídeos, já no vídeo tocado (mesma tela cheia). O botão voltar do celular retorna à aba de onde a pessoa veio. Fotos continuam abrindo no visualizador de fotos.
+
+## Botões do cartão do feed maiores
+- Curtir, comentar, repostar, enviar e salvar nos cartões do feed passaram de 24dp para 32dp (números de 12sp para 15sp), no app e no site. Os botões sobre o vídeo em tela cheia têm 40dp.

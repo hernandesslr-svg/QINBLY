@@ -334,7 +334,7 @@ private val Muted: Color get() = if (QiblyTheme.dark) Color(0xFFF2F4F8) else Col
 @androidx.compose.runtime.Composable
 private fun RepostVerifiedIcon(verified: Boolean, tint: Color = Color.White) {
     // Repostar: duas setas em círculo (redondinho), grade 24x24, contorno arredondado.
-    androidx.compose.foundation.Canvas(modifier = Modifier.size(24.dp)) {
+    androidx.compose.foundation.Canvas(modifier = Modifier.size(LocalQinblyActionIconSize.current)) {
         val stroke = androidx.compose.ui.graphics.drawscope.Stroke(
             width = 2.1f,
             cap = androidx.compose.ui.graphics.StrokeCap.Round,
@@ -394,7 +394,8 @@ private fun QinblyShareArrowIcon(tint: Color = Color.White, iconSize: Dp = 26.dp
 @androidx.compose.runtime.Composable
 private fun RoundedPaperPlaneIcon(tint: Color = Color.White) {
     // Avião de papel do QINBLY: asas largas e todas as pontas arredondadas (bico e as duas asas). Grade 26x24, contorno 2.
-    androidx.compose.foundation.Canvas(modifier = Modifier.size(width = 26.dp, height = 24.dp)) {
+    val planeSize = LocalQinblyActionIconSize.current
+    androidx.compose.foundation.Canvas(modifier = Modifier.size(width = planeSize * 26f / 24f, height = planeSize)) {
         val outline = androidx.compose.ui.graphics.Path().apply {
             moveTo(6.14f, 8.94f)
             lineTo(19.49f, 4.0f)
@@ -4176,8 +4177,13 @@ private fun QinblyPostActionBar(
         }
     } else {
         val background = if (tone == QinblyTone.Feed) RemoteAppearance.feedActionBackgroundColor else Color.Transparent
+        // Botões do cartão maiores (ícones de 32dp, números de 15sp).
+        androidx.compose.runtime.CompositionLocalProvider(
+            LocalQinblyActionIconSize provides 32.dp,
+            LocalQinblyActionTextSize provides 15.sp
+        ) {
         Row(
-            modifier.fillMaxWidth().background(background).heightIn(min = 52.dp).padding(horizontal = 8.dp, vertical = 2.dp),
+            modifier.fillMaxWidth().background(background).heightIn(min = 56.dp).padding(horizontal = 8.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -4188,6 +4194,7 @@ private fun QinblyPostActionBar(
             QinblyShareButton(onShare, tone, false)
             Spacer(Modifier.weight(1f))
             QinblySaveButton(QinblyEngagement.isSaved(post), { QinblyEngagement.toggleSaved(prefs, post, onNotice) }, tone, false)
+        }
         }
     }
 }
