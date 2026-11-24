@@ -1218,6 +1218,6 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - O Mercado mostra só anúncios de venda. Doações, Achados, Eventos e Serviços continuam cada um na sua tela.
 - Topo: seta de voltar, título e cidade centralizados, e na direita a lupa, o "+" (sem fundo) para publicar e os três tracinhos.
 - Fileira de categorias com ícone em cima e nome embaixo: Celulares, Computadores, Carros, Motos, Bicicletas e "Ver mais". "Ver mais" abre uma folha com todas (Celulares, Computadores, Eletrônicos, Games, Carros, Motos, Bicicletas, Peças, Casa, Eletrodomésticos, Roupas, Ferramentas, Bebê, Livros, Pets, Outros). Categoria escolhida fica em branco; tocar de novo limpa o filtro. Se a escolhida não está na fileira, ela entra no lugar da última.
-- Publicar uma venda exige escolher a categoria (guardada no campo `extra` como "Estado|categoria"; anúncios antigos caem em "Outros").
+- Publicar uma venda exige escolher a categoria (mesma fileira de 5 + "Ver mais" com a folha de todas; guardada no campo `extra` como "Estado|categoria"; anúncios antigos caem em "Outros").
 - Cartões em duas colunas independentes (altura variada, sem sobra): foto, título em 2 linhas, preço em destaque e só o tempo ("há 2 h"). Sem foto/nome do vendedor.
 - Ainda não existe: distância (anúncio não guarda posição), "Aceita troca/Entrego" e preço antigo riscado.

@@ -437,35 +437,7 @@ internal fun QinblyNearbyHub(
         }
     }
 
-    if (showCatSheet) {
-        QinblyDialog(onDismissRequest = { showCatSheet = false }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
-            val noRipple = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-            Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = noRipple) { showCatSheet = false }) {
-                Column(
-                    Modifier.align(Alignment.BottomCenter).fillMaxWidth().clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).background(Color(0xFF1F1F21))
-                        .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { }
-                        .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 22.dp + qinblyNavBarPadding())
-                ) {
-                    Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 4.dp).clip(CircleShape).background(Color(0x4DFFFFFF)))
-                    Text("Todas as categorias", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 19.sp, modifier = Modifier.padding(top = 12.dp, bottom = 14.dp))
-                    for (rowCats in marketProductCats.chunked(4)) {
-                        Row(Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
-                            for (c in rowCats) {
-                                val on = prodCat == c.key
-                                Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable { prodCat = if (on) null else c.key; showCatSheet = false }, horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Box(Modifier.size(62.dp).clip(CircleShape).background(if (on) Color.White else Color(0xFF26262A)), contentAlignment = Alignment.Center) {
-                                        QinblyIconOf(c.icon, if (on) Color(0xFF0F0F11) else Color.White, 29.dp)
-                                    }
-                                    Text(c.label, color = Color.White, fontSize = 13.sp, maxLines = 1, modifier = Modifier.padding(top = 5.dp))
-                                }
-                            }
-                            repeat(4 - rowCats.size) { Spacer(Modifier.weight(1f)) }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    if (showCatSheet) MarketCatSheet(prodCat, { prodCat = it }, { showCatSheet = false })
     if (showDrawer) {
         QinblyDialog(onDismissRequest = { showDrawer = false }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
             Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { showDrawer = false }) {
@@ -597,6 +569,38 @@ internal fun QinblyNearbyHub(
             if (posted == "achado" || posted == "perdido") sub = posted
             refresh++
         }, onNotice = onNotice)
+    }
+}
+
+/** Folha "Todas as categorias" (usada no filtro do Mercado e ao publicar). Tocar na escolhida de novo limpa. */
+@Composable
+private fun MarketCatSheet(selected: String?, onPick: (String?) -> Unit, onDismiss: () -> Unit) {
+    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
+        val noRipple = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+        Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = noRipple) { onDismiss() }) {
+            Column(
+                Modifier.align(Alignment.BottomCenter).fillMaxWidth().clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).background(Color(0xFF1F1F21))
+                    .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { }
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 22.dp + qinblyNavBarPadding())
+            ) {
+                Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 4.dp).clip(CircleShape).background(Color(0x4DFFFFFF)))
+                Text("Todas as categorias", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 19.sp, modifier = Modifier.padding(top = 12.dp, bottom = 14.dp))
+                for (rowCats in marketProductCats.chunked(4)) {
+                    Row(Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
+                        for (c in rowCats) {
+                            val on = selected == c.key
+                            Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable { onPick(if (on) null else c.key); onDismiss() }, horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(Modifier.size(62.dp).clip(CircleShape).background(if (on) Color.White else Color(0xFF26262A)), contentAlignment = Alignment.Center) {
+                                    QinblyIconOf(c.icon, if (on) Color(0xFF0F0F11) else Color.White, 29.dp)
+                                }
+                                Text(c.label, color = Color.White, fontSize = 13.sp, maxLines = 1, modifier = Modifier.padding(top = 5.dp))
+                            }
+                        }
+                        repeat(4 - rowCats.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -736,6 +740,7 @@ private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPos
     var priceTxt by remember { mutableStateOf("") }
     var extra by remember { mutableStateOf(if (kind == "venda" || kind == "doacao") "Bom" else "") }
     var prodCat by remember { mutableStateOf("") }
+    var showCatSheet by remember { mutableStateOf(false) }
     val photos: SnapshotStateList<Uri> = remember { mutableStateListOf() }
     var posting by remember { mutableStateOf(false) }
     val picker = rememberQinblyMultiPhotoLauncher(6) { uris ->
@@ -821,16 +826,22 @@ private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPos
                 }
                 if (kind == "venda") {
                     Text("Categoria", color = QiblyTheme.secondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(marketProductCats) { c ->
-                            val selected = prodCat == c.key
-                            Row(
-                                Modifier.clip(RoundedCornerShape(18.dp)).background(if (selected) QiblyTheme.text else QiblyTheme.soft).clickable { prodCat = c.key }.padding(start = 10.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                QinblyIconOf(c.icon, if (selected) QiblyTheme.background else QiblyTheme.secondary, 20.dp)
-                                Text(c.label, color = if (selected) QiblyTheme.background else QiblyTheme.secondary, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, fontSize = 14.sp, modifier = Modifier.padding(start = 6.dp))
+                    val formShown = if (prodCat.isNotBlank() && marketMainCats.none { it.key == prodCat }) marketMainCats.dropLast(1) + marketProductCats.first { it.key == prodCat } else marketMainCats
+                    Row(Modifier.fillMaxWidth()) {
+                        for (c in formShown) {
+                            val on = prodCat == c.key
+                            Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable { prodCat = c.key }.padding(vertical = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(Modifier.size(54.dp).clip(CircleShape).background(if (on) QiblyTheme.text else QiblyTheme.soft), contentAlignment = Alignment.Center) {
+                                    QinblyIconOf(c.icon, if (on) QiblyTheme.background else QiblyTheme.text, 26.dp)
+                                }
+                                Text(c.short, color = if (on) QiblyTheme.text else QiblyTheme.secondary, fontSize = 12.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
                             }
+                        }
+                        Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable { showCatSheet = true }.padding(vertical = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(Modifier.size(54.dp).clip(CircleShape).border(1.5.dp, QiblyTheme.secondary.copy(alpha = 0.6f), CircleShape), contentAlignment = Alignment.Center) {
+                                QinblyIconOf(MI.GridView, QiblyTheme.text, 26.dp)
+                            }
+                            Text("Ver mais", color = QiblyTheme.secondary, fontSize = 12.sp, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
                         }
                     }
                 }
@@ -842,6 +853,7 @@ private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPos
             }
         }
     }
+    if (showCatSheet) MarketCatSheet(prodCat.ifBlank { null }, { prodCat = it ?: "" }, { showCatSheet = false })
 }
 
 /** Escolher a cidade: usar a da localização, buscar outra pelo nome ou voltar a uma recente. */
