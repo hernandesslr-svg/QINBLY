@@ -1178,3 +1178,10 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Tabela D1 `user_mutes (user_id, muted_id, created_at)`; rotas `POST /api/users/:id/mute` (alterna) e `GET /api/users/me/mutes`.
 - `feedFilter` esconde bloqueados e silenciados do feed, hashtags e busca de publicações. Perfil, mensagens e stories não mudam.
 - App: "Silenciar @fulano" no menu da publicação; Configurações > Contas silenciadas desfaz. Site: opção no menu da publicação (lista de silenciados só no app por enquanto).
+
+## Topo e abas do feed (reorganização)
+
+- Abas só com texto, nesta ordem: Explorar, Vídeos, Seguindo, Em alta, Ao vivo. Antes: Descobrir, Seguindo, Em alta, Vídeos, Lives, Perto de mim.
+- "Descobrir" e "Lives" só mudaram de nome na tela; os códigos internos (`selectedFeedTab`) continuam os mesmos. "Perto de mim" saiu da linha de abas e segue no menu lateral.
+- Topo: menu (três tracinhos), logo, lojinha (Mercado), lupa e sino. Mensagens ficam na barra de baixo.
+- Site espelha as mesmas abas e a ordem dos ícones do topo.

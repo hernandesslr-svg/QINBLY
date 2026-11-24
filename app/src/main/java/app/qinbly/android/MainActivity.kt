@@ -7128,7 +7128,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         if (back != null) { selectedFeedTab = "Descobrir"; QinblyStoryReturn.index = QinblyFeedJump.returnIndex; QinblyStoryReturn.entry = back }
     }
     // Deslizar para os lados troca as abas de cima (Descobrir, Seguindo, Em alta, Vídeos, Lives, Perto de mim); a barra de baixo não muda por gesto.
-    val feedTabOrder = listOf("Descobrir", "Seguindo", "Em alta", "Vídeos", "Lives", "Perto de mim")
+    val feedTabOrder = listOf("Descobrir", "Vídeos", "Seguindo", "Em alta", "Lives")
     // O cabeçalho inteiro (QINBLY, busca, sino e as abas Descobrir/Seguindo/Em alta/...) sobe junto com a rolagem e volta ao rolar para cima.
     var headerPx by remember { mutableFloatStateOf(0f) }
     var headerOffset by remember { mutableFloatStateOf(0f) }
@@ -7181,11 +7181,11 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             }
             Text(QinblyBrand.Name, style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(QinblyBrand.Logo, QinblyBrand.Pink))), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, modifier = Modifier.align(Alignment.Center))
             Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onSearch, modifier = Modifier.size(42.dp)) {
-                Icon(Icons.Default.Search, contentDescription = "Buscar", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(26.dp))
-            }
             IconButton(onClick = { marketCategory = "Vendas"; showMarket = true }, modifier = Modifier.size(42.dp)) {
                 Icon(androidx.compose.material.icons.Icons.Outlined.ShoppingBasket, contentDescription = "Mercado e avisos", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(26.dp))
+            }
+            IconButton(onClick = onSearch, modifier = Modifier.size(42.dp)) {
+                Icon(Icons.Default.Search, contentDescription = "Buscar", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(26.dp))
             }
             Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                 IconButton(onClick = onNotifications, modifier = Modifier.size(48.dp)) {
@@ -7206,38 +7206,22 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         }
         }
         Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
-            listOf("Descobrir", "Seguindo", "Em alta", "Vídeos", "Lives", "Perto de mim").forEach { feedTab ->
+            listOf("Descobrir", "Vídeos", "Seguindo", "Em alta", "Lives").forEach { feedTab ->
                 val selected = selectedFeedTab == feedTab
-                val tint = if (selected) QinblyBrand.SelectedIcon else RemoteAppearance.headerTextColor.copy(alpha = 0.62f)
-                val labelTint = if (selected) QinblyBrand.TextAccent else tint
+                val labelTint = if (selected) QinblyBrand.TextAccent else RemoteAppearance.headerTextColor.copy(alpha = 0.62f)
+                // Nomes na tela; os códigos internos (Descobrir, Lives) continuam os mesmos.
+                val tabLabel = when (feedTab) { "Descobrir" -> "Explorar"; "Lives" -> "Ao vivo"; else -> feedTab }
                 Column(
-                    modifier = Modifier.weight(if (feedTab == "Perto de mim") 1.35f else 1f).clickable {
-                        selectedFeedTab = feedTab
-                    }.padding(top = 6.dp),
+                    modifier = Modifier.weight(1f).clickable { selectedFeedTab = feedTab }.padding(top = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    when (feedTab) {
-                        "Descobrir" -> QinblySparkIcon(tint, 22.dp)
-                        else -> Box(Modifier.size(22.dp)) {
-                            Icon(
-                                when (feedTab) {
-                                    "Seguindo" -> Icons.Default.People
-                                    "Em alta" -> Icons.Default.LocalFireDepartment
-                                    "Vídeos" -> Icons.Default.PlayCircle
-                                    "Lives" -> androidx.compose.material.icons.Icons.Default.Sensors
-                                    else -> Icons.Default.LocationOn
-                                }, contentDescription = feedTab, tint = tint, modifier = Modifier.size(22.dp)
-                            )
-                            if (feedTab == "Seguindo" && hasNewFollowing && !selected) Box(
-                                Modifier.align(Alignment.TopEnd).offset(x = 3.dp, y = (-2).dp).size(10.dp)
-                                    .border(1.5.dp, RemoteAppearance.screenBackgroundColor, CircleShape).clip(CircleShape).background(Color(0xFFE53935))
-                            )
-                        }
+                    Box {
+                        Text(tabLabel, color = labelTint, fontSize = 13.sp, maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal)
+                        if (feedTab == "Seguindo" && hasNewFollowing && !selected) Box(
+                            Modifier.align(Alignment.TopEnd).offset(x = 7.dp, y = (-3).dp).size(8.dp).clip(CircleShape).background(Color(0xFFE53935))
+                        )
                     }
-                    // A última aba mostra o lugar de cada pessoa ("Vilhena, RO"); sem localização continua "Perto de mim".
-                    val tabLabel = if (feedTab == "Perto de mim") qinblyShortPlace(prefs.getString("device_place", null).orEmpty().ifBlank { QinblyApi.myCity(prefs) }).ifBlank { feedTab } else feedTab
-                    Text(tabLabel, color = labelTint, fontSize = 11.sp, maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, modifier = Modifier.padding(top = 2.dp))
-                    Spacer(Modifier.height(5.dp))
+                    Spacer(Modifier.height(10.dp))
                     Box(Modifier.fillMaxWidth().height(3.dp).background(if (selected) QinblyBrand.TextAccent else Color.Transparent))
                 }
             }

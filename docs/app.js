@@ -448,7 +448,8 @@
   }
 
   var FEED = [], feedTab = "Descobrir", feedBefore = null, feedMore = false;
-  var FTABS = ["Descobrir", "Seguindo", "Em alta", "Vídeos", "Lives", "Perto de mim"];
+  var FTABS = ["Descobrir", "Vídeos", "Seguindo", "Em alta", "Lives"];
+  var FTAB_LABEL = { "Descobrir": "Explorar", "Lives": "Ao vivo" };
   var FTAB_IC = { "Descobrir": "spark", "Seguindo": "groups", "Em alta": "flame", "Vídeos": "play", "Lives": "sensors", "Perto de mim": "pin" };
   function shortPlace() { var p = LS.get("qb_place", ""); if (!p) return ""; var a = p.split(","), c = a[0].trim(), st = (a[1] || "").trim(); return c + (st.length === 2 ? ", " + st : ""); }
   function hot(p) { return (p.likes || 0) * 2 + (p.comments || 0) * 3 + (p.reposts || 0) * 3; }
@@ -461,8 +462,8 @@
   }
   function viewFeed(tab) {
     if (tab) feedTab = tab;
-    var mob = '<header class="top mob apphd"><button class="ib" data-moremenu aria-label="Menu e configurações">' + svg("menu") + '</button><h1 class="brandg">QINBLY</h1><div class="hr"><button class="ib" data-go="#/search" aria-label="Buscar">' + svg("search") + '</button><button class="ib" data-go="#/market" aria-label="Mercado e avisos">' + svg("bag") + '</button><button class="ib" data-go="#/notifications" aria-label="Notificações">' + svg("bell") + badge("notif", notifN) + "</button></div></header>";
-    setView(mob + '<div class="ftabs ic">' + FTABS.map(function (t) { return '<button data-ftab="' + t + '" class="' + (t === feedTab ? "on" : "") + '">' + svg(FTAB_IC[t]) + "<span>" + (t === "Perto de mim" && shortPlace() ? esc(shortPlace()) : t) + "</span></button>"; }).join("") + '</div><div id="st"' + (feedTab === "Descobrir" ? "" : " hidden") + '></div><div id="fd">' + spin() + "</div>", tab ? "trending" : "home");
+    var mob = '<header class="top mob apphd"><button class="ib" data-moremenu aria-label="Menu e configurações">' + svg("menu") + '</button><h1 class="brandg">QINBLY</h1><div class="hr"><button class="ib" data-go="#/market" aria-label="Mercado e avisos">' + svg("bag") + '</button><button class="ib" data-go="#/search" aria-label="Buscar">' + svg("search") + '</button><button class="ib" data-go="#/notifications" aria-label="Notificações">' + svg("bell") + badge("notif", notifN) + "</button></div></header>";
+    setView(mob + '<div class="ftabs">' + FTABS.map(function (t) { return '<button data-ftab="' + t + '" class="' + (t === feedTab ? "on" : "") + '">' + (FTAB_LABEL[t] || t) + "</button>"; }).join("") + '</div><div id="st"' + (feedTab === "Descobrir" ? "" : " hidden") + '></div><div id="fd">' + spin() + "</div>", tab ? "trending" : "home");
     loadStories();
     if (FEED.length) drawFeed();
     loadFeed(true);
@@ -889,7 +890,7 @@
     var o = document.createElement("div"); o.id = "scr"; o.className = "scr";
     o.innerHTML = '<div class="scw"><div class="sch"><button class="ib" data-sc="close" aria-label="Voltar">' + svg("back") + "</button><h2>Atalhos</h2></div>" +
       (me ? '<button class="scp" data-sc="profile">' + avatar(me.avatarUrl, me.displayName || me.username) + '<span class="t"><b>' + esc(me.username) + "</b><small>Ver meu perfil</small></span></button>" : "") +
-      lab("EXPLORAR") + item("play", "tab:Vídeos", "Vídeos", "Curtos e longos") + item("flame", "tab:Em alta", "Em alta", "O que está bombando") + item("sensors", "tab:Lives", "Lives", "Transmissões ao vivo") + item("pin", "tab:Perto de mim", "Perto de mim", "Gente da sua cidade") +
+      lab("EXPLORAR") + item("play", "tab:Vídeos", "Vídeos", "Curtos e longos") + item("flame", "tab:Em alta", "Em alta", "O que está bombando") + item("sensors", "tab:Lives", "Ao vivo", "Transmissões ao vivo") + item("pin", "tab:Perto de mim", "Perto de mim", "Gente da sua cidade") +
       lab("NA SUA CIDADE") + item("bag", "mk:1", "Mercado", "Compre e venda perto de você") + item("gift", "mk:2", "Doações", "Dê e ganhe coisas") + item("search", "mk:3", "Achados", "Achei algo, perdi algo") + item("cal", "mk:4", "Eventos", "O que vai rolar na cidade") + item("tool", "mk:5", "Serviços", "Quem faz o quê") + item("mega", "mk:6", "Avisos", "Recados do bairro") +
       lab("SEUS ESPAÇOS") + item("groups", "go:#/communities", "Comunidades", "Seus grupos") + item("save", "go:#/saved", "Salvos", "Publicações que você guardou") + item("adduser", "invite", "Convidar amigos", "Compartilhe o QINBLY") + item("sensors", "go:#/golive", "Transmitir ao vivo", "Comece uma live agora") +
       '<div class="scg"></div>' + item("gear", "go:#/settings", "Configurações", "Conta, privacidade, tela e mais") + item("groups", "accounts", "Trocar de conta", me ? "@" + esc(me.username) : "") + item("download", "install", "Instalar o app", "Instala direto no celular") +
