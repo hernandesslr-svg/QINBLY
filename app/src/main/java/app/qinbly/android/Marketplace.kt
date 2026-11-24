@@ -220,7 +220,7 @@ internal fun QinblyNearbyHub(
             if (onClose != null) Box(Modifier.size(44.dp).clip(CircleShape).clickable { onClose() }, contentAlignment = Alignment.Center) { QinblyBackIcon(textColor, 22.dp) }
             // Título centralizado: a esquerda ganha um espaço do tamanho que sobra na direita (lupa + três tracinhos).
             val rightW = if (mine == null && cat != "Avisos") 88.dp else 44.dp
-            Spacer(Modifier.width((rightW - (if (onClose != null) 44.dp else 0.dp)).coerceAtLeast(0.dp)))
+            Spacer(Modifier.width(if (onClose != null) rightW - 44.dp else rightW))
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (mine != null) {
                     Text(if (mine == "doacao") "Minhas doações" else if (mine == "saved") "Anúncios salvos" else "Meus anúncios", color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
