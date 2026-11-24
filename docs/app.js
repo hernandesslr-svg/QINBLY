@@ -457,6 +457,22 @@
   function shortPlace() { var p = LS.get("qb_place", ""); if (!p) return ""; var a = p.split(","), c = a[0].trim(), st = (a[1] || "").trim(); return c + (st.length === 2 ? ", " + st : ""); }
   function hot(p) { return (p.likes || 0) * 2 + (p.comments || 0) * 3 + (p.reposts || 0) * 3; }
   /* ---------- Em alta (mesmo desenho do app) ---------- */
+  var altaLives = [], altaLivesAt = 0;
+  function altaLivesLoad() {
+    if (Date.now() - altaLivesAt < 60000) return;
+    altaLivesAt = Date.now();
+    call(HOST + "/api/live?action=list").then(function (j) {
+      altaLives = j.lives || [];
+      if (altaLives.length && feedTab === "Em alta" && el("acar")) drawFeed();
+    }).catch(function () { });
+  }
+  function altaCarInit() {
+    var c = el("acar"), d = el("adots"); if (!c || !d) return;
+    c.addEventListener("scroll", function () {
+      var i = Math.round(c.scrollLeft / Math.max(1, c.clientWidth));
+      Array.prototype.forEach.call(d.children, function (x, k) { x.className = k === i ? "on" : ""; });
+    });
+  }
   var altaPeriod = "Semana", ALTA_DAYS = { "Hoje": 1, "Semana": 7, "Mês": 30 };
   function altaPosts(period) {
     var lim = Date.now() - ALTA_DAYS[period || altaPeriod] * 86400000;
@@ -482,9 +498,22 @@
   }
   function altaHTML(l) {
     if (!l.length) return periodChips("data-aperiod", altaPeriod) + '<div class="empty">Nada em alta neste período.</div>';
-    var h = l[0], ha = h.author || {}, out = "";
-    var hm = safeUrl(h.mediaUrl) ? (h.mediaType === "video" ? '<video src="' + safeUrl(h.mediaUrl) + '#t=0.1" preload="metadata" muted playsinline></video>' : h.mediaType === "image" ? '<i style="background-image:url(\'' + safeUrl(h.mediaUrl) + '\')"></i>' : "") : "";
-    out += '<a class="ahero" href="#/post/' + esc(h.id) + '">' + hm + '<span class="ahin"><span class="atag">' + svg("flame") + 'Tendência agora</span><strong>EM ALTA</strong><small>@' + esc(ha.username || "") + " · " + cntFmt(h.likes) + " curtidas</small></span></a>";
+    var out = "", cards = [];
+    var best = function (fn) { var m = null; l.forEach(function (p) { if (fn(p) > 0 && (!m || fn(p) > fn(m))) m = p; }); return m; };
+    var bl = best(function (p) { return p.likes || 0; }), bc = best(function (p) { return p.comments || 0; });
+    if (bl) cards.push({ k: "likes", p: bl });
+    if (bc) cards.push({ k: "comments", p: bc });
+    if (altaLives.length) cards.push({ k: "live", lv: altaLives.slice().sort(function (x, y) { return y.viewers - x.viewers; })[0] });
+    if (!cards.length) cards.push({ k: "likes", p: l[0] });
+    out += '<div class="acw"><div class="acar" id="acar">' + cards.map(function (c) {
+      var p = c.p, a = p ? (p.author || {}) : {}, u = p ? safeUrl(p.mediaUrl) : "";
+      var hm = u ? (p.mediaType === "video" ? '<video src="' + u + '#t=0.1" preload="metadata" muted playsinline></video>' : p.mediaType === "image" ? '<i style="background-image:url(\'' + u + '\')"></i>' : "") : "";
+      var href = c.lv ? "#/live/" + esc(c.lv.id) + "/" + encodeURIComponent(c.lv.host) : "#/post/" + esc(p.id);
+      var chip = c.k === "likes" ? svg("heart") + "Mais curtido" : c.k === "comments" ? svg("comment") + "Mais comentado" : svg("flame") + "Live em alta";
+      var title = c.lv ? (c.lv.displayName || c.lv.host) : c.k === "likes" ? "EM ALTA" : (String(p.caption || "").split("\n")[0].trim() || a.displayName || a.username || "");
+      var sub = c.lv ? "@" + c.lv.host + " · " + cntFmt(c.lv.viewers) + " assistindo" : "@" + (a.username || "") + " · " + (c.k === "comments" ? cntFmt(p.comments) + " comentários" : cntFmt(p.likes) + " curtidas");
+      return '<a class="ahero' + (c.lv ? " live" : "") + '" href="' + href + '">' + hm + (c.lv ? '<span class="alive"><u></u>AO VIVO</span>' : "") + '<span class="ahin"><span class="atag">' + chip + "</span><strong" + (c.k === "likes" ? ' class="big"' : "") + ">" + esc(title) + "</strong><small>" + esc(sub) + "</small></span></a>";
+    }).join("") + "</div>" + (cards.length > 1 ? '<div class="adots" id="adots">' + cards.map(function (c, i) { return "<i" + (i === 0 ? ' class="on"' : "") + "></i>"; }).join("") + "</div>" : "") + "</div>";
     out += periodChips("data-aperiod", altaPeriod);
     var cm = {};
     l.forEach(function (p) { var a = p.author || {}, k = String(a.username || "").toLowerCase(); if (!k) return; (cm[k] = cm[k] || { a: a, n: 0 }).n += (p.likes || 0); });
@@ -624,7 +653,7 @@
     var l = feedList();
     if (feedTab === "Vídeos" && l.length) { fd.innerHTML = '<div class="reels" id="reels">' + l.map(reelHTML).join("") + (feedMore ? '<section class="reel rmoresec"><button class="more" data-more>Carregar mais</button></section>' : "") + "</div>"; reelsInit(); return; }
     var empty = { "Descobrir": "Ainda não há publicações. Toque em Criar e publique a primeira.", "Seguindo": "Siga pessoas para ver as publicações delas aqui.", "Em alta": "Nada em alta nos últimos 7 dias.", "Vídeos": "Ainda não há vídeos.", "Perto de mim": "" }[feedTab];
-    if (feedTab === "Em alta") { fd.innerHTML = altaHTML(l); return; }
+    if (feedTab === "Em alta") { fd.innerHTML = altaHTML(l); altaCarInit(); altaLivesLoad(); return; }
     fd.innerHTML = (feedTab === "Descobrir" ? homeHeader() : "") + (l.length ? l.map(postHTML).join("") : '<div class="empty">' + empty + "</div>");
     if (feedMore) fd.insertAdjacentHTML("beforeend", '<button class="more" data-more>Carregar mais</button>');
   }

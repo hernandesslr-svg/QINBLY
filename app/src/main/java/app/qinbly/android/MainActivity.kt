@@ -7001,33 +7001,77 @@ private fun QinblyPostThumb(post: QinblyApi.PostSummary, modifier: Modifier) {
     }
 }
 
-/** Em alta: cartão grande da tendência, período, assuntos, top criadores e o início do ranking de vídeos. */
+/** Um cartão do carrossel do Em alta: o mais curtido, o mais comentado ou uma live em alta. */
+private data class EmAltaCard(val kind: String, val post: QinblyApi.PostSummary? = null, val live: QinblyLive? = null)
+
+/** Em alta: carrossel de cartões (um por vez, de canto a canto), período, assuntos, top criadores e o início do ranking de vídeos. */
 @Composable
 private fun QinblyEmAltaHeader(
-    period: String, onPeriod: (String) -> Unit, hero: QinblyApi.PostSummary?,
+    period: String, onPeriod: (String) -> Unit, cards: List<EmAltaCard>,
     creators: List<Pair<QinblyApi.PostSummary, Int>>, hasVideos: Boolean, empty: Boolean,
-    onOpen: (QinblyApi.PostSummary) -> Unit, onProfile: (String) -> Unit, onSeeAll: () -> Unit
+    onOpenCard: (EmAltaCard) -> Unit, onProfile: (String) -> Unit, onSeeAll: () -> Unit
 ) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        if (hero != null) {
-            Box(
-                Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(20.dp))
-                    .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(QinblyBrand.Accent, QinblyBrand.Pink)))
-                    .clickable { onOpen(hero) }
-            ) {
-                if (hero.mediaUrl.isNotBlank()) QinblyPostThumb(hero, Modifier.fillMaxSize())
-                Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0x33000000), Color(0xCC000000)))))
-                Column(Modifier.align(Alignment.BottomStart).padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Row(
-                        Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0x66000000)).padding(horizontal = 10.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)
+        if (cards.isNotEmpty()) {
+            val pager = androidx.compose.foundation.pager.rememberPagerState(pageCount = { cards.size })
+            Box(Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(20.dp))) {
+            androidx.compose.foundation.pager.HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
+                val card = cards[page]
+                val isLive = card.live != null
+                Box(
+                    Modifier.fillMaxSize()
+                        .background(androidx.compose.ui.graphics.Brush.linearGradient(if (isLive) listOf(Color(0xFF5C2C3A), Color(0xFFC0392B)) else listOf(QinblyBrand.Accent, QinblyBrand.Pink)))
+                        .clickable { onOpenCard(card) }
+                ) {
+                    card.post?.let { if (it.mediaUrl.isNotBlank()) QinblyPostThumb(it, Modifier.fillMaxSize()) }
+                    Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0x33000000), Color(0xCC000000)))))
+                    if (isLive) Row(
+                        Modifier.align(Alignment.TopStart).padding(12.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFFE0245E)).padding(horizontal = 8.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
-                        Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                        Text("Tendência agora", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Box(Modifier.size(6.dp).clip(CircleShape).background(Color.White))
+                        Text("AO VIVO", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
-                    Text("EM ALTA", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
-                    Text("@${hero.username} · ${qinblyCount(QinblyEngagement.likeCount(hero))} curtidas", color = Color(0xCCFFFFFF), fontSize = 13.sp, maxLines = 1)
+                    Column(Modifier.align(Alignment.BottomStart).padding(start = 16.dp, end = 16.dp, bottom = if (cards.size > 1) 30.dp else 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0x66000000)).padding(horizontal = 10.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            when (card.kind) {
+                                "likes" -> QinblyIconOf(QinblyIcon.Favorite, Color(0xFFFF6B8A), 14.dp)
+                                "comments" -> QinblyIconOf(QinblyIcon.ChatBubble, Color.White, 14.dp)
+                                else -> Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                            }
+                            Text(when (card.kind) { "likes" -> "Mais curtido"; "comments" -> "Mais comentado"; else -> "Live em alta" }, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        }
+                        val post = card.post; val live = card.live
+                        val title = when {
+                            live != null -> live.displayName.ifBlank { live.host }
+                            card.kind == "likes" -> "EM ALTA"
+                            else -> {
+                                val first = post?.caption?.lineSequence()?.firstOrNull().orEmpty().trim()
+                                if (first.isNotBlank()) first else (post?.displayName.orEmpty().ifBlank { post?.username.orEmpty() })
+                            }
+                        }
+                        Text(title, color = Color.White, fontSize = if (card.kind == "likes" && live == null) 30.sp else 24.sp, fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = if (card.kind == "likes") 1.sp else 0.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        val sub = when {
+                            live != null -> "@${live.host} · ${qinblyCount(live.viewers)} assistindo"
+                            card.kind == "comments" && post != null -> "@${post.username} · ${qinblyCount(post.comments)} comentários"
+                            post != null -> "@${post.username} · ${qinblyCount(QinblyEngagement.likeCount(post))} curtidas"
+                            else -> ""
+                        }
+                        Text(sub, color = Color(0xCCFFFFFF), fontSize = 13.sp, maxLines = 1)
+                    }
                 }
+            }
+            // As bolinhas ficam dentro da imagem (sobrepostas ao rodapé do cartão).
+            if (cards.size > 1) Row(Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                repeat(cards.size) { i ->
+                    val on = pager.currentPage == i
+                    Box(Modifier.padding(horizontal = 2.5.dp).height(5.dp).width(if (on) 16.dp else 5.dp).clip(RoundedCornerShape(3.dp)).background(if (on) Color.White else Color(0x80FFFFFF)))
+                }
+            }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -7200,6 +7244,8 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     var sharePost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
     var selectedAudioPost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
     var showTrendingAll by remember { mutableStateOf(false) }
+    var emAltaLives by remember { mutableStateOf<List<QinblyLive>>(emptyList()) }
+    var openEmAltaLive by remember { mutableStateOf<QinblyLive?>(null) }
     val openFeedComments: (QinblyApi.PostSummary) -> Unit = { target -> commentPost = target }
     var fullscreenVideoId by remember { mutableStateOf<String?>(null) }
     val resumeFeedFullscreen = remember { QinblyKeep.state<String?>("feed.resumeFullscreen", null) }
@@ -7347,6 +7393,13 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 }
             }
         }.start()
+    }
+    // Carrossel do Em alta: busca as lives no ar ao abrir a aba (sem ficar consultando).
+    LaunchedEffect(selectedFeedTab) {
+        if (selectedFeedTab == "Em alta") {
+            val liveToken = QinblyLiveNet.userToken(context)
+            if (liveToken.isNotBlank()) QinblyLiveNet.list(liveToken)?.let { emAltaLives = it }
+        }
     }
     // "Ver original" de um vídeo de story: vai para a aba Vídeos; se o vídeo não estiver na lista, abre a publicação sozinha.
     LaunchedEffect(QinblyFeedJump.postId) { if (QinblyFeedJump.postId != null && selectedFeedTab != "Vídeos") selectedFeedTab = "Vídeos" }
@@ -7566,11 +7619,17 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     val creators = periodPosts.groupBy { it.username.lowercase() }
                         .map { (_, ps) -> ps.first() to ps.sumOf { QinblyEngagement.likeCount(it) } }
                         .sortedByDescending { it.second }.take(3)
+                    val cards = buildList {
+                        periodPosts.maxByOrNull { QinblyEngagement.likeCount(it) }?.let { add(EmAltaCard("likes", post = it)) }
+                        periodPosts.filter { it.comments > 0 }.maxByOrNull { it.comments }?.let { add(EmAltaCard("comments", post = it)) }
+                        emAltaLives.maxByOrNull { it.viewers }?.let { add(EmAltaCard("live", live = it)) }
+                    }
                     QinblyEmAltaHeader(
                         period = emAltaPeriod, onPeriod = { emAltaPeriod = it },
-                        hero = displayedPosts.firstOrNull(), creators = creators,
+                        cards = cards, creators = creators,
                         hasVideos = displayedPosts.any { it.mediaType.equals("video", ignoreCase = true) && it.mediaUrl.isNotBlank() },
-                        empty = displayedPosts.isEmpty(), onOpen = { openPostMedia(it) }, onProfile = onOpenProfile, onSeeAll = { showTrendingAll = true }
+                        empty = displayedPosts.isEmpty(),
+                        onOpenCard = { c -> val l = c.live; val pst = c.post; if (l != null) openEmAltaLive = l else if (pst != null) openPostMedia(pst) }, onProfile = onOpenProfile, onSeeAll = { showTrendingAll = true }
                     )
                 }
                 if (!loading && displayedPosts.isEmpty()) {
@@ -7622,6 +7681,10 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         }
         }
         }
+    openEmAltaLive?.let { live ->
+        val roomBack = remember { mutableStateOf<(() -> Unit)?>(null) }
+        QinblyLiveWindow(roomBack) { QinblyLiveRoom(live, onClose = { openEmAltaLive = null }, onNotice = onNotice, backHook = roomBack) }
+    }
     if (showTrendingAll) {
         QinblyTrendingAllScreen(
             posts = allFeedPosts, initialPeriod = emAltaPeriod, onDismiss = { showTrendingAll = false },
