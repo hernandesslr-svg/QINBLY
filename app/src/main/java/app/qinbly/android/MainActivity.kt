@@ -6986,10 +6986,50 @@ private fun QinblyLiveRoom(live: QinblyLive, onClose: () -> Unit, onNotice: (Str
     }
 }
 
-/** Em alta: período, assuntos em alta e (abaixo, na lista) o ranking das publicações. */
+private val EmAltaGold = Color(0xFFEF9F27)
+private val EmAltaSilver = Color(0xFFB4B2A9)
+private val EmAltaBronze = Color(0xFFD85A30)
+private fun qinblyRankColor(rank: Int): Color = when (rank) { 1 -> EmAltaGold; 2 -> EmAltaSilver; 3 -> EmAltaBronze; else -> RemoteAppearance.feedSecondaryTextColor }
+
+/** Miniatura de uma publicação (quadro do vídeo, foto ou ícone de texto). */
 @Composable
-private fun QinblyEmAltaHeader(period: String, onPeriod: (String) -> Unit, tags: List<String>, empty: Boolean) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+private fun QinblyPostThumb(post: QinblyApi.PostSummary, modifier: Modifier) {
+    when {
+        post.mediaType.equals("video", ignoreCase = true) && post.mediaUrl.isNotBlank() -> QinblyVideoPoster(post.mediaUrl, modifier, androidx.compose.ui.layout.ContentScale.Crop)
+        post.mediaType.equals("image", ignoreCase = true) && post.mediaUrl.isNotBlank() -> AsyncImage(model = post.mediaUrl, contentDescription = null, modifier = modifier, contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+        else -> Box(modifier, contentAlignment = Alignment.Center) { Icon(Icons.Default.Edit, contentDescription = null, tint = QinblyBrand.Accent) }
+    }
+}
+
+/** Em alta: cartão grande da tendência, período, assuntos, top criadores e o início do ranking de vídeos. */
+@Composable
+private fun QinblyEmAltaHeader(
+    period: String, onPeriod: (String) -> Unit, tags: List<String>, hero: QinblyApi.PostSummary?,
+    creators: List<Pair<QinblyApi.PostSummary, Int>>, hasVideos: Boolean, empty: Boolean,
+    onOpen: (QinblyApi.PostSummary) -> Unit, onProfile: (String) -> Unit, onSeeAll: () -> Unit
+) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        if (hero != null) {
+            Box(
+                Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(20.dp))
+                    .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(QinblyBrand.Accent, QinblyBrand.Pink)))
+                    .clickable { onOpen(hero) }
+            ) {
+                if (hero.mediaUrl.isNotBlank()) QinblyPostThumb(hero, Modifier.fillMaxSize())
+                Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0x33000000), Color(0xCC000000)))))
+                Column(Modifier.align(Alignment.BottomStart).padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0x66000000)).padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                        Text("Tendência agora", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    }
+                    Text("EM ALTA", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+                    Text("@${hero.username} · ${qinblyCount(QinblyEngagement.likeCount(hero))} curtidas", color = Color(0xCCFFFFFF), fontSize = 13.sp, maxLines = 1)
+                }
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("Hoje", "Semana", "Mês").forEach { label ->
                 val on = period == label
@@ -6999,7 +7039,6 @@ private fun QinblyEmAltaHeader(period: String, onPeriod: (String) -> Unit, tags:
             }
         }
         if (tags.isNotEmpty()) {
-            Text("Assuntos em alta", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 tags.forEach { tag ->
                     Text("#$tag", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
@@ -7008,25 +7047,134 @@ private fun QinblyEmAltaHeader(period: String, onPeriod: (String) -> Unit, tags:
                 }
             }
         }
-        Text(if (empty) "Nada em alta neste período" else "Mais curtidas", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+        if (creators.isNotEmpty()) {
+            val whenLabel = when (period) { "Semana" -> "da semana"; "Mês" -> "do mês"; else -> "de hoje" }
+            Text("Top criadores $whenLabel", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                creators.forEachIndexed { i, (post, likes) ->
+                    Column(
+                        Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(QinblyBrand.Accent.copy(alpha = 0.08f)).clickable { onProfile(post.username) }.padding(vertical = 12.dp, horizontal = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(Modifier.size(62.dp)) {
+                            QiblyAccountAvatar(post.username, post.avatarUrl, 58.dp) { onProfile(post.username) }
+                            Box(Modifier.align(Alignment.BottomEnd).size(22.dp).clip(CircleShape).background(qinblyRankColor(i + 1)), contentAlignment = Alignment.Center) {
+                                Text("${i + 1}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        Text(post.displayName.ifBlank { post.username }, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        Text("${qinblyCount(likes)} curtidas", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp, maxLines = 1)
+                    }
+                }
+            }
+        }
+        if (empty) {
+            Text("Nada em alta neste período", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+        } else if (hasVideos) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Vídeos em alta", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.weight(1f))
+                Text("Ver todos", color = QinblyBrand.Accent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
+                    modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { onSeeAll() }.padding(horizontal = 8.dp, vertical = 6.dp))
+            }
+        } else {
+            Text("Mais curtidas", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+        }
     }
 }
 
 @Composable
-private fun QinblyRankRow(rank: Int, post: QinblyApi.PostSummary, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(rank.toString(), color = QinblyBrand.Accent, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, modifier = Modifier.width(26.dp))
-        Box(Modifier.size(64.dp).clip(RoundedCornerShape(12.dp)).background(QinblyBrand.Accent.copy(alpha = 0.10f)), contentAlignment = Alignment.Center) {
-            when {
-                post.mediaType == "video" && post.mediaUrl.isNotBlank() -> QinblyVideoPoster(post.mediaUrl, Modifier.fillMaxSize(), androidx.compose.ui.layout.ContentScale.Crop)
-                post.mediaType == "image" && post.mediaUrl.isNotBlank() -> AsyncImage(model = post.mediaUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-                else -> Icon(Icons.Default.Edit, contentDescription = null, tint = QinblyBrand.Accent)
-            }
-        }
+private fun QinblyRankRow(rank: Int, post: QinblyApi.PostSummary, onMore: (() -> Unit)? = null, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(rank.toString(), color = qinblyRankColor(rank), fontWeight = FontWeight.SemiBold, fontSize = 18.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.width(22.dp))
+        QinblyPostThumb(post, Modifier.size(width = 84.dp, height = 58.dp).clip(RoundedCornerShape(10.dp)).background(QinblyBrand.Accent.copy(alpha = 0.10f)))
         Column(Modifier.weight(1f)) {
-            Text(post.displayName.ifBlank { post.username }, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, maxLines = 1)
-            if (post.caption.isNotBlank()) Text(post.caption, color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-            Row(verticalAlignment = Alignment.CenterVertically) { QinblyIconOf(QinblyIcon.Favorite, RemoteAppearance.feedSecondaryTextColor, 15.dp); Text(" ${QinblyEngagement.likeCount(post)}   ", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp); QinblyIconOf(QinblyIcon.ChatBubble, RemoteAppearance.feedSecondaryTextColor, 15.dp); Text(" ${post.comments}", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp) }
+            val title = post.caption.lineSequence().firstOrNull().orEmpty().trim().ifBlank { post.displayName.ifBlank { post.username } }
+            Text(title, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Text("@${post.username}", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp, maxLines = 1)
+            Text("${qinblyCount(QinblyEngagement.likeCount(post))} curtidas · ${qinblyCount(post.comments)} comentários", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp, maxLines = 1)
+        }
+        if (onMore != null) IconButton(onClick = onMore, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.MoreVert, contentDescription = "Mais opções", tint = RemoteAppearance.feedSecondaryTextColor) }
+    }
+}
+
+/** "Ver todos" do Em alta: lista completa de vídeos em alta, com período, ordem e busca. */
+@Composable
+private fun QinblyTrendingAllScreen(
+    posts: List<QinblyApi.PostSummary>, initialPeriod: String, onDismiss: () -> Unit,
+    onOpen: (QinblyApi.PostSummary) -> Unit, onProfile: (String) -> Unit, onShare: (QinblyApi.PostSummary) -> Unit
+) {
+    var period by remember { mutableStateOf(initialPeriod) }
+    var sort by remember { mutableStateOf("Mais curtidos") }
+    var searching by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    var menuFor by remember { mutableStateOf<String?>(null) }
+    val list = remember(posts, period, sort, query) {
+        val q = query.trim().removePrefix("@").lowercase()
+        posts.filter { it.mediaType.equals("video", ignoreCase = true) && it.mediaUrl.isNotBlank() && qinblyInPeriod(it, period) }
+            .filter { q.isEmpty() || it.caption.lowercase().contains(q) || it.username.lowercase().contains(q) || it.displayName.lowercase().contains(q) }
+            .let { l ->
+                when (sort) {
+                    "Mais comentados" -> l.sortedByDescending { it.comments }
+                    "Recentes" -> l.sortedByDescending { it.createdAt }
+                    else -> l.sortedByDescending { QinblyEngagement.likeCount(it) }
+                }
+            }.take(50)
+    }
+    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+        Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding()) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.screenTextColor) }
+                Text("Vídeos em alta", color = RemoteAppearance.screenTextColor, fontSize = 20.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                IconButton(onClick = { searching = !searching; if (!searching) query = "" }) {
+                    Icon(if (searching) Icons.Default.Close else Icons.Default.Search, contentDescription = "Buscar", tint = RemoteAppearance.screenTextColor)
+                }
+            }
+            if (searching) {
+                TextField(
+                    value = query, onValueChange = { query = it }, singleLine = true, shape = RoundedCornerShape(24.dp),
+                    placeholder = { Text("Buscar vídeo ou @usuário", color = RemoteAppearance.screenSecondaryTextColor) },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = QinblyBrand.Accent.copy(alpha = 0.10f), unfocusedContainerColor = QinblyBrand.Accent.copy(alpha = 0.10f),
+                        focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
+                        focusedTextColor = RemoteAppearance.screenTextColor, unfocusedTextColor = RemoteAppearance.screenTextColor
+                    )
+                )
+            }
+            Row(Modifier.padding(horizontal = 14.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Hoje", "Semana", "Mês").forEach { label ->
+                    val on = period == label
+                    Text(label, color = if (on) Color.White else RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
+                        modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(if (on) QinblyBrand.Accent else QinblyBrand.Accent.copy(alpha = 0.10f))
+                            .clickable { period = label }.padding(horizontal = 16.dp, vertical = 8.dp))
+                }
+            }
+            Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Mais curtidos", "Mais comentados", "Recentes").forEach { label ->
+                    val on = sort == label
+                    Text(label, color = if (on) QinblyBrand.Accent else RemoteAppearance.screenSecondaryTextColor, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, fontSize = 13.sp,
+                        modifier = Modifier.clip(RoundedCornerShape(16.dp)).border(1.dp, if (on) QinblyBrand.Accent else RemoteAppearance.screenSecondaryTextColor.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                            .clickable { sort = label }.padding(horizontal = 12.dp, vertical = 6.dp))
+                }
+            }
+            if (list.isEmpty()) {
+                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                    Text(if (query.isNotBlank()) "Nenhum vídeo encontrado" else "Nenhum vídeo em alta neste período", color = RemoteAppearance.screenSecondaryTextColor, fontSize = 15.sp)
+                }
+            } else LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(top = 4.dp, bottom = 16.dp + qinblyNavBarPadding())) {
+                items(list.size, key = { "all-" + list[it].id }) { i ->
+                    val p = list[i]
+                    Box(Modifier.fillMaxWidth()) {
+                        QinblyRankRow(i + 1, p, onMore = { menuFor = p.id }) { onOpen(p) }
+                        Box(Modifier.align(Alignment.CenterEnd)) {
+                            DropdownMenu(expanded = menuFor == p.id, onDismissRequest = { menuFor = null }) {
+                                DropdownMenuItem(text = { Text("Ver perfil") }, onClick = { menuFor = null; onProfile(p.username) })
+                                DropdownMenuItem(text = { Text("Compartilhar") }, onClick = { menuFor = null; onShare(p) })
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -7060,6 +7208,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     var commentPost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
     var sharePost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
     var selectedAudioPost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
+    var showTrendingAll by remember { mutableStateOf(false) }
     val openFeedComments: (QinblyApi.PostSummary) -> Unit = { target -> commentPost = target }
     var fullscreenVideoId by remember { mutableStateOf<String?>(null) }
     val resumeFeedFullscreen = remember { QinblyKeep.state<String?>("feed.resumeFullscreen", null) }
@@ -7422,7 +7571,16 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     QinblyHomeHeader(allFeedPosts, prefs, onCreateWith)
                 }
                 if (selectedFeedTab == "Em alta") item(key = "alta-header") {
-                    QinblyEmAltaHeader(emAltaPeriod, { emAltaPeriod = it }, qinblyTopHashtags(allFeedPosts.filter { qinblyInPeriod(it, emAltaPeriod) }), displayedPosts.isEmpty())
+                    val periodPosts = allFeedPosts.filter { qinblyInPeriod(it, emAltaPeriod) }
+                    val creators = periodPosts.groupBy { it.username.lowercase() }
+                        .map { (_, ps) -> ps.first() to ps.sumOf { QinblyEngagement.likeCount(it) } }
+                        .sortedByDescending { it.second }.take(3)
+                    QinblyEmAltaHeader(
+                        period = emAltaPeriod, onPeriod = { emAltaPeriod = it }, tags = qinblyTopHashtags(periodPosts),
+                        hero = displayedPosts.firstOrNull(), creators = creators,
+                        hasVideos = displayedPosts.any { it.mediaType.equals("video", ignoreCase = true) && it.mediaUrl.isNotBlank() },
+                        empty = displayedPosts.isEmpty(), onOpen = { openPostMedia(it) }, onProfile = onOpenProfile, onSeeAll = { showTrendingAll = true }
+                    )
                 }
                 if (!loading && displayedPosts.isEmpty()) {
                     item {
@@ -7439,8 +7597,19 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                         }
                     }
                 }
-                if (selectedFeedTab == "Em alta") items(displayedPosts.size, key = { "rank-" + displayedPosts[it].id }) { index ->
-                    QinblyRankRow(index + 1, displayedPosts[index]) { openPostMedia(displayedPosts[index]) }
+                if (selectedFeedTab == "Em alta") {
+                    val altaVideos = displayedPosts.filter { it.mediaType.equals("video", ignoreCase = true) && it.mediaUrl.isNotBlank() }.take(3)
+                    val altaOthers = displayedPosts.filter { p -> altaVideos.none { it.id == p.id } }.take(10)
+                    items(altaVideos.size, key = { "rank-" + altaVideos[it].id }) { index ->
+                        QinblyRankRow(index + 1, altaVideos[index]) { openPostMedia(altaVideos[index]) }
+                    }
+                    if (altaOthers.isNotEmpty() && altaVideos.isNotEmpty()) item(key = "alta-others") {
+                        Text("Publicações em alta", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 17.sp,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp))
+                    }
+                    items(altaOthers.size, key = { "rank2-" + altaOthers[it].id }) { index ->
+                        QinblyRankRow(index + 1, altaOthers[index]) { openPostMedia(altaOthers[index]) }
+                    }
                 } else items(displayedPosts, key = { it.id }) { post ->
                     Column(Modifier.fillMaxWidth()) {
                     QinblyPostCard(
@@ -7462,6 +7631,14 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         }
         }
         }
+    if (showTrendingAll) {
+        QinblyTrendingAllScreen(
+            posts = allFeedPosts, initialPeriod = emAltaPeriod, onDismiss = { showTrendingAll = false },
+            onOpen = { showTrendingAll = false; openPostMedia(it) },
+            onProfile = { showTrendingAll = false; onOpenProfile(it) },
+            onShare = { sharePost = it }
+        )
+    }
     sharePost?.let { selectedPost ->
         QiblyShareDialog(
             post = selectedPost,

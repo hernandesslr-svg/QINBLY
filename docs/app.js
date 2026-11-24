@@ -456,11 +456,80 @@
   var FTAB_IC = { "Descobrir": "spark", "Seguindo": "groups", "Em alta": "flame", "Vídeos": "play", "Lives": "sensors", "Perto de mim": "pin" };
   function shortPlace() { var p = LS.get("qb_place", ""); if (!p) return ""; var a = p.split(","), c = a[0].trim(), st = (a[1] || "").trim(); return c + (st.length === 2 ? ", " + st : ""); }
   function hot(p) { return (p.likes || 0) * 2 + (p.comments || 0) * 3 + (p.reposts || 0) * 3; }
+  /* ---------- Em alta (mesmo desenho do app) ---------- */
+  var altaPeriod = "Semana", ALTA_DAYS = { "Hoje": 1, "Semana": 7, "Mês": 30 };
+  function altaPosts(period) {
+    var lim = Date.now() - ALTA_DAYS[period || altaPeriod] * 86400000;
+    return FEED.filter(function (p) { return !isHidden(p) && Date.parse(p.createdAt) > lim; }).sort(function (x, y) { return hot(y) - hot(x); });
+  }
+  function cntFmt(n) {
+    n = Number(n) || 0;
+    var one = function (v) { return v.toFixed(1).replace(/\.0$/, "").replace(".", ","); };
+    return n >= 1e6 ? one(n / 1e6) + " mi" : n >= 1e3 ? one(n / 1e3) + " mil" : String(n);
+  }
+  function thumbIn(p) {
+    var u = safeUrl(p.mediaUrl);
+    if (p.mediaType === "video" && u) return '<video src="' + u + '#t=0.1" preload="metadata" muted playsinline></video>';
+    if (p.mediaType === "image" && u) return '<i style="background-image:url(\'' + u + '\')"></i>';
+    return '<b class="ta">Aa</b>';
+  }
+  function arow(p, i) {
+    var a = p.author || {}, t = String(p.caption || "").split("\n")[0].trim() || a.displayName || a.username || "";
+    return '<a class="arow" href="#/post/' + esc(p.id) + '"><span class="rk r' + (i < 3 ? i + 1 : 0) + '">' + (i + 1) + '</span><span class="athumb">' + thumbIn(p) + '</span><span class="ainf"><b>' + esc(t) + "</b><small>@" + esc(a.username || "") + "</small><small>" + cntFmt(p.likes) + " curtidas · " + cntFmt(p.comments) + " comentários</small></span></a>";
+  }
+  function periodChips(attr, cur2) {
+    return '<div class="pchips">' + ["Hoje", "Semana", "Mês"].map(function (x) { return '<button ' + attr + '="' + x + '" class="' + (x === cur2 ? "on" : "") + '">' + x + "</button>"; }).join("") + "</div>";
+  }
+  function altaHTML(l) {
+    if (!l.length) return periodChips("data-aperiod", altaPeriod) + '<div class="empty">Nada em alta neste período.</div>';
+    var h = l[0], ha = h.author || {}, out = "";
+    var hm = safeUrl(h.mediaUrl) ? (h.mediaType === "video" ? '<video src="' + safeUrl(h.mediaUrl) + '#t=0.1" preload="metadata" muted playsinline></video>' : h.mediaType === "image" ? '<i style="background-image:url(\'' + safeUrl(h.mediaUrl) + '\')"></i>' : "") : "";
+    out += '<a class="ahero" href="#/post/' + esc(h.id) + '">' + hm + '<span class="ahin"><span class="atag">' + svg("flame") + 'Tendência agora</span><strong>EM ALTA</strong><small>@' + esc(ha.username || "") + " · " + cntFmt(h.likes) + " curtidas</small></span></a>";
+    out += periodChips("data-aperiod", altaPeriod);
+    var tc = {};
+    l.forEach(function (p) { (String(p.caption || "").match(/#[\p{L}\p{N}_]+/gu) || []).forEach(function (t) { t = t.slice(1).toLowerCase(); tc[t] = (tc[t] || 0) + 1; }); });
+    var tags = Object.keys(tc).sort(function (a, b) { return tc[b] - tc[a]; }).slice(0, 8);
+    if (tags.length) out += '<div class="atags">' + tags.map(function (t) { return '<a href="#/tag/' + encodeURIComponent(t) + '">#' + esc(t) + "</a>"; }).join("") + "</div>";
+    var cm = {};
+    l.forEach(function (p) { var a = p.author || {}, k = String(a.username || "").toLowerCase(); if (!k) return; (cm[k] = cm[k] || { a: a, n: 0 }).n += (p.likes || 0); });
+    var cr = Object.keys(cm).map(function (k) { return cm[k]; }).sort(function (x, y) { return y.n - x.n; }).slice(0, 3);
+    if (cr.length) out += '<h3 class="ash">Top criadores ' + { "Hoje": "de hoje", "Semana": "da semana", "Mês": "do mês" }[altaPeriod] + '</h3><div class="acre">' + cr.map(function (c, i) { return '<a href="#/u/' + encodeURIComponent(c.a.username) + '"><span class="acav">' + avatar(c.a.avatarUrl, c.a.displayName || c.a.username, "l") + '<em class="rk r' + (i + 1) + '">' + (i + 1) + "</em></span><b>" + esc(c.a.displayName || c.a.username) + "</b><small>" + cntFmt(c.n) + " curtidas</small></a>"; }).join("") + "</div>";
+    var vids = l.filter(function (p) { return p.mediaType === "video" && safeUrl(p.mediaUrl); }).slice(0, 3);
+    var others = l.filter(function (p) { return vids.indexOf(p) < 0; }).slice(0, 10);
+    out += vids.length ? '<div class="ash2"><h3 class="ash">Vídeos em alta</h3><a class="asee" href="#/trending/all">Ver todos</a></div>' + vids.map(arow).join("") + (others.length ? '<h3 class="ash" style="margin-top:12px">Publicações em alta</h3>' : "") : '<h3 class="ash">Mais curtidas</h3>';
+    return out + others.map(arow).join("");
+  }
+  /* "Ver todos": lista completa de vídeos em alta, com período, ordem e busca */
+  function viewTrendingAll() {
+    var per = altaPeriod, srt = "likes", q = "";
+    setView(top("Vídeos em alta", { back: true, right: '<button class="ib" id="asb" aria-label="Buscar">' + svg("search") + "</button>" }) + '<div class="asrch" id="asw" hidden><input id="asq" placeholder="Buscar vídeo ou @usuário" autocomplete="off"></div><div id="ach"></div><div id="alist">' + spin() + "</div>", "trending", "noNav");
+    function list() {
+      var qq = q.trim().replace(/^@/, "").toLowerCase();
+      var l = altaPosts(per).filter(function (p) { var a = p.author || {}; return p.mediaType === "video" && safeUrl(p.mediaUrl) && (!qq || String(p.caption || "").toLowerCase().indexOf(qq) >= 0 || String(a.username || "").toLowerCase().indexOf(qq) >= 0 || String(a.displayName || "").toLowerCase().indexOf(qq) >= 0); });
+      l.sort(srt === "comments" ? function (x, y) { return (y.comments || 0) - (x.comments || 0); } : srt === "recent" ? function (x, y) { return Date.parse(y.createdAt) - Date.parse(x.createdAt); } : function (x, y) { return (y.likes || 0) - (x.likes || 0); });
+      return l.slice(0, 50);
+    }
+    function draw() {
+      var SO = [["likes", "Mais curtidos"], ["comments", "Mais comentados"], ["recent", "Recentes"]];
+      el("ach").innerHTML = periodChips("data-allper", per) + '<div class="asort">' + SO.map(function (x) { return '<button data-allsort="' + x[0] + '" class="' + (x[0] === srt ? "on" : "") + '">' + x[1] + "</button>"; }).join("") + "</div>";
+      var l = list();
+      el("alist").innerHTML = l.length ? l.map(arow).join("") : '<div class="empty">' + (q.trim() ? "Nenhum vídeo encontrado." : "Nenhum vídeo em alta neste período.") + "</div>";
+    }
+    el("ach").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      if (b.dataset.allper) per = b.dataset.allper; else if (b.dataset.allsort) srt = b.dataset.allsort; else return;
+      draw();
+    });
+    el("asb").addEventListener("click", function () { var w = el("asw"); w.hidden = !w.hidden; if (w.hidden) { q = ""; el("asq").value = ""; draw(); } else el("asq").focus(); });
+    el("asq").addEventListener("input", function () { q = this.value; el("alist").innerHTML = ""; draw(); });
+    function go() { draw(); }
+    if (FEED.length) go(); else api("/api/posts?limit=40").then(function (j) { FEED = j.posts || []; go(); }).catch(function (e) { el("alist").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
+  }
   function feedList() {
     var hp = lget("hposts", []), l = FEED.filter(function (p) { return !isHidden(p) && hp.indexOf(p.id) < 0; });
     if (feedTab === "Seguindo") l = l.filter(function (p) { return p.isFollowing; });
     else if (feedTab === "Vídeos") l = l.filter(function (p) { return p.mediaType === "video"; });
-    else if (feedTab === "Em alta") { var lim = Date.now() - 7 * 86400000; l = l.filter(function (p) { return Date.parse(p.createdAt) > lim; }).sort(function (x, y) { return hot(y) - hot(x); }).slice(0, 30); }
+    else if (feedTab === "Em alta") l = altaPosts().slice(0, 30);
     return l;
   }
   function viewFeed(tab) {
@@ -559,6 +628,7 @@
     var l = feedList();
     if (feedTab === "Vídeos" && l.length) { fd.innerHTML = '<div class="reels" id="reels">' + l.map(reelHTML).join("") + (feedMore ? '<section class="reel rmoresec"><button class="more" data-more>Carregar mais</button></section>' : "") + "</div>"; reelsInit(); return; }
     var empty = { "Descobrir": "Ainda não há publicações. Toque em Criar e publique a primeira.", "Seguindo": "Siga pessoas para ver as publicações delas aqui.", "Em alta": "Nada em alta nos últimos 7 dias.", "Vídeos": "Ainda não há vídeos.", "Perto de mim": "" }[feedTab];
+    if (feedTab === "Em alta") { fd.innerHTML = altaHTML(l); return; }
     fd.innerHTML = (feedTab === "Descobrir" ? homeHeader() : "") + (l.length ? l.map(postHTML).join("") : '<div class="empty">' + empty + "</div>");
     if (feedMore) fd.insertAdjacentHTML("beforeend", '<button class="more" data-more>Carregar mais</button>');
   }
@@ -1936,7 +2006,7 @@
     api("/api/users/" + id + "/follow", { method: "POST", body: {} }).then(function () { if (name) viewProfile(name); else { toast("Seguindo."); RC.sug = RC.sug.filter(function (u) { return u.id !== id; }); fillRcol(); Object.keys(POSTS).forEach(function (k) { if (POSTS[k].authorId === id) { POSTS[k].isFollowing = true; repaint(k); } }); } }).catch(onErr);
   }
   document.addEventListener("click", function (e) {
-    var t = e.target.closest("[data-go],[data-back],[data-like],[data-save],[data-comments],[data-share],[data-vote],[data-follow],[data-open],[data-story],[data-more],[data-settings],[data-accounts],[data-edit],[data-shareprofile],[data-chat],[data-find],[data-switch],[data-drop],[data-addacc],[data-install],[data-mode],[data-moremenu],[data-ftab],[data-ctab],[data-joincom],[data-newcom],[data-mk],[data-listing],[data-addstory],[data-pmenu],[data-pact],[data-repost],[data-newwith],[data-locon],[data-nrefresh],[data-notice],[data-invite],[data-forgot],[data-cvote],[data-golive],[data-stat],[data-umenu],[data-newlisting]");
+    var t = e.target.closest("[data-go],[data-back],[data-like],[data-save],[data-comments],[data-share],[data-vote],[data-follow],[data-open],[data-story],[data-more],[data-settings],[data-accounts],[data-edit],[data-shareprofile],[data-chat],[data-find],[data-switch],[data-drop],[data-addacc],[data-install],[data-mode],[data-moremenu],[data-ftab],[data-aperiod],[data-ctab],[data-joincom],[data-newcom],[data-mk],[data-listing],[data-addstory],[data-pmenu],[data-pact],[data-repost],[data-newwith],[data-locon],[data-nrefresh],[data-notice],[data-invite],[data-forgot],[data-cvote],[data-golive],[data-stat],[data-umenu],[data-newlisting]");
     if (!t) return;
     var d = t.dataset;
     if (d.go) { if (location.hash === d.go) render(); else location.hash = d.go; return; }
@@ -1963,6 +2033,7 @@
     if (t.hasAttribute("data-install")) { installNow(); return; }
     if (d.mode) { viewLogin(d.mode); return; }
     if (t.hasAttribute("data-moremenu")) return moreMenu();
+    if (d.aperiod) { altaPeriod = d.aperiod; drawFeed(); return; }
     if (d.ftab) { feedTab = d.ftab; document.querySelectorAll(".ftabs button").forEach(function (b) { b.classList.toggle("on", b.dataset.ftab === feedTab); }); var stb = el("st"); if (stb) stb.hidden = feedTab !== "Descobrir"; drawFeed(); return; }
     if (d.ctab) { comTab = d.ctab; viewCommunities(); return; }
     if (d.joincom) { api("/api/communities/" + d.joincom + "/join", { method: "POST", body: {} }).then(function () { if (t.hasAttribute("data-stay")) viewCommunity(d.joincom); else viewCommunities(); }).catch(onErr); return; }
@@ -1994,6 +2065,7 @@
     if (parts[0] === "login") return viewLogin("login");
     var r = parts[0] || "home";
     if (r === "home") return viewFeed();
+    if (r === "trending" && parts[1] === "all") return viewTrendingAll();
     if (r === "trending") return viewFeed("Em alta");
     if (r === "search") return viewSearch();
     if (r === "notifications") return viewNotifs();
