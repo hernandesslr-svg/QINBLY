@@ -1221,3 +1221,6 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Publicar uma venda exige escolher a categoria (mesma fileira de 5 + "Ver mais" com a folha de todas; guardada no campo `extra` como "Estado|categoria"; anúncios antigos caem em "Outros").
 - Cartões em duas colunas independentes (altura variada, sem sobra): foto, título em 2 linhas, preço em destaque e só o tempo ("há 2 h"). Sem foto/nome do vendedor.
 - Ainda não existe: distância (anúncio não guarda posição), "Aceita troca/Entrego" e preço antigo riscado.
+
+## Texto longo no feed
+- Publicação só de texto: mostra até 6 linhas e o resto fica atrás do "… mais" (toque abre tudo, "menos" fecha). Publicação com foto ou vídeo: legenda mostra até 4 linhas. Texto curto não muda. No site vale o mesmo (texto 6, legenda 4).

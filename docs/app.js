@@ -2134,7 +2134,7 @@
   if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () { }); }); }
 })();
 
-/* Legenda longa no feed: 4 linhas e "… mais" no fim da última; toque abre tudo ("menos" recolhe). */
+/* Legenda longa no feed: 4 linhas (com foto/vídeo) ou 6 (só texto) e "… mais" no fim da última; toque abre tudo ("menos" recolhe). */
 (function () {
   var LINES = 4;
   function lineH(el) {
@@ -2165,7 +2165,7 @@
   function collapse(el) {
     if (el.getAttribute("data-cx") || el.offsetParent === null) return;
     el.setAttribute("data-cx", "1");
-    var limit = lineH(el) * (el.classList.contains("rcap") ? 2 : LINES) + 2;
+    var limit = lineH(el) * (el.classList.contains("rcap") ? 2 : el.classList.contains("tbg") ? 6 : LINES) + 2;
     if (el.scrollHeight <= limit) return;
     el._full = el.cloneNode(true);
     var lo = 0, hi = el.textContent.length;
@@ -2177,7 +2177,7 @@
     el._k = lo;
     renderCut(el, lo);
   }
-  function scan() { var l = document.querySelectorAll(".post .cap:not([data-cx]), .reel .rcap:not([data-cx])"); for (var i = 0; i < l.length; i++) collapse(l[i]); }
+  function scan() { var l = document.querySelectorAll(".post .cap:not([data-cx]), .post .tbg:not([data-cx]), .reel .rcap:not([data-cx])"); for (var i = 0; i < l.length; i++) collapse(l[i]); }
   var raf = 0;
   new MutationObserver(function () { if (!raf) raf = requestAnimationFrame(function () { raf = 0; scan(); }); }).observe(document.documentElement, { childList: true, subtree: true });
   document.addEventListener("click", function (e) {

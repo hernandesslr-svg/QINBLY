@@ -1007,7 +1007,8 @@ private fun QinblyFeedCaption(caption: String, modifier: Modifier = Modifier) {
     val legend = remember(caption) { qinblySplitCaption(caption).first }
     if (legend.isBlank()) return
     Column(modifier) {
-        QinblyCollapsibleText(legend, RemoteAppearance.feedTextColor, fontSize = 16.sp)
+        // Publicação com foto/vídeo: legenda mostra até 4 linhas; o resto fica atrás do "mais".
+        QinblyCollapsibleText(legend, RemoteAppearance.feedTextColor, fontSize = 16.sp, collapsedLines = 4)
     }
 }
 
@@ -5328,7 +5329,8 @@ private fun QinblyPostCard(
                     }
                     QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
                 } else {
-                    QinblyCollapsibleText(qinblySplitCaption(post.caption).first.ifBlank { post.caption }, RemoteAppearance.feedTextColor, fontSize = 16.sp,
+                    // Publicação só de texto: até 6 linhas; passou disso, o resto fica atrás do "mais".
+                    QinblyCollapsibleText(qinblySplitCaption(post.caption).first.ifBlank { post.caption }, RemoteAppearance.feedTextColor, fontSize = 16.sp, collapsedLines = 6,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp))
                 }
             }
