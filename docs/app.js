@@ -45,7 +45,8 @@
     msg: '<path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>',
     heart: '<path d="M12 20s-7-4.5-9-9.2C1.7 6.6 5.5 3.5 9 5.5c1.3.7 2.3 1.8 3 3 .7-1.2 1.7-2.3 3-3 3.5-2 7.3 1.1 6 5.3-2 4.7-9 9.2-9 9.2z"/>',
-    comment: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
+    comment: '<path d="M3 20l1.3-3.9C2 12.7 2.9 8.2 6.4 5.7c3.5-2.5 8.6-2.3 11.8.5 3.3 2.8 3.7 7.3 1 10.5-2.7 3.2-7.6 4.2-11.6 2.3L3 20"/><path d="M8 10h8M8 13.5h5"/>',
+    commentR: '<path transform="translate(24 0) scale(-1 1)" d="M3 20l1.3-3.9C2 12.7 2.9 8.2 6.4 5.7c3.5-2.5 8.6-2.3 11.8.5 3.3 2.8 3.7 7.3 1 10.5-2.7 3.2-7.6 4.2-11.6 2.3L3 20"/><path d="M8 10h8M8 13.5h5"/>',
     send: '<path d="M5.67 8.94 L17.99 4.0 Q21.97 2.4 20.76 6.81 L17.71 17.97 Q16.62 22.0 14.4 18.56 L12.77 16.02 Q11.08 13.4 8.25 12.46 L5.74 11.63 Q2.03 10.4 5.67 8.94 Z"/><path d="M11.63 13.9 L19.2 5.2"/>',
     save: '<path d="M6 3h12v18l-6-4-6 4z"/>',
     back: '<path d="M15 5l-7 7 7 7"/>',
@@ -497,7 +498,7 @@
     return '<section class="reel" data-reel="' + p.id + '"><video src="' + safeUrl(p.mediaUrl) + '" loop muted playsinline preload="metadata"></video>' +
       '<div class="rside">' +
       '<button class="ra' + (p.likedByMe ? " on" : "") + '" data-like="' + p.id + '" aria-label="Curtir">' + svg("heart") + "<span>" + (p.likes || "") + "</span></button>" +
-      '<button class="ra" data-comments="' + p.id + '" aria-label="Comentários">' + svg("comment") + "<span>" + (p.comments || "") + "</span></button>" +
+      '<button class="ra" data-comments="' + p.id + '" aria-label="Comentários">' + svg("commentR") + "<span>" + (p.comments || "") + "</span></button>" +
       '<button class="ra' + (p.savedByMe ? " on" : "") + '" data-save="' + p.id + '" aria-label="Salvar">' + svg("save") + "<span>Salvar</span></button>" +
       '<button class="ra" data-share="' + p.id + '" aria-label="Enviar">' + ARW + "<span>Enviar</span></button>" +
       '<button class="ra" data-pmenu="' + p.id + '" aria-label="Mais opções">' + svg("dots") + "</button></div>" +
@@ -529,6 +530,9 @@
       }, { root: box, threshold: [0, 0.6, 1] });
       box.querySelectorAll(".reel").forEach(function (r) { REELIO.observe(r); });
     }
+    box.addEventListener("scroll", function () {
+      var vw = document.querySelector("main.view"); if (vw) vw.classList.toggle("vscr", box.scrollTop > box.clientHeight * 0.5);
+    });
     box.addEventListener("timeupdate", function (e) {
       var v = e.target; if (!v || !v.duration) return;
       var i = v.parentNode.querySelector(".rbar i"); if (i) i.style.width = Math.min(100, v.currentTime / v.duration * 100) + "%";
@@ -549,7 +553,7 @@
   }
   function drawFeed() {
     var fd = document.getElementById("fd"); if (!fd) return;
-    var vw = document.querySelector("main.view"); if (vw) vw.classList.toggle("vid", feedTab === "Vídeos");
+    var vw = document.querySelector("main.view"); if (vw) { vw.classList.toggle("vid", feedTab === "Vídeos"); vw.classList.remove("vscr"); }
     if (feedTab === "Lives") return liveList();
     if (feedTab === "Perto de mim") return nearbyView();
     var l = feedList();

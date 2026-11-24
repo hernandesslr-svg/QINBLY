@@ -536,15 +536,16 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 /* Aba Vídeos: tela cheia, um vídeo por tela, abas transparentes por cima */
 .reel{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;color:#fff;overflow:hidden}
 .reel video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
-.rside{position:absolute;right:8px;bottom:24px;display:flex;flex-direction:column;align-items:center;gap:16px;z-index:2}
-.ra{display:flex;flex-direction:column;align-items:center;gap:2px;color:#fff;font-size:12px;min-width:46px}
-.ra svg{width:30px;height:30px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rside{position:absolute;right:6px;bottom:24px;display:flex;flex-direction:column;align-items:center;gap:20px;z-index:2}
+.ra{display:flex;flex-direction:column;align-items:center;gap:2px;color:#fff;font-size:14px;min-width:54px}
+.ra svg{width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .ra.on[data-like] svg{fill:#E53935;stroke:#E53935}
 .ra.on[data-save] svg{fill:#FFD54F;stroke:#FFD54F}
-.ra svg.arw{width:26px;height:26px;fill:#fff;stroke:#fff;stroke-width:3.5}
-.rinfo{position:absolute;left:14px;right:78px;bottom:24px;display:flex;flex-direction:column;gap:8px;z-index:2}
+.ra svg.arw{width:38px;height:38px;fill:#fff;stroke:#fff;stroke-width:3.5}
+.rinfo{position:absolute;left:12px;right:84px;bottom:24px;display:flex;flex-direction:column;gap:8px;z-index:2}
 .rwho{display:flex;align-items:center;gap:8px}
-.rwho b{font-size:15px;font-weight:600}
+.rwho .av{width:54px;height:54px;font-size:18px}
+.rwho b{font-size:16px;font-weight:600}
 .rwho a{color:#fff}
 .rfol{border:.5px solid rgba(255,255,255,.85);color:#fff;border-radius:8px;padding:4px 12px;font-size:13px;font-weight:600}
 .rcap{font-size:14px;line-height:1.4;max-height:40vh;overflow-y:auto;word-break:break-word}
@@ -566,6 +567,9 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 .view.vid .empty{padding-top:140px}
 @media(max-width:699px){
   .view.vid{padding-bottom:0}
+  .view.vid.vscr::before{height:56px}
+  .view.vid.vscr .top.mob{display:none}
+  .view.vid.vscr .ftabs{top:env(safe-area-inset-top)}
   .view.vid::before{content:"";position:fixed;left:0;right:0;top:0;height:120px;background:rgba(0,0,0,.22);z-index:6;pointer-events:none}
   .view.vid .top.mob{position:fixed;left:0;right:0;top:0;z-index:7;background:transparent;border:0}
   .view.vid .top.mob .ib{color:#fff}
