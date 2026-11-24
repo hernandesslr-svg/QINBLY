@@ -11715,7 +11715,7 @@ private fun QinblyLoginPrompt(message: String, onEnter: () -> Unit, onDismiss: (
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                     .background(QiblyTheme.card)
                     .clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) { }
-                    .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 28.dp),
+                    .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 28.dp + qinblyNavBarPadding(40.dp)),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(Modifier.width(38.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(Color(0x55888888)))
