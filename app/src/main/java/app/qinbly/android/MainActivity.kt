@@ -7227,6 +7227,17 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     val videoPagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { videoTabPosts.size })
     // Depois do primeiro vídeo, o logo e os ícones somem e ficam só as abas de letra.
     val hideTop = onVideoTab && videoPagerState.currentPage > 0
+    // Tocar num vídeo em qualquer aba do Início (Explorar, Seguindo...) abre a mesma tela cheia da aba Vídeos, já nele; voltar retorna à aba de origem.
+    var videoBackTab by remember { mutableStateOf<String?>(null) }
+    val openPostMedia: (QinblyApi.PostSummary) -> Unit = { target ->
+        if (target.mediaType.equals("video", ignoreCase = true) && target.mediaUrl.isNotBlank()) {
+            videoBackTab = selectedFeedTab
+            QinblyFeedJump.postId = target.id
+            selectedFeedTab = "Vídeos"
+        } else fullscreenVideoId = target.id
+    }
+    LaunchedEffect(selectedFeedTab) { if (selectedFeedTab != "Vídeos") videoBackTab = null }
+    BackHandler(enabled = onVideoTab && videoBackTab != null) { selectedFeedTab = videoBackTab ?: "Descobrir"; videoBackTab = null }
     // O cabeçalho inteiro (QINBLY, busca, sino e as abas Descobrir/Seguindo/Em alta/...) sobe junto com a rolagem e volta ao rolar para cima.
     var headerPx by remember { mutableFloatStateOf(0f) }
     var headerOffset by remember { mutableFloatStateOf(0f) }
@@ -7359,7 +7370,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                         nameFontStyle = nameFontStyle,
                         onNotice = onNotice,
                         onOpenProfile = onOpenProfile,
-                        onOpenViewer = { fullscreenVideoId = it.id },
+                        onOpenViewer = { openPostMedia(it) },
                         onComment = { openFeedComments(it) },
                         onShare = { sharePost = it },
                         onPostsTransform = { change -> nearbyPosts = change(nearbyPosts) },
@@ -7422,7 +7433,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     }
                 }
                 if (selectedFeedTab == "Em alta") items(displayedPosts.size, key = { "rank-" + displayedPosts[it].id }) { index ->
-                    QinblyRankRow(index + 1, displayedPosts[index]) { fullscreenVideoId = displayedPosts[index].id }
+                    QinblyRankRow(index + 1, displayedPosts[index]) { openPostMedia(displayedPosts[index]) }
                 } else items(displayedPosts, key = { it.id }) { post ->
                     Column(Modifier.fillMaxWidth()) {
                     QinblyPostCard(
@@ -7431,7 +7442,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                         nameFontStyle = nameFontStyle,
                         onNotice = onNotice,
                         onOpenProfile = onOpenProfile,
-                        onOpenViewer = { fullscreenVideoId = it.id },
+                        onOpenViewer = { openPostMedia(it) },
                         onComment = { openFeedComments(it) },
                         onShare = { sharePost = it },
                         onPostsTransform = { change -> posts = change(posts) },

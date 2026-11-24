@@ -1199,3 +1199,6 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Na aba Vídeos (e no visualizador em tela cheia) os botões da lateral e a bolinha do perfil ficaram maiores (ícones de 40dp, números de 14sp, perfil de 54dp).
 - Ícone de comentário novo, em todo o app e no site: balão redondo com 2 tracinhos dentro. Nos vídeos a pontinha fica na direita; nos cartões do feed e no resto, na esquerda (virado).
 - Depois do primeiro vídeo, o logo e os ícones do topo somem e ficam só as abas (Explorar, Vídeos, Seguindo, Em alta, Ao vivo). Voltando ao primeiro vídeo, o topo completo volta.
+
+## Abrir vídeo pelo Início
+- Tocar num vídeo em Explorar, Seguindo, Em alta ou no ranking leva para a aba Vídeos, já no vídeo tocado (mesma tela cheia). O botão voltar do celular retorna à aba de onde a pessoa veio. Fotos continuam abrindo no visualizador de fotos.
