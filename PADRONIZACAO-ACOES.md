@@ -1185,3 +1185,12 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - "Descobrir" e "Lives" só mudaram de nome na tela; os códigos internos (`selectedFeedTab`) continuam os mesmos. "Perto de mim" saiu da linha de abas e segue no menu lateral.
 - Topo: menu (três tracinhos), logo, lojinha (Mercado), lupa e sino. Mensagens ficam na barra de baixo.
 - Site espelha as mesmas abas e a ordem dos ícones do topo.
+
+## Aba Vídeos em tela cheia (app e site)
+- A aba Vídeos do Início abre direto nos vídeos, um por tela, deslizando na vertical (app: `QinblyVideoPager` com `embedded = true`; site: `.reels` com `scroll-snap`).
+- O cabeçalho e as abas ficam transparentes por cima do vídeo, em branco, com uma faixa escura leve no topo para dar leitura. O cabeçalho não encolhe com a rolagem nessa aba.
+- Lateral direita: curtir, comentar, salvar, enviar (seta cheia, curta e gorda) e os 3 pontinhos. Repostar fica no menu dos 3 pontinhos.
+- Embaixo à esquerda: foto do perfil + @nome + Seguir, legenda de 2 linhas com "… mais" (hashtags escondidas) e a linha "Som original · nome" (toque abre as publicações com esse áudio no app; no site liga/desliga o som).
+- Barra de progresso fina na borda de baixo. Toque pausa/toca, toque duplo curte.
+- A seta de enviar nova vale só para os botões sobre o vídeo (lateral); os cartões do feed continuam com o avião de papel.
+- O visualizador em tela cheia (Clipes, perfil, "Ver original") usa o mesmo componente, com os mesmos botões.

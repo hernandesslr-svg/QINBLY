@@ -279,6 +279,8 @@
       '<button class="act sv ' + (p.savedByMe ? "on" : "") + '" data-save="' + p.id + '" aria-label="Salvar">' + svg("save") + "</button>" + "</div></article>";
   }
   function repaint(id) {
+    var rl = document.querySelector('[data-reel="' + id + '"]');
+    if (rl && POSTS[id]) { repaintReel(rl, POSTS[id]); return; }
     var el = document.querySelector('[data-post="' + id + '"]');
     if (el && POSTS[id]) { var t = document.createElement("div"); t.innerHTML = postHTML(POSTS[id]); el.replaceWith(t.firstChild); }
   }
@@ -482,11 +484,76 @@
       }).join("") + "</div>";
     }).catch(function () { /* stories são opcionais */ });
   }
+  /* ---------- aba Vídeos: tela cheia, um vídeo por tela (como o app) ---------- */
+  var REELIO = null, REELMUTE = true;
+  var NOTE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></svg>';
+  var SPK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="w" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/><path class="x" d="M16 9l5 6M21 9l-5 6"/></svg>';
+  var ARW = '<svg class="arw" viewBox="0 0 34 34" aria-hidden="true"><path d="M18 4L31 16L18 28V22C12 22 8 24 4 29C4 18 8 11 18 10Z" stroke-linejoin="round"/></svg>';
+  function reelHTML(p) {
+    POSTS[p.id] = p;
+    var a = p.author || {}, me = cur(), mine = me && p.authorId === me.id;
+    var legend = String(p.caption || "").replace(/(\s*#[\p{L}\p{N}_]+)+\s*$/u, "").trim();
+    var nm = esc(a.displayName || a.username);
+    return '<section class="reel" data-reel="' + p.id + '"><video src="' + safeUrl(p.mediaUrl) + '" loop muted playsinline preload="metadata"></video>' +
+      '<div class="rside">' +
+      '<button class="ra' + (p.likedByMe ? " on" : "") + '" data-like="' + p.id + '" aria-label="Curtir">' + svg("heart") + "<span>" + (p.likes || "") + "</span></button>" +
+      '<button class="ra" data-comments="' + p.id + '" aria-label="Comentários">' + svg("comment") + "<span>" + (p.comments || "") + "</span></button>" +
+      '<button class="ra' + (p.savedByMe ? " on" : "") + '" data-save="' + p.id + '" aria-label="Salvar">' + svg("save") + "<span>Salvar</span></button>" +
+      '<button class="ra" data-share="' + p.id + '" aria-label="Enviar">' + ARW + "<span>Enviar</span></button>" +
+      '<button class="ra" data-pmenu="' + p.id + '" aria-label="Mais opções">' + svg("dots") + "</button></div>" +
+      '<div class="rinfo"><div class="rwho"><a href="#/u/' + esc(a.username) + '">' + avatar(a.avatarUrl, a.displayName || a.username, "m") + '</a><b><a href="#/u/' + esc(a.username) + '">@' + esc(a.username) + "</a></b>" +
+      (!mine && !p.isFollowing && me ? '<button class="rfol" data-follow="' + p.authorId + '">Seguir</button>' : "") + "</div>" +
+      (legend ? '<div class="rcap">' + linkify(legend) + "</div>" : "") +
+      '<div class="rsrow"><span class="rsnd">' + NOTE + "Som original · " + nm + '</span><button class="rmute m" data-rmute aria-label="Ligar ou desligar o som">' + SPK + "</button></div></div>" +
+      '<div class="rbar"><i></i></div></section>';
+  }
+  function repaintReel(rl, p) {
+    var b;
+    if ((b = rl.querySelector("[data-like]"))) { b.classList.toggle("on", !!p.likedByMe); b.lastElementChild.textContent = p.likes || ""; }
+    if ((b = rl.querySelector("[data-comments]"))) b.lastElementChild.textContent = p.comments || "";
+    if ((b = rl.querySelector("[data-save]"))) b.classList.toggle("on", !!p.savedByMe);
+    if (p.isFollowing && (b = rl.querySelector(".rfol"))) b.remove();
+  }
+  function reelsInit() {
+    var box = document.getElementById("reels"); if (!box) return;
+    if (REELIO) { try { REELIO.disconnect(); } catch (e) { } }
+    if ("IntersectionObserver" in window) {
+      REELIO = new IntersectionObserver(function (es) {
+        es.forEach(function (en) {
+          var v = en.target.querySelector("video"); if (!v) return;
+          if (en.isIntersecting && en.intersectionRatio >= 0.6) {
+            v.muted = REELMUTE; var pr = v.play(); if (pr && pr.catch) pr.catch(function () { });
+            var m = en.target.querySelector(".rmute"); if (m) m.classList.toggle("m", REELMUTE);
+          } else { v.pause(); }
+        });
+      }, { root: box, threshold: [0, 0.6, 1] });
+      box.querySelectorAll(".reel").forEach(function (r) { REELIO.observe(r); });
+    }
+    box.addEventListener("timeupdate", function (e) {
+      var v = e.target; if (!v || !v.duration) return;
+      var i = v.parentNode.querySelector(".rbar i"); if (i) i.style.width = Math.min(100, v.currentTime / v.duration * 100) + "%";
+    }, true);
+    box.addEventListener("click", function (e) {
+      var rm = e.target.closest("[data-rmute],.rsnd");
+      if (rm) { REELMUTE = !REELMUTE; box.querySelectorAll("video").forEach(function (v) { v.muted = REELMUTE; }); box.querySelectorAll(".rmute").forEach(function (m) { m.classList.toggle("m", REELMUTE); }); return; }
+      if (e.target.closest("a,button,.rcap,.cx-more,.cx-less")) return;
+      var r = e.target.closest(".reel"), v = r && r.querySelector("video"); if (!v) return;
+      if (v.paused) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () { }); } else v.pause();
+    });
+    box.addEventListener("dblclick", function (e) {
+      if (e.target.closest("a,button,.rcap")) return;
+      var r = e.target.closest(".reel"); if (!r) return;
+      var lk = r.querySelector("[data-like]"); if (lk && !lk.classList.contains("on")) lk.click();
+      var h = document.createElement("div"); h.className = "rburst"; h.innerHTML = svg("heart"); r.appendChild(h); setTimeout(function () { h.remove(); }, 750);
+    });
+  }
   function drawFeed() {
     var fd = document.getElementById("fd"); if (!fd) return;
+    var vw = document.querySelector("main.view"); if (vw) vw.classList.toggle("vid", feedTab === "Vídeos");
     if (feedTab === "Lives") return liveList();
     if (feedTab === "Perto de mim") return nearbyView();
     var l = feedList();
+    if (feedTab === "Vídeos" && l.length) { fd.innerHTML = '<div class="reels" id="reels">' + l.map(reelHTML).join("") + (feedMore ? '<section class="reel rmoresec"><button class="more" data-more>Carregar mais</button></section>' : "") + "</div>"; reelsInit(); return; }
     var empty = { "Descobrir": "Ainda não há publicações. Toque em Criar e publique a primeira.", "Seguindo": "Siga pessoas para ver as publicações delas aqui.", "Em alta": "Nada em alta nos últimos 7 dias.", "Vídeos": "Ainda não há vídeos.", "Perto de mim": "" }[feedTab];
     fd.innerHTML = (feedTab === "Descobrir" ? homeHeader() : "") + (l.length ? l.map(postHTML).join("") : '<div class="empty">' + empty + "</div>");
     if (feedMore) fd.insertAdjacentHTML("beforeend", '<button class="more" data-more>Carregar mais</button>');
@@ -494,7 +561,7 @@
   function loadFeed(first) {
     api("/api/posts?limit=40" + (first || !feedBefore ? "" : "&before=" + encodeURIComponent(feedBefore))).then(function (j) {
       var ps = j.posts || [];
-      var jaRolou = first && FEED.length && window.scrollY > 120;
+      var rb = document.getElementById("reels"), jaRolou = first && FEED.length && (window.scrollY > 120 || (rb && rb.scrollTop > 60));
       FEED = first ? ps : FEED.concat(ps);
       if (ps.length) feedBefore = ps[ps.length - 1].createdAt;
       feedMore = ps.length >= 40;
@@ -1997,7 +2064,7 @@
   function collapse(el) {
     if (el.getAttribute("data-cx") || el.offsetParent === null) return;
     el.setAttribute("data-cx", "1");
-    var limit = lineH(el) * LINES + 2;
+    var limit = lineH(el) * (el.classList.contains("rcap") ? 2 : LINES) + 2;
     if (el.scrollHeight <= limit) return;
     el._full = el.cloneNode(true);
     var lo = 0, hi = el.textContent.length;
@@ -2009,7 +2076,7 @@
     el._k = lo;
     renderCut(el, lo);
   }
-  function scan() { var l = document.querySelectorAll(".post .cap:not([data-cx])"); for (var i = 0; i < l.length; i++) collapse(l[i]); }
+  function scan() { var l = document.querySelectorAll(".post .cap:not([data-cx]), .reel .rcap:not([data-cx])"); for (var i = 0; i < l.length; i++) collapse(l[i]); }
   var raf = 0;
   new MutationObserver(function () { if (!raf) raf = requestAnimationFrame(function () { raf = 0; scan(); }); }).observe(document.documentElement, { childList: true, subtree: true });
   document.addEventListener("click", function (e) {

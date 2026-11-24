@@ -356,6 +356,20 @@ private fun RepostVerifiedIcon(verified: Boolean, tint: Color = Color.White) {
 }
 
 @androidx.compose.runtime.Composable
+private fun QinblyShareArrowIcon(tint: Color = Color.White) {
+    // Seta de enviar dos vídeos: cheia, curva, curta e gorda (ponta grande). Grade 34x34.
+    androidx.compose.foundation.Canvas(modifier = Modifier.size(26.dp)) {
+        val arrow = androidx.compose.ui.graphics.vector.PathParser()
+            .parsePathString("M18 4L31 16L18 28V22C12 22 8 24 4 29C4 18 8 11 18 10Z")
+            .toPath()
+        withTransform({ scale(size.width / 34f, size.width / 34f, pivot = androidx.compose.ui.geometry.Offset.Zero) }) {
+            drawPath(arrow, tint)
+            drawPath(arrow, tint, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.5f, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+        }
+    }
+}
+
+@androidx.compose.runtime.Composable
 private fun RoundedPaperPlaneIcon(tint: Color = Color.White) {
     // Avião de papel do QINBLY: asas largas e todas as pontas arredondadas (bico e as duas asas). Grade 26x24, contorno 2.
     androidx.compose.foundation.Canvas(modifier = Modifier.size(width = 26.dp, height = 24.dp)) {
@@ -981,12 +995,13 @@ private fun QinblyCollapsibleText(
     color: Color,
     modifier: Modifier = Modifier,
     fontSize: androidx.compose.ui.unit.TextUnit = 16.sp,
-    collapsedLines: Int = 4
+    collapsedLines: Int = 4,
+    moreColor: Color? = null
 ) {
     var expanded by remember(text) { mutableStateOf(false) }
     var overflowed by remember(text) { mutableStateOf(false) }
     var cutAt by remember(text) { mutableIntStateOf(-1) }
-    val muted = RemoteAppearance.feedSecondaryTextColor.copy(alpha = 0.5f)
+    val muted = moreColor ?: RemoteAppearance.feedSecondaryTextColor.copy(alpha = 0.5f)
     val link = QinblyBrand.Mention
     val collapsed = !expanded && cutAt >= 0 && cutAt < text.length
     val annotated = remember(text, expanded, cutAt, color, link, muted) {
@@ -3416,7 +3431,7 @@ private fun QinblyHeartBurst(trigger: Int, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, showProgress: Boolean = true, onDoubleTap: (() -> Unit)? = null) {
+private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, showProgress: Boolean = true, thinProgress: Boolean = false, onDoubleTap: (() -> Unit)? = null) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var firstFrameShown by remember(url) { mutableStateOf(false) }
     var buffering by remember(url) { mutableStateOf(true) }
@@ -3470,6 +3485,9 @@ private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, sh
             }
         }
         QinblyHeartBurst(likeBurst, Modifier.align(Alignment.Center))
+        if (thinProgress) Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(2.dp).background(Color.White.copy(alpha = 0.3f))) {
+            Box(Modifier.fillMaxHeight().fillMaxWidth(position.coerceIn(0f, 1f)).background(Color.White))
+        }
         if (showProgress) Row(
             Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                 .padding(start = 18.dp, end = 18.dp, bottom = 118.dp),
@@ -4064,7 +4082,7 @@ private fun QinblyRepostButton(reposted: Boolean, count: Int, onClick: () -> Uni
 
 @Composable
 private fun QinblySaveButton(saved: Boolean, onClick: () -> Unit, tone: QinblyTone, vertical: Boolean = false) {
-    QinblyActionButton(if (saved) "Remover dos salvos" else "Salvar publicação", onClick, tone, vertical, null) {
+    QinblyActionButton(if (saved) "Remover dos salvos" else "Salvar publicação", onClick, tone, vertical, if (tone == QinblyTone.Overlay && vertical) "Salvar" else null) {
         Icon(
             if (saved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
             contentDescription = if (saved) "Remover dos salvos" else "Salvar publicação",
@@ -4076,8 +4094,9 @@ private fun QinblySaveButton(saved: Boolean, onClick: () -> Unit, tone: QinblyTo
 
 @Composable
 private fun QinblyShareButton(onClick: () -> Unit, tone: QinblyTone, vertical: Boolean = false) {
-    QinblyActionButton("Enviar publicação", onClick, tone, vertical, null) {
-        RoundedPaperPlaneIcon(tint = qinblyIconTint(tone))
+    val onVideo = tone == QinblyTone.Overlay && vertical
+    QinblyActionButton("Enviar publicação", onClick, tone, vertical, if (onVideo) "Enviar" else null) {
+        if (onVideo) QinblyShareArrowIcon(tint = qinblyIconTint(tone)) else RoundedPaperPlaneIcon(tint = qinblyIconTint(tone))
     }
 }
 
@@ -4091,7 +4110,8 @@ private fun QinblyPostActionButtons(
     dividers: Boolean,
     onNotice: (String) -> Unit,
     onComment: () -> Unit,
-    onShare: () -> Unit
+    onShare: () -> Unit,
+    showRepost: Boolean = true
 ) {
     val dividerColor = if (tone == QinblyTone.Overlay) Color.White.copy(alpha = 0.25f) else QiblyTheme.border
     val divider: @Composable () -> Unit = {
@@ -4101,8 +4121,10 @@ private fun QinblyPostActionButtons(
     divider()
     QinblyCommentButton(post.comments, onComment, tone, vertical)
     divider()
-    QinblyRepostButton(QinblyEngagement.isReposted(post), QinblyEngagement.repostCount(post), { QinblyEngagement.toggleReposted(prefs, post, onNotice) }, tone, vertical)
-    divider()
+    if (showRepost) {
+        QinblyRepostButton(QinblyEngagement.isReposted(post), QinblyEngagement.repostCount(post), { QinblyEngagement.toggleReposted(prefs, post, onNotice) }, tone, vertical)
+        divider()
+    }
     QinblySaveButton(QinblyEngagement.isSaved(post), { QinblyEngagement.toggleSaved(prefs, post, onNotice) }, tone, vertical)
     divider()
     QinblyShareButton(onShare, tone, vertical)
@@ -4118,11 +4140,12 @@ private fun QinblyPostActionBar(
     onComment: () -> Unit,
     onShare: () -> Unit,
     modifier: Modifier = Modifier,
-    vertical: Boolean = false
+    vertical: Boolean = false,
+    showRepost: Boolean = true
 ) {
     if (vertical) {
         Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            QinblyPostActionButtons(post, prefs, tone, true, false, onNotice, onComment, onShare)
+            QinblyPostActionButtons(post, prefs, tone, true, false, onNotice, onComment, onShare, showRepost)
         }
     } else {
         val background = if (tone == QinblyTone.Feed) RemoteAppearance.feedActionBackgroundColor else Color.Transparent
@@ -4261,8 +4284,6 @@ private fun QinblyPostViewer(
     onOpenAudio: ((QinblyApi.PostSummary) -> Unit)? = null
 ) {
     if (posts.isEmpty()) return
-    val context = androidx.compose.ui.platform.LocalContext.current
-    var reportPost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
     QinblyDialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
@@ -4280,119 +4301,156 @@ private fun QinblyPostViewer(
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
                 }
             }
-            androidx.compose.foundation.pager.VerticalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize(),
-                beyondViewportPageCount = 0
-            ) { page ->
-                val post = posts[page]
-                val isVideo = post.mediaType.equals("video", ignoreCase = true)
-                val images = remember(post.id) { post.mediaUrls.ifEmpty { listOf(post.mediaUrl) }.filter { it.isNotBlank() } }
-                var menuOpen by remember(post.id) { mutableStateOf(false) }
-                Box(Modifier.fillMaxSize().background(Color.Black)) {
-                    if (isVideo) {
-                        if (pagerState.currentPage == page) {
-                            QinblyFullscreenVideo(post.mediaUrl.ifBlank { images.firstOrNull().orEmpty() }, Modifier.fillMaxSize(), onDoubleTap = { if (!QinblyEngagement.isLiked(post)) QinblyEngagement.toggleLike(prefs, post, onNotice) })
-                        }
-                    } else {
-                        QinblyViewerImages(images, post, prefs, onNotice)
-                        // Foto: visualização limpa, só a imagem. Salvar/compartilhar/denunciar ficam num menu discreto no canto.
-                        Box(Modifier.align(Alignment.TopEnd).padding(12.dp)) {
-                            IconButton(onClick = { menuOpen = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "Mais opções", tint = Color.White)
-                            }
-                            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                                DropdownMenuItem(text = { Text("Salvar no celular") }, leadingIcon = { QinblyMenuIcon("Salvar no celular") }, onClick = {
-                                    menuOpen = false
-                                    saveProfilePhotoToDevice(context, post.mediaUrl.ifBlank { images.firstOrNull().orEmpty() }, onNotice)
-                                })
-                                DropdownMenuItem(text = { Text("Compartilhar") }, leadingIcon = { QinblyMenuIcon("Compartilhar") }, onClick = { menuOpen = false; onShare(post) })
-                                if (!post.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
-                                    DropdownMenuItem(text = { Text("Denunciar publicação") }, leadingIcon = { QinblyMenuIcon("Denunciar publicação") }, onClick = { menuOpen = false; reportPost = post })
-                                }
-                            }
-                        }
+            QinblyVideoPager(
+                posts = posts, pagerState = pagerState, prefs = prefs, currentUsername = currentUsername, onNotice = onNotice,
+                onComment = onComment, onShare = onShare, onOpenProfile = onOpenProfile, onOpenAudio = onOpenAudio,
+                modifier = Modifier.fillMaxSize(), bottomPad = 180.dp, embedded = false
+            )
+            IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopStart).padding(12.dp)) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+            }
+        }
+    }
+}
+
+/**
+ * Vídeos um por tela, deslizando na vertical. Usado no visualizador em tela cheia (embedded = false)
+ * e dentro da aba Vídeos do Início (embedded = true, com barra de progresso fina na borda de baixo).
+ * Lateral: curtir, comentar, salvar, enviar e os 3 pontinhos. Embaixo: perfil + nome + Seguir, legenda com "… mais" e o som.
+ */
+@Composable
+private fun QinblyVideoPager(
+    posts: List<QinblyApi.PostSummary>,
+    pagerState: androidx.compose.foundation.pager.PagerState,
+    prefs: android.content.SharedPreferences,
+    currentUsername: String,
+    onNotice: (String) -> Unit,
+    onComment: (QinblyApi.PostSummary) -> Unit,
+    onShare: (QinblyApi.PostSummary) -> Unit,
+    onOpenProfile: (String) -> Unit,
+    onOpenAudio: ((QinblyApi.PostSummary) -> Unit)?,
+    modifier: Modifier,
+    bottomPad: Dp,
+    embedded: Boolean
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var reportPost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
+    androidx.compose.foundation.pager.VerticalPager(
+        state = pagerState,
+        modifier = modifier,
+        beyondViewportPageCount = 0
+    ) { page ->
+        val post = posts[page]
+        val isVideo = post.mediaType.equals("video", ignoreCase = true)
+        val images = remember(post.id) { post.mediaUrls.ifEmpty { listOf(post.mediaUrl) }.filter { it.isNotBlank() } }
+        var menuOpen by remember(post.id) { mutableStateOf(false) }
+        Box(Modifier.fillMaxSize().background(Color.Black)) {
+            if (isVideo) {
+                if (pagerState.currentPage == page) {
+                    QinblyFullscreenVideo(
+                        post.mediaUrl.ifBlank { images.firstOrNull().orEmpty() }, Modifier.fillMaxSize(),
+                        showProgress = !embedded, thinProgress = embedded,
+                        onDoubleTap = { if (!QinblyEngagement.isLiked(post)) QinblyEngagement.toggleLike(prefs, post, onNotice) }
+                    )
+                }
+            } else {
+                QinblyViewerImages(images, post, prefs, onNotice)
+                // Foto: visualização limpa, só a imagem. Salvar/compartilhar/denunciar ficam num menu discreto no canto.
+                Box(Modifier.align(Alignment.TopEnd).padding(12.dp)) {
+                    IconButton(onClick = { menuOpen = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Mais opções", tint = Color.White)
                     }
-                    if (isVideo) Column(
-                        Modifier.align(Alignment.BottomEnd).padding(end = 22.dp, bottom = 180.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        if (isVideo && onOpenAudio != null) {
-                            // Disco musical independente, sem painel preto atrás dos controles.
-                            Box(
-                                modifier = Modifier.padding(bottom = 19.dp).size(45.dp)
-                                    .border(2.dp, Color(0xFF43C6FF), CircleShape)
-                                    .clickable { onOpenAudio(post) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (post.audioId.isBlank() && post.avatarUrl.isNotBlank()) {
-                                    AsyncImage(
-                                        model = post.avatarUrl,
-                                        contentDescription = "Som original de @${post.username}. Ver publicações com este áudio",
-                                        modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                                    )
-                                } else {
-                                    Icon(Icons.Default.MusicNote, contentDescription = "Ver publicações com este áudio", tint = Color.White, modifier = Modifier.size(23.dp))
-                                }
-                            }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(text = { Text("Salvar no celular") }, leadingIcon = { QinblyMenuIcon("Salvar no celular") }, onClick = {
+                            menuOpen = false
+                            saveProfilePhotoToDevice(context, post.mediaUrl.ifBlank { images.firstOrNull().orEmpty() }, onNotice)
+                        })
+                        DropdownMenuItem(text = { Text("Compartilhar") }, leadingIcon = { QinblyMenuIcon("Compartilhar") }, onClick = { menuOpen = false; onShare(post) })
+                        if (!post.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
+                            DropdownMenuItem(text = { Text("Denunciar publicação") }, leadingIcon = { QinblyMenuIcon("Denunciar publicação") }, onClick = { menuOpen = false; reportPost = post })
                         }
-                        QinblyPostActionBar(
-                            post = post,
-                            prefs = prefs,
-                            tone = QinblyTone.Overlay,
-                            onNotice = onNotice,
-                            onComment = { onComment(post) },
-                            onShare = { onShare(post) },
-                            vertical = true
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Box {
-                            IconButton(onClick = { menuOpen = true }) {
-                                Icon(Icons.Default.MoreHoriz, contentDescription = "Mais opções", tint = Color.White, modifier = Modifier.size(28.dp))
-                            }
-                            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                                DropdownMenuItem(text = { Text("Salvar no celular") }, leadingIcon = { QinblyMenuIcon("Salvar no celular") }, onClick = {
-                                    menuOpen = false
-                                    saveProfilePhotoToDevice(context, post.mediaUrl.ifBlank { images.firstOrNull().orEmpty() }, onNotice)
-                                })
-                                DropdownMenuItem(text = { Text("Compartilhar") }, leadingIcon = { QinblyMenuIcon("Compartilhar") }, onClick = {
-                                    menuOpen = false
-                                    onShare(post)
-                                })
-                                if (!post.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
-                                    DropdownMenuItem(text = { Text("Denunciar publicação") }, leadingIcon = { QinblyMenuIcon("Denunciar publicação") }, onClick = {
-                                        menuOpen = false
-                                        reportPost = post
-                                    })
-                                }
-                            }
-                        }
-                    }
-                    if (isVideo) Column(
-                        Modifier.align(Alignment.BottomStart).fillMaxWidth(0.88f).padding(start = 18.dp, bottom = 180.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            QiblyAccountAvatar(post.username, post.avatarUrl, 52.dp, storyRing = true) { onOpenProfile(post.username) }
-                            Text("@" + post.username, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1, fontSize = 16.sp)
-                            if (post.username.isNotBlank() && !post.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
-                                QinblyFollowButton(
-                                    following = QinblyEngagement.isFollowing(prefs, post.username, post.isFollowing),
-                                    busy = QinblyEngagement.isFollowBusy(post.username),
-                                    onClick = { QinblyEngagement.toggleFollow(prefs, post.username, post.authorId, post.displayName, onNotice) },
-                                    tone = QinblyTone.Overlay
-                                )
-                            }
-                        }
-                        if (post.caption.isNotBlank()) QinblyViewerCaption(post.caption)
-                        if (post.musicUrl.isNotBlank()) QinblyPostMusicChip(post, Modifier.padding(top = 6.dp))
                     }
                 }
             }
-            IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopStart).padding(12.dp)) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+            if (isVideo) Column(
+                Modifier.align(Alignment.BottomEnd).padding(end = 8.dp, bottom = bottomPad),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                QinblyPostActionBar(
+                    post = post,
+                    prefs = prefs,
+                    tone = QinblyTone.Overlay,
+                    onNotice = onNotice,
+                    onComment = { onComment(post) },
+                    onShare = { onShare(post) },
+                    vertical = true,
+                    showRepost = false
+                )
+                Box {
+                    IconButton(onClick = { menuOpen = true }) {
+                        Icon(Icons.Default.MoreHoriz, contentDescription = "Mais opções", tint = Color.White, modifier = Modifier.size(28.dp))
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        val reposted = QinblyEngagement.isReposted(post)
+                        DropdownMenuItem(text = { Text(if (reposted) "Remover repost" else "Repostar") }, leadingIcon = { QinblyMenuIcon("Repostar") }, onClick = {
+                            menuOpen = false
+                            QinblyEngagement.toggleReposted(prefs, post, onNotice)
+                        })
+                        DropdownMenuItem(text = { Text("Salvar no celular") }, leadingIcon = { QinblyMenuIcon("Salvar no celular") }, onClick = {
+                            menuOpen = false
+                            saveProfilePhotoToDevice(context, post.mediaUrl.ifBlank { images.firstOrNull().orEmpty() }, onNotice)
+                        })
+                        DropdownMenuItem(text = { Text("Compartilhar") }, leadingIcon = { QinblyMenuIcon("Compartilhar") }, onClick = {
+                            menuOpen = false
+                            onShare(post)
+                        })
+                        if (!post.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
+                            DropdownMenuItem(text = { Text("Denunciar publicação") }, leadingIcon = { QinblyMenuIcon("Denunciar publicação") }, onClick = {
+                                menuOpen = false
+                                reportPost = post
+                            })
+                        }
+                    }
+                }
+            }
+            if (isVideo) Column(
+                Modifier.align(Alignment.BottomStart).fillMaxWidth(0.78f).padding(start = 14.dp, bottom = bottomPad),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    QiblyAccountAvatar(post.username, post.avatarUrl, 40.dp, storyRing = true) { onOpenProfile(post.username) }
+                    Text("@" + post.username, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1, fontSize = 15.sp, modifier = Modifier.weight(1f, fill = false))
+                    if (post.username.isNotBlank() && !post.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
+                        QinblyFollowButton(
+                            following = QinblyEngagement.isFollowing(prefs, post.username, post.isFollowing),
+                            busy = QinblyEngagement.isFollowBusy(post.username),
+                            onClick = { QinblyEngagement.toggleFollow(prefs, post.username, post.authorId, post.displayName, onNotice) },
+                            tone = QinblyTone.Overlay
+                        )
+                    }
+                }
+                val legend = remember(post.id) { qinblySplitCaption(post.caption).first }
+                if (legend.isNotBlank()) {
+                    Column(Modifier.heightIn(max = 220.dp).verticalScroll(rememberScrollState())) {
+                        QinblyCollapsibleText(legend, Color.White, fontSize = 14.sp, collapsedLines = 2, moreColor = Color.White.copy(alpha = 0.6f))
+                    }
+                }
+                if (post.musicUrl.isNotBlank()) QinblyPostMusicChip(post, Modifier.padding(top = 2.dp))
+                else {
+                    val soundLabel = if (post.audioId.isBlank()) "Som original · " + post.displayName.ifBlank { post.username }
+                    else post.audioTitle.ifBlank { "Áudio" } + (if (post.audioArtist.isNotBlank()) " · " + post.audioArtist else "")
+                    Row(
+                        Modifier.clip(RoundedCornerShape(14.dp)).background(Color.Black.copy(alpha = 0.35f))
+                            .then(if (onOpenAudio != null) Modifier.clickable { onOpenAudio(post) } else Modifier)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(soundLabel, color = Color.White, fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 220.dp))
+                    }
+                }
             }
         }
     }
@@ -6962,6 +7020,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     }
     var commentPost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
     var sharePost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
+    var selectedAudioPost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
     val openFeedComments: (QinblyApi.PostSummary) -> Unit = { target -> commentPost = target }
     var fullscreenVideoId by remember { mutableStateOf<String?>(null) }
     val resumeFeedFullscreen = remember { QinblyKeep.state<String?>("feed.resumeFullscreen", null) }
@@ -7129,13 +7188,18 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     }
     // Deslizar para os lados troca as abas de cima (Descobrir, Seguindo, Em alta, Vídeos, Lives, Perto de mim); a barra de baixo não muda por gesto.
     val feedTabOrder = listOf("Descobrir", "Vídeos", "Seguindo", "Em alta", "Lives")
+    // Aba Vídeos: tela cheia, um vídeo por tela, com o cabeçalho transparente por cima.
+    val onVideoTab = selectedFeedTab == "Vídeos"
+    val hdrText = if (onVideoTab) Color.White else RemoteAppearance.headerTextColor
+    val videoTabPosts = if (onVideoTab) displayedPosts.filter { it.mediaUrl.isNotBlank() } else emptyList()
+    val videoPagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { videoTabPosts.size })
     // O cabeçalho inteiro (QINBLY, busca, sino e as abas Descobrir/Seguindo/Em alta/...) sobe junto com a rolagem e volta ao rolar para cima.
     var headerPx by remember { mutableFloatStateOf(0f) }
     var headerOffset by remember { mutableFloatStateOf(0f) }
     val headerConnection = remember {
         object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): Offset {
-                if (headerPx <= 0f || available.y == 0f) return Offset.Zero
+                if (selectedFeedTab == "Vídeos" || headerPx <= 0f || available.y == 0f) return Offset.Zero
                 val next = (headerOffset + available.y).coerceIn(-headerPx, 0f)
                 val used = next - headerOffset
                 headerOffset = next
@@ -7166,6 +7230,27 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 )
             }
     ) {
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+        if (onVideoTab) {
+            LaunchedEffect(QinblyFeedJump.postId, videoTabPosts.size) {
+                val id = QinblyFeedJump.postId
+                if (id != null) {
+                    val i = videoTabPosts.indexOfFirst { it.id == id }
+                    if (i >= 0) { videoPagerState.scrollToPage(i); QinblyFeedJump.postId = null }
+                }
+            }
+            LaunchedEffect(scrollToTopRequest) { if (scrollToTopRequest > 0) videoPagerState.animateScrollToPage(0) }
+            if (videoTabPosts.isNotEmpty()) {
+                QinblyVideoPager(
+                    posts = videoTabPosts, pagerState = videoPagerState, prefs = prefs, currentUsername = currentUsername, onNotice = onNotice,
+                    onComment = { openFeedComments(it) }, onShare = { sharePost = it }, onOpenProfile = onOpenProfile,
+                    onOpenAudio = { selectedAudioPost = it },
+                    modifier = Modifier.fillMaxSize(), bottomPad = 24.dp, embedded = true
+                )
+                Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(110.dp).background(Color.Black.copy(alpha = 0.22f)))
+            } else if (loading) QinblyLoadingSpinner(Modifier.fillMaxSize())
+        }
+        Column(Modifier.fillMaxSize()) {
         Column(
             Modifier.fillMaxWidth().clipToBounds()
                 .layout { measurable, constraints ->
@@ -7177,19 +7262,19 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         ) {
         Box(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 6.dp).heightIn(min = 42.dp)) {
             IconButton(onClick = { showShortcuts = true }, modifier = Modifier.align(Alignment.CenterStart).size(44.dp).offset(x = (-8).dp)) {
-                Icon(Icons.Default.Menu, contentDescription = "Menu e configurações", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(30.dp))
+                Icon(Icons.Default.Menu, contentDescription = "Menu e configurações", tint = hdrText, modifier = Modifier.size(30.dp))
             }
             Text(QinblyBrand.Name, style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(QinblyBrand.Logo, QinblyBrand.Pink))), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, modifier = Modifier.align(Alignment.Center))
             Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { marketCategory = "Vendas"; showMarket = true }, modifier = Modifier.size(42.dp)) {
-                Icon(androidx.compose.material.icons.Icons.Outlined.ShoppingBasket, contentDescription = "Mercado e avisos", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(26.dp))
+                Icon(androidx.compose.material.icons.Icons.Outlined.ShoppingBasket, contentDescription = "Mercado e avisos", tint = hdrText, modifier = Modifier.size(26.dp))
             }
             IconButton(onClick = onSearch, modifier = Modifier.size(42.dp)) {
-                Icon(Icons.Default.Search, contentDescription = "Buscar", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(26.dp))
+                Icon(Icons.Default.Search, contentDescription = "Buscar", tint = hdrText, modifier = Modifier.size(26.dp))
             }
             Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                 IconButton(onClick = onNotifications, modifier = Modifier.size(48.dp)) {
-                    Icon(androidx.compose.material.icons.Icons.Outlined.NotificationsNone, contentDescription = "Notificações", tint = RemoteAppearance.headerTextColor, modifier = Modifier.size(32.dp))
+                    Icon(androidx.compose.material.icons.Icons.Outlined.NotificationsNone, contentDescription = "Notificações", tint = hdrText, modifier = Modifier.size(32.dp))
                 }
                 if (unreadNotifications > 0) {
                     Box(
@@ -7208,7 +7293,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
             listOf("Descobrir", "Vídeos", "Seguindo", "Em alta", "Lives").forEach { feedTab ->
                 val selected = selectedFeedTab == feedTab
-                val labelTint = if (selected) QinblyBrand.TextAccent else RemoteAppearance.headerTextColor.copy(alpha = 0.62f)
+                val labelTint = if (selected) (if (onVideoTab) Color.White else QinblyBrand.TextAccent) else hdrText.copy(alpha = 0.62f)
                 // Nomes na tela; os códigos internos (Descobrir, Lives) continuam os mesmos.
                 val tabLabel = when (feedTab) { "Descobrir" -> "Explorar"; "Lives" -> "Ao vivo"; else -> feedTab }
                 Column(
@@ -7222,13 +7307,13 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                         )
                     }
                     Spacer(Modifier.height(10.dp))
-                    Box(Modifier.fillMaxWidth().height(3.dp).background(if (selected) QinblyBrand.TextAccent else Color.Transparent))
+                    Box(Modifier.fillMaxWidth().height(3.dp).background(if (selected) (if (onVideoTab) Color.White else QinblyBrand.TextAccent) else Color.Transparent))
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(0.5.dp).background(RemoteAppearance.feedDividerColor))
+        Box(Modifier.fillMaxWidth().height(0.5.dp).background(if (onVideoTab) Color.Transparent else RemoteAppearance.feedDividerColor))
         }
-        if (selectedFeedTab != "Descobrir") QinblyStoriesRow(onNotice, onOpenProfile, onOpenConversation, onAddStory, hostOnly = true)
+        if (selectedFeedTab != "Descobrir" && selectedFeedTab != "Vídeos") QinblyStoriesRow(onNotice, onOpenProfile, onOpenConversation, onAddStory, hostOnly = true)
         if (selectedFeedTab == "Lives") {
             QinblyLivesPage(emptyList(), onNotice)
         } else if (selectedFeedTab == "Perto de mim") {
@@ -7248,6 +7333,8 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     )
                 }
             }
+        } else if (selectedFeedTab == "Vídeos" && (videoTabPosts.isNotEmpty() || loading)) {
+            // A aba Vídeos é desenhada na camada de baixo (tela cheia, atrás do cabeçalho transparente).
         } else if (!loading && displayedPosts.isEmpty() && selectedFeedTab != "Em alta" && selectedFeedTab != "Descobrir") {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -7321,6 +7408,8 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             }
             }
         }
+        }
+        }
     sharePost?.let { selectedPost ->
         QiblyShareDialog(
             post = selectedPost,
@@ -7329,7 +7418,6 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             onNotice = onNotice
         )
     }
-    var selectedAudioPost by remember { mutableStateOf<QinblyApi.PostSummary?>(null) }
     if (reelsOpen) {
         // Clipes: vídeos do feed, um por tela, deslizando na vertical, com o mesmo visualizador, botões e comentários de todo o app.
         val reels = allFeedPosts.filter { it.mediaType == "video" && it.mediaUrl.isNotBlank() }
