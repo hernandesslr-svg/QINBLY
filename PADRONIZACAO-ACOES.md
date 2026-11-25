@@ -1266,3 +1266,10 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 ## Voltar na aba Vídeos
 - 1 toque no voltar do celular volta ao Explorar (ou à aba de onde o vídeo foi aberto).
 - 2 toques rápidos (até 1,2 s) fecham o app. Controle: `QinblyQuickExit` em `MainActivity.kt`.
+
+## Tom A, repostar girando, card do feed e repost no feed
+- Ícones de ação do feed #444 e números #555 (`actionIconColor` no remote-config, revisão 31).
+- Repostar: ao tocar, as setas giram uma volta (700 ms) e o "verificado" aparece/some dentro, na mesma cor.
+- Card com foto/vídeo: música embaixo do nome (nota, sem fundo nem contorno), legenda no canto esquerdo com 1 linha + "mais", hora logo acima do coração.
+- Repost no feed (servidor `GET /api/posts` traz reposts de quem você segue com `repostedBy` e `repostedAt`): foto pequena de quem repostou sobre a foto do autor e "Repostado por Fulano · Há X" acima do coração. Menu: "Desfazer repost" (se foi você), "Silenciar/Bloquear @quem repostou". Web mostra a linha "Repostado por".
+- Voltar: em qualquer aba, 1 toque leva ao Explorar; 2 toques rápidos (até 1,2 s) fecham o app.

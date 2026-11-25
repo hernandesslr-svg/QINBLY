@@ -300,7 +300,44 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
       const limit = Math.min(Math.max(Number(url.searchParams.get("limit") || 30), 1), 60);
       const before = url.searchParams.get("before");
       const rows = await rest(`posts?select=${POST_SELECT}&${await feedFilter()}${before ? `&created_at=lt.${encodeURIComponent(before)}` : ""}&order=created_at.desc&limit=${limit}`);
-      return reply({ posts: await buildPosts(visiblePolls(rows || [])) });
+      const built = await buildPosts(visiblePolls(rows || []));
+      // Reposts de quem você segue entram no feed: "Repostado por Fulano" + hora do repost.
+      if (viewerId) {
+        try {
+          const followingIds = [...await myFollowing()];
+          if (followingIds.length) {
+            const hidden = new Set((await Promise.all([myBlocks(), myMutes()])).flat());
+            const rr = ((await rest(`post_reposts?user_id=in.(${followingIds.join(",")})${before ? `&created_at=lt.${encodeURIComponent(before)}` : ""}&select=original_post_id,user_id,created_at&order=created_at.desc&limit=${limit}`)) || [])
+              .filter((r: any) => !hidden.has(r.user_id));
+            if (rr.length) {
+              const reposters = await profilesByIds(rr.map((r: any) => r.user_id));
+              const byId = new Map<string, any>(built.map((b: any) => [b.id, b]));
+              const missing = [...new Set(rr.map((r: any) => r.original_post_id).filter((id: string) => !byId.has(id)))] as string[];
+              if (missing.length) {
+                const orig = await rest(`posts?id=in.(${inList(missing)})&select=${POST_SELECT}&${await feedFilter()}`);
+                for (const b of await buildPosts(visiblePolls(orig || []))) byId.set(b.id, b);
+              }
+              const extra: any[] = [];
+              const used = new Set<string>();
+              for (const r of rr) {
+                const o: any = byId.get(r.original_post_id);
+                const who = reposters.get(r.user_id);
+                if (!o || !who || used.has(o.id) || o.authorId === r.user_id) continue;
+                used.add(o.id);
+                const info = { repostedBy: { id: who.id, username: who.username, displayName: who.display_name || "", avatarUrl: who.avatar_path ? pub(who.avatar_path) : "", verified: !!who.is_verified }, repostedAt: r.created_at };
+                const inFeed = built.find((b: any) => b.id === o.id);
+                if (inFeed) Object.assign(inFeed, info);
+                else extra.push({ ...o, ...info, originalCreatedAt: o.createdAt, createdAt: r.created_at });
+              }
+              if (extra.length) {
+                const merged = [...built, ...extra].sort((x: any, y: any) => Date.parse(y.createdAt) - Date.parse(x.createdAt));
+                return reply({ posts: merged });
+              }
+            }
+          }
+        } catch (_e) { /* se o repost falhar, o feed normal continua */ }
+      }
+      return reply({ posts: built });
     }
     const onePost = route("GET", /^\/api\/posts\/([0-9a-f-]{36})$/i);
     if (onePost) {

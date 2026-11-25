@@ -336,7 +336,19 @@ private val Muted: Color get() = if (QiblyTheme.dark) Color(0xFFF2F4F8) else Col
 @androidx.compose.runtime.Composable
 private fun RepostVerifiedIcon(verified: Boolean, tint: Color = Color.White) {
     // Repostar: duas setas em círculo (redondinho), grade 24x24, contorno arredondado.
-    androidx.compose.foundation.Canvas(modifier = Modifier.size(LocalQinblyActionIconSize.current)) {
+    // Ao tocar, as setas dão uma volta inteira e o "verificado" aparece (ou some) dentro delas, na mesma cor.
+    val spin = remember { androidx.compose.animation.core.Animatable(360f) }
+    var firstFrame by remember { mutableStateOf(true) }
+    LaunchedEffect(verified) {
+        if (firstFrame) { firstFrame = false; return@LaunchedEffect }
+        spin.snapTo(0f)
+        spin.animateTo(360f, androidx.compose.animation.core.tween(700, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+    }
+    val p = spin.value / 360f
+    val checkAlpha = if (p >= 1f) (if (verified) 1f else 0f)
+        else if (verified) ((p - 0.39f) / 0.3f).coerceIn(0f, 1f)
+        else (1f - p / 0.35f).coerceIn(0f, 1f)
+    androidx.compose.foundation.Canvas(modifier = Modifier.size(LocalQinblyActionIconSize.current).graphicsLayer { rotationZ = spin.value }) {
         val stroke = androidx.compose.ui.graphics.drawscope.Stroke(
             width = 2.1f,
             cap = androidx.compose.ui.graphics.StrokeCap.Round,
@@ -347,11 +359,11 @@ private fun RepostVerifiedIcon(verified: Boolean, tint: Color = Color.White) {
             .toPath()
         withTransform({ scale(size.width / 24f, size.width / 24f, pivot = androidx.compose.ui.geometry.Offset.Zero) }) {
             drawPath(arrows, tint, style = stroke)
-            if (verified) {
+            if (checkAlpha > 0f) {
                 val check = androidx.compose.ui.graphics.Path().apply {
                     moveTo(9f, 12.4f); lineTo(11.2f, 14.6f); lineTo(15f, 10.4f)
                 }
-                drawPath(check, Color(0xFF00E676), style = stroke)
+                drawPath(check, tint.copy(alpha = tint.alpha * checkAlpha), style = stroke)
             }
         }
     }
@@ -1016,8 +1028,8 @@ private fun QinblyFeedCaption(caption: String, modifier: Modifier = Modifier) {
     val legend = remember(caption) { qinblySplitCaption(caption).first }
     if (legend.isBlank()) return
     Column(modifier) {
-        // Publicação com foto/vídeo: legenda mostra até 4 linhas; o resto fica atrás do "mais".
-        QinblyCollapsibleText(legend, RemoteAppearance.feedTextColor, fontSize = 16.sp, collapsedLines = 4)
+        // Publicação com foto/vídeo: legenda mostra 1 linha; o resto fica atrás do "mais".
+        QinblyCollapsibleText(legend, RemoteAppearance.feedTextColor, fontSize = 16.sp, collapsedLines = 1)
     }
 }
 
@@ -1846,7 +1858,7 @@ internal object QinblyVideoChrome {
     var active by androidx.compose.runtime.mutableStateOf(false)
 }
 
-/** Voltar na aba Vídeos: 1 toque volta ao Explorar; 2 toques rápidos fecham o app. */
+/** Voltar em qualquer aba: 1 toque volta ao Explorar; 2 toques rápidos (até 1,2 s) fecham o app. */
 internal object QinblyQuickExit {
     var at = 0L
     fun recent(): Boolean = at > 0L && android.os.SystemClock.elapsedRealtime() - at <= 1200L
@@ -1908,7 +1920,7 @@ private object RemoteAppearance {
     var headerUnderlineColor by androidx.compose.runtime.mutableStateOf(QinblyBrand.Accent)
     var headerTextSize by androidx.compose.runtime.mutableIntStateOf(17)
     var headerVisible by androidx.compose.runtime.mutableStateOf(true)
-    private var actionIconColorBase by androidx.compose.runtime.mutableStateOf(Color.Black)
+    private var actionIconColorBase by androidx.compose.runtime.mutableStateOf(Color(0xFF444444))
     var actionIconColor: Color
         get() = if (QiblyTheme.dark) QiblyTheme.text else actionIconColorBase
         set(value) { actionIconColorBase = value }
@@ -2270,6 +2282,8 @@ private fun QinblyApp() {
             }
             tab == 1 && messageRecipient.isNotBlank() -> messageRecipient = ""
             tab != 0 -> {
+                // Abas de baixo: 1 toque leva ao início (Explorar); 2 toques rápidos fecham o app.
+                QinblyQuickExit.at = android.os.SystemClock.elapsedRealtime()
                 tab = 0
                 messageRecipient = ""
             }
@@ -3840,7 +3854,7 @@ private fun qinblyIconTint(tone: QinblyTone): Color = when (tone) {
 }
 
 private fun qinblyCountColor(tone: QinblyTone): Color = when (tone) {
-    QinblyTone.Feed -> RemoteAppearance.feedSecondaryTextColor
+    QinblyTone.Feed -> if (QiblyTheme.dark) RemoteAppearance.feedSecondaryTextColor else Color(0xFF555555)
     QinblyTone.Screen -> RemoteAppearance.screenSecondaryTextColor
     QinblyTone.Overlay -> Color.White
 }
@@ -5136,11 +5150,11 @@ private fun QinblyPostCard(
                         if (post.mediaUrl.isBlank() || (post.mediaType != "image" && post.mediaType != "video")) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().background(Color.Transparent).padding(horizontal = 14.dp, vertical = 7.dp)) {
                     val avatarUrl = post.avatarUrl
-                    QiblyAccountAvatar(post.username, avatarUrl, 52.dp, storyRing = true) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
+                    QinblyPostAvatar(post, onOpenProfile)
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }) {
                         Row(verticalAlignment = Alignment.CenterVertically) { Text(post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name }, color = RemoteAppearance.feedTextColor, fontSize = 16.sp, fontWeight = if (nameFontStyle == "Elegante") FontWeight.Medium else FontWeight.SemiBold, fontFamily = nameFontFamily(nameFontStyle)); if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(16.dp) } }
-                        LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor, suffix = if (post.authorCity.isNotBlank()) " · " + qinblyFullPlace(post.authorCity) else "")
+                        QinblyPostTimeLine(post, RemoteAppearance.feedSecondaryTextColor, onOpenProfile)
                     }
                     QinblyCardFollow(post, prefs, onNotice)
                     QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = null, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true })
@@ -5153,7 +5167,7 @@ private fun QinblyPostCard(
                     verticalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                        QiblyAccountAvatar(post.username, post.avatarUrl, 52.dp, storyRing = true) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
+                        QinblyPostAvatar(post, onOpenProfile)
                         Column(Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -5163,7 +5177,7 @@ private fun QinblyPostCard(
                             )
                             if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) }
                             }
-                            LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor, suffix = if (post.authorCity.isNotBlank()) " · " + qinblyFullPlace(post.authorCity) else "")
+                            if (post.musicUrl.isNotBlank()) QinblyPostMusicChip(post, Modifier, RemoteAppearance.feedSecondaryTextColor)
                         }
                     QinblyCardFollow(post, prefs, onNotice)
                         QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = RemoteAppearance.feedTextColor, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true })
@@ -5172,13 +5186,10 @@ private fun QinblyPostCard(
                 }
             }
             if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video") && post.caption.isNotBlank()) {
-                QinblyFeedCaption(post.caption, Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp))
+                QinblyFeedCaption(post.caption, Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 2.dp, bottom = 8.dp))
             }
             // Pessoas marcadas: logo embaixo do texto da legenda e antes da mídia.
             if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
-            if (post.musicUrl.isNotBlank() && post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) {
-                QinblyPostMusicChip(post, Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp), RemoteAppearance.feedTextColor)
-            }
             if (post.mediaUrl.isNotBlank() && post.mediaType == "image") {
                 val demoGallery = remember(post.id) {
                     when (post.id) {
@@ -5416,6 +5427,12 @@ private fun QinblyPostCard(
                 }
             }
             if (!(post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) && !(post.mediaType == "text" && post.caption.isNotBlank() && qinblyTextBgBrush(post.textBg) != null)) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
+            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) {
+                // Hora logo em cima do coração (com a cidade, se houver).
+                Box(Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp)) {
+                    QinblyPostTimeLine(post, RemoteAppearance.feedSecondaryTextColor, onOpenProfile)
+                }
+            }
             if (post.mediaType != "poll") { // Enquetes exibem apenas votação e total de votos
                 QinblyPostActionBar(
                     post = post,
@@ -5514,6 +5531,37 @@ private fun QinblyPhotoViewer(url: String, onNotice: (String) -> Unit, onDismiss
 }
 
 /** Menu "⋮" único das publicações (dono: editar, copiar link, excluir; outras pessoas: denunciar, bloquear, ocultar, copiar link). */
+/** Foto de perfil do card; se o post veio de um repost, a foto pequena de quem repostou fica por cima, no canto. */
+@Composable
+private fun QinblyPostAvatar(post: QinblyApi.PostSummary, onOpenProfile: (String) -> Unit) {
+    Box {
+        QiblyAccountAvatar(post.username, post.avatarUrl, 52.dp, storyRing = true) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
+        if (post.repostedByUsername.isNotBlank()) {
+            Box(Modifier.align(Alignment.BottomEnd).offset(x = 6.dp, y = 4.dp).size(26.dp).clip(CircleShape).background(QiblyTheme.background).padding(2.dp)) {
+                QiblyAccountAvatar(post.repostedByUsername, post.repostedByAvatar, 22.dp) { onOpenProfile(post.repostedByUsername) }
+            }
+        }
+    }
+}
+
+/** Linha em cima do coração: "Repostado por Fulano · Há 1 h" (ou só a hora, quando não é repost). */
+@Composable
+private fun QinblyPostTimeLine(post: QinblyApi.PostSummary, color: Color, onOpenProfile: (String) -> Unit) {
+    if (post.repostedByUsername.isBlank()) {
+        LivePostTime(post.createdAt, color, suffix = if (post.authorCity.isNotBlank()) " · " + qinblyFullPlace(post.authorCity) else "")
+    } else {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Repostado por " + post.repostedByName.ifBlank { post.repostedByUsername },
+                color = color, fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false).clickable { onOpenProfile(post.repostedByUsername) }
+            )
+            Text(" · ", color = color, fontSize = 12.sp)
+            LivePostTime(post.repostedAt.ifBlank { post.createdAt }, color)
+        }
+    }
+}
+
 @Composable
 private fun QinblyPostMenu(
     post: QinblyApi.PostSummary,
@@ -5593,6 +5641,17 @@ private fun QinblyPostMenu(
                 clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Publicação ${QinblyBrand.Name}", qinblyPostLink(post.id)))
                 onNotice("Link copiado.")
             })
+            if (QinblyEngagement.isReposted(post)) {
+                DropdownMenuItem(
+                    text = { Text("Desfazer repost", color = Color(0xFFD32F2F)) },
+                    leadingIcon = { Icon(Icons.Default.Repeat, contentDescription = null, tint = Color(0xFFD32F2F)) },
+                    onClick = {
+                        expanded = false
+                        QinblyEngagement.toggleReposted(prefs, post, onNotice)
+                        if (post.repostedByUsername.isNotBlank()) onPostsTransform { list -> list.map { if (it.id == post.id) it.copy(repostedByUsername = "", repostedByName = "", repostedByAvatar = "", repostedAt = "") else it } }
+                    }
+                )
+            }
             if (mine) {
                 DropdownMenuItem(
                     text = { Text("Excluir publicação", color = Color(0xFFD32F2F)) },
@@ -5623,6 +5682,41 @@ private fun QinblyPostMenu(
                     }.start()
                 })
                 DropdownMenuItem(text = { Text("Bloquear @" + post.username) }, leadingIcon = { QinblyMenuIcon("Bloquear @" + post.username) }, onClick = { expanded = false; onBlock() })
+                if (post.repostedByUsername.isNotBlank()) {
+                    // Sobre quem repostou: o autor do post continua aparecendo.
+                    DropdownMenuItem(text = { Text("Silenciar @" + post.repostedByUsername) }, leadingIcon = { Icon(Icons.Outlined.NotificationsOff, contentDescription = null, tint = QiblyTheme.text) }, onClick = {
+                        expanded = false
+                        val token = prefs.getString("token", null)
+                        if (token.isNullOrBlank()) onNotice("Entre na sua conta.")
+                        else Thread {
+                            try {
+                                QinblyApi.muteByUsername(token, post.repostedByUsername)
+                                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                    onPostsTransform { list -> list.filterNot { it.repostedByUsername.equals(post.repostedByUsername, ignoreCase = true) } }
+                                    onNotice("Você não verá mais as publicações de @" + post.repostedByUsername + ". Reative em Configurações > Contas silenciadas.")
+                                }
+                            } catch (e: Exception) {
+                                android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível silenciar agora.") }
+                            }
+                        }.start()
+                    })
+                    DropdownMenuItem(text = { Text("Bloquear @" + post.repostedByUsername) }, leadingIcon = { QinblyMenuIcon("Bloquear @" + post.repostedByUsername) }, onClick = {
+                        expanded = false
+                        val token = prefs.getString("token", null)
+                        if (token.isNullOrBlank()) onNotice("Entre na sua conta.")
+                        else Thread {
+                            try {
+                                QinblyApi.blockByUsername(token, post.repostedByUsername)
+                                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                    onPostsTransform { list -> list.filterNot { it.repostedByUsername.equals(post.repostedByUsername, ignoreCase = true) } }
+                                    onNotice("Usuário bloqueado.")
+                                }
+                            } catch (e: Exception) {
+                                android.os.Handler(android.os.Looper.getMainLooper()).post { onNotice(e.message ?: "Não foi possível bloquear agora.") }
+                            }
+                        }.start()
+                    })
+                }
             }
         }
     }
@@ -7525,7 +7619,8 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         } else fullscreenVideoId = target.id
     }
     LaunchedEffect(selectedFeedTab) { if (selectedFeedTab != "Vídeos") videoBackTab = null }
-    BackHandler(enabled = onVideoTab && (videoBackTab != null || QinblyFeedJump.returnEntry == null)) {
+    // Qualquer aba de cima que não seja a Explorar: 1 toque no voltar leva ao Explorar; 2 toques rápidos fecham o app.
+    BackHandler(enabled = selectedFeedTab != "Descobrir" && (videoBackTab != null || QinblyFeedJump.returnEntry == null)) {
         QinblyQuickExit.at = android.os.SystemClock.elapsedRealtime()
         selectedFeedTab = videoBackTab ?: "Descobrir"
         videoBackTab = null

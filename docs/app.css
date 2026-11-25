@@ -671,3 +671,6 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 .ptabs svg{width:27px;height:27px}
 .ptabs i{margin-top:8px}
 @media(min-width:700px){#pf>.pcats,.pbio2,.pbt,.pfb,.pst.big{max-width:470px;margin-left:auto;margin-right:auto}.pbio2,.pbt,.pfb,.pst.big{width:100%}}
+
+.rpl{padding:0 14px 6px;font-size:12px;color:var(--muted)}
+.rpl a{color:inherit;font-weight:500}

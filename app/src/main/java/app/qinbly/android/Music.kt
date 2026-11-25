@@ -151,12 +151,13 @@ internal fun QinblyPostMusicChip(post: QinblyApi.PostSummary, modifier: Modifier
     val on = QinblyFeedMusic.playingId == post.id
     DisposableEffect(post.id) { onDispose { if (QinblyFeedMusic.playingId == post.id) QinblyFeedMusic.playingId = "" } }
     Row(
-        modifier.clip(CircleShape).background(Color(0x33808080)).clickable { QinblyFeedMusic.playingId = if (on) "" else post.id }
-            .padding(start = 10.dp, end = 14.dp, top = 6.dp, bottom = 6.dp),
+        modifier.clip(RoundedCornerShape(8.dp)).clickable { QinblyFeedMusic.playingId = if (on) "" else post.id }
+            .padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        QinblyIconOf(if (on) QinblyIcon.Pause else QinblyIcon.PlayArrow, color, 18.dp)
-        Text("  " + post.musicTitle + " · " + post.musicArtist, color = color, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 240.dp))
+        // Sem fundo nem contorno: só a notinha (vira pausa enquanto toca) e o texto.
+        QinblyIconOf(if (on) QinblyIcon.Pause else QinblyIcon.MusicNote, color, 15.dp)
+        Text(" " + post.musicTitle + " · " + post.musicArtist, color = color, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 260.dp))
     }
     if (on) QinblyMusicPlayer(post.musicUrl, muted = false)
 }

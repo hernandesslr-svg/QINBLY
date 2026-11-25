@@ -233,7 +233,9 @@ object QinblyApi {
         /** Só preenchido na sua própria publicação agendada ainda não publicada (data ISO). */
         val scheduledAt: String = "",
         /** Cidade de quem postou (só preenchida no Perto de mim). */
-        val authorCity: String = ""
+        val authorCity: String = "",
+        /** Preenchido quando o post aparece no feed porque alguém que você segue repostou. */
+        val repostedByUsername: String = "", val repostedByName: String = "", val repostedByAvatar: String = "", val repostedAt: String = ""
     )
 
     /** Converte uma publicação do JSON da API. `fallback` (dono do perfil) preenche o autor quando a lista não o traz. */
@@ -273,7 +275,11 @@ object QinblyApi {
             (0 until counts.length()).mapNotNull { counts.optJSONObject(it) }.firstOrNull { it.optInt("optionIndex") == i }?.optInt("votes") ?: 0
         } } ?: emptyList(),
         myPollVote = post.optInt("myPollVote", -1),
-        taggedUsers = post.optJSONArray("taggedUsers")?.let { a -> (0 until a.length()).map { a.optString(it) }.filter { it.isNotBlank() } } ?: emptyList()
+        taggedUsers = post.optJSONArray("taggedUsers")?.let { a -> (0 until a.length()).map { a.optString(it) }.filter { it.isNotBlank() } } ?: emptyList(),
+        repostedByUsername = post.optJSONObject("repostedBy")?.optString("username").orEmpty(),
+        repostedByName = post.optJSONObject("repostedBy")?.optString("displayName").orEmpty(),
+        repostedByAvatar = post.optJSONObject("repostedBy")?.optString("avatarUrl").orEmpty(),
+        repostedAt = post.optString("repostedAt")
             )
     }
 
