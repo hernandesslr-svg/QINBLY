@@ -57,6 +57,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.material.icons.outlined.OndemandVideo
+import androidx.compose.material.icons.filled.OndemandVideo
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.PlayCircle
@@ -10448,7 +10450,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     // Aba selecionada: ícone preenchido e sublinhado fino na cor do texto.
                     val tabOn = profileTab == item
                     Icon(when(item) {
-                        "Vídeos" -> if (tabOn) androidx.compose.material.icons.filled.OndemandVideo else androidx.compose.material.icons.outlined.OndemandVideo
+                        "Vídeos" -> if (tabOn) Icons.Filled.OndemandVideo else Icons.Outlined.OndemandVideo
                         "Fotos" -> if (tabOn) Icons.Default.Image else Icons.Outlined.Image
                         "Salvos" -> if (tabOn) Icons.Default.Bookmark else Icons.Default.BookmarkBorder
                         else -> if (tabOn) Icons.Default.GridView else Icons.Outlined.GridView
@@ -11911,7 +11913,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                 Column(Modifier.weight(1f).clickable { selectedTab = section }.padding(top = 7.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     val sectionOn = selectedTab == section
                     Icon(imageVector = when (section) {
-                        "Vídeos" -> if (sectionOn) androidx.compose.material.icons.filled.OndemandVideo else androidx.compose.material.icons.outlined.OndemandVideo
+                        "Vídeos" -> if (sectionOn) Icons.Filled.OndemandVideo else Icons.Outlined.OndemandVideo
                         "Fotos" -> if (sectionOn) Icons.Default.Image else Icons.Outlined.Image
                         "Republicações" -> Icons.Default.Repeat
                         "Curtidas" -> Icons.Default.FavoriteBorder
