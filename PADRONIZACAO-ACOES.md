@@ -1246,3 +1246,10 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Tela de abertura (splash): branca por padrão; no Android 13+ ela passa a ter a cor do tema escolhido no app (`setSplashScreenTheme` com `Theme.Qinbly.SplashLight/SplashDark`, atualizado ao abrir o app e ao trocar o tema).
 - Quem nunca escolheu tema nas configurações passa a abrir no tema do aparelho (`qinblySavedDark`); quem escolheu usa o escolhido.
 - Causa da "tela preta que depois clareia": as cores de reserva do app (`RemoteAppearance` e `readUiColor`) eram escuras e só viravam claras quando a configuração remota (`remote-config/android-ui.json`) chegava. Agora as cores de reserva são iguais às da configuração (claras), então o primeiro quadro já sai certo.
+
+## Tema claro revisado
+- Fundo único branco em todas as abas (`QiblyTheme.background`); cartões cinza bem claro (`card` #F4F5F7); diálogos e folhas brancos (`QiblyTheme.dialog`, usado em todo `containerColor`).
+- Texto de apoio/legenda: `QiblyTheme.hint` (#6B6F7A no claro). Não usar cinzas fixos tipo #9A9AA8/#B4B4BC em telas que seguem o tema.
+- Balão recebido #E9ECF1; divisórias `QiblyTheme.border` (#E3E4E8). Nota das bolinhas de story acompanha o tema.
+- Azul único #2F68E0 (sublinhado do cabeçalho, indicador da barra, comentários, barra do vídeo; `remote-config` revisão 30).
+- Web: `[data-theme=light]` espelha as mesmas cores.

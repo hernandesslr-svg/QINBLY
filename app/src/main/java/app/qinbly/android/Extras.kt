@@ -94,7 +94,7 @@ import coil.compose.AsyncImage
 import org.json.JSONArray
 import org.json.JSONObject
 
-private val Panel: Color get() = if (QiblyTheme.dark) Color(0xFF1F1F21) else QiblyTheme.background
+private val Panel: Color get() = if (QiblyTheme.dark) Color(0xFF1F1F21) else Color.White
 private val FieldBg: Color get() = if (QiblyTheme.dark) Color(0xFF262628) else Color(0xFFE4E6EB)
 /** Texto principal e dica das telas de painel: branco/cinza no escuro, preto/cinza no claro. */
 private val Ink: Color get() = if (QiblyTheme.dark) Color.White else Color(0xFF111111)
@@ -581,7 +581,7 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                 Text(n.optString("body"), color = Ink, fontSize = 16.sp)
                 val all = comments
                 val tops = all?.filter { it.optString("parent_id").let { x -> x.isBlank() || x == "null" } }.orEmpty()
-                Text(if (all == null) "Carregando comentários…" else if (all.isEmpty()) "Nenhum comentário ainda. Seja o primeiro." else "${all.size} comentário" + (if (all.size > 1) "s" else ""), color = Color(0xFFB4B4BC), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Text(if (all == null) "Carregando comentários…" else if (all.isEmpty()) "Nenhum comentário ainda. Seja o primeiro." else "${all.size} comentário" + (if (all.size > 1) "s" else ""), color = QiblyTheme.hint, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 @Composable fun Bubble(c: JSONObject, small: Boolean) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.size(if (small) 24.dp else 30.dp).clip(CircleShape).background(Color(0xFF3A3A3E)), contentAlignment = Alignment.Center) {
@@ -630,7 +630,7 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
             }
             if (editing != null) Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("Editando comentário", color = Color(0xFF7FA6F2), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                QinblyCloseIcon(Color(0xFFB4B4BC), 18.dp, Modifier.clickable { editing = null; input = androidx.compose.ui.text.input.TextFieldValue("") })
+                QinblyCloseIcon(QiblyTheme.hint, 18.dp, Modifier.clickable { editing = null; input = androidx.compose.ui.text.input.TextFieldValue("") })
             }
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(FieldBg).padding(horizontal = 16.dp, vertical = 11.dp)) {

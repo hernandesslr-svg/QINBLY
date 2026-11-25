@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "revision": 29,
+  "revision": 30,
   "navigation": {
-    "indicatorColor": "#FF2196F3",
+    "indicatorColor": "#FF2F68E0",
     "backgroundColor": "#FFFFFFFF",
     "selectedIconColor": "#FF000000",
     "unselectedIconColor": "#FF000000"
   },
   "appearance": {
     "headerTextColor": "#FF000000",
-    "headerUnderlineColor": "#FF1269EA",
+    "headerUnderlineColor": "#FF2F68E0",
     "headerTextSize": 17,
     "headerVisible": true,
     "actionIconColor": "#FF000000",
@@ -34,7 +34,7 @@
     "badgeColor": "#FFFF3045",
     "likedColor": "#FFFF3045",
     "profileAccentColor": "#FF000000",
-    "commentAccentColor": "#FF2196F3",
+    "commentAccentColor": "#FF2F68E0",
     "messageAccentColor": "#FF000000",
     "playerProgressColor": "#FF000000",
     "showFeedHeader": true,

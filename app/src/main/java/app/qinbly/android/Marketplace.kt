@@ -453,7 +453,7 @@ internal fun QinblyNearbyHub(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     val outl = androidx.compose.material.icons.Icons.Outlined
-                    val gray = Color(0xFF8A8A93)
+                    val gray = QiblyTheme.hint
                     Row(Modifier.padding(start = 4.dp, top = 6.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(36.dp).clip(CircleShape).clickable { showDrawer = false }, contentAlignment = Alignment.Center) { QinblyCloseIcon(QiblyTheme.text, 20.dp) }
                         Text("Mercado", color = QiblyTheme.text, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, modifier = Modifier.padding(start = 10.dp))

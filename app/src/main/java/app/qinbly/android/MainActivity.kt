@@ -1796,10 +1796,10 @@ private fun AccountSwitcherDialog(
        Spacer(Modifier.width(12.dp))
        Column(Modifier.weight(1f)) {
         Text(account.displayName.ifBlank { account.username }, color = QiblyTheme.text, fontWeight = FontWeight.Medium, fontSize = 14.sp, maxLines = 1)
-        Text("@" + account.username.removePrefix("@"), color = Color(0xFF9A9AA8), fontSize = 12.sp, maxLines = 1)
+        Text("@" + account.username.removePrefix("@"), color = QiblyTheme.hint, fontSize = 12.sp, maxLines = 1)
        }
        if (active) Icon(Icons.Default.CheckCircle, "Conta atual", tint = blue)
-       else Icon(Icons.Default.RadioButtonUnchecked, "Trocar para esta conta", tint = Color(0xFF9A9AA8))
+       else Icon(Icons.Default.RadioButtonUnchecked, "Trocar para esta conta", tint = QiblyTheme.hint)
       }
       Box(Modifier.fillMaxWidth().height(0.5.dp).background(QiblyTheme.border))
      }
@@ -1810,7 +1810,7 @@ private fun AccountSwitcherDialog(
       Spacer(Modifier.width(12.dp))
       Text("Adicionar outra conta", color = blue, fontWeight = FontWeight.Medium, fontSize = 14.sp)
      }
-     if (accounts.size > 1) Text("Segure uma conta para removê-la deste aparelho.", color = Color(0xFF9A9AA8), fontSize = 11.sp, modifier = Modifier.padding(top = 12.dp))
+     if (accounts.size > 1) Text("Segure uma conta para removê-la deste aparelho.", color = QiblyTheme.hint, fontSize = 11.sp, modifier = Modifier.padding(top = 12.dp))
     }
    }
   }
@@ -1830,7 +1830,7 @@ private fun AccountSwitcherDialog(
     }) { Text("Remover", color = QiblyTheme.secondary) }
    },
    dismissButton = { TextButton(onClick = { confirmRemove = "" }) { Text("Cancelar") } },
-   containerColor = QiblyTheme.card,
+   containerColor = QiblyTheme.dialog,
    titleContentColor = QiblyTheme.text,
    textContentColor = QiblyTheme.secondary
   )
@@ -1845,12 +1845,15 @@ internal object QiblyTheme {
     var largeText by androidx.compose.runtime.mutableStateOf(false)
     var reduceMotion by androidx.compose.runtime.mutableStateOf(false)
     // Tema escuro "azul-noite": fundo azul bem escuro, cartões um tom mais claros e texto sempre legível.
-    val background: Color get() = if (dark) Color(0xFF171719) else Color(0xFFF6F6F7)
-    val card: Color get() = if (dark) Color(0xFF171719) else Color(0xFFF6F6F7)
+    // Claro: fundo branco único em todas as abas; cartões cinza bem claro; diálogos/folhas brancos; texto de apoio legível.
+    val background: Color get() = if (dark) Color(0xFF171719) else Color.White
+    val card: Color get() = if (dark) Color(0xFF171719) else Color(0xFFF4F5F7)
+    val dialog: Color get() = if (dark) Color(0xFF171719) else Color.White
+    val hint: Color get() = if (dark) Color(0xFFB4B4BC) else Color(0xFF6B6F7A)
     val soft: Color get() = if (dark) Color(0xFF262628) else Color(0xFFE4E6EB)
     val text: Color get() = if (dark) Color(0xFFF2F4F8) else Color.Black
     val secondary: Color get() = if (dark) Color(0xFFF2F4F8) else Color(0xFF555555)
-    val border: Color get() = if (dark) Color(0xFF2E2E30) else Color(0xFFDADADD)
+    val border: Color get() = if (dark) Color(0xFF2E2E30) else Color(0xFFE3E4E8)
 }
 
 private object RemoteAppearance {
@@ -1890,7 +1893,7 @@ private object RemoteAppearance {
     var headerTextColor: Color
         get() = if (QiblyTheme.dark) Color.White else headerTextColorBase
         set(value) { headerTextColorBase = value }
-    var headerUnderlineColor by androidx.compose.runtime.mutableStateOf(Color(0xFF1269EA))
+    var headerUnderlineColor by androidx.compose.runtime.mutableStateOf(QinblyBrand.Accent)
     var headerTextSize by androidx.compose.runtime.mutableIntStateOf(17)
     var headerVisible by androidx.compose.runtime.mutableStateOf(true)
     private var actionIconColorBase by androidx.compose.runtime.mutableStateOf(Color.Black)
@@ -1913,7 +1916,7 @@ private object RemoteAppearance {
     var badgeColor by androidx.compose.runtime.mutableStateOf(Color(0xFFFF3045))
     var likedColor by androidx.compose.runtime.mutableStateOf(Color(0xFFFF3045))
     var profileAccentColor by androidx.compose.runtime.mutableStateOf(Color.Black)
-    var commentAccentColor by androidx.compose.runtime.mutableStateOf(Color(0xFF2196F3))
+    var commentAccentColor by androidx.compose.runtime.mutableStateOf(Color(0xFF2F68E0))
     private var commentBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color.White)
     var commentBackgroundColor: Color
         get() = if (QiblyTheme.dark) QiblyTheme.card else commentBackgroundColorBase
@@ -1967,7 +1970,7 @@ private fun QinblyApp() {
         val saved = uiPreferences.getString(key, null) ?: return Color(fallback)
         return try { Color(android.graphics.Color.parseColor(saved)) } catch (_: Exception) { Color(fallback) }
     }
-    var navigationIndicatorColor by remember { mutableStateOf(readUiColor("indicatorColor", 0xFF2196F3L)) }
+    var navigationIndicatorColor by remember { mutableStateOf(readUiColor("indicatorColor", 0xFF2F68E0L)) }
     var navigationBackgroundColor by remember { mutableStateOf(readUiColor("backgroundColor", 0xFFFFFFFFL)) }
     var navigationSelectedColor by remember { mutableStateOf(readUiColor("selectedIconColor", 0xFF000000L)) }
     var navigationUnselectedColor by remember { mutableStateOf(readUiColor("unselectedIconColor", 0xFF000000L)) }
@@ -2715,7 +2718,7 @@ private fun QinblyApp() {
                                 )
                             }
                         }
-                        Divider(color = Color.White.copy(alpha = 0.08f))
+                        Divider(color = QiblyTheme.border)
                         if (profileStat == "Seguidores" || profileStat == "Seguindo") {
                             when {
                                 loggedInUser.isBlank() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -3573,7 +3576,7 @@ private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, sh
                 contentAlignment = Alignment.CenterStart
             ) {
                 Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(3.dp)).background(Color.White.copy(alpha = 0.9f)))
-                Box(Modifier.fillMaxWidth(position.coerceIn(0f, 1f)).height(4.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFF168BFF)))
+                Box(Modifier.fillMaxWidth(position.coerceIn(0f, 1f)).height(4.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFF2F68E0)))
                 Box(Modifier.offset(x = maxWidth * position.coerceIn(0f, 1f) - 7.dp).size(14.dp).clip(CircleShape).background(Color.White))
             }
             val seconds = (position * duration).toLong().coerceAtLeast(0L) / 1000L
@@ -4870,7 +4873,7 @@ private fun QinblyCommentsDialog(
                         editingComment?.let { target ->
                             AlertDialog(
         shape = RoundedCornerShape(28.dp),
-        containerColor = QiblyTheme.card,
+        containerColor = QiblyTheme.dialog,
                                 onDismissRequest = { editingComment = null },
                                 title = { Text("Editar comentário") },
                                 text = { QinblyClearFocusWhenKeyboardCloses(); OutlinedTextField(value = editDraft, onValueChange = { editDraft = it.take(2000) }, minLines = 2, maxLines = 6, visualTransformation = QinblyTagTransformation, modifier = Modifier.fillMaxWidth()) },
@@ -5078,7 +5081,7 @@ private fun QinblyPostCard(
                 }) { Text("Bloquear", color = Color.Red) }
             },
             dismissButton = { TextButton(onClick = { blockingAuthor = false }) { Text("Cancelar", color = Pink) } },
-            containerColor = QiblyTheme.card, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
+            containerColor = QiblyTheme.dialog, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
         )
     }
     Surface(
@@ -5490,7 +5493,7 @@ private fun QinblyPostMenu(
     if (confirmDelete) {
         AlertDialog(
         shape = RoundedCornerShape(28.dp),
-        containerColor = QiblyTheme.card,
+        containerColor = QiblyTheme.dialog,
             onDismissRequest = { confirmDelete = false },
             title = { Text("Excluir publicação?") },
             text = { Text("Essa ação não pode ser desfeita.") },
@@ -5622,7 +5625,7 @@ private fun QinblyPostStatsDialog(post: QinblyApi.PostSummary, prefs: android.co
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(28.dp),
-        containerColor = QiblyTheme.card, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text,
+        containerColor = QiblyTheme.dialog, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text,
         title = { Text("Estatísticas da publicação") },
         text = {
             val st = stats
@@ -5698,7 +5701,7 @@ private fun QinblyEditCaptionDialog(
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             shape = RoundedCornerShape(28.dp),
-            containerColor = QiblyTheme.card,
+            containerColor = QiblyTheme.dialog,
             title = { Text("Excluir publicação?") },
             text = { Text("Essa ação não pode ser desfeita.") },
             confirmButton = {
@@ -6037,7 +6040,7 @@ private fun QiblyShareCommunityDialog(
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
         Column(
-            Modifier.fillMaxSize().background(QiblyTheme.card).statusBarsPadding()
+            Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding()
                 .padding(horizontal = 18.dp).padding(top = 4.dp, bottom = 14.dp + qinblyNavBarPadding())
         ) {
             Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -6175,7 +6178,7 @@ private fun QinblyHomeHeader(
                     Text("PERGUNTA DO DIA", color = QinblyBrand.Lavender, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.8.sp)
                     Text(question, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, maxLines = 2,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
-                    Text("Responder com uma publicação  →", color = Color(0xFFB4B4BC), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
+                    Text("Responder com uma publicação  →", color = QiblyTheme.hint, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
                 }
             } else {
                 Row(
@@ -8765,7 +8768,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
             }
             if (confirmDelete && c != null) {
                 AlertDialog(
-                    shape = RoundedCornerShape(28.dp), containerColor = QiblyTheme.card,
+                    shape = RoundedCornerShape(28.dp), containerColor = QiblyTheme.dialog,
                     onDismissRequest = { confirmDelete = false },
                     title = { Text("Excluir comunidade?") },
                     text = { Text("Todas as publicações e membros serão removidos. Não dá para desfazer.") },
@@ -8786,7 +8789,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
             }
             if (confirmLeave && c != null) {
                 AlertDialog(
-                    shape = RoundedCornerShape(28.dp), containerColor = QiblyTheme.card,
+                    shape = RoundedCornerShape(28.dp), containerColor = QiblyTheme.dialog,
                     onDismissRequest = { confirmLeave = false },
                     title = { Text("Sair da comunidade?") },
                     text = { Text("Você deixa de ver e enviar mensagens em ${c.name}. Dá para entrar de novo depois.") },
@@ -8796,7 +8799,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
             }
             if (confirmClear) {
                 AlertDialog(
-                    shape = RoundedCornerShape(28.dp), containerColor = QiblyTheme.card,
+                    shape = RoundedCornerShape(28.dp), containerColor = QiblyTheme.dialog,
                     onDismissRequest = { confirmClear = false },
                     title = { Text("Limpar conversa?") },
                     text = { Text("Isso apaga as mensagens só da sua tela. Para os outros membros, nada muda.") },
@@ -8847,7 +8850,7 @@ internal fun ReportReasonDialog(title: String, onDismiss: () -> Unit, onSelect: 
         },
         confirmButton = {},
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar", color = Pink) } },
-        containerColor = QiblyTheme.card, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
+        containerColor = QiblyTheme.dialog, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
     )
 }
 
@@ -8898,7 +8901,7 @@ private fun BlockedAccountsDialog(prefs: android.content.SharedPreferences, onDi
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Fechar", color = Pink) } },
-        containerColor = QiblyTheme.card, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
+        containerColor = QiblyTheme.dialog, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
     )
 }
 
@@ -9484,7 +9487,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         val sharedPostForPad = remember(message.body) { Regex("post/([0-9a-fA-F-]{36})").find(message.body)?.groupValues?.get(1) }
                         // Publicação compartilhada (só mídia/texto): sem balão em volta; hora e check ficam do lado de fora.
                         val sharedBare = sharedPostForPad != null && message.poll == null && message.fileUrl.isBlank() && message.stickerUrl.isBlank() && message.imageUrl.isBlank() && message.audioUrl.isBlank() && QinblyStickers.idOf(message.body) == null
-                        val bubbleColor = if (isOwn) QinblyBrand.Accent else if (QiblyTheme.dark) QiblyTheme.soft else Color(0xFFF0F2F6)
+                        val bubbleColor = if (isOwn) QinblyBrand.Accent else if (QiblyTheme.dark) QiblyTheme.soft else Color(0xFFE9ECF1)
                         val textColor = if (sharedBare) QiblyTheme.text else if (isOwn) Color.White else if (QiblyTheme.dark) Color.White else Color(0xFF111827)
                         Surface(color = if (sharedBare || message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) Color.Transparent else bubbleColor, shape = bubbleShape, modifier = Modifier.widthIn(max = 300.dp).onGloballyPositioned { bubbleRect[0] = it.boundsInWindow() }.clip(bubbleShape).combinedClickable(onClick = { if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) { menuAnchor = bubbleRect[0]; menuMessage = message } else if (message.poll == null && message.fileUrl.isBlank() && message.imageUrl.isNotBlank()) { chatPhotoUrl = message.imageUrl } }, onLongClick = { menuAnchor = bubbleRect[0]; menuMessage = message })) {
                             Column(Modifier.padding(horizontal = if (sharedBare) 0.dp else if (message.imageUrl.isNotBlank() && message.poll == null && message.fileUrl.isBlank() && message.stickerUrl.isBlank()) 3.dp else 12.dp, vertical = if (sharedBare) 0.dp else if (message.imageUrl.isNotBlank() && message.poll == null && message.fileUrl.isBlank() && message.stickerUrl.isBlank()) 3.dp else 8.dp)) {
@@ -9779,7 +9782,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         }) { Text("Bloquear", color = Color.Red) }
                     },
                     dismissButton = { TextButton(onClick = { showBlockConfirm = false }) { Text("Cancelar", color = Pink) } },
-                    containerColor = QiblyTheme.card, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
+                    containerColor = QiblyTheme.dialog, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
                 )
             }
             if (showReportConfirm) {
@@ -10186,10 +10189,10 @@ private fun QinblyNoteBubble(note: String, onClick: (() -> Unit)? = null) {
     // O balão pode ser mais largo que a coluna do avatar, assim a nota aparece inteira (até 3 linhas).
     Box(Modifier.height(60.dp).fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
         if (note.isNotBlank()) {
-            Text(note, color = Color.White, fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.Medium, maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            Text(note, color = if (QiblyTheme.dark) Color.White else Color(0xFF111111), fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.Medium, maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 modifier = Modifier.offset(y = 6.dp)
-                    .clip(RoundedCornerShape(16.dp)).then(if (onClick != null) Modifier.clickable { onClick() } else Modifier).background(Color(0xFF2C2C2E)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(16.dp)).padding(horizontal = 10.dp, vertical = 5.dp))
+                    .clip(RoundedCornerShape(16.dp)).then(if (onClick != null) Modifier.clickable { onClick() } else Modifier).background(if (QiblyTheme.dark) Color(0xFF2C2C2E) else Color(0xFFF0F1F5)).border(1.dp, if (QiblyTheme.dark) Color(0x33FFFFFF) else Color(0xFFDADADD), RoundedCornerShape(16.dp)).padding(horizontal = 10.dp, vertical = 5.dp))
         }
     }
 }
@@ -11377,7 +11380,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                 }) { Text(if (deletingAccount) "Excluindo…" else "Excluir", color = Color.Red) }
             },
             dismissButton = { TextButton(enabled = !deletingAccount, onClick = { showDeleteAccount = false }) { Text("Cancelar", color = Pink) } },
-            containerColor = QiblyTheme.card, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
+            containerColor = QiblyTheme.dialog, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
         )
     }
 
@@ -11460,7 +11463,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
         }
         LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(2.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
             if (section == "home") {
-                item { Text("CONFIGURAÇÕES", color = Color(0xFF8A9BAB), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold) }
+                item { Text("CONFIGURAÇÕES", color = QiblyTheme.hint, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold) }
                 val categories = listOf(
                     Triple("account", "Conta", "Senha, e-mail, aparelhos e exclusão"),
                     Triple("privacy", "Privacidade", "Quem vê, quem fala com você e bloqueios"),
@@ -12049,7 +12052,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
     if (showMoreOptions) {
         AlertDialog(
         shape = RoundedCornerShape(28.dp),
-        containerColor = QiblyTheme.card,
+        containerColor = QiblyTheme.dialog,
             onDismissRequest = { showMoreOptions = false },
             title = { Text(displayName, fontWeight = FontWeight.SemiBold) },
             text = {
@@ -12079,7 +12082,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
     if (confirmBlock) {
         AlertDialog(
         shape = RoundedCornerShape(28.dp),
-        containerColor = QiblyTheme.card,
+        containerColor = QiblyTheme.dialog,
             onDismissRequest = { confirmBlock = false },
             title = { Text("Bloquear @$publicUsername?") },
             text = { Text("Essa pessoa não poderá interagir com você. Você pode desbloquear depois em Configurações > Contas bloqueadas.") },

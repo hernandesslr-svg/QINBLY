@@ -298,9 +298,9 @@ textarea.inp{min-height:120px;resize:vertical}
 .lc b{margin-right:6px}
 
 /* ===== tema claro, texto maior, menos animação ===== */
-[data-theme=light]{--bg:#F6F6F7;--surface:#E4E6EB;--line:#DADADD;--text:#14151a;--muted:#6a6e7a}
+[data-theme=light]{--bg:#FFFFFF;--surface:#F1F2F5;--line:#E3E4E8;--text:#14151a;--muted:#5E6370}
 [data-theme=light] .row:active,[data-theme=light] .ib:active{background:rgba(0,0,0,.06)}
-[data-theme=light] .msg{background:#e8eaee;color:#14151a}
+[data-theme=light] .msg{background:#E9ECF1;color:#14151a}
 [data-theme=light] .msg.me{background:var(--accent);color:#fff}
 [data-theme=light] .tog{background:#c5c8d0}
 body.big{zoom:1.15}
