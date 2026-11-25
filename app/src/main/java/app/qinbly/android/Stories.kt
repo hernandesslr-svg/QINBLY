@@ -245,7 +245,6 @@ private fun MenuRow(text: String, accent: Color, onClick: () -> Unit) {
 internal fun StoryVideo(url: String, paused: Boolean = false, onProgress: suspend (Float) -> Unit = {}, onEnded: () -> Unit) {
     val context = LocalContext.current
     val progressCallback by androidx.compose.runtime.rememberUpdatedState(onProgress)
-    var videoAspect by remember(url) { mutableStateOf(0f) }
     val player = remember(url) {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(url))
@@ -257,9 +256,6 @@ internal fun StoryVideo(url: String, paused: Boolean = false, onProgress: suspen
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) { if (state == Player.STATE_ENDED) onEnded() }
-            override fun onVideoSizeChanged(size: androidx.media3.common.VideoSize) {
-                if (size.width > 0 && size.height > 0) videoAspect = size.width * size.pixelWidthHeightRatio / size.height
-            }
         }
         player.addListener(listener)
         val unreg = QinblyPlayback.add({ val w = player.playWhenReady; player.pause(); w }, { player.play() })
@@ -278,7 +274,7 @@ internal fun StoryVideo(url: String, paused: Boolean = false, onProgress: suspen
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { ctx -> PlayerView(ctx).apply { useController = false; resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM; this.player = player } },
-        update = { it.player = player; it.resizeMode = if (videoAspect > 1.4f) AspectRatioFrameLayout.RESIZE_MODE_FIT else AspectRatioFrameLayout.RESIZE_MODE_ZOOM }
+        update = { it.player = player; it.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM }
     )
 }
 

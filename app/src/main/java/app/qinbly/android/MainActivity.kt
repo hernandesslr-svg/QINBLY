@@ -3497,16 +3497,11 @@ private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, sh
     val context = androidx.compose.ui.platform.LocalContext.current
     var firstFrameShown by remember(url) { mutableStateOf(false) }
     var buffering by remember(url) { mutableStateOf(true) }
-    // Proporção real do vídeo (largura/altura). Vídeos até 4:3 enchem a tela toda; só os bem largos (16:9) ficam inteiros.
-    var videoAspect by remember(url) { mutableStateOf(0f) }
-    val player = remember(url) {
+        val player = remember(url) {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(url))
             repeatMode = androidx.media3.common.Player.REPEAT_MODE_ONE
             addListener(object : androidx.media3.common.Player.Listener {
-                override fun onVideoSizeChanged(size: androidx.media3.common.VideoSize) {
-                    if (size.width > 0 && size.height > 0) videoAspect = size.width * size.pixelWidthHeightRatio / size.height
-                }
                 override fun onRenderedFirstFrame() { firstFrameShown = true }
                 override fun onPlaybackStateChanged(playbackState: Int) { buffering = playbackState == androidx.media3.common.Player.STATE_BUFFERING }
             })
@@ -3538,8 +3533,8 @@ private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, sh
         }
     }
     Box(modifier.background(Color.Black)) {
-        AndroidView(modifier = Modifier.fillMaxSize(), factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false; resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM } }, update = { view -> view.player = player; view.useController = false; view.resizeMode = if (videoAspect > 1.4f) androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT else androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM })
-        if (!firstFrameShown) QinblyVideoPoster(url, Modifier.fillMaxSize(), if (videoAspect > 1.4f) ContentScale.Fit else ContentScale.Crop)
+        AndroidView(modifier = Modifier.fillMaxSize(), factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false; resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM } }, update = { view -> view.player = player; view.useController = false; view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM })
+        if (!firstFrameShown) QinblyVideoPoster(url, Modifier.fillMaxSize(), ContentScale.Crop)
         if (!firstFrameShown || buffering) QinblyLoadingSpinner(Modifier.fillMaxSize())
         Box(Modifier.fillMaxSize().pointerInput(url) {
             detectTapGestures(

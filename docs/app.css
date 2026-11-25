@@ -535,7 +535,7 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 
 /* Aba Vídeos: tela cheia, um vídeo por tela, abas transparentes por cima */
 .reel{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;color:#fff;overflow:hidden}
-.reel video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.reel video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 .rside{position:absolute;right:6px;bottom:24px;display:flex;flex-direction:column;align-items:center;gap:20px;z-index:2}
 .ra{display:flex;flex-direction:column;align-items:center;gap:2px;color:#fff;font-size:14px;min-width:54px}
 .ra svg{width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
