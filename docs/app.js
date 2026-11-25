@@ -2190,7 +2190,7 @@
   }, true);
 })();
 
-/* Tela cheia com zoom leve: no máximo 1,6x sobre o vídeo inteiro (enche se faltar até 8%). */
+/* Igual ao TikTok: em pé enche a tela; largo/quadrado aparece inteiro, sem zoom, com faixas pretas. */
 document.addEventListener("loadedmetadata", function (e) {
   var v = e.target;
   if (!v || v.tagName !== "VIDEO" || !v.closest || !v.videoWidth || !v.videoHeight) return;
@@ -2199,7 +2199,7 @@ document.addEventListener("loadedmetadata", function (e) {
   var cw = box.clientWidth, ch = box.clientHeight, a = v.videoWidth / v.videoHeight;
   if (!cw || !ch) return;
   var wide = a >= cw / ch, fitW = wide ? cw : ch * a, fillW = wide ? ch * a : cw;
-  var w = fillW <= fitW * 1.08 ? fillW : Math.min(fillW, fitW * 1.6);
+  var w = fillW <= fitW * 1.08 ? fillW : fitW;
   v.classList.add("fit");
   v.style.width = Math.round(w) + "px";
   v.style.height = Math.round(w / a) + "px";

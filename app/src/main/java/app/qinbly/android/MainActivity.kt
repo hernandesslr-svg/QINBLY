@@ -3502,7 +3502,7 @@ private fun QinblyHeartBurst(trigger: Int, modifier: Modifier = Modifier) {
     }
 }
 
-/** Moldura do vídeo (tela cheia com zoom leve): vídeo em pé enche a tela; vídeo largo ganha no máximo 1,6x sobre o tamanho inteiro (QINBLY_VIDEO_MAX_ZOOM) e o resto fica com o fundo desfocado. */
+/** Moldura do vídeo, igual ao TikTok: vídeo em pé (9:16) enche a tela; vídeo largo ou quadrado aparece inteiro, sem zoom e sem corte, com faixas pretas. */
 @Composable
 internal fun QinblyVideoFrame(aspect: Float, content: @Composable (Modifier) -> Unit) {
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().clipToBounds(), contentAlignment = Alignment.Center) {
@@ -3512,7 +3512,7 @@ internal fun QinblyVideoFrame(aspect: Float, content: @Composable (Modifier) -> 
             val wide = aspect >= wc / hc
             val fitW = if (wide) wc else hc * aspect
             val fillW = if (wide) hc * aspect else wc
-            val w = if (fillW <= fitW * 1.08f) fillW else minOf(fillW, fitW * 1.6f)
+            val w = if (fillW <= fitW * 1.08f) fillW else fitW
             Modifier.requiredSize(w.dp, (w / aspect).dp)
         }
         content(frameMod)
@@ -3564,7 +3564,6 @@ private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, sh
         }
     }
     Box(modifier.background(Color.Black)) {
-        if (android.os.Build.VERSION.SDK_INT >= 31 && videoAspect > 0f) QinblyVideoPoster(url, Modifier.fillMaxSize().blur(32.dp).alpha(0.55f), ContentScale.Crop)
         QinblyVideoFrame(videoAspect) { frameMod ->
             AndroidView(modifier = frameMod, factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false; resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT } }, update = { view -> view.player = player; view.useController = false; view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT })
             if (!firstFrameShown) QinblyVideoPoster(url, frameMod, ContentScale.Crop)
