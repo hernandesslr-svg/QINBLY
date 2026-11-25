@@ -1254,10 +1254,10 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Azul único #2F68E0 (sublinhado do cabeçalho, indicador da barra, comentários, barra do vídeo; `remote-config` revisão 30).
 - Web: `[data-theme=light]` espelha as mesmas cores.
 
-## Vídeo igual ao da edição (sem zoom)
-- O vídeo publicado aparece exatamente como a pessoa editou: sem zoom e sem corte (`RESIZE_MODE_FIT`; web `object-fit: contain`), com fundo desfocado do próprio vídeo nas sobras. A câmera/editor já gravam o arquivo na proporção escolhida (9:16, 4:3, 1:1), e o upload não recorta.
-- `QinblyVideoFrame(aspect)` só preenche a tela quando a diferença é mínima (até 8%), para não sobrar fresta fina. Usado na aba Vídeos, na prévia do editor (mesmo componente) e nos stories; o cartão do feed e o vídeo compartilhado no chat usam `FIT`.
-- Nunca usar `RESIZE_MODE_ZOOM` para vídeo de publicação.
+## Vídeo em tela cheia com zoom leve
+- `QinblyVideoFrame(aspect)`: vídeo em pé enche a tela; vídeo largo (4:3, 16:9) ganha no máximo 1,6x sobre o tamanho inteiro (`fitW * 1.6`) e as sobras ficam com o fundo desfocado do próprio vídeo. Para mais ou menos zoom, mudar só o 1,6 (app: `QinblyVideoFrame`; web: `app.js`, `fitW * 1.6`).
+- Usado na aba Vídeos, na prévia do editor (mesmo componente) e nos stories. Cartão do feed e vídeo compartilhado no chat ficam inteiros (`FIT`).
+- Nunca usar `RESIZE_MODE_ZOOM` puro (cortava demais).
 
 ## Aba Vídeos: barras pretas (opção A)
 - Na aba Vídeos (`QinblyVideoChrome.on` no FeedPage): sem menu/logo/carrinho/busca/sino no topo, só as abas de letra; barra de status, abas, barra de baixo e botões do Android ficam pretos com ícones brancos; o vídeo fica entre as abas e a barra de baixo.

@@ -3502,7 +3502,7 @@ private fun QinblyHeartBurst(trigger: Int, modifier: Modifier = Modifier) {
     }
 }
 
-/** Moldura do vídeo: mostra o vídeo exatamente como foi editado (sem zoom, sem corte). Só preenche a tela quando a diferença é mínima (até ~8%), para não sobrar fresta fina. */
+/** Moldura do vídeo (tela cheia com zoom leve): vídeo em pé enche a tela; vídeo largo ganha no máximo 1,6x sobre o tamanho inteiro (QINBLY_VIDEO_MAX_ZOOM) e o resto fica com o fundo desfocado. */
 @Composable
 internal fun QinblyVideoFrame(aspect: Float, content: @Composable (Modifier) -> Unit) {
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().clipToBounds(), contentAlignment = Alignment.Center) {
@@ -3512,7 +3512,7 @@ internal fun QinblyVideoFrame(aspect: Float, content: @Composable (Modifier) -> 
             val wide = aspect >= wc / hc
             val fitW = if (wide) wc else hc * aspect
             val fillW = if (wide) hc * aspect else wc
-            val w = if (fillW <= fitW * 1.08f) fillW else fitW
+            val w = if (fillW <= fitW * 1.08f) fillW else minOf(fillW, fitW * 1.6f)
             Modifier.requiredSize(w.dp, (w / aspect).dp)
         }
         content(frameMod)

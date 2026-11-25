@@ -1,5 +1,5 @@
 // QINBLY web: guarda só a "casca" do app para abrir rápido. Dados (API) e fotos sempre vêm da rede.
-const CACHE = "qinbly-web-v30";
+const CACHE = "qinbly-web-v31";
 const SHELL = ["./", "app.css", "app.js", "manifest.webmanifest", "icon-192.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => {
