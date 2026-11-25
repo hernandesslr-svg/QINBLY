@@ -1255,4 +1255,4 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Web: `[data-theme=light]` espelha as mesmas cores.
 
 ## Vídeos em tela cheia (aba Vídeos)
-- Vídeo com proporção até 4:3 (largura/altura ≤ 1,4) usa `RESIZE_MODE_ZOOM` e preenche a tela; só vídeo bem largo (16:9) fica inteiro (`FIT`). A proporção vem de `onVideoSizeChanged`. Web: mesma regra em `.reel video`.
+- Story e editor (prévia ao publicar) seguem a mesma regra. Vídeo com proporção até 4:3 (largura/altura ≤ 1,4) usa `RESIZE_MODE_ZOOM` e preenche a tela; só vídeo bem largo (16:9) fica inteiro (`FIT`). A proporção vem de `onVideoSizeChanged`. Web: mesma regra em `.reel video`.
