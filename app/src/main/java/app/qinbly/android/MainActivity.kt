@@ -441,6 +441,12 @@ class MainActivity : ComponentActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Tema salvo já no primeiro quadro: antes ele só era lido depois de a tela aparecer (ficava escuro e depois clareava).
+        getSharedPreferences("qinbly_session", MODE_PRIVATE).byAccount().let { sp ->
+            QiblyTheme.dark = sp.getString("setting_theme", "dark") == "dark"
+            QiblyTheme.largeText = sp.getBoolean("setting_large_text", false)
+            QiblyTheme.reduceMotion = sp.getBoolean("setting_reduce_motion", false)
+        }
         QinblyEngagement.init(getSharedPreferences("qinbly_session", MODE_PRIVATE).byAccount())
         QinblyHidden.load(getSharedPreferences("qinbly_session", MODE_PRIVATE).byAccount())
         QinblyAvatarCache.init(applicationContext)
