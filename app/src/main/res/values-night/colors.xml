@@ -1,0 +1,4 @@
+<resources>
+    <color name="qinbly_launch_bg">#130F1D</color>
+    <bool name="qinbly_light_bars">false</bool>
+</resources>

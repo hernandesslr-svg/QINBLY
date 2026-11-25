@@ -445,7 +445,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // Tema salvo já no primeiro quadro: antes ele só era lido depois de a tela aparecer (ficava escuro e depois clareava).
         getSharedPreferences("qinbly_session", MODE_PRIVATE).byAccount().let { sp ->
-            QiblyTheme.dark = sp.getString("setting_theme", "dark") == "dark"
+            QiblyTheme.dark = qinblySavedDark(sp, this)
             QiblyTheme.largeText = sp.getBoolean("setting_large_text", false)
             QiblyTheme.reduceMotion = sp.getBoolean("setting_reduce_motion", false)
         }
@@ -1191,6 +1191,13 @@ private fun QinblyRichText(
                 ?: annotated.getStringAnnotations("U", offset, offset).firstOrNull()?.let { qinblyOpenUrl(urlContext, it.item) }
         }
     )
+}
+
+/** Tema salvo; quando a pessoa nunca escolheu, acompanha o modo claro/escuro do aparelho (a abertura do app já usa a mesma cor). */
+private fun qinblySavedDark(sp: android.content.SharedPreferences, context: android.content.Context): Boolean {
+    val saved = sp.getString("setting_theme", null)
+    if (saved != null) return saved == "dark"
+    return (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
 }
 
 /** Abre um link da bio ou do texto no navegador (acrescenta https:// quando falta). */
@@ -1939,7 +1946,7 @@ private fun QinblyApp() {
     val uiPreferences = remember { appContext.getSharedPreferences("qinbly_remote_ui", android.content.Context.MODE_PRIVATE) }
     val themePrefs = remember { appContext.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
     LaunchedEffect(Unit) {
-        QiblyTheme.dark = themePrefs.getString("setting_theme", "dark") == "dark"
+        QiblyTheme.dark = qinblySavedDark(themePrefs, appContext)
         QiblyTheme.largeText = themePrefs.getBoolean("setting_large_text", false)
         QiblyTheme.reduceMotion = themePrefs.getBoolean("setting_reduce_motion", false)
     }

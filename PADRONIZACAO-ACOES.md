@@ -1241,3 +1241,7 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Perfil de outra pessoa não mostra mais "@usuário" no topo (só voltar e três pontinhos).
 - Site (`docs/`): mesmo layout (`#pf`, `.pbio2`, `.pmeta.c`), cache `qinbly-web-v26`.
 - Ainda não existe campo próprio de "site/link" no perfil: links aparecem dentro da bio.
+
+## Abertura do app (sem tela preta)
+- Tela de abertura (splash) e fundo da janela seguem o modo claro/escuro do aparelho (`values/colors.xml` e `values-night/colors.xml`, `values-v31` define `windowSplashScreenBackground`).
+- Quem nunca escolheu tema nas configurações passa a abrir no tema do aparelho (`qinblySavedDark`); quem escolheu usa o escolhido.
