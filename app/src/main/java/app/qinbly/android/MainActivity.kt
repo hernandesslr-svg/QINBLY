@@ -6177,6 +6177,10 @@ private fun qinblyInPeriod(post: QinblyApi.PostSummary, period: String): Boolean
     return (qinblyPostAgeHours(post.createdAt) ?: 0L) <= limit
 }
 
+/** Em alta mostra só publicações com vídeo ou foto (texto e enquete ficam de fora). */
+private fun qinblyEmAltaMedia(post: QinblyApi.PostSummary): Boolean =
+    post.mediaUrl.isNotBlank() && (post.mediaType.equals("video", ignoreCase = true) || post.mediaType.equals("image", ignoreCase = true))
+
 private fun qinblyTopHashtags(posts: List<QinblyApi.PostSummary>): List<String> =
     posts.flatMap { p -> Regex("#([\\p{L}\\p{N}_]+)").findAll(p.caption).map { it.groupValues[1].lowercase() }.toList() }
         .groupingBy { it }.eachCount().entries.sortedByDescending { it.value }.take(8).map { it.key }
@@ -7363,7 +7367,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     val displayedPosts = when (selectedFeedTab) {
         "Perto de mim" -> nearbyPosts
         "Vídeos" -> allFeedPosts.filter { it.mediaType.equals("video", ignoreCase = true) }
-        "Em alta" -> allFeedPosts.filter { qinblyInPeriod(it, emAltaPeriod) }.sortedByDescending { qinblyHotScore(it) }.take(20)
+        "Em alta" -> allFeedPosts.filter { qinblyEmAltaMedia(it) && qinblyInPeriod(it, emAltaPeriod) }.sortedByDescending { qinblyHotScore(it) }.take(20)
         else -> feedTabPosts
     }
     // Como o Instagram: o feed é buscado ao entrar no app, ao voltar depois de um tempo e ao puxar para atualizar. Nunca fica consultando enquanto a pessoa usa.
@@ -7617,7 +7621,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     QinblyHomeHeader(allFeedPosts, prefs, onCreateWith)
                 }
                 if (selectedFeedTab == "Em alta") item(key = "alta-header") {
-                    val periodPosts = allFeedPosts.filter { qinblyInPeriod(it, emAltaPeriod) }
+                    val periodPosts = allFeedPosts.filter { qinblyEmAltaMedia(it) && qinblyInPeriod(it, emAltaPeriod) }
                     val creators = periodPosts.groupBy { it.username.lowercase() }
                         .map { (_, ps) -> ps.first() to ps.sumOf { QinblyEngagement.likeCount(it) } }
                         .sortedByDescending { it.second }.take(3)

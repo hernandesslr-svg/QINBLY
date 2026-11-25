@@ -1224,3 +1224,4 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 
 ## Texto longo no feed
 - Publicação só de texto: mostra até 6 linhas e o resto fica atrás do "… mais" (toque abre tudo, "menos" fecha). Publicação com foto ou vídeo: legenda mostra até 4 linhas. Texto curto não muda. No site vale o mesmo (texto 6, legenda 4).
+- Em alta mostra só publicações com vídeo ou foto (texto e enquete ficam de fora), no app e no site.

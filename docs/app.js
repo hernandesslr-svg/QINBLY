@@ -476,7 +476,7 @@
   var altaPeriod = "Semana", ALTA_DAYS = { "Hoje": 1, "Semana": 7, "Mês": 30 };
   function altaPosts(period) {
     var lim = Date.now() - ALTA_DAYS[period || altaPeriod] * 86400000;
-    return FEED.filter(function (p) { return !isHidden(p) && Date.parse(p.createdAt) > lim; }).sort(function (x, y) { return hot(y) - hot(x); });
+    return FEED.filter(function (p) { return !isHidden(p) && (p.mediaType === "video" || p.mediaType === "image") && safeUrl(p.mediaUrl) && Date.parse(p.createdAt) > lim; }).sort(function (x, y) { return hot(y) - hot(x); });
   }
   function cntFmt(n) {
     n = Number(n) || 0;
