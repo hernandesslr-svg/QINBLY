@@ -167,7 +167,8 @@ private fun parseListing(o: JSONObject): QinblyListing {
 }
 
 /** Sobe uma imagem para o bucket público do app (pasta do próprio usuário) e devolve a URL pública. */
-internal fun uploadMarketPhoto(context: Context, token: String, userId: String, uri: Uri, index: Int): String {
+internal fun uploadMarketPhoto(context: Context, tokenIn: String, userId: String, uri: Uri, index: Int): String {
+    val token = QinblyApi.freshToken(tokenIn)
     val resolver = context.contentResolver
     val type = (resolver.getType(uri) ?: "image/jpeg").lowercase()
     require(type in setOf("image/jpeg", "image/png", "image/webp")) { "Use fotos JPG, PNG ou WebP." }

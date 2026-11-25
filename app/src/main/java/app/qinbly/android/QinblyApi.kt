@@ -345,8 +345,9 @@ object QinblyApi {
             .also { if (scheduledAt.isNotBlank()) it.put("scheduledAt", scheduledAt) }, token)
     }
 
-    fun uploadPostMedia(context: Context, token: String, uri: Uri, fileName: String, contentType: String, sizeBytes: Long, category: String = "post_media"): String {
+    fun uploadPostMedia(context: Context, tokenIn: String, uri: Uri, fileName: String, contentType: String, sizeBytes: Long, category: String = "post_media"): String {
         require(sizeBytes in 1..(100L * 1024L * 1024L)) { "O arquivo está vazio ou ultrapassa 100 MB." }
+        val token = freshToken(tokenIn)
         val requestBody = JSONObject().put("fileName", fileName).put("contentType", contentType)
             .put("sizeBytes", sizeBytes).put("category", category)
         val upload = request("POST", "/api/files/upload-url", requestBody, token)
@@ -728,7 +729,8 @@ object QinblyApi {
     }
 
     /** Envia a foto da comunidade e devolve o código do arquivo para usar em [updateCommunity] (avatarFileId). */
-    fun uploadCommunityPhoto(context: Context, token: String, uri: Uri): String {
+    fun uploadCommunityPhoto(context: Context, tokenIn: String, uri: Uri): String {
+        val token = freshToken(tokenIn)
         val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: throw IllegalStateException("Não foi possível ler a imagem selecionada.")
         require(bytes.isNotEmpty() && bytes.size <= 25 * 1024 * 1024) { "A imagem deve ter até 25 MB." }
         val contentType = when (context.contentResolver.getType(uri)) { "image/png" -> "image/png"; "image/webp" -> "image/webp"; else -> "image/jpeg" }
@@ -1578,6 +1580,19 @@ object QinblyApi {
         } finally {
             connection.disconnect()
         }
+    }
+    private fun jwtExpired(t: String): Boolean = try {
+        val payload = String(android.util.Base64.decode(t.split(".")[1], android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP), Charsets.UTF_8)
+        val exp = JSONObject(payload).optLong("exp", 0L)
+        exp > 0L && exp * 1000L < System.currentTimeMillis() + 60_000L
+    } catch (_: Exception) { false }
+
+    /** Token de acesso válido para envio de arquivos: o PUT do upload não renova sozinho, então renova antes se já venceu. */
+    internal fun freshToken(token: String): String {
+        val stored = storedAccessToken()
+        var t = if (!stored.isNullOrBlank() && stored != token && !jwtExpired(stored)) stored else token
+        if (jwtExpired(t)) t = try { renewExpiredSession(t) } catch (_: Exception) { t }
+        return t
     }
     private fun renewExpiredSession(expiredToken: String): String = synchronized(refreshLock) {
         val context = applicationContext
