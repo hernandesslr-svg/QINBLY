@@ -640,3 +640,33 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 .ahin{bottom:30px}
 .ahin strong{font-size:24px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ahin strong.big{font-size:32px}
+
+/* ===== perfil: foto no meio, números, botões, categorias e bio (igual ao app) ===== */
+.pring.xl .av,.pring.xl .av.l{width:100px;height:100px;font-size:40px}
+.pbig{padding:2px 0 6px}
+.pc .nm2{display:flex;align-items:center;justify-content:center;gap:6px;max-width:100%;margin:0 auto;font-size:24px;font-weight:600;color:var(--text)}
+.pc .nm2 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc .nm2 svg{width:22px;height:22px;flex:none}
+.pc .at2{display:flex;align-items:center;justify-content:center;margin:2px auto 0;font-size:15px;color:var(--muted)}
+.pc .at2 svg{width:18px;height:18px;stroke:var(--text);fill:none;stroke-width:2;margin-left:2px}
+.pst.big{padding:14px 14px 4px;margin:0}
+.pst.big b{font-size:22px}
+.pst.big span{font-size:13px}
+.pbt{padding:0 14px;margin-top:12px;gap:8px}
+.pill{height:34px;font-size:12px}
+.pfb{padding:8px 14px 0}
+.fol,.msgb{flex:1;height:38px;font-size:14px}
+.fol svg,.msgb svg{width:16px;height:16px}
+.msgb{border:0;background:rgba(255,255,255,.1);color:#fff}
+[data-theme=light] .msgb{background:#E8F0FF;color:#2558C4}
+#pf>.pcats{justify-content:center;margin:14px 14px 0}
+.pbio2{display:flex;justify-content:center;padding:10px 14px 0}
+.pbio2 p{width:fit-content;max-width:41ch;margin:0;text-align:left;font-size:14px;white-space:pre-wrap;word-wrap:break-word}
+.pbio2 p.mut{color:var(--muted)}
+.pbio2 a{color:#2F68E0}
+.pmeta.c{justify-content:center;padding:8px 14px 0;margin:0}
+.ptabs{margin-top:16px}
+.ptabs button{padding:9px 0 0;gap:0}
+.ptabs svg{width:27px;height:27px}
+.ptabs i{margin-top:8px}
+@media(min-width:700px){#pf>.pcats,.pbio2,.pbt,.pfb,.pst.big{max-width:470px;margin-left:auto;margin-right:auto}.pbio2,.pbt,.pfb,.pst.big{width:100%}}

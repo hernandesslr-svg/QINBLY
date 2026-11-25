@@ -701,11 +701,11 @@ internal fun qinblyCategoryIcon(raw: String): androidx.compose.ui.graphics.vecto
 /** Linha de categorias do perfil: ícone de linha + nome, separadas por "•". Aceita o texto salvo (com ou sem emoji). */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-internal fun QinblyCategoryLine(raw: String, textColor: Color, iconColor: Color, modifier: Modifier = Modifier, compact: Boolean = false) {
+internal fun QinblyCategoryLine(raw: String, textColor: Color, iconColor: Color, modifier: Modifier = Modifier, compact: Boolean = false, center: Boolean = false) {
     val items = raw.split(" • ").map { it.trim() }.filter { it.isNotBlank() }
     androidx.compose.foundation.layout.FlowRow(
         modifier = modifier,
-        horizontalArrangement = if (compact) Arrangement.spacedBy(14.dp, Alignment.Start) else Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
+        horizontalArrangement = if (compact && !center) Arrangement.spacedBy(14.dp, Alignment.Start) else Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         items.forEach { item ->

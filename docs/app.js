@@ -72,6 +72,7 @@
     download: '<path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/>',
     spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18 16l.7 1.8 1.8.7-1.8.7L18 21l-.7-1.8-1.8-.7 1.8-.7z"/>',
     play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/>',
+    vdisp: '<rect x="3" y="5" width="18" height="14" rx="3.5"/><path d="M10.5 9.5l4 2.5-4 2.5z"/>',
     sensors: '<circle cx="12" cy="12" r="2"/><path d="M7.8 7.8a6 6 0 000 8.4M16.2 7.8a6 6 0 010 8.4M4.9 4.9a10 10 0 000 14.2M19.1 4.9a10 10 0 010 14.2"/>',
     pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 005 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
     repeat: '<path d="M20 11a8.1 8.1 0 0 0-15.5-2m-.5-4v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/>',
@@ -692,7 +693,7 @@
     if (isMeRoute) name = me.username;
     var hdr = isMeRoute
       ? '<header class="top pfhd"><span class="sp"></span><button class="ib" data-go="#/settings" aria-label="Configurações do perfil">' + svg("menu") + "</button></header>"
-      : '<header class="top pfhd"><button class="ib" data-back aria-label="Voltar">' + svg("back") + '</button><h1>@' + esc(name) + '</h1><button class="ib" data-umenu aria-label="Opções deste perfil">' + svg("dots") + "</button></header>";
+      : '<header class="top pfhd"><button class="ib" data-back aria-label="Voltar">' + svg("back") + '</button><span class="sp"></span><button class="ib" data-umenu aria-label="Opções deste perfil">' + svg("dots") + "</button></header>";
     setView(hdr + '<div id="pf">' + spin() + "</div>", isMeRoute ? "me" : "");
     api("/api/users/" + encodeURIComponent(name)).then(function (j) {
       var u = j.user, posts = (j.posts || []).slice().sort(function (a, b) { return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0); }), own = me && u.id === me.id;
@@ -701,19 +702,19 @@
       posts.forEach(function (p) { if (!p.author) p.author = { username: u.username, displayName: u.displayName, avatarUrl: u.avatarUrl, verified: u.verified }; if (!p.authorId) p.authorId = u.id; });
       var bio = parseBio(u.bio), shown = u.displayName || u.username, unseen = (window.__unseen || {})[String(u.username).toLowerCase()];
       var tabs = own ? ["Publicações", "Vídeos", "Fotos", "Salvos"] : ["Publicações", "Vídeos", "Fotos"];
-      var TIC = { "Publicações": "grid", "Vídeos": "play", "Fotos": "photo", "Salvos": "save" };
+      var TIC = { "Publicações": "grid", "Vídeos": "vdisp", "Fotos": "photo", "Salvos": "save" };
       var meta = (bio.country ? '<span>' + svg("pin") + esc(bio.country) + "</span>" : "") + (joinedTxt(u, true) ? "<span>" + svg("cal") + esc(joinedTxt(u, true)) + "</span>" : "");
       var cats = bio.cats.length ? '<div class="pcats">' + bio.cats.map(function (c) { return "<span>" + svg("spark") + esc(c) + "</span>"; }).join("") + "</div>" : "";
       var stats = '<div class="pst"><div><b>' + (posts.length || u.posts_count || 0) + '</b><span>Publicações</span></div><button data-stat="following"><b>' + (u.following || 0) + '</b><span>Seguindo</span></button><button data-stat="followers"><b>' + (u.followers || 0) + "</b><span>Seguidores</span></button></div>";
-      var head;
-      if (own) {
-        head = '<div class="pown"><div class="pav"><span class="pring ' + (unseen ? "new" : "") + '">' + avatar(u.avatarUrl, shown, "l") + "</span>" + "" + '</div><div class="pn"><button class="nm" data-edit><span>' + esc(shown) + "</span>" + (u.verified ? VERIFIED : "") + '</button><button class="at" data-accounts>@' + esc(u.username) + svg("chev") + "</button></div></div>" +
-          '<div class="pbio">' + (cats ? cats : "") + (bio.desc ? "<p>" + linkify(bio.desc) + "</p>" : (cats ? "" : '<p class="mut">Adicione uma descrição ao seu perfil</p>')) + (meta ? '<div class="pmeta">' + meta + "</div>" : "") + stats +
-          '<div class="pbt"><button class="pill" data-edit>' + svg("edit") + 'Editar perfil</button><button class="pill" data-shareprofile="' + esc(u.username) + '">' + svg("send") + "Compartilhar perfil</button></div></div>";
-      } else {
-        head = '<div class="pbig"><span class="pring xl ' + (unseen ? "new" : "") + '">' + avatar(u.avatarUrl, shown, "l") + '</span></div><div class="pc"><h2>' + esc(shown) + (u.verified ? VERIFIED : "") + '</h2><div class="at">@' + esc(u.username) + "</div>" + cats + (bio.desc ? "<p>" + linkify(bio.desc) + "</p>" : "") + (meta ? '<div class="pmeta">' + meta + "</div>" : "") + "</div>" + stats.replace('class="pst"', 'class="pst big"') +
-          '<div class="pfb"><button class="fol ' + (u.isFollowing ? "on" : "") + '" data-follow="' + u.id + '" data-profile="' + esc(u.username) + '">' + svg(u.isFollowing ? "check" : "add") + "<span>" + (u.isFollowing ? "Seguindo" : "Seguir") + '</span></button><button class="msgb" data-chat="' + esc(u.username) + '">' + svg("msg") + "Mensagem</button></div>";
-      }
+      var photo = '<div class="pbig"><span class="pring xl ' + (unseen ? "new" : "") + '">' + avatar(u.avatarUrl, shown, "l") + "</span></div>";
+      var who = own
+        ? '<div class="pc"><button class="nm2" data-edit><span>' + esc(shown) + "</span>" + (u.verified ? VERIFIED : "") + '</button><button class="at at2" data-accounts>@' + esc(u.username) + svg("chev") + "</button></div>"
+        : '<div class="pc"><h2>' + esc(shown) + (u.verified ? VERIFIED : "") + '</h2><div class="at">@' + esc(u.username) + "</div></div>";
+      var btns = own
+        ? '<div class="pbt"><button class="pill" data-edit>' + svg("edit") + 'Editar perfil</button><button class="pill" data-shareprofile="' + esc(u.username) + '">' + svg("send") + "Compartilhar perfil</button></div>"
+        : '<div class="pfb"><button class="fol ' + (u.isFollowing ? "on" : "") + '" data-follow="' + u.id + '" data-profile="' + esc(u.username) + '">' + svg(u.isFollowing ? "check" : "add") + "<span>" + (u.isFollowing ? "Seguindo" : "Seguir") + '</span></button><button class="msgb" data-chat="' + esc(u.username) + '">' + svg("msg") + "Mensagem</button></div>";
+      var bioHtml = bio.desc ? '<div class="pbio2"><p>' + linkify(bio.desc) + "</p></div>" : (own && !cats ? '<div class="pbio2"><p class="mut">Adicione uma descrição ao seu perfil</p></div>' : "");
+      var head = photo + who + stats.replace('class="pst"', 'class="pst big"') + btns + cats + bioHtml + (meta ? '<div class="pmeta c">' + meta + "</div>" : "");
       function gridOf(list) {
         return list.map(function (p) { POSTS[p.id] = p; return '<button data-open="' + p.id + '" style="' + (p.mediaUrl ? "background-image:url('" + safeUrl(p.mediaUrl) + "')" : "") + '"></button>'; }).join("");
       }
@@ -730,7 +731,7 @@
         pg.innerHTML = listOf(posts, own ? "Você ainda não publicou nada" : "Nenhuma publicação pública encontrada nesta conta", "grid");
       }
       var pf = document.getElementById("pf");
-      pf.innerHTML = head + '<div id="hl"></div><div class="ptabs">' + tabs.map(function (t, i) { return '<button data-ptab="' + t + '" class="' + (i ? "" : "on") + '">' + svg(TIC[t]) + "<span>" + t + '</span><i></i></button>'; }).join("") + '</div><div id="pg"></div>';
+      pf.innerHTML = head + '<div id="hl"></div><div class="ptabs">' + tabs.map(function (t, i) { return '<button data-ptab="' + t + '" aria-label="' + t + '" class="' + (i ? "" : "on") + '">' + svg(TIC[t]) + "<i></i></button>"; }).join("") + '</div><div id="pg"></div>';
       show("Publicações");
       pf.addEventListener("click", function (e) {
         var t = e.target.closest("[data-ptab],[data-hl]"); if (!t) return;

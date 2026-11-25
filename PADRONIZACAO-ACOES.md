@@ -1232,3 +1232,12 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Mercado inteiro agora respeita o tema: folha "Todas as categorias", menu lateral, "O que você quer publicar?", "Escolha a cidade", dicas/regras, chips do anúncio, mural de avisos e comentários do aviso.
 - `QinblyFullScreen`/`QinblyBottomPanel` sem cores explícitas agora seguem o tema; telas de story/música/comentários de story continuam escuras de propósito (passam as cores explicitamente).
 - Ainda escuros no tema claro (por serem de câmera/story ou não revisados): editor de story, seletor de música, seletor de fotos e partes do criador de publicações.
+
+## Perfil novo (meu perfil e perfil de outras pessoas)
+- Ordem: foto no meio (100 dp), nome com selo, @, números (Publicações/Seguindo/Seguidores, sem caixa), botões finos, categorias no meio, bio, país + "Entrou em", destaques, abas.
+- Meu perfil: botões "Editar perfil" e "Compartilhar perfil". Perfil de outra pessoa: "Seguir" e "Mensagem"; "Compartilhar perfil" fica no menu de três pontinhos.
+- Bio (`QinblyProfileBio`): bloco centralizado de até ~300 dp (cerca de 40 letras por linha), texto alinhado à esquerda dentro do bloco; @menções, #hashtags e links (http/https/www) em azul e clicáveis.
+- Abas só com ícone (sem nome); Vídeos usa o ícone de tela com play (SmartDisplay); sublinhado fino na aba escolhida.
+- Perfil de outra pessoa não mostra mais "@usuário" no topo (só voltar e três pontinhos).
+- Site (`docs/`): mesmo layout (`#pf`, `.pbio2`, `.pmeta.c`), cache `qinbly-web-v26`.
+- Ainda não existe campo próprio de "site/link" no perfil: links aparecem dentro da bio.
