@@ -469,7 +469,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             // Ícones da barra de cima/de baixo (hora, bateria, sinal) escuros quando o fundo do app é claro, claros quando é escuro.
             val barView = androidx.compose.ui.platform.LocalView.current
-            val lightBackground = QiblyTheme.background.luminance() > 0.5f
+            val lightBackground = QiblyTheme.background.luminance() > 0.5f && !QinblyVideoChrome.active
             SideEffect {
                 val controller = androidx.core.view.WindowCompat.getInsetsController(window, barView)
                 controller.isAppearanceLightStatusBars = lightBackground
@@ -1840,6 +1840,12 @@ private fun AccountSwitcherDialog(
 /** Escala geral das letras do app: 1.0 = tamanhos do padrão (ver PADRONIZACAO-ACOES.md). */
 internal const val QINBLY_TEXT_SCALE = 1.0f
 
+/** Aba Vídeos: barras de cima e de baixo ficam pretas (tela de vídeo), sem logo/ícones no topo. */
+internal object QinblyVideoChrome {
+    var on by androidx.compose.runtime.mutableStateOf(false)
+    var active by androidx.compose.runtime.mutableStateOf(false)
+}
+
 internal object QiblyTheme {
     var dark by androidx.compose.runtime.mutableStateOf(true)
     var largeText by androidx.compose.runtime.mutableStateOf(false)
@@ -2336,7 +2342,9 @@ private fun QinblyApp() {
                 showCreateOptions = false; createEntryMode = "camera"; tab = 2
             }
         }
-        Scaffold(containerColor = QiblyTheme.background, bottomBar = {
+        val videoChrome = QinblyVideoChrome.on && tab == 0 && !showSettings && !showEditProfile && !showEditProfilePhoto && !showNotifications && !showAuth && publicProfileUsername.isBlank()
+        SideEffect { QinblyVideoChrome.active = videoChrome }
+        Scaffold(containerColor = if (videoChrome) Color.Black else QiblyTheme.background, bottomBar = {
             if (tab != 2 && !keyboardOpen) {
             Column {
                 if (false) {
@@ -2350,16 +2358,18 @@ private fun QinblyApp() {
                     }
                 }
                 NavigationBar(
-                    containerColor = if (QiblyTheme.dark) QiblyTheme.background else navigationBackgroundColor,
-                    contentColor = if (QiblyTheme.dark) Color.White else Color.Black,
-                    tonalElevation = 0.dp
+                    containerColor = if (videoChrome) Color.Black else if (QiblyTheme.dark) QiblyTheme.background else navigationBackgroundColor,
+                    contentColor = if (videoChrome || QiblyTheme.dark) Color.White else Color.Black,
+                    tonalElevation = 0.dp,
+                    // Na aba Vídeos a barra fica mais baixa, quase rente aos botões do celular.
+                    modifier = if (videoChrome) Modifier.height(50.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()) else Modifier
                 ) {
                     val navColors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = QinblyBrand.SelectedIcon,
-                        selectedTextColor = QinblyBrand.TextAccent,
+                        selectedIconColor = if (videoChrome) Color.White else QinblyBrand.SelectedIcon,
+                        selectedTextColor = if (videoChrome) QinblyBrand.AccentLight else QinblyBrand.TextAccent,
                         indicatorColor = Color.Transparent,
-                        unselectedIconColor = if (QiblyTheme.dark) Color.White else navigationUnselectedColor,
-                        unselectedTextColor = if (QiblyTheme.dark) Color.White else navigationUnselectedColor
+                        unselectedIconColor = if (videoChrome || QiblyTheme.dark) Color.White else navigationUnselectedColor,
+                        unselectedTextColor = if (videoChrome || QiblyTheme.dark) Color.White else navigationUnselectedColor
                     )
                     NavigationBarItem(selected = tab == 0 && !showNotifications, onClick = { QinblyResume.clear(); showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; messageRecipient = ""; showAuth = false; if (tab == 0) navTopRequest++; tab = 0 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Home, null); if (RemoteAppearance.navigationUnderlineVisible && tab == 0 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.SelectedIcon)) } }, label = { Text(RemoteAppearance.navigationLabels[0], fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
                     NavigationBarItem(selected = tab == 3 && !showNotifications, onClick = { QinblyResume.clear(); showSettings = false; showEditProfile = false; showNotifications = false; publicProfileUsername = ""; showAuth = false; if (tab == 3) navTopRequest++; tab = 3 }, icon = { Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(Icons.Default.Groups, contentDescription = "Comunidades"); if (RemoteAppearance.navigationUnderlineVisible && tab == 3 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(QinblyBrand.SelectedIcon)) } }, label = { Text("Comunidades", fontSize = RemoteAppearance.navigationLabelSize.sp) }, colors = navColors)
@@ -7471,7 +7481,8 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     val videoTabPosts = if (onVideoTab) displayedPosts.filter { it.mediaUrl.isNotBlank() } else emptyList()
     val videoPagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { videoTabPosts.size })
     // Depois do primeiro vídeo, o logo e os ícones somem e ficam só as abas de letra.
-    val hideTop = onVideoTab && videoPagerState.currentPage > 0
+    val hideTop = onVideoTab
+    DisposableEffect(onVideoTab) { QinblyVideoChrome.on = onVideoTab; onDispose { QinblyVideoChrome.on = false } }
     // Tocar num vídeo em qualquer aba do Início (Explorar, Seguindo...) abre a mesma tela cheia da aba Vídeos, já nele; voltar retorna à aba de origem.
     var videoBackTab by remember { mutableStateOf<String?>(null) }
     val openPostMedia: (QinblyApi.PostSummary) -> Unit = { target ->
@@ -7499,7 +7510,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
     }
     LaunchedEffect(selectedFeedTab, scrollToTopRequest) { headerOffset = 0f }
     Column(
-        Modifier.fillMaxSize().background(RemoteAppearance.headerBackgroundColor).padding(0.dp)
+        Modifier.fillMaxSize().background(if (onVideoTab) Color.Black else RemoteAppearance.headerBackgroundColor).padding(0.dp)
             .nestedScroll(headerConnection)
             .pointerInput(Unit) {
                 var dragged = 0f
@@ -7535,9 +7546,8 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     posts = videoTabPosts, pagerState = videoPagerState, prefs = prefs, currentUsername = currentUsername, onNotice = onNotice,
                     onComment = { openFeedComments(it) }, onShare = { sharePost = it }, onOpenProfile = onOpenProfile,
                     onOpenAudio = { selectedAudioPost = it },
-                    modifier = Modifier.fillMaxSize(), bottomPad = 24.dp, embedded = true
+                    modifier = Modifier.fillMaxSize().padding(top = with(androidx.compose.ui.platform.LocalDensity.current) { headerPx.toDp() }), bottomPad = 24.dp, embedded = true
                 )
-                Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(if (hideTop) 56.dp else 110.dp).background(Color.Black.copy(alpha = 0.22f)))
             } else if (loading) QinblyLoadingSpinner(Modifier.fillMaxSize())
         }
         Column(Modifier.fillMaxSize()) {
