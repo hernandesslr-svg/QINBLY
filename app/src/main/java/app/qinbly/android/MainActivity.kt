@@ -1846,6 +1846,12 @@ internal object QinblyVideoChrome {
     var active by androidx.compose.runtime.mutableStateOf(false)
 }
 
+/** Voltar na aba Vídeos: 1 toque volta ao Explorar; 2 toques rápidos fecham o app. */
+internal object QinblyQuickExit {
+    var at = 0L
+    fun recent(): Boolean = at > 0L && android.os.SystemClock.elapsedRealtime() - at <= 1200L
+}
+
 internal object QiblyTheme {
     var dark by androidx.compose.runtime.mutableStateOf(true)
     var largeText by androidx.compose.runtime.mutableStateOf(false)
@@ -2269,7 +2275,10 @@ private fun QinblyApp() {
             }
             else -> {
                 val now = android.os.SystemClock.elapsedRealtime()
-                if (now - lastExitBackAt <= 2000L) {
+                if (QinblyQuickExit.recent()) {
+                    QinblyQuickExit.at = 0L
+                    (appContext as? android.app.Activity)?.finish()
+                } else if (now - lastExitBackAt <= 2000L) {
                     lastExitBackAt = 0L
                     (appContext as? android.app.Activity)?.finish()
                 } else {
@@ -7516,7 +7525,11 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         } else fullscreenVideoId = target.id
     }
     LaunchedEffect(selectedFeedTab) { if (selectedFeedTab != "Vídeos") videoBackTab = null }
-    BackHandler(enabled = onVideoTab && videoBackTab != null) { selectedFeedTab = videoBackTab ?: "Descobrir"; videoBackTab = null }
+    BackHandler(enabled = onVideoTab && (videoBackTab != null || QinblyFeedJump.returnEntry == null)) {
+        QinblyQuickExit.at = android.os.SystemClock.elapsedRealtime()
+        selectedFeedTab = videoBackTab ?: "Descobrir"
+        videoBackTab = null
+    }
     // O cabeçalho inteiro (QINBLY, busca, sino e as abas Descobrir/Seguindo/Em alta/...) sobe junto com a rolagem e volta ao rolar para cima.
     var headerPx by remember { mutableFloatStateOf(0f) }
     var headerOffset by remember { mutableFloatStateOf(0f) }

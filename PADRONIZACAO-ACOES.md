@@ -1262,3 +1262,7 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 ## Aba Vídeos: barras pretas (opção A)
 - Na aba Vídeos (`QinblyVideoChrome.on` no FeedPage): sem menu/logo/carrinho/busca/sino no topo, só as abas de letra; barra de status, abas, barra de baixo e botões do Android ficam pretos com ícones brancos; o vídeo fica entre as abas e a barra de baixo.
 - A barra de baixo fica mais baixa (50dp + margem do sistema), quase rente aos botões do celular. Só nessa aba; as outras abas continuam brancas.
+
+## Voltar na aba Vídeos
+- 1 toque no voltar do celular volta ao Explorar (ou à aba de onde o vídeo foi aberto).
+- 2 toques rápidos (até 1,2 s) fecham o app. Controle: `QinblyQuickExit` em `MainActivity.kt`.
