@@ -1225,3 +1225,10 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 ## Texto longo no feed
 - Publicação só de texto: mostra até 6 linhas e o resto fica atrás do "… mais" (toque abre tudo, "menos" fecha). Publicação com foto ou vídeo: legenda mostra até 4 linhas. Texto curto não muda. No site vale o mesmo (texto 6, legenda 4).
 - Em alta mostra só publicações com vídeo ou foto (texto e enquete ficam de fora), no app e no site.
+
+## Tema claro: varredura de partes escuras
+- Campos de texto em pílula (publicar anúncio, buscar cidade, nome do pacote): no tema claro ficam brancos, com contorno e letras pretas.
+- Seleções (Estado, categorias, Achados/Perdidos): no tema claro a opção escolhida fica azul (igual ao botão Publicar); no escuro continua como antes.
+- Mercado inteiro agora respeita o tema: folha "Todas as categorias", menu lateral, "O que você quer publicar?", "Escolha a cidade", dicas/regras, chips do anúncio, mural de avisos e comentários do aviso.
+- `QinblyFullScreen`/`QinblyBottomPanel` sem cores explícitas agora seguem o tema; telas de story/música/comentários de story continuam escuras de propósito (passam as cores explicitamente).
+- Ainda escuros no tema claro (por serem de câmera/story ou não revisados): editor de story, seletor de música, seletor de fotos e partes do criador de publicações.

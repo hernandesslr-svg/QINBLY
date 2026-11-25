@@ -272,7 +272,7 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
             } catch (_: Exception) { main.post { onNotice("Não foi possível carregar o áudio.") } }
         }.start()
     }
-    QinblyFullScreen(if (collab) "Contribuições" else if (isOwner) "Comentários" else "Comentar no story", onDismiss, scroll = false) {
+    QinblyFullScreen(if (collab) "Contribuições" else if (isOwner) "Comentários" else "Comentar no story", onDismiss, background = Color(0xFF1F1F21), contentColor = Color.White, scroll = false) {
         val list = comments?.filter { (it.kind == "contrib") == collab }
         if (list == null) Text("Carregando…", color = Color(0xFFF2F4F8), modifier = Modifier.weight(1f).padding(16.dp))
         else if (list.isEmpty()) Text(if (isOwner) "Ninguém comentou ainda." else if (collab) "Seja o primeiro a contribuir." else "Só quem postou o story vê o seu comentário.", color = Color(0xFFF2F4F8), modifier = Modifier.weight(1f).padding(16.dp))

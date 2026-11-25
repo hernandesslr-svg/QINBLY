@@ -197,7 +197,7 @@ internal fun QinblyMusicPicker(onPick: (QinblyMusic) -> Unit, onDismiss: () -> U
     }
     val q = query.trim()
     val freeMatches = remember(q) { if (q.isBlank()) emptyList() else qinblyFreeTracks.flatMap { it.second }.filter { it.title.contains(q, ignoreCase = true) } }
-    QinblyFullScreen("Adicionar música", onDismiss, scroll = false) {
+    QinblyFullScreen("Adicionar música", onDismiss, background = Color(0xFF1F1F21), contentColor = Color.White, scroll = false) {
         Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).clip(RoundedCornerShape(24.dp)).background(Color(0xFF262628)).padding(horizontal = 16.dp, vertical = 12.dp)) {
             if (query.isEmpty()) Text(if (freeOnly) "Buscar nas músicas livres" else "Buscar música ou artista", color = Color(0xFF8E87A8), fontSize = 16.sp)
             BasicTextField(query, { query = it.take(60) }, singleLine = true, textStyle = TextStyle(color = Color.White, fontSize = 16.sp), cursorBrush = SolidColor(Color.White), modifier = Modifier.fillMaxWidth())

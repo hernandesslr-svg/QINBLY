@@ -99,6 +99,10 @@ import java.net.URL
 // ───────── Perto de mim: anúncios do bairro (vendas, doações, achados, eventos, serviços) ─────────
 
 private val MarketBlue = Color(0xFF2F68E0)
+/** Seleção: no tema escuro continua clara; no tema claro fica azul (igual ao botão Publicar). */
+private val mkSelBg: Color get() = if (QiblyTheme.dark) QiblyTheme.text else MarketBlue
+private val mkSelFg: Color get() = if (QiblyTheme.dark) QiblyTheme.background else Color.White
+private val mkPanel: Color get() = if (QiblyTheme.dark) Color(0xFF1F1F21) else Color.White
 private const val MARKET_STORAGE = "https://qinbly.pages.dev/storage/v1/object/public/post-media/"
 private fun marketMain(block: () -> Unit) { Handler(Looper.getMainLooper()).post(block) }
 
@@ -310,8 +314,8 @@ internal fun QinblyNearbyHub(
                 for (c in shown) {
                     val on = sel == c.key
                     Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable { prodCat = if (on) null else c.key }.padding(vertical = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(Modifier.size(54.dp).clip(CircleShape).background(if (on) QiblyTheme.text else QiblyTheme.soft), contentAlignment = Alignment.Center) {
-                            QinblyIconOf(c.icon, if (on) QiblyTheme.background else textColor, 26.dp)
+                        Box(Modifier.size(54.dp).clip(CircleShape).background(if (on) mkSelBg else QiblyTheme.soft), contentAlignment = Alignment.Center) {
+                            QinblyIconOf(c.icon, if (on) mkSelFg else textColor, 26.dp)
                         }
                         Text(c.short, color = if (on) textColor else secondary, fontSize = 12.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
                     }
@@ -329,11 +333,11 @@ internal fun QinblyNearbyHub(
                 val selected = name == cat
                 val (emoji, tone) = chipStyle(name)
                 Row(
-                    Modifier.clip(RoundedCornerShape(20.dp)).background(if (selected) QiblyTheme.text else QiblyTheme.soft).clickable { cat = name }.padding(start = 11.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
+                    Modifier.clip(RoundedCornerShape(20.dp)).background(if (selected) mkSelBg else QiblyTheme.soft).clickable { cat = name }.padding(start = 11.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    EmojiIcon(emoji, 17.dp, if (selected) QiblyTheme.background else secondary)
-                    Text(name, color = if (selected) QiblyTheme.background else secondary, fontSize = 14.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, modifier = Modifier.padding(start = 6.dp))
+                    EmojiIcon(emoji, 17.dp, if (selected) mkSelFg else secondary)
+                    Text(name, color = if (selected) mkSelFg else secondary, fontSize = 14.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, modifier = Modifier.padding(start = 6.dp))
                 }
             }
         }
@@ -342,8 +346,8 @@ internal fun QinblyNearbyHub(
                 for ((key, label) in listOf("achado" to "Achados", "perdido" to "Perdidos")) {
                     val selected = sub == key
                     Text(
-                        label, color = if (selected) QiblyTheme.background else secondary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, textAlign = TextAlign.Center,
-                        modifier = Modifier.weight(1f).clip(RoundedCornerShape(18.dp)).background(if (selected) QiblyTheme.text else QiblyTheme.soft)
+                        label, color = if (selected) mkSelFg else secondary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f).clip(RoundedCornerShape(18.dp)).background(if (selected) mkSelBg else QiblyTheme.soft)
                             .clickable { sub = key }.padding(vertical = 8.dp)
                     )
                 }
@@ -442,7 +446,7 @@ internal fun QinblyNearbyHub(
         QinblyDialog(onDismissRequest = { showDrawer = false }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), lift = false) {
             Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { showDrawer = false }) {
                 Column(
-                    Modifier.align(Alignment.CenterStart).fillMaxSize().padding(end = 64.dp).background(Color(0xFF1F1F21))
+                    Modifier.align(Alignment.CenterStart).fillMaxSize().padding(end = 64.dp).background(mkPanel)
                         .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { }
                         .statusBarsPadding().verticalScroll(rememberScrollState()).padding(start = 14.dp, end = 14.dp, top = 16.dp, bottom = 16.dp + qinblyNavBarPadding()),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -450,8 +454,8 @@ internal fun QinblyNearbyHub(
                     val outl = androidx.compose.material.icons.Icons.Outlined
                     val gray = Color(0xFF8A8A93)
                     Row(Modifier.padding(start = 4.dp, top = 6.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(36.dp).clip(CircleShape).clickable { showDrawer = false }, contentAlignment = Alignment.Center) { QinblyCloseIcon(Color.White, 20.dp) }
-                        Text("Mercado", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, modifier = Modifier.padding(start = 10.dp))
+                        Box(Modifier.size(36.dp).clip(CircleShape).clickable { showDrawer = false }, contentAlignment = Alignment.Center) { QinblyCloseIcon(QiblyTheme.text, 20.dp) }
+                        Text("Mercado", color = QiblyTheme.text, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, modifier = Modifier.padding(start = 10.dp))
                     }
                     @Composable fun DrawerLabel(t: String) = Text(t, color = gray, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 6.dp, top = 8.dp))
                     @Composable fun DrawerItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
@@ -459,8 +463,8 @@ internal fun QinblyNearbyHub(
                             Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { showDrawer = false; onClick() }.padding(horizontal = 6.dp, vertical = 11.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            QinblyIconOf(icon, Color.White, 24.dp)
-                            Text(label, color = Color.White, fontSize = 16.sp, modifier = Modifier.padding(start = 16.dp))
+                            QinblyIconOf(icon, QiblyTheme.text, 24.dp)
+                            Text(label, color = QiblyTheme.text, fontSize = 16.sp, modifier = Modifier.padding(start = 16.dp))
                         }
                     }
                     DrawerLabel("CATEGORIAS")
@@ -481,7 +485,7 @@ internal fun QinblyNearbyHub(
         }
     }
     info?.let { which ->
-        QinblyBottomPanel(which, onDismiss = { info = null }) {
+        QinblyFullScreen(which, { info = null }, background = QiblyTheme.background, contentColor = QiblyTheme.text) {
             val lines = if (which == "Dicas de segurança") listOf(
                 "Combine a troca em local público e movimentado, de preferência de dia.",
                 "Não envie dinheiro adiantado nem códigos que chegarem por mensagem.",
@@ -495,7 +499,7 @@ internal fun QinblyNearbyHub(
                 "Doações são de graça de verdade: não cobre nada de quem pedir.",
                 "Anúncios que quebram as regras podem ser removidos."
             )
-            for (l in lines) Text("• " + l, color = Color(0xFFE6EAF2), fontSize = 16.sp)
+            for (l in lines) Text("• " + l, color = QiblyTheme.text, fontSize = 16.sp)
         }
     }
 
@@ -537,7 +541,7 @@ internal fun QinblyNearbyHub(
         )
     }
     if (showMenu) {
-        QinblyBottomPanel("O que você quer publicar?", onDismiss = { showMenu = false }) {
+        QinblyFullScreen("O que você quer publicar?", { showMenu = false }, background = QiblyTheme.background, contentColor = QiblyTheme.text) {
             val options = listOf(
                 Triple("venda", "Vender", "Usados e desapegos"), Triple("doacao", "Doar", "Dê de graça para quem precisa"),
                 Triple("achado", "Achado ou perdido", "Chaves, pets, documentos"), Triple("evento", "Evento", "Feiras, encontros"),
@@ -545,7 +549,7 @@ internal fun QinblyNearbyHub(
             )
             for ((key, title, sub2) in options) {
                 Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFF262628)).clickable {
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(QiblyTheme.soft).clickable {
                         showMenu = false
                         if (key == "aviso") cat = "Avisos" else createKind = key
                     }.padding(14.dp),
@@ -553,10 +557,10 @@ internal fun QinblyNearbyHub(
                 ) {
                     Box(Modifier.size(36.dp).clip(CircleShape).background(kindColor(key)))
                     Column(Modifier.padding(start = 12.dp).weight(1f)) {
-                        Text(title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                        Text(sub2, color = Color(0xFFF2F4F8), fontSize = 12.sp)
+                        Text(title, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                        Text(sub2, color = QiblyTheme.secondary, fontSize = 12.sp)
                     }
-                    QinblyIconOf(QinblyIcon.KeyboardArrowRight, Color(0xFFF2F4F8), 26.dp)
+                    QinblyIconOf(QinblyIcon.KeyboardArrowRight, QiblyTheme.secondary, 26.dp)
                 }
             }
         }
@@ -579,21 +583,21 @@ private fun MarketCatSheet(selected: String?, onPick: (String?) -> Unit, onDismi
         val noRipple = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
         Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable(indication = null, interactionSource = noRipple) { onDismiss() }) {
             Column(
-                Modifier.align(Alignment.BottomCenter).fillMaxWidth().clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).background(Color(0xFF1F1F21))
+                Modifier.align(Alignment.BottomCenter).fillMaxWidth().clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).background(mkPanel)
                     .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { }
                     .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 22.dp + qinblyNavBarPadding())
             ) {
                 Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 4.dp).clip(CircleShape).background(Color(0x4DFFFFFF)))
-                Text("Todas as categorias", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 19.sp, modifier = Modifier.padding(top = 12.dp, bottom = 14.dp))
+                Text("Todas as categorias", color = QiblyTheme.text, fontWeight = FontWeight.Medium, fontSize = 19.sp, modifier = Modifier.padding(top = 12.dp, bottom = 14.dp))
                 for (rowCats in marketProductCats.chunked(4)) {
                     Row(Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
                         for (c in rowCats) {
                             val on = selected == c.key
                             Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable { onPick(if (on) null else c.key); onDismiss() }, horizontalAlignment = Alignment.CenterHorizontally) {
-                                Box(Modifier.size(62.dp).clip(CircleShape).background(if (on) Color.White else Color(0xFF26262A)), contentAlignment = Alignment.Center) {
-                                    QinblyIconOf(c.icon, if (on) Color(0xFF0F0F11) else Color.White, 29.dp)
+                                Box(Modifier.size(62.dp).clip(CircleShape).background(if (on) (if (QiblyTheme.dark) Color.White else MarketBlue) else QiblyTheme.soft), contentAlignment = Alignment.Center) {
+                                    QinblyIconOf(c.icon, if (on) (if (QiblyTheme.dark) Color(0xFF0F0F11) else Color.White) else QiblyTheme.text, 29.dp)
                                 }
-                                Text(c.label, color = Color.White, fontSize = 13.sp, maxLines = 1, modifier = Modifier.padding(top = 5.dp))
+                                Text(c.label, color = QiblyTheme.text, fontSize = 13.sp, maxLines = 1, modifier = Modifier.padding(top = 5.dp))
                             }
                         }
                         repeat(4 - rowCats.size) { Spacer(Modifier.weight(1f)) }
@@ -688,15 +692,15 @@ private fun ListingDetail(
                     if (priceText(l).isNotBlank()) Text(priceText(l), color = textColor, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp)
                     Text(l.title, color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
                     androidx.compose.foundation.layout.FlowRow(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(kindLabel(l.kind), color = Color(0xFFB5D4F4), fontSize = 12.sp, modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xFF0C447C)).padding(horizontal = 10.dp, vertical = 5.dp))
-                        if (listingState(l).isNotBlank() && l.kind != "evento") Text("Estado: " + listingState(l), color = Color(0xFFC0DD97), fontSize = 12.sp, modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xFF27500A)).padding(horizontal = 10.dp, vertical = 5.dp))
-                        if (l.city.isNotBlank()) Row(Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xFF2E2E30)).padding(horizontal = 10.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                            MarketGlyph(Color(0xFFB4B2A9), 14.dp, "M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0", "M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z")
-                            Text(l.city, color = Color(0xFFB4B2A9), fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
+                        Text(kindLabel(l.kind), color = if (QiblyTheme.dark) Color(0xFFB5D4F4) else Color(0xFF0C447C), fontSize = 12.sp, modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(if (QiblyTheme.dark) Color(0xFF0C447C) else Color(0xFFD6E6FA)).padding(horizontal = 10.dp, vertical = 5.dp))
+                        if (listingState(l).isNotBlank() && l.kind != "evento") Text("Estado: " + listingState(l), color = if (QiblyTheme.dark) Color(0xFFC0DD97) else Color(0xFF27500A), fontSize = 12.sp, modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(if (QiblyTheme.dark) Color(0xFF27500A) else Color(0xFFDDEFC6)).padding(horizontal = 10.dp, vertical = 5.dp))
+                        if (l.city.isNotBlank()) Row(Modifier.clip(RoundedCornerShape(14.dp)).background(QiblyTheme.soft).padding(horizontal = 10.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                            MarketGlyph(QiblyTheme.secondary, 14.dp, "M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0", "M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z")
+                            Text(l.city, color = QiblyTheme.secondary, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
                         }
-                        Row(Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xFF2E2E30)).padding(horizontal = 10.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                            MarketGlyph(Color(0xFFB4B2A9), 14.dp, "M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0", "M12 7v5l3 3")
-                            Text(qinblyAgo(l.createdAt), color = Color(0xFFB4B2A9), fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
+                        Row(Modifier.clip(RoundedCornerShape(14.dp)).background(QiblyTheme.soft).padding(horizontal = 10.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                            MarketGlyph(QiblyTheme.secondary, 14.dp, "M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0", "M12 7v5l3 3")
+                            Text(qinblyAgo(l.createdAt), color = QiblyTheme.secondary, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp))
                         }
                     }
                     if (l.description.isNotBlank()) {
@@ -805,8 +809,8 @@ private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPos
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         for ((key, label) in listOf("achado" to "Achei algo", "perdido" to "Perdi algo")) {
                             val selected = subKind == key
-                            Text(label, color = if (selected) QiblyTheme.background else QiblyTheme.secondary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, textAlign = TextAlign.Center,
-                                modifier = Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(if (selected) QiblyTheme.text else QiblyTheme.soft).clickable { subKind = key }.padding(vertical = 10.dp))
+                            Text(label, color = if (selected) mkSelFg else QiblyTheme.secondary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, textAlign = TextAlign.Center,
+                                modifier = Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(if (selected) mkSelBg else QiblyTheme.soft).clickable { subKind = key }.padding(vertical = 10.dp))
                         }
                     }
                 }
@@ -819,8 +823,8 @@ private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPos
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         for (s in listOf("Novo", "Bom", "Usado")) {
                             val selected = extra == s
-                            Text(s, color = if (selected) QiblyTheme.background else QiblyTheme.secondary, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, fontSize = 14.sp,
-                                modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(if (selected) QiblyTheme.text else QiblyTheme.soft).clickable { extra = s }.padding(horizontal = 18.dp, vertical = 9.dp))
+                            Text(s, color = if (selected) mkSelFg else QiblyTheme.secondary, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, fontSize = 14.sp,
+                                modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(if (selected) mkSelBg else QiblyTheme.soft).clickable { extra = s }.padding(horizontal = 18.dp, vertical = 9.dp))
                         }
                     }
                 }
@@ -831,8 +835,8 @@ private fun ListingForm(kind: String, city: String, onDismiss: () -> Unit, onPos
                         for (c in formShown) {
                             val on = prodCat == c.key
                             Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable { prodCat = c.key }.padding(vertical = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Box(Modifier.size(54.dp).clip(CircleShape).background(if (on) QiblyTheme.text else QiblyTheme.soft), contentAlignment = Alignment.Center) {
-                                    QinblyIconOf(c.icon, if (on) QiblyTheme.background else QiblyTheme.text, 26.dp)
+                                Box(Modifier.size(54.dp).clip(CircleShape).background(if (on) mkSelBg else QiblyTheme.soft), contentAlignment = Alignment.Center) {
+                                    QinblyIconOf(c.icon, if (on) mkSelFg else QiblyTheme.text, 26.dp)
                                 }
                                 Text(c.short, color = if (on) QiblyTheme.text else QiblyTheme.secondary, fontSize = 12.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
                             }
@@ -886,24 +890,24 @@ private fun CityPicker(current: String, deviceCity: String, prefs: android.conte
         } catch (_: Exception) { emptyList() }
         searching = false
     }
-    QinblyBottomPanel("Escolha a cidade", onDismiss = onDismiss) {
+    QinblyFullScreen("Escolha a cidade", onDismiss, background = QiblyTheme.background, contentColor = QiblyTheme.text) {
         QinblyPillField(query, { query = it.take(60) }, "Buscar cidade…", Modifier.fillMaxWidth())
         if (deviceCity.isNotBlank()) Row(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF262628)).clickable { choose(deviceCity) }.padding(14.dp),
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(QiblyTheme.soft).clickable { choose(deviceCity) }.padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {
-                Text("Usar minha localização", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                Text(deviceCity, color = Color(0xFFF2F4F8), fontSize = 12.sp)
+                Text("Usar minha localização", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                Text(deviceCity, color = QiblyTheme.secondary, fontSize = 12.sp)
             }
             if (current == deviceCity) QinblyCheckIcon(MarketBlue, 21.dp)
         }
         if (query.trim().length >= 3) {
-            if (searching) Text("Buscando…", color = Color(0xFFF2F4F8), fontSize = 14.sp)
-            else if (results.isEmpty()) Text("Nenhuma cidade encontrada.", color = Color(0xFFF2F4F8), fontSize = 14.sp)
+            if (searching) Text("Buscando…", color = QiblyTheme.secondary, fontSize = 14.sp)
+            else if (results.isEmpty()) Text("Nenhuma cidade encontrada.", color = QiblyTheme.secondary, fontSize = 14.sp)
             for (c in results) CityRow(c, c == current) { choose(c) }
         } else if (recents.isNotEmpty()) {
-            Text("Cidades recentes", color = Color(0xFFF2F4F8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            Text("Cidades recentes", color = QiblyTheme.secondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             for (c in recents) CityRow(c, c == current) { choose(c) }
         }
     }
@@ -911,8 +915,8 @@ private fun CityPicker(current: String, deviceCity: String, prefs: android.conte
 
 @Composable
 private fun CityRow(name: String, selected: Boolean, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0xFF262628)).clickable { onClick() }.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(name, color = Color.White, fontSize = 16.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, modifier = Modifier.weight(1f))
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(QiblyTheme.soft).clickable { onClick() }.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(name, color = QiblyTheme.text, fontSize = 16.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, modifier = Modifier.weight(1f))
         if (selected) QinblyCheckIcon(MarketBlue, 21.dp)
     }
 }

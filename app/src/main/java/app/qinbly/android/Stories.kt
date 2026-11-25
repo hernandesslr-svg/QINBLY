@@ -766,7 +766,7 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
         } catch (e: Exception) { viewers = emptyList(); onNotice(e.message ?: "Não foi possível ver quem viu.") }
     }
     val list = viewers
-    QinblyFullScreen("Seu story", onDismiss, scroll = false) {
+    QinblyFullScreen("Seu story", onDismiss, background = Color(0xFF1F1F21), contentColor = Color.White, scroll = false) {
         if (list == null) { Box(Modifier.fillMaxWidth().padding(vertical = 28.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = accent, modifier = Modifier.size(28.dp)) }; return@QinblyFullScreen }
         fun near(v: QinblyApi.StoryViewer): Boolean { val c = cities[v.username].orEmpty(); return c.isNotBlank() && ownerCity.isNotBlank() && c.equals(ownerCity, ignoreCase = true) }
         // Barras do gráfico: 12 faixas de 2 h desde que o story foi postado.
