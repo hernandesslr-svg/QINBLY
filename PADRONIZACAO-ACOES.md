@@ -1245,3 +1245,4 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 ## Abertura do app (sem tela preta)
 - Tela de abertura (splash): branca por padrão; no Android 13+ ela passa a ter a cor do tema escolhido no app (`setSplashScreenTheme` com `Theme.Qinbly.SplashLight/SplashDark`, atualizado ao abrir o app e ao trocar o tema).
 - Quem nunca escolheu tema nas configurações passa a abrir no tema do aparelho (`qinblySavedDark`); quem escolheu usa o escolhido.
+- Causa da "tela preta que depois clareia": as cores de reserva do app (`RemoteAppearance` e `readUiColor`) eram escuras e só viravam claras quando a configuração remota (`remote-config/android-ui.json`) chegava. Agora as cores de reserva são iguais às da configuração (claras), então o primeiro quadro já sai certo.

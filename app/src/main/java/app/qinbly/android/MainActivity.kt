@@ -1854,19 +1854,19 @@ internal object QiblyTheme {
 }
 
 private object RemoteAppearance {
-    private var feedTextColorBase by androidx.compose.runtime.mutableStateOf(Color.White)
+    private var feedTextColorBase by androidx.compose.runtime.mutableStateOf(Color.Black)
     var feedTextColor: Color
         get() = if (QiblyTheme.dark) Color.White else feedTextColorBase
         set(value) { feedTextColorBase = value }
-    private var feedSecondaryTextColorBase by androidx.compose.runtime.mutableStateOf(Color(0xFFADB2CB))
+    private var feedSecondaryTextColorBase by androidx.compose.runtime.mutableStateOf(Color(0xFF333333))
     var feedSecondaryTextColor: Color
         get() = if (QiblyTheme.dark) QiblyTheme.secondary else feedSecondaryTextColorBase
         set(value) { feedSecondaryTextColorBase = value }
-    private var feedActionBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color(0x66030711))
+    private var feedActionBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color.White)
     var feedActionBackgroundColor: Color
         get() = if (QiblyTheme.dark) QiblyTheme.background else feedActionBackgroundColorBase
         set(value) { feedActionBackgroundColorBase = value }
-    private var feedDividerColorBase by androidx.compose.runtime.mutableStateOf(Color(0xFF252525))
+    private var feedDividerColorBase by androidx.compose.runtime.mutableStateOf(Color(0xFFE5E5E5))
     var feedDividerColor: Color
         get() = if (QiblyTheme.dark) QiblyTheme.border else feedDividerColorBase
         set(value) { feedDividerColorBase = value }
@@ -1886,14 +1886,14 @@ private object RemoteAppearance {
     var screenSecondaryTextColor: Color
         get() = if (QiblyTheme.dark) QiblyTheme.secondary else screenSecondaryTextColorBase
         set(value) { screenSecondaryTextColorBase = value }
-    private var headerTextColorBase by androidx.compose.runtime.mutableStateOf(Color.White)
+    private var headerTextColorBase by androidx.compose.runtime.mutableStateOf(Color.Black)
     var headerTextColor: Color
         get() = if (QiblyTheme.dark) Color.White else headerTextColorBase
         set(value) { headerTextColorBase = value }
-    var headerUnderlineColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    var headerUnderlineColor by androidx.compose.runtime.mutableStateOf(Color(0xFF1269EA))
     var headerTextSize by androidx.compose.runtime.mutableIntStateOf(17)
     var headerVisible by androidx.compose.runtime.mutableStateOf(true)
-    private var actionIconColorBase by androidx.compose.runtime.mutableStateOf(Color.White)
+    private var actionIconColorBase by androidx.compose.runtime.mutableStateOf(Color.Black)
     var actionIconColor: Color
         get() = if (QiblyTheme.dark) QiblyTheme.text else actionIconColorBase
         set(value) { actionIconColorBase = value }
@@ -1902,7 +1902,7 @@ private object RemoteAppearance {
     var navigationLabels by androidx.compose.runtime.mutableStateOf(listOf("Início", "Comunidades", "Criar", "Mensagens", "Perfil"))
     var feedLabels by androidx.compose.runtime.mutableStateOf(listOf("Descobrir", "Seguindo", "Comunidade"))
     var navigationLabelSize by androidx.compose.runtime.mutableIntStateOf(12)
-    private var headerBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color.Black)
+    private var headerBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color.White)
     var headerBackgroundColor: Color
         get() = if (QiblyTheme.dark) QiblyTheme.background else headerBackgroundColorBase
         set(value) { headerBackgroundColorBase = value }
@@ -1912,8 +1912,8 @@ private object RemoteAppearance {
     var spreadPostActions by androidx.compose.runtime.mutableStateOf(false)
     var badgeColor by androidx.compose.runtime.mutableStateOf(Color(0xFFFF3045))
     var likedColor by androidx.compose.runtime.mutableStateOf(Color(0xFFFF3045))
-    var profileAccentColor by androidx.compose.runtime.mutableStateOf(Color.White)
-    var commentAccentColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    var profileAccentColor by androidx.compose.runtime.mutableStateOf(Color.Black)
+    var commentAccentColor by androidx.compose.runtime.mutableStateOf(Color(0xFF2196F3))
     private var commentBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color.White)
     var commentBackgroundColor: Color
         get() = if (QiblyTheme.dark) QiblyTheme.card else commentBackgroundColorBase
@@ -1934,8 +1934,8 @@ private object RemoteAppearance {
     var commentDividerColor: Color
         get() = if (QiblyTheme.dark) QiblyTheme.border else commentDividerColorBase
         set(value) { commentDividerColorBase = value }
-    var messageAccentColor by androidx.compose.runtime.mutableStateOf(Color.White)
-    var playerProgressColor by androidx.compose.runtime.mutableStateOf(Color.White)
+    var messageAccentColor by androidx.compose.runtime.mutableStateOf(Color.Black)
+    var playerProgressColor by androidx.compose.runtime.mutableStateOf(Color.Black)
     var enableDemoFeed by androidx.compose.runtime.mutableStateOf(true)
     var showFeedHeader by androidx.compose.runtime.mutableStateOf(true)
 }
@@ -1967,10 +1967,10 @@ private fun QinblyApp() {
         val saved = uiPreferences.getString(key, null) ?: return Color(fallback)
         return try { Color(android.graphics.Color.parseColor(saved)) } catch (_: Exception) { Color(fallback) }
     }
-    var navigationIndicatorColor by remember { mutableStateOf(readUiColor("indicatorColor", 0x33FFFFFFL)) }
-    var navigationBackgroundColor by remember { mutableStateOf(readUiColor("backgroundColor", 0x99030710L)) }
-    var navigationSelectedColor by remember { mutableStateOf(readUiColor("selectedIconColor", 0xFFFFFFFFL)) }
-    var navigationUnselectedColor by remember { mutableStateOf(readUiColor("unselectedIconColor", 0xFFFFFFFFL)) }
+    var navigationIndicatorColor by remember { mutableStateOf(readUiColor("indicatorColor", 0xFF2196F3L)) }
+    var navigationBackgroundColor by remember { mutableStateOf(readUiColor("backgroundColor", 0xFFFFFFFFL)) }
+    var navigationSelectedColor by remember { mutableStateOf(readUiColor("selectedIconColor", 0xFF000000L)) }
+    var navigationUnselectedColor by remember { mutableStateOf(readUiColor("unselectedIconColor", 0xFF000000L)) }
     LaunchedEffect(RemoteUiRefreshSignal.value) {
         val manualRefresh = RemoteUiRefreshSignal.value > 0
         var firstRequest = true
