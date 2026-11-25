@@ -2190,15 +2190,16 @@
   }, true);
 })();
 
-/* Vídeo largo: zoom moderado (corta no máximo ~22% das laterais) em vez de encher e cortar demais. */
+/* Vídeo aparece como foi editado: sem zoom nem corte (só preenche se a diferença for até 8%). */
 document.addEventListener("loadedmetadata", function (e) {
   var v = e.target;
   if (!v || v.tagName !== "VIDEO" || !v.closest || !v.videoWidth || !v.videoHeight) return;
   var box = v.closest(".reel");
   if (!box) return;
   var cw = box.clientWidth, ch = box.clientHeight, a = v.videoWidth / v.videoHeight;
-  if (!cw || !ch || a < cw / ch) return;
-  var w = Math.min(ch * a, cw / 0.78);
+  if (!cw || !ch) return;
+  var wide = a >= cw / ch, fitW = wide ? cw : ch * a, fillW = wide ? ch * a : cw;
+  var w = fillW <= fitW * 1.08 ? fillW : fitW;
   v.classList.add("fit");
   v.style.width = Math.round(w) + "px";
   v.style.height = Math.round(w / a) + "px";

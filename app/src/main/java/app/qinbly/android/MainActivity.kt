@@ -3502,14 +3502,17 @@ private fun QinblyHeartBurst(trigger: Int, modifier: Modifier = Modifier) {
     }
 }
 
-/** Moldura do vídeo: em pé enche a tela; largo recebe só um zoom moderado (corta no máximo ~22% das laterais) em vez de encher e cortar demais. */
+/** Moldura do vídeo: mostra o vídeo exatamente como foi editado (sem zoom, sem corte). Só preenche a tela quando a diferença é mínima (até ~8%), para não sobrar fresta fina. */
 @Composable
 internal fun QinblyVideoFrame(aspect: Float, content: @Composable (Modifier) -> Unit) {
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().clipToBounds(), contentAlignment = Alignment.Center) {
         val wc = maxWidth.value
         val hc = maxHeight.value
         val frameMod = if (aspect <= 0f || wc <= 0f || hc <= 0f) Modifier.fillMaxSize() else {
-            val w = if (aspect >= wc / hc) minOf(hc * aspect, wc / 0.78f) else wc
+            val wide = aspect >= wc / hc
+            val fitW = if (wide) wc else hc * aspect
+            val fillW = if (wide) hc * aspect else wc
+            val w = if (fillW <= fitW * 1.08f) fillW else fitW
             Modifier.requiredSize(w.dp, (w / aspect).dp)
         }
         content(frameMod)
@@ -3764,12 +3767,12 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
                     useController = false
                     setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
                     setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
-                    resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
                 } },
                 update = { view ->
                     view.player = player
                     view.useController = false
-                    view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
                 }
             )
             if (!firstFrameShown) {
