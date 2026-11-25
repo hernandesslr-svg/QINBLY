@@ -1253,3 +1253,6 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Balão recebido #E9ECF1; divisórias `QiblyTheme.border` (#E3E4E8). Nota das bolinhas de story acompanha o tema.
 - Azul único #2F68E0 (sublinhado do cabeçalho, indicador da barra, comentários, barra do vídeo; `remote-config` revisão 30).
 - Web: `[data-theme=light]` espelha as mesmas cores.
+
+## Vídeos em tela cheia (aba Vídeos)
+- Vídeo com proporção até 4:3 (largura/altura ≤ 1,4) usa `RESIZE_MODE_ZOOM` e preenche a tela; só vídeo bem largo (16:9) fica inteiro (`FIT`). A proporção vem de `onVideoSizeChanged`. Web: mesma regra em `.reel video`.

@@ -2189,3 +2189,11 @@
     if (t.className === "cx-more") renderFull(el); else renderCut(el, el._k);
   }, true);
 })();
+
+/* Vídeos em tela cheia: até 4:3 enchem a tela; só os bem largos ficam inteiros. */
+document.addEventListener("loadedmetadata", function (e) {
+  var v = e.target;
+  if (v && v.tagName === "VIDEO" && v.closest && v.closest(".reel") && v.videoWidth && v.videoHeight) {
+    v.style.objectFit = v.videoWidth / v.videoHeight > 1.4 ? "contain" : "cover";
+  }
+}, true);
