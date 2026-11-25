@@ -1591,6 +1591,9 @@ object QinblyApi {
         }
         val result = try {
             request("POST", "/api/auth/refresh", JSONObject().put("refreshToken", refreshToken), null, false)
+        } catch (e: java.io.IOException) {
+            // Sem rede não é sessão vencida: mantém o login e tenta de novo depois.
+            throw IllegalStateException("Sem conexão com o servidor. Tente novamente.")
         } catch (_: Exception) {
             throw IllegalStateException("Sua sessão expirou. Entre novamente com o Google para continuar.")
         }

@@ -141,7 +141,10 @@ export const refreshSession = async (env, refreshToken) => {
   if (!row || row.expires_at < nowIso()) return null;
   const acc = await env.DB.prepare("SELECT id, email FROM accounts WHERE id = ?").bind(row.account_id).first();
   if (!acc) return null;
-  await env.DB.prepare("DELETE FROM refresh_tokens WHERE token_hash = ?").bind(hash).run();
+  // O token antigo continua valendo por 10 min: se a resposta se perder (rede ruim) ou dois pedidos
+  // renovarem ao mesmo tempo, o app tenta de novo com o mesmo token em vez de perder a sessão.
+  const grace = new Date(Date.now() + 10 * 60000).toISOString();
+  if (row.expires_at > grace) await env.DB.prepare("UPDATE refresh_tokens SET expires_at = ? WHERE token_hash = ?").bind(grace, hash).run();
   return { account: acc, session: await issueSession(env, acc, row.sid || "") };
 };
 export const signOutOthers = async (env, accountId, keepSid) => {
