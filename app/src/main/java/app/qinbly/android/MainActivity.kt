@@ -446,6 +446,7 @@ class MainActivity : ComponentActivity() {
         // Tema salvo já no primeiro quadro: antes ele só era lido depois de a tela aparecer (ficava escuro e depois clareava).
         getSharedPreferences("qinbly_session", MODE_PRIVATE).byAccount().let { sp ->
             QiblyTheme.dark = qinblySavedDark(sp, this)
+            qinblySetSplashTheme(this, QiblyTheme.dark)
             QiblyTheme.largeText = sp.getBoolean("setting_large_text", false)
             QiblyTheme.reduceMotion = sp.getBoolean("setting_reduce_motion", false)
         }
@@ -1191,6 +1192,13 @@ private fun QinblyRichText(
                 ?: annotated.getStringAnnotations("U", offset, offset).firstOrNull()?.let { qinblyOpenUrl(urlContext, it.item) }
         }
     )
+}
+
+/** Abertura do app na cor do tema escolhido (Android 13+ guarda isso para as próximas aberturas). */
+private fun qinblySetSplashTheme(activity: android.app.Activity, dark: Boolean) {
+    if (android.os.Build.VERSION.SDK_INT >= 33) {
+        try { activity.splashScreen.setSplashScreenTheme(if (dark) R.style.Theme_Qinbly_SplashDark else R.style.Theme_Qinbly_SplashLight) } catch (_: Exception) { }
+    }
 }
 
 /** Tema salvo; quando a pessoa nunca escolheu, acompanha o modo claro/escuro do aparelho (a abertura do app já usa a mesma cor). */
@@ -11584,6 +11592,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                         ) { enabled ->
                             QiblyTheme.dark = enabled
                             prefs.edit().putString("setting_theme", if (enabled) "dark" else "light").apply()
+                            (context as? android.app.Activity)?.let { qinblySetSplashTheme(it, enabled) }
                         }
                     }
                     item { Text("FONTES", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 14.dp, bottom = 2.dp)) }

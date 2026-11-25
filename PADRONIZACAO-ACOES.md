@@ -1243,5 +1243,5 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Ainda não existe campo próprio de "site/link" no perfil: links aparecem dentro da bio.
 
 ## Abertura do app (sem tela preta)
-- Tela de abertura (splash) e fundo da janela seguem o modo claro/escuro do aparelho (`values/colors.xml` e `values-night/colors.xml`, `values-v31` define `windowSplashScreenBackground`).
+- Tela de abertura (splash): branca por padrão; no Android 13+ ela passa a ter a cor do tema escolhido no app (`setSplashScreenTheme` com `Theme.Qinbly.SplashLight/SplashDark`, atualizado ao abrir o app e ao trocar o tema).
 - Quem nunca escolheu tema nas configurações passa a abrir no tema do aparelho (`qinblySavedDark`); quem escolheu usa o escolhido.
