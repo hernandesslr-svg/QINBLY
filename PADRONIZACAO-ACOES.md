@@ -1255,7 +1255,8 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Web: `[data-theme=light]` espelha as mesmas cores.
 
 ## Vídeos em tela cheia (formato TikTok)
-- Todo vídeo (aba Vídeos, story, prévia do editor ao publicar, web `.reel`) enche a tela 9:16: `RESIZE_MODE_ZOOM` / `object-fit: cover`, qualquer que seja a proporção original. Nunca usar `FIT` nesses lugares.
+- `QinblyVideoFrame(aspect)` (MainActivity.kt) dimensiona o vídeo: em pé enche a tela 9:16; largo (4:3, 16:9) recebe só zoom moderado, cortando no máximo ~22% das laterais (largura ≤ largura da tela / 0,78), com fundo desfocado do próprio vídeo nas sobras. Usado na aba Vídeos, na prévia do editor e nos stories. Web: mesma regra em `.reel video.fit`.
+- Não usar `RESIZE_MODE_ZOOM` puro nesses lugares (cortava demais).
 
 ## Aba Vídeos: barras pretas (opção A)
 - Na aba Vídeos (`QinblyVideoChrome.on` no FeedPage): sem menu/logo/carrinho/busca/sino no topo, só as abas de letra; barra de status, abas, barra de baixo e botões do Android ficam pretos com ícones brancos; o vídeo fica entre as abas e a barra de baixo.

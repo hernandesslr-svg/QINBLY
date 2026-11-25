@@ -2189,3 +2189,17 @@
     if (t.className === "cx-more") renderFull(el); else renderCut(el, el._k);
   }, true);
 })();
+
+/* Vídeo largo: zoom moderado (corta no máximo ~22% das laterais) em vez de encher e cortar demais. */
+document.addEventListener("loadedmetadata", function (e) {
+  var v = e.target;
+  if (!v || v.tagName !== "VIDEO" || !v.closest || !v.videoWidth || !v.videoHeight) return;
+  var box = v.closest(".reel");
+  if (!box) return;
+  var cw = box.clientWidth, ch = box.clientHeight, a = v.videoWidth / v.videoHeight;
+  if (!cw || !ch || a < cw / ch) return;
+  var w = Math.min(ch * a, cw / 0.78);
+  v.classList.add("fit");
+  v.style.width = Math.round(w) + "px";
+  v.style.height = Math.round(w / a) + "px";
+}, true);

@@ -3502,16 +3502,34 @@ private fun QinblyHeartBurst(trigger: Int, modifier: Modifier = Modifier) {
     }
 }
 
+/** Moldura do vídeo: em pé enche a tela; largo recebe só um zoom moderado (corta no máximo ~22% das laterais) em vez de encher e cortar demais. */
+@Composable
+internal fun QinblyVideoFrame(aspect: Float, content: @Composable (Modifier) -> Unit) {
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().clipToBounds(), contentAlignment = Alignment.Center) {
+        val wc = maxWidth.value
+        val hc = maxHeight.value
+        val frameMod = if (aspect <= 0f || wc <= 0f || hc <= 0f) Modifier.fillMaxSize() else {
+            val w = if (aspect >= wc / hc) minOf(hc * aspect, wc / 0.78f) else wc
+            Modifier.requiredSize(w.dp, (w / aspect).dp)
+        }
+        content(frameMod)
+    }
+}
+
 @Composable
 private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, showProgress: Boolean = true, thinProgress: Boolean = false, onDoubleTap: (() -> Unit)? = null) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var firstFrameShown by remember(url) { mutableStateOf(false) }
     var buffering by remember(url) { mutableStateOf(true) }
-        val player = remember(url) {
+    var videoAspect by remember(url) { mutableStateOf(0f) }
+    val player = remember(url) {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(url))
             repeatMode = androidx.media3.common.Player.REPEAT_MODE_ONE
             addListener(object : androidx.media3.common.Player.Listener {
+                override fun onVideoSizeChanged(size: androidx.media3.common.VideoSize) {
+                    if (size.width > 0 && size.height > 0) videoAspect = size.width * size.pixelWidthHeightRatio / size.height
+                }
                 override fun onRenderedFirstFrame() { firstFrameShown = true }
                 override fun onPlaybackStateChanged(playbackState: Int) { buffering = playbackState == androidx.media3.common.Player.STATE_BUFFERING }
             })
@@ -3543,8 +3561,11 @@ private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, sh
         }
     }
     Box(modifier.background(Color.Black)) {
-        AndroidView(modifier = Modifier.fillMaxSize(), factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false; resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM } }, update = { view -> view.player = player; view.useController = false; view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM })
-        if (!firstFrameShown) QinblyVideoPoster(url, Modifier.fillMaxSize(), ContentScale.Crop)
+        if (android.os.Build.VERSION.SDK_INT >= 31 && videoAspect > 0f) QinblyVideoPoster(url, Modifier.fillMaxSize().blur(32.dp).alpha(0.55f), ContentScale.Crop)
+        QinblyVideoFrame(videoAspect) { frameMod ->
+            AndroidView(modifier = frameMod, factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false; resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT } }, update = { view -> view.player = player; view.useController = false; view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT })
+            if (!firstFrameShown) QinblyVideoPoster(url, frameMod, ContentScale.Crop)
+        }
         if (!firstFrameShown || buffering) QinblyLoadingSpinner(Modifier.fillMaxSize())
         Box(Modifier.fillMaxSize().pointerInput(url) {
             detectTapGestures(
