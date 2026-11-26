@@ -107,7 +107,8 @@ internal fun QinblyVoiceBar(
     val context = LocalContext.current
     val recorder = remember { QinblyVoiceRecorder(context) }
     var seconds by remember { mutableIntStateOf(0) }
-    val levels = remember { mutableStateListOf<Float>().apply { repeat(28) { add(0.05f) } } }
+    val slots = 34
+    val levels = remember { mutableStateListOf<Float>() }
     var started by remember { mutableStateOf(false) }
     var done by remember { mutableStateOf(false) }
 
@@ -118,7 +119,7 @@ internal fun QinblyVoiceBar(
         while (!done) {
             kotlinx.coroutines.delay(100)
             ticks++
-            if (levels.size >= 28) levels.removeAt(0)
+            if (levels.size >= slots) levels.removeAt(0)
             levels.add(max(0.05f, recorder.level()))
             if (ticks % 10 == 0) seconds = ticks / 10
             if (ticks >= 3000 && !done) { // limite de 5 minutos
@@ -130,27 +131,39 @@ internal fun QinblyVoiceBar(
     DisposableEffect(Unit) { onDispose { if (!done) recorder.discard() } }
 
     Row(
-        modifier.fillMaxWidth().height(58.dp).clip(RoundedCornerShape(29.dp)).background(barColor).padding(horizontal = 8.dp),
+        modifier.fillMaxWidth().height(58.dp).padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Box(Modifier.size(44.dp).clip(CircleShape).clickable { done = true; recorder.discard(); onCancel() }, contentAlignment = Alignment.Center) {
             Icon(Icons.Outlined.Delete, contentDescription = "Cancelar gravação", tint = textColor.copy(alpha = 0.7f), modifier = Modifier.size(28.dp))
         }
-        Box(Modifier.size(10.dp).clip(CircleShape).background(Color(0xFFE24B4A)))
+        val pulse = androidx.compose.animation.core.rememberInfiniteTransition(label = "rec").animateFloat(
+            initialValue = 1f, targetValue = 0.3f,
+            animationSpec = androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(800), androidx.compose.animation.core.RepeatMode.Reverse),
+            label = "recDot"
+        )
+        Box(Modifier.size(11.dp).clip(CircleShape).background(Color(0xFFE24B4A).copy(alpha = pulse.value)))
         Text("%d:%02d".format(seconds / 60, seconds % 60), color = textColor, fontSize = 16.sp)
-        Canvas(Modifier.weight(1f).height(34.dp)) {
-            val n = levels.size
-            val gap = size.width / n
-            val barW = gap * 0.45f
-            levels.forEachIndexed { i, l ->
-                val h = size.height * (0.15f + 0.85f * l)
-                drawRoundRect(
-                    textColor.copy(alpha = 0.45f),
-                    Offset(i * gap + (gap - barW) / 2f, (size.height - h) / 2f),
-                    Size(barW, h),
-                    CornerRadius(barW / 2f, barW / 2f)
-                )
+        Canvas(Modifier.weight(1f).height(38.dp)) {
+            val gap = size.width / slots
+            val barW = gap * 0.5f
+            val brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                listOf(Color(0xFF2F8CFF), Color(0xFF7B3DFF), Color(0xFFE0368C)), startX = 0f, endX = size.width
+            )
+            for (i in 0 until slots) {
+                val cx = i * gap + gap / 2f
+                if (i < levels.size) {
+                    val h = size.height * (0.14f + 0.86f * levels[i])
+                    drawRoundRect(
+                        brush,
+                        Offset(cx - barW / 2f, (size.height - h) / 2f),
+                        Size(barW, h),
+                        CornerRadius(barW / 2f, barW / 2f)
+                    )
+                } else {
+                    drawCircle(textColor.copy(alpha = 0.3f), radius = barW / 2.2f, center = Offset(cx, size.height / 2f))
+                }
             }
         }
         Box(
