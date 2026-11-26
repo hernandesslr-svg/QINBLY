@@ -364,6 +364,25 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
       const profiles = await profilesByIds((rows || []).map((r: any) => r.user_id));
       return reply({ comments: (rows || []).map((r: any) => ({ id: r.id, body: r.body, createdAt: r.created_at, username: profiles.get(r.user_id)?.username || "", displayName: profiles.get(r.user_id)?.display_name || "" })) });
     }
+    // Publicações de um perfil ordenadas por curtidas, vistas ou comentários (folha "Mais curtidas" do perfil).
+    const topM = route("GET", /^\/api\/users\/([^/]+)\/top-posts$/);
+    if (topM && topM[1] !== "me") {
+      const name = decodeURIComponent(topM[1]).replace(/^@/, "").toLowerCase();
+      const target = (await rest(`profiles?username=eq.${encodeURIComponent(name)}&select=id`))?.[0];
+      if (!target) return reply({ posts: [] });
+      const asked = url.searchParams.get("by") || "likes";
+      const by = ["likes", "views", "comments"].includes(asked) ? asked : "likes";
+      const own = target.id === viewerId;
+      const rows = await rest(`posts?user_id=eq.${target.id}&select=${POST_SELECT}${own ? "" : "&visibility=eq.public"}&${await feedFilter()}&order=created_at.desc&limit=200`);
+      const built = await buildPosts(visiblePolls(rows || []));
+      const viewRows = built.length ? await rest(`post_views?post_id=in.(${inList(built.map((b: any) => b.id))})&select=post_id&limit=50000`) : [];
+      const counts = new Map<string, number>();
+      for (const v of viewRows || []) counts.set(v.post_id, (counts.get(v.post_id) || 0) + 1);
+      const out = built.map((b: any) => ({ ...b, views: counts.get(b.id) || 0 }));
+      const metric = (x: any) => by === "views" ? x.views : by === "comments" ? (x.comments || 0) : (x.likes || 0);
+      out.sort((x: any, y: any) => metric(y) - metric(x) || String(y.createdAt || "").localeCompare(String(x.createdAt || "")));
+      return reply({ posts: out.slice(0, 50) });
+    }
     // perfis públicos (depois das rotas /api/users/<nome fixo> acima e das rotas /me abaixo)
     const conn = route("GET", /^\/api\/users\/([^/]+)\/(followers|following)$/);
     if (conn && conn[1] !== "me") {

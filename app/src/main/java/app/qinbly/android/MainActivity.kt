@@ -261,7 +261,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 
-private fun postRelativeTime(createdAt: String, nowMillis: Long): String {
+internal fun postRelativeTime(createdAt: String, nowMillis: Long): String {
     val timestamp = try {
         java.time.Instant.parse(createdAt).toEpochMilli()
     } catch (_: Exception) {
@@ -10550,6 +10550,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         // Cabeçalho: foto à esquerda; ao lado nome, @ · país e os números.
         val ownParts = qinblyBioParts(bio)
         var showAbout by remember { mutableStateOf(false) }
+        var showTopPosts by remember { mutableStateOf(false) }
         QinblyProfileTop(
             avatar = {
                 Box(Modifier.size(92.dp), contentAlignment = Alignment.Center) {
@@ -10575,9 +10576,11 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             following = followingCount,
             followers = followersCount,
             onFollowing = { onStat("Seguindo") },
-            onFollowers = { onStat("Seguidores") }
+            onFollowers = { onStat("Seguidores") },
+            onLikes = if (username.isBlank()) null else ({ showTopPosts = true })
         )
         if (showAbout) QinblyProfileAbout(joinedMonthYear, ownParts.country) { showAbout = false }
+        if (showTopPosts) QinblyTopPostsSheet(username.removePrefix("@"), onOpenPost = { id -> QinblyDeepLink.postId = id }) { showTopPosts = false }
         if (username.isBlank()) {
             // Sem conta: só um botão grande de Entrar (leva para entrar ou criar conta).
             QinblyGradientButton(
@@ -11992,6 +11995,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
         val joinMonth = joinedDate.drop(5).take(2).toIntOrNull() ?: 0
         val monthNames = listOf("jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez")
         var showAbout by remember { mutableStateOf(false) }
+        var showTopPosts by remember { mutableStateOf(false) }
         QinblyProfileTop(
             avatar = {
                 Box(Modifier.size(92.dp), contentAlignment = Alignment.Center) {
@@ -12015,8 +12019,10 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
             following = user.optInt("following"),
             followers = user.optInt("followers"),
             onFollowing = { openConnections("following") },
-            onFollowers = { openConnections("followers") }
+            onFollowers = { openConnections("followers") },
+            onLikes = { showTopPosts = true }
         )
+        if (showTopPosts) QinblyTopPostsSheet(publicUsername, onOpenPost = { id -> QinblyDeepLink.postId = id }) { showTopPosts = false }
         if (showAbout) QinblyProfileAbout(if (joinMonth in 1..12) "${monthNames[joinMonth - 1]} ${joinedDate.take(4)}" else "", publicParts.country) { showAbout = false }
         QinblyProfileBioLeft(publicParts.description)
         QinblyProfileLinks(publicParts.links)

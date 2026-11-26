@@ -1152,6 +1152,14 @@ object QinblyApi {
         return parsePost(response.optJSONObject("post") ?: throw IllegalStateException("Publicação não encontrada."))
     }
 
+    /** Publicações de um perfil em ordem de curtidas, vistas ou comentários (by = likes, views ou comments), com o número de vistas. */
+    fun topPosts(username: String, by: String): List<Pair<PostSummary, Int>> {
+        val u = java.net.URLEncoder.encode(username.removePrefix("@"), "UTF-8")
+        val response = request("GET", "/api/users/$u/top-posts?by=$by", null, storedAccessToken())
+        val arr = response.optJSONArray("posts") ?: org.json.JSONArray()
+        return (0 until arr.length()).mapNotNull { i -> arr.optJSONObject(i)?.let { parsePost(it) to it.optInt("views") } }
+    }
+
     fun toggleSave(token: String, postId: String): Boolean =
         request("POST", "/api/posts/" + postId + "/save", JSONObject(), token).optBoolean("saved")
 

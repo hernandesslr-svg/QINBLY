@@ -39,7 +39,16 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -124,7 +133,8 @@ internal fun QinblyProfileTop(
     following: Int,
     followers: Int,
     onFollowing: () -> Unit,
-    onFollowers: () -> Unit
+    onFollowers: () -> Unit,
+    onLikes: (() -> Unit)? = null
 ) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         avatar()
@@ -150,7 +160,7 @@ internal fun QinblyProfileTop(
             Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
                 QinblyProfileStat("Seguindo", following, onFollowing)
                 QinblyProfileStat("Seguidores", followers, onFollowers)
-                QinblyProfileStat("Curtidas", likes, null)
+                QinblyProfileStat("Curtidas", likes, onLikes)
             }
         }
     }
@@ -498,5 +508,109 @@ private fun QinblyFavoriteViewer(
         },
         dismissButton = { TextButton(onClick = { ask = "" }) { Text("Cancelar") } },
         containerColor = QiblyTheme.card, titleContentColor = QiblyTheme.text, textContentColor = QiblyTheme.text
+    )
+}
+
+
+/** Folha aberta ao tocar em "Curtidas": publicações do perfil em ordem de mais curtidas, mais vistas ou mais comentadas. */
+@Composable
+internal fun QinblyTopPostsSheet(username: String, onOpenPost: (String) -> Unit, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    var by by remember { mutableStateOf("likes") }
+    var menu by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(true) }
+    var failed by remember { mutableStateOf(false) }
+    var items by remember { mutableStateOf<List<Pair<QinblyApi.PostSummary, Int>>>(emptyList()) }
+    LaunchedEffect(by) {
+        loading = true
+        failed = false
+        val result = try {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.topPosts(username, by) }
+        } catch (_: Exception) { null }
+        if (result == null) failed = true else items = result
+        loading = false
+    }
+    val title = when (by) { "views" -> "Mais vistas"; "comments" -> "Mais comentadas"; else -> "Mais curtidas" }
+    val options = listOf(
+        Triple("likes", "Mais curtidas", Icons.Outlined.FavoriteBorder),
+        Triple("views", "Mais vistas", Icons.Outlined.Visibility),
+        Triple("comments", "Mais comentadas", Icons.Outlined.ChatBubbleOutline)
+    )
+    app.qinbly.android.AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = QiblyTheme.dialog,
+        titleContentColor = QiblyTheme.text,
+        textContentColor = QiblyTheme.text,
+        confirmButton = {},
+        title = {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(title, modifier = Modifier.weight(1f))
+                Box {
+                    QinblyAccentIcon(Icons.Outlined.Tune, contentDescription = "Ordenar por", modifier = Modifier.size(24.dp).clickable { menu = true })
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        options.forEach { (key, label, icon) ->
+                            DropdownMenuItem(
+                                text = { Text(label, color = if (by == key) QinblyBrand.Accent else QiblyTheme.text, fontWeight = if (by == key) FontWeight.SemiBold else FontWeight.Normal) },
+                                leadingIcon = { Icon(icon, contentDescription = null, tint = if (by == key) QinblyBrand.Accent else QiblyTheme.text, modifier = Modifier.size(20.dp)) },
+                                trailingIcon = { if (by == key) Icon(Icons.Default.Check, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(18.dp)) },
+                                onClick = { by = key; menu = false }
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.width(14.dp))
+                Icon(Icons.Default.Close, contentDescription = "Fechar", tint = QiblyTheme.text, modifier = Modifier.size(24.dp).clickable(onClick = onDismiss))
+            }
+        },
+        text = {
+            Box(Modifier.fillMaxWidth()) {
+                if (loading && items.isEmpty()) {
+                    Box(Modifier.fillMaxWidth().padding(28.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = QinblyBrand.Accent) }
+                } else if (failed && items.isEmpty()) {
+                    Text("Não foi possível carregar agora.", color = QiblyTheme.secondary, modifier = Modifier.fillMaxWidth().padding(20.dp))
+                } else if (items.isEmpty()) {
+                    Text("Ainda não há publicações.", color = QiblyTheme.secondary, modifier = Modifier.fillMaxWidth().padding(20.dp))
+                } else {
+                    LazyColumn(Modifier.fillMaxWidth()) {
+                        itemsIndexed(items, key = { _, it -> it.first.id }) { index, (post, views) ->
+                            val value = when (by) { "views" -> views; "comments" -> post.comments; else -> post.likes }
+                            Row(Modifier.fillMaxWidth().clickable { onOpenPost(post.id); onDismiss() }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("${index + 1}", modifier = Modifier.width(26.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = QiblyTheme.text)
+                                Spacer(Modifier.width(12.dp))
+                                Box(Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(QiblyTheme.soft), contentAlignment = Alignment.Center) {
+                                    if (post.mediaUrl.isBlank() || post.mediaType == "text" || post.mediaType == "poll") {
+                                        Text("Aa", color = QiblyTheme.text, fontWeight = FontWeight.SemiBold)
+                                    } else {
+                                        val request = remember(post.mediaUrl) {
+                                            coil.request.ImageRequest.Builder(context).data(post.mediaUrl).apply {
+                                                if (post.mediaType == "video") { decoderFactory(coil.decode.VideoFrameDecoder.Factory()); videoFrameMillis(500) }
+                                            }.crossfade(true).build()
+                                        }
+                                        AsyncImage(model = request, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                                    }
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        post.caption.lineSequence().firstOrNull { it.isNotBlank() }?.trim() ?: if (post.mediaType == "video") "Vídeo" else "Publicação",
+                                        color = QiblyTheme.text, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(postRelativeTime(post.createdAt, System.currentTimeMillis()), color = QiblyTheme.secondary, fontSize = 12.sp)
+                                }
+                                Spacer(Modifier.width(8.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    QinblyAccentIcon(
+                                        when (by) { "views" -> Icons.Outlined.Visibility; "comments" -> Icons.Outlined.ChatBubbleOutline; else -> Icons.Outlined.FavoriteBorder },
+                                        contentDescription = null, modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    QinblyAccentText(qinblyStatText(value), fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     )
 }
