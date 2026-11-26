@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
+import coil.request.videoFrameMillis
 
 // ───────── Bio: a bio guarda também o país ("🌍 ") e os links ("🔗 ", separados por " | ") em linhas próprias ─────────
 
