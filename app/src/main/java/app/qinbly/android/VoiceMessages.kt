@@ -69,6 +69,10 @@ internal class QinblyVoiceRecorder(private val context: android.content.Context)
     /** Volume atual de 0 a 1 (para desenhar as ondas). */
     fun level(): Float = try { ((recorder?.maxAmplitude ?: 0) / 14000f).coerceIn(0f, 1f) } catch (_: Exception) { 0f }
 
+    fun pause() { try { recorder?.pause() } catch (_: Exception) { } }
+
+    fun resume() { try { recorder?.resume() } catch (_: Exception) { } }
+
     /** Para a gravação. Retorna true se o arquivo ficou válido. */
     fun stop(): Boolean {
         val r = recorder ?: return false
@@ -111,6 +115,7 @@ internal fun QinblyVoiceBar(
     val levels = remember { mutableStateListOf<Float>() }
     var started by remember { mutableStateOf(false) }
     var done by remember { mutableStateOf(false) }
+    var paused by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         started = recorder.start()
@@ -118,6 +123,7 @@ internal fun QinblyVoiceBar(
         var ticks = 0
         while (!done) {
             kotlinx.coroutines.delay(100)
+            if (paused) continue
             ticks++
             if (levels.size >= slots) levels.removeAt(0)
             levels.add(max(0.05f, recorder.level()))
@@ -133,17 +139,31 @@ internal fun QinblyVoiceBar(
     Row(
         modifier.fillMaxWidth().height(58.dp).padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Box(Modifier.size(44.dp).clip(CircleShape).clickable { done = true; recorder.discard(); onCancel() }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Outlined.Delete, contentDescription = "Cancelar gravação", tint = textColor.copy(alpha = 0.7f), modifier = Modifier.size(28.dp))
+        Box(Modifier.size(40.dp).clip(CircleShape).clickable { done = true; recorder.discard(); onCancel() }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Outlined.Delete, contentDescription = "Cancelar gravação", tint = Color(0xFFE24B4A), modifier = Modifier.size(27.dp))
+        }
+        Box(
+            Modifier.size(40.dp).clip(CircleShape).clickable {
+                if (done || !started) return@clickable
+                if (paused) { recorder.resume(); paused = false } else { recorder.pause(); paused = true }
+            },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                if (paused) Icons.Default.PlayArrow else Icons.Default.Pause,
+                contentDescription = if (paused) "Continuar gravação" else "Pausar gravação",
+                tint = textColor.copy(alpha = 0.85f),
+                modifier = Modifier.size(27.dp)
+            )
         }
         val pulse = androidx.compose.animation.core.rememberInfiniteTransition(label = "rec").animateFloat(
             initialValue = 1f, targetValue = 0.3f,
             animationSpec = androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(800), androidx.compose.animation.core.RepeatMode.Reverse),
             label = "recDot"
         )
-        Box(Modifier.size(11.dp).clip(CircleShape).background(Color(0xFFE24B4A).copy(alpha = pulse.value)))
+        Box(Modifier.size(11.dp).clip(CircleShape).background(if (paused) textColor.copy(alpha = 0.35f) else Color(0xFFE24B4A).copy(alpha = pulse.value)))
         Text("%d:%02d".format(seconds / 60, seconds % 60), color = textColor, fontSize = 16.sp)
         Canvas(Modifier.weight(1f).height(38.dp)) {
             val gap = size.width / slots
