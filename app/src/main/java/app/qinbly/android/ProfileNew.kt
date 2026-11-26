@@ -144,7 +144,7 @@ internal fun QinblyProfileTop(
                     Icon(Icons.Default.LocationOn, contentDescription = "País", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(14.dp))
                     Text(country, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 2.dp).weight(1f, fill = false))
                 }
-                if (onAbout != null) Icon(Icons.Outlined.Info, contentDescription = "Sobre este perfil", tint = RemoteAppearance.screenSecondaryTextColor,
+                if (onAbout != null) QinblyAccentIcon(Icons.Outlined.Info, contentDescription = "Sobre este perfil",
                     modifier = Modifier.padding(start = 6.dp).size(18.dp).clickable(onClick = onAbout))
             }
             Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
@@ -206,8 +206,10 @@ internal fun QinblyProfileLinks(links: List<String>) {
 @Composable
 internal fun QinblyGrayButton(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val bg = if (QiblyTheme.dark) Color(0x1AFFFFFF) else Color(0xFFF1F2F5)
-    Box(modifier.height(34.dp).clip(RoundedCornerShape(10.dp)).background(bg).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
-        Text(label, color = RemoteAppearance.screenTextColor, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+    val line = if (QiblyTheme.dark) Color.White else Color(0xFF111111)
+    val shape = RoundedCornerShape(10.dp)
+    Box(modifier.height(34.dp).clip(shape).background(bg).border(1.dp, line, shape).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
+        QinblyAccentText(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1)
     }
 }
 

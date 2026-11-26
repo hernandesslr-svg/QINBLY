@@ -4332,14 +4332,14 @@ private fun QinblyFollowButton(
 ) {
     val accent = QinblyBrand.Accent
     val outline = if (tone == QinblyTone.Overlay) Color.White else accent
-    val sizing = if (large) modifier.height(46.dp) else modifier.height(32.dp).widthIn(min = 84.dp)
-    val shape = RoundedCornerShape(if (large) 12.dp else 18.dp)
+    val sizing = if (large) modifier.height(34.dp) else modifier.height(32.dp).widthIn(min = 84.dp)
+    val shape = RoundedCornerShape(if (large) 10.dp else 18.dp)
     val label: @Composable () -> Unit = {
         if (large) {
-            Icon(if (following) Icons.Default.CheckCircle else Icons.Default.PersonAddAlt1, contentDescription = null, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(8.dp))
+            Icon(if (following) Icons.Default.CheckCircle else Icons.Default.PersonAddAlt1, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
         }
-        Text(if (busy) "Aguarde..." else if (following) "Seguindo" else idleLabel, fontSize = if (large) 16.sp else 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Text(if (busy) "Aguarde..." else if (following) "Seguindo" else idleLabel, fontSize = 13.sp, fontWeight = if (large) FontWeight.Medium else FontWeight.SemiBold, maxLines = 1)
     }
     if (following && large) {
         // Perfil: cinza claro, contorno preto fino, ícone e letra com o degradê (igual ao Mensagem).
@@ -4349,9 +4349,9 @@ private fun QinblyFollowButton(
             sizing.clip(shape).background(fill).border(1.dp, line, shape).clickable(enabled = !busy, onClick = onClick),
             horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
         ) {
-            QinblyAccentIcon(Icons.Outlined.CheckCircle, contentDescription = null, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(8.dp))
-            QinblyAccentText(if (busy) "Aguarde..." else "Seguindo", fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+            QinblyAccentIcon(Icons.Outlined.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            QinblyAccentText(if (busy) "Aguarde..." else "Seguindo", fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1)
         }
     } else if (following) {
         OutlinedButton(
@@ -12059,31 +12059,34 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
             if (!privateLocked) {
                 val msgFill = if (QiblyTheme.dark) Color(0x1AFFFFFF) else Color(0xFFF1F2F5)
                 val msgLine = if (QiblyTheme.dark) Color.White else Color(0xFF111111)
-                val msgShape = RoundedCornerShape(12.dp)
-                Row(Modifier.weight(1f).height(46.dp).clip(msgShape).background(msgFill).border(1.dp, msgLine, msgShape).clickable { onMessage(publicUsername) }, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    QinblyAccentIcon(Icons.Default.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
-                    QinblyAccentText("Mensagem", fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                val msgShape = RoundedCornerShape(10.dp)
+                Row(Modifier.weight(1f).height(34.dp).clip(msgShape).background(msgFill).border(1.dp, msgLine, msgShape).clickable { onMessage(publicUsername) }, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                    QinblyAccentIcon(Icons.Default.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    QinblyAccentText("Mensagem", fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                 }
             }
         }
         QinblyHighlightsRow(publicUsername, prefs, mine = publicUsername.equals(prefs.getString("username", "").orEmpty().removePrefix("@"), ignoreCase = true), onNotice = onNotice)
-        Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+        Spacer(Modifier.height(18.dp))
+        Row(
+            Modifier.fillMaxWidth().background(RemoteAppearance.screenBackgroundColor).padding(top = 4.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
             listOf("Publicações", "Vídeos", "Fotos").forEach { section ->
-                Column(Modifier.weight(1f).clickable { selectedTab = section }.padding(top = 7.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(Modifier.weight(1f).clickable { selectedTab = section }.padding(top = 9.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     val sectionOn = selectedTab == section
                     Icon(imageVector = when (section) {
                         "Vídeos" -> if (sectionOn) Icons.Filled.OndemandVideo else Icons.Outlined.OndemandVideo
                         "Fotos" -> if (sectionOn) Icons.Default.Image else Icons.Outlined.Image
-                        "Republicações" -> Icons.Default.Repeat
-                        "Curtidas" -> Icons.Default.FavoriteBorder
-                        "Salvos" -> if (sectionOn) Icons.Default.Bookmark else Icons.Default.BookmarkBorder
                         else -> if (sectionOn) Icons.Default.GridView else Icons.Outlined.GridView
                     }, contentDescription = section, tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(27.dp))
+                    Spacer(Modifier.height(8.dp))
                     Box(Modifier.fillMaxWidth().height(2.dp).background(if (sectionOn) RemoteAppearance.screenTextColor else Color.Transparent))
                 }
             }
         }
+        Box(Modifier.fillMaxWidth().height(0.5.dp).background(QiblyTheme.border))
         if (loading) {
             Box(Modifier.fillMaxWidth().padding(30.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Pink) }
         } else if (profileLoadError != null) {
