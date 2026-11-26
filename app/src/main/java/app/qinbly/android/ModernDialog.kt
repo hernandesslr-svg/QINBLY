@@ -56,7 +56,10 @@ internal fun AlertDialog(
     tonalElevation: Dp = AlertDialogDefaults.TonalElevation,
     properties: DialogProperties = DialogProperties()
 ) {
-    val nav = qinblyNavBarPadding()
+    // Esta caixinha abre numa janela própria: se a tela de trás já tratava a barra do celular (LocalQinblyNavHandled),
+    // o valor vinha zerado e os botões ficavam escondidos atrás dela.
+    var nav = 0.dp
+    CompositionLocalProvider(LocalQinblyNavHandled provides false) { nav = qinblyNavBarPadding() }
     val none = remember { MutableInteractionSource() }
     QinblyDialog(
         onDismissRequest = onDismissRequest,
