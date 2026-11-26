@@ -1881,7 +1881,7 @@ internal object QiblyTheme {
     val border: Color get() = if (dark) Color(0xFF2E2E30) else Color(0xFFE3E4E8)
 }
 
-private object RemoteAppearance {
+internal object RemoteAppearance {
     private var feedTextColorBase by androidx.compose.runtime.mutableStateOf(Color.Black)
     var feedTextColor: Color
         get() = if (QiblyTheme.dark) Color.White else feedTextColorBase
