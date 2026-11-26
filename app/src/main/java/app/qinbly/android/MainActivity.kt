@@ -9539,9 +9539,8 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         }
                     }
                 }
-                Column(Modifier.weight(1f).clickable { showSharedMedia = true }) {
-                    Text(recipientUsername.removePrefix("@"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                    Text("Mídia, links e documentos", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelSmall)
+                Column(Modifier.weight(1f).clickable { onOpenProfile(recipientUsername) }, verticalArrangement = Arrangement.Center) {
+                    Text(recipientUsername.removePrefix("@"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
                 IconButton(onClick = { conversationSearch = !conversationSearch; if (!conversationSearch) messageSearch = "" }) {
                     Icon(Icons.Default.Search, contentDescription = "Pesquisar nesta conversa", tint = RemoteAppearance.screenSecondaryTextColor)
@@ -9551,6 +9550,11 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         Icon(Icons.Default.MoreVert, contentDescription = "Opções da conversa", tint = RemoteAppearance.screenTextColor)
                     }
                     DropdownMenu(expanded = showConversationMenu, onDismissRequest = { showConversationMenu = false }, modifier = Modifier.background(RemoteAppearance.screenBackgroundColor)) {
+                        DropdownMenuItem(
+                            text = { Text("Mídia, links e documentos") },
+                            leadingIcon = { Icon(Icons.Default.PhotoLibrary, null, tint = Pink) },
+                            onClick = { showConversationMenu = false; showSharedMedia = true }
+                        )
                         DropdownMenuItem(
                             text = { Text(if (isMuted) "Ativar notificações" else "Silenciar notificações") },
                             leadingIcon = { Icon(Icons.Default.NotificationsOff, null, tint = Pink) },
