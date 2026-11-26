@@ -31,4 +31,4 @@ internal fun Modifier.border(width: Dp, color: Color, shape: Shape = RectangleSh
 internal fun Modifier.border(width: Dp, brush: Brush, shape: Shape): Modifier =
     foundationBorder(width, brush, shape)
 
-internal fun Modifier.border(border: BorderStroke): Modifier = foundationBorder(border)
+internal fun Modifier.border(border: BorderStroke, shape: Shape = RectangleShape): Modifier = foundationBorder(border, shape)
