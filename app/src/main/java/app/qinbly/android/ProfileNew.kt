@@ -216,9 +216,8 @@ internal fun QinblyProfileLinks(links: List<String>) {
 @Composable
 internal fun QinblyGrayButton(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val bg = if (QiblyTheme.dark) Color(0x1AFFFFFF) else Color(0xFFF1F2F5)
-    val line = if (QiblyTheme.dark) Color.White else Color(0xFF111111)
     val shape = RoundedCornerShape(10.dp)
-    Box(modifier.height(34.dp).clip(shape).background(bg).border(1.dp, line, shape).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
+    Box(modifier.height(34.dp).clip(shape).background(bg).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
         QinblyAccentText(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1)
     }
 }

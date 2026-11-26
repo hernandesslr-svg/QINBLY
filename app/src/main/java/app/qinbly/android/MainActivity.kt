@@ -4344,9 +4344,8 @@ private fun QinblyFollowButton(
     if (following && large) {
         // Perfil: cinza claro, contorno preto fino, ícone e letra com o degradê (igual ao Mensagem).
         val fill = if (QiblyTheme.dark) Color(0x1AFFFFFF) else Color(0xFFF1F2F5)
-        val line = if (QiblyTheme.dark) Color.White else Color(0xFF111111)
         Row(
-            sizing.clip(shape).background(fill).border(1.dp, line, shape).clickable(enabled = !busy, onClick = onClick),
+            sizing.clip(shape).background(fill).clickable(enabled = !busy, onClick = onClick),
             horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically
         ) {
             QinblyAccentIcon(Icons.Outlined.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -12064,9 +12063,8 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
             )
             if (!privateLocked) {
                 val msgFill = if (QiblyTheme.dark) Color(0x1AFFFFFF) else Color(0xFFF1F2F5)
-                val msgLine = if (QiblyTheme.dark) Color.White else Color(0xFF111111)
                 val msgShape = RoundedCornerShape(10.dp)
-                Row(Modifier.weight(1f).height(34.dp).clip(msgShape).background(msgFill).border(1.dp, msgLine, msgShape).clickable { onMessage(publicUsername) }, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.weight(1f).height(34.dp).clip(msgShape).background(msgFill).clickable { onMessage(publicUsername) }, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                     QinblyAccentIcon(Icons.Default.ChatBubbleOutline, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
                     QinblyAccentText("Mensagem", fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1)

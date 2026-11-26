@@ -711,12 +711,12 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 .atags a{background-color:rgba(47,104,224,.12)}
 .plk svg{stroke:#5A5BE8}
 .fol{background:var(--grad-h);border-radius:12px;height:46px;color:#fff}
-.fol.on,.msgb{border:1px solid #111;border-radius:12px;height:46px;font-weight:500;background-color:#F1F2F5;background-image:var(--grad-v),none;-webkit-background-clip:text,border-box;background-clip:text,border-box;color:transparent;-webkit-text-fill-color:transparent}
+.fol.on,.msgb{border:0;border-radius:12px;height:46px;font-weight:500;background-color:#F1F2F5;background-image:var(--grad-v),none;-webkit-background-clip:text,border-box;background-clip:text,border-box;color:transparent;-webkit-text-fill-color:transparent}
 .fol.on svg,.msgb svg{stroke:#5A5BE8}
-[data-theme=dark] .fol.on,[data-theme=dark] .msgb{border-color:#fff;background-color:rgba(255,255,255,.1)}
+[data-theme=dark] .fol.on,[data-theme=dark] .msgb{background-color:rgba(255,255,255,.1)}
 .pbt .pill{border-radius:12px}
-[data-theme=light] .msgb,[data-theme=light] .fol.on{background-color:#F1F2F5;background-image:var(--grad-v),none;color:transparent;border:1px solid #111}
-[data-theme=dark] .msgb,[data-theme=dark] .fol.on{background-color:rgba(255,255,255,.1);background-image:var(--grad-v),none;color:transparent;border:1px solid #fff}
+[data-theme=light] .msgb,[data-theme=light] .fol.on{background-color:#F1F2F5;background-image:var(--grad-v),none;color:transparent;border:0}
+[data-theme=dark] .msgb,[data-theme=dark] .fol.on{background-color:rgba(255,255,255,.1);background-image:var(--grad-v),none;color:transparent;border:0}
 
 /* Chat afinado: bolha só com o texto; a hora fica fora, só na última mensagem da sequência */
 .msg{padding:6px 12px}
