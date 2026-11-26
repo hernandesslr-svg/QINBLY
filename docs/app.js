@@ -86,7 +86,7 @@
     var ini = safeUrl(url) ? "" : esc((name || "?").trim().charAt(0).toUpperCase());
     return '<span class="av ' + (cls || "") + '"' + st + ">" + ini + "</span>";
   }
-  var TEXT_BGS = [["#2F68E0", "#1F4FB0"], ["#E0457B", "#8A2A5A"], ["#1D9E75", "#0F6E56"], ["#EF9F27", "#B45309"], ["#378ADD", "#185FA5"], ["#111111", "#2B2B2B"]];
+  var TEXT_BGS = [["#7C4DFF", "#2F68E0"], ["#E0457B", "#8A2A5A"], ["#1D9E75", "#0F6E56"], ["#EF9F27", "#B45309"], ["#378ADD", "#185FA5"], ["#111111", "#2B2B2B"]];
   function bgCss(n) {
     n = Number(n) || 0;
     if (n >= 16777216) return "#" + (n & 0xffffff).toString(16).padStart(6, "0");
@@ -1281,7 +1281,7 @@
     s.querySelector("#ns").addEventListener("click", function () { api("/api/notes", { method: "POST", body: { body: s.querySelector("#nb").value } }).then(function () { closeSheet(); toast("Nota publicada."); loadStories(); }).catch(function (e) { s.querySelector("#ner").textContent = e.message; }); });
     s.querySelector("#nd").addEventListener("click", function () { api("/api/notes", { method: "DELETE" }).then(function () { closeSheet(); toast("Nota apagada."); loadStories(); }).catch(onErr); });
   }
-  var STORY_BGS = [["#2F68E0", "#1F4FB0"], ["#E0457B", "#8A2A5A"], ["#1D9E75", "#0F6E56"], ["#EF9F27", "#B45309"], ["#378ADD", "#185FA5"], ["#111111", "#2B2B2B"], ["#D85A30", "#993C1D"], ["#639922", "#3B6D11"]];
+  var STORY_BGS = [["#7C4DFF", "#2F68E0"], ["#E0457B", "#8A2A5A"], ["#1D9E75", "#0F6E56"], ["#EF9F27", "#B45309"], ["#378ADD", "#185FA5"], ["#111111", "#2B2B2B"], ["#D85A30", "#993C1D"], ["#639922", "#3B6D11"]];
   function storyBg(n) { var c = STORY_BGS[(Number(n) || 0) % STORY_BGS.length]; return "linear-gradient(135deg," + c[0] + "," + c[1] + ")"; }
   function storyMenu() {
     var s = sheet("Criar", '<button class="row" data-sm="media"><span class="t"><b>Foto ou vídeo</b><small>Story de 24 horas</small></span></button><button class="row" data-sm="text"><span class="t"><b>Texto</b><small>Story só com palavras e cor</small></span></button><button class="row" data-sm="note"><span class="t"><b>Nota</b><small>Frase curta ao lado da sua foto</small></span></button>');
@@ -1926,7 +1926,7 @@
         var box = el("nbl"); if (!box) return;
         box.innerHTML = l.length ? l.map(function (n) {
           var p = n.profiles || {}, cnt = (n.neighborhood_comments && n.neighborhood_comments[0] && n.neighborhood_comments[0].count) || 0;
-          return '<button class="row" data-notice="' + n.id + '" style="align-items:flex-start"><span class="t"><small style="color:#7FA6F2">' + esc(p.display_name || p.username || "") + " · " + ago(n.created_at) + '</small><b style="font-weight:400;white-space:pre-wrap">' + esc(n.body) + "</b><small>" + (cnt ? cnt + (cnt === 1 ? " comentário" : " comentários") : "Comentar") + "</small></span></button>";
+          return '<button class="row" data-notice="' + n.id + '" style="align-items:flex-start"><span class="t"><small style="color:#9A9EF7">' + esc(p.display_name || p.username || "") + " · " + ago(n.created_at) + '</small><b style="font-weight:400;white-space:pre-wrap">' + esc(n.body) + "</b><small>" + (cnt ? cnt + (cnt === 1 ? " comentário" : " comentários") : "Comentar") + "</small></span></button>";
         }).join("") : '<div class="empty">Nenhum aviso por perto ainda. Escreva o primeiro.</div>';
       }).catch(function (e) { if (el("nbl")) el("nbl").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
     }
@@ -1938,7 +1938,7 @@
   }
   function noticeSheet(id) {
     var n = NOTICES[id]; if (!n) return; var me = cur(), p = n.profiles || {}, reply = null, list = [];
-    var s = sheet("Aviso", '<div style="padding:4px 16px 12px"><small style="color:#7FA6F2">' + esc(p.display_name || p.username || "") + " · " + ago(n.created_at) + '</small><div style="white-space:pre-wrap;font-size:16px;margin-top:4px">' + linkify(n.body) + "</div>" + (n.user_id === me.id ? '<button class="link" id="nd" style="color:var(--danger);margin-top:8px">Apagar aviso</button>' : "") + '</div><div id="nc">' + spin() + '</div>', '<div id="nrp" class="rpl" hidden></div><form class="cin" id="ncf"><input id="nci" maxlength="1000" placeholder="Comentar…" autocomplete="off"><button type="submit">Enviar</button></form>');
+    var s = sheet("Aviso", '<div style="padding:4px 16px 12px"><small style="color:#9A9EF7">' + esc(p.display_name || p.username || "") + " · " + ago(n.created_at) + '</small><div style="white-space:pre-wrap;font-size:16px;margin-top:4px">' + linkify(n.body) + "</div>" + (n.user_id === me.id ? '<button class="link" id="nd" style="color:var(--danger);margin-top:8px">Apagar aviso</button>' : "") + '</div><div id="nc">' + spin() + '</div>', '<div id="nrp" class="rpl" hidden></div><form class="cin" id="ncf"><input id="nci" maxlength="1000" placeholder="Comentar…" autocomplete="off"><button type="submit">Enviar</button></form>');
     function draw() {
       var tops = list.filter(function (c) { return !c.parent_id; });
       function one(c, sub) { var a = c.profiles || {}; return '<div class="cm ' + (sub ? "sub" : "") + '"><div class="b"><b>' + esc(a.username || "") + "</b>" + linkify(c.body) + "<small>" + ago(c.created_at) + ' · <button data-nr="' + c.id + ":" + esc(a.username || "") + '">Responder</button>' + (c.user_id === me.id ? ' · <button data-nx="' + c.id + '">Apagar</button>' : "") + "</small></div></div>"; }

@@ -7,8 +7,6 @@ import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -98,7 +96,7 @@ import java.net.URL
 
 // ───────── Perto de mim: anúncios do bairro (vendas, doações, achados, eventos, serviços) ─────────
 
-private val MarketBlue = Color(0xFF2F68E0)
+private val MarketBlue = QinblyBrand.Accent
 /** Seleção: no tema escuro continua clara; no tema claro fica azul (igual ao botão Publicar). */
 private val mkSelBg: Color get() = if (QiblyTheme.dark) QiblyTheme.text else MarketBlue
 private val mkSelFg: Color get() = if (QiblyTheme.dark) QiblyTheme.background else Color.White
@@ -137,7 +135,7 @@ private fun kindLabel(kind: String) = when (kind) {
 
 private fun kindColor(kind: String) = when (kind) {
     "venda" -> Color(0xFF3A5BA5); "doacao" -> Color(0xFF1D9E75); "achado" -> Color(0xFFE0457B); "perdido" -> Color(0xFFD85A30)
-    "evento" -> Color(0xFFFF4F9A); "servico" -> Color(0xFF2F6FDB); else -> Color(0xFF5B5B66)
+    "evento" -> Color(0xFFFF4F9A); "servico" -> QinblyBrand.Accent; else -> Color(0xFF5B5B66)
 }
 
 private fun money(v: Double): String = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("pt", "BR")).format(v)
@@ -951,6 +949,6 @@ private fun chipStyle(name: String): Pair<String, Color> = when (name) {
     "Doações" -> "\uD83C\uDF81" to Color(0xFF1D9E75)
     "Achados" -> "\uD83D\uDD0E" to Color(0xFFE0457B)
     "Eventos" -> "\uD83C\uDF89" to Color(0xFFFF4F9A)
-    "Serviços" -> "\uD83D\uDEE0\uFE0F" to Color(0xFF2F6FDB)
+    "Serviços" -> "\uD83D\uDEE0\uFE0F" to QinblyBrand.Accent
     else -> "\uD83D\uDCAC" to Color(0xFF6B7280)
 }

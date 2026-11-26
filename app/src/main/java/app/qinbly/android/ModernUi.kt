@@ -2,7 +2,6 @@ package app.qinbly.android
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -137,11 +136,11 @@ internal fun OutlinedTextField(
     shape: Shape = RoundedCornerShape(26.dp),
     colors: TextFieldColors = OutlinedTextFieldDefaults.colors(
         focusedContainerColor = QiblyTheme.soft, unfocusedContainerColor = QiblyTheme.soft,
-        focusedBorderColor = Color(0xFF2F68E0), unfocusedBorderColor = Color.Transparent,
+        focusedBorderColor = QinblyBrand.Accent, unfocusedBorderColor = Color.Transparent,
         focusedTextColor = QiblyTheme.text, unfocusedTextColor = QiblyTheme.text,
         focusedPlaceholderColor = QiblyTheme.secondary, unfocusedPlaceholderColor = QiblyTheme.secondary,
-        focusedLabelColor = Color(0xFF7FA6F2), unfocusedLabelColor = QiblyTheme.secondary,
-        cursorColor = Color(0xFF7FA6F2)
+        focusedLabelColor = QinblyBrand.AccentLight, unfocusedLabelColor = QiblyTheme.secondary,
+        cursorColor = QinblyBrand.AccentLight
     )
 ) {
     androidx.compose.material3.OutlinedTextField(

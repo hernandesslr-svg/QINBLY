@@ -11,8 +11,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -169,10 +167,10 @@ internal fun QinblyStoryMenu(
                     if (!galleryGranted) item(key = "gallery-permission", span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
                         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("Permita o acesso às suas fotos para escolher daqui.", color = Color(0xFFF2F4F8), fontSize = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                            Text("Permitir acesso", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFF2F68E0))
+                            Text("Permitir acesso", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(QinblyBrand.Accent)
                                 .clickable { galleryPermission.launch(if (android.os.Build.VERSION.SDK_INT >= 33) arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES, android.Manifest.permission.READ_MEDIA_VIDEO) else arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)) }
                                 .padding(horizontal = 18.dp, vertical = 9.dp))
-                            Text("Escolher pela galeria do celular", color = Color(0xFF7FA6F2), fontSize = 11.sp, modifier = Modifier.clickable { systemPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }.padding(6.dp))
+                            Text("Escolher pela galeria do celular", color = QinblyBrand.AccentLight, fontSize = 11.sp, modifier = Modifier.clickable { systemPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }.padding(6.dp))
                         }
                     }
                     gridItems(galleryItems, key = { it.uri.toString() }) { g ->
@@ -738,7 +736,7 @@ internal fun QinblyStoryMessageBar(username: String, fieldBg: Color, hintColor: 
             QinblyIconOf(if (liked) QinblyIcon.Favorite else QinblyIcon.FavoriteBorder, if (liked) Color(0xFFE5484D) else Color.White, 24.dp)
         }
         val ready = draft.isNotBlank() && !sending
-        Box(Modifier.size(46.dp).clip(CircleShape).background(if (ready) Color(0xFF2F68E0) else Color(0x66000000)).clickable(enabled = ready) { send() }, contentAlignment = Alignment.Center) { QinblySendIcon(Color.White, 20.dp) }
+        Box(Modifier.size(46.dp).clip(CircleShape).background(if (ready) QinblyBrand.Accent else Color(0x66000000)).clickable(enabled = ready) { send() }, contentAlignment = Alignment.Center) { QinblySendIcon(Color.White, 20.dp) }
     }
 }
 

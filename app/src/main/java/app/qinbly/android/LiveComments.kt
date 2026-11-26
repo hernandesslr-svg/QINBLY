@@ -1,7 +1,6 @@
 package app.qinbly.android
 
 import android.content.Context
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape

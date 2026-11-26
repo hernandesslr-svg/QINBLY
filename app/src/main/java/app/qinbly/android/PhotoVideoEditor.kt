@@ -6,8 +6,6 @@ import android.os.Handler
 import android.os.Looper
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.DragInteraction
@@ -87,7 +85,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.roundToInt
 
-private val PvBlue = Color(0xFF2F68E0)
+private val PvBlue = QinblyBrand.Accent
 private const val PvPxPerSec = 22
 private const val PvMaxPhotos = 20
 private val PvTransitions = listOf("Nenhuma", "Zoom", "Deslizar", "Surgir")

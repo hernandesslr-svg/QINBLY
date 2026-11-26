@@ -26,8 +26,6 @@ import coil.compose.AsyncImage
 import coil.request.videoFrameMillis
 import androidx.compose.ui.graphics.toArgb
 import java.io.File
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.filled.Archive
@@ -305,19 +303,19 @@ internal object QinblyBrand {
     /** Roxo original: só o logotipo e o botão + do Criar continuam com ele. */
     val Logo = Color(0xFF7C4DFF)
     /** Cor padrão do app (azul #2F68E0). */
-    val Accent: Color get() = if (QiblyTheme.dark) Color(0xFF2F68E0) else Color(0xFF2F68E0)
-    val AccentDeep: Color get() = if (QiblyTheme.dark) Color(0xFF3A72E8) else Color(0xFF2558C4)
+    val Accent: Color get() = Color(0xFF565BF0)
+    val AccentDeep: Color get() = if (QiblyTheme.dark) Color(0xFF6A6FF3) else Color(0xFF4A4FD6)
     /** Letreiros (PERGUNTA DO DIA, DESAFIO) e hashtags: azul padrão. */
-    val Lavender = Color(0xFF2F68E0)
-    val AccentLight = Color(0xFF7FA6F2)
+    val Lavender = Color(0xFF565BF0)
+    val AccentLight = Color(0xFF9A9EF7)
     /** Cor dos letreiros que antes eram roxos (branco no escuro). Logo e botão Criar continuam roxos. */
     val TextAccent: Color get() = if (QiblyTheme.dark) Color.White else Accent
     /** Hashtags e @menções: índigo mais claro (#2F68E0); os botões continuam #2F68E0. */
     /** Ícone da aba/botão selecionado: branco no escuro (achar uma cor depois). */
     val SelectedIcon: Color get() = if (QiblyTheme.dark) Color.White else Color(0xFF111111)
-    val Mention: Color get() = Color(0xFF2F68E0)
-    val AccentLine: Color get() = if (QiblyTheme.dark) Color(0xFF1E3A70) else Color(0xFFD6E4FF)
-    val AccentSoft: Color get() = if (QiblyTheme.dark) Color(0xFF162447) else Color(0xFFE8F0FF)
+    val Mention: Color get() = Color(0xFF565BF0)
+    val AccentLine: Color get() = if (QiblyTheme.dark) Color(0xFF2E2C70) else Color(0xFFDCDAFF)
+    val AccentSoft: Color get() = if (QiblyTheme.dark) Color(0xFF1D1B47) else Color(0xFFEDECFF)
     val Highlight = Color(0xFFFFB020)
     val Pink = Color(0xFFFF4F9A)
     /** Anel de story não visto: degradê roxo para rosa, as cores do logotipo (como o anel do Instagram, mas na cara do QINBLY). */
@@ -867,7 +865,7 @@ private val QinblyTagTransformation = androidx.compose.ui.text.input.VisualTrans
     val styled = androidx.compose.ui.text.buildAnnotatedString {
         append(t.text)
         for (m in Regex("[#@][\\p{L}\\p{N}_.]{1,30}").findAll(t.text)) {
-            addStyle(androidx.compose.ui.text.SpanStyle(color = QinblyBrand.Mention, fontWeight = FontWeight.SemiBold), m.range.first, m.range.last + 1)
+            addStyle(androidx.compose.ui.text.SpanStyle(brush = qinblyAccentBrush(), fontWeight = FontWeight.SemiBold), m.range.first, m.range.last + 1)
         }
     }
     androidx.compose.ui.text.input.TransformedText(styled, androidx.compose.ui.text.input.OffsetMapping.Identity)
@@ -1945,7 +1943,7 @@ internal object RemoteAppearance {
     var badgeColor by androidx.compose.runtime.mutableStateOf(Color(0xFFFF3045))
     var likedColor by androidx.compose.runtime.mutableStateOf(Color(0xFFFF3045))
     var profileAccentColor by androidx.compose.runtime.mutableStateOf(Color.Black)
-    var commentAccentColor by androidx.compose.runtime.mutableStateOf(Color(0xFF2F68E0))
+    var commentAccentColor by androidx.compose.runtime.mutableStateOf(QinblyBrand.Accent)
     private var commentBackgroundColorBase by androidx.compose.runtime.mutableStateOf(Color.White)
     var commentBackgroundColor: Color
         get() = if (QiblyTheme.dark) QiblyTheme.card else commentBackgroundColorBase
@@ -1999,7 +1997,7 @@ private fun QinblyApp() {
         val saved = uiPreferences.getString(key, null) ?: return Color(fallback)
         return try { Color(android.graphics.Color.parseColor(saved)) } catch (_: Exception) { Color(fallback) }
     }
-    var navigationIndicatorColor by remember { mutableStateOf(readUiColor("indicatorColor", 0xFF2F68E0L)) }
+    var navigationIndicatorColor by remember { mutableStateOf(readUiColor("indicatorColor", 0xFF565BF0L)) }
     var navigationBackgroundColor by remember { mutableStateOf(readUiColor("backgroundColor", 0xFFFFFFFFL)) }
     var navigationSelectedColor by remember { mutableStateOf(readUiColor("selectedIconColor", 0xFF000000L)) }
     var navigationUnselectedColor by remember { mutableStateOf(readUiColor("unselectedIconColor", 0xFF000000L)) }
@@ -2960,7 +2958,7 @@ private fun NotificationsPage(
                         "like" -> Icons.Default.Favorite to Color(0xFFE5365B)
                         "follow", "follow_accepted", "follow_request" -> Icons.Default.PersonAdd to QinblyBrand.Accent
                         "comment", "reply" -> Icons.Default.ChatBubbleOutline to Color(0xFF2FA36B)
-                        "mention", "mention_comment", "tag" -> Icons.Default.AlternateEmail to Color(0xFF2F68E0)
+                        "mention", "mention_comment", "tag" -> Icons.Default.AlternateEmail to QinblyBrand.Accent
                         else -> Icons.Default.Info to Color(0xFF6B7280)
                     }
                     Row(
@@ -3636,7 +3634,7 @@ private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, sh
                 contentAlignment = Alignment.CenterStart
             ) {
                 Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(3.dp)).background(Color.White.copy(alpha = 0.9f)))
-                Box(Modifier.fillMaxWidth(position.coerceIn(0f, 1f)).height(4.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFF2F68E0)))
+                Box(Modifier.fillMaxWidth(position.coerceIn(0f, 1f)).height(4.dp).clip(RoundedCornerShape(3.dp)).background(QinblyBrand.Accent))
                 Box(Modifier.offset(x = maxWidth * position.coerceIn(0f, 1f) - 7.dp).size(14.dp).clip(CircleShape).background(Color.White))
             }
             val seconds = (position * duration).toLong().coerceAtLeast(0L) / 1000L
@@ -8828,7 +8826,7 @@ private fun QinblyCommunityDialog(communityId: String, onNotice: (String) -> Uni
                         if (showAttach) {
                             val attachOptions = listOf(
                                 Triple("Documento", Icons.Outlined.Description, Color(0xFF5B6CF0)),
-                                Triple("Galeria", Icons.Outlined.Image, Color(0xFF2F68E0)),
+                                Triple("Galeria", Icons.Outlined.Image, QinblyBrand.Accent),
                                 Triple("Áudio", Icons.Outlined.Headphones, Color(0xFFF97316)),
                                 Triple("Localização", Icons.Outlined.LocationOn, Color(0xFF16A34A)),
                                 Triple("Contato", Icons.Outlined.PersonOutline, Color(0xFF0EA5E9)),
@@ -9738,7 +9736,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
             if (showAttachPanel) {
                 val attachOptions = listOf(
                     Triple("Documento", Icons.Outlined.Description, Color(0xFF5B6CF0)),
-                    Triple("Galeria", Icons.Outlined.Image, Color(0xFF2F68E0)),
+                    Triple("Galeria", Icons.Outlined.Image, QinblyBrand.Accent),
                     Triple("Áudio", Icons.Outlined.Headphones, Color(0xFFF97316)),
                     Triple("Localização", Icons.Outlined.LocationOn, Color(0xFF16A34A)),
                     Triple("Contato", Icons.Outlined.PersonOutline, Color(0xFF0EA5E9)),
@@ -12308,7 +12306,7 @@ private fun QinblyLoginPrompt(message: String, onEnter: () -> Unit, onDismiss: (
 @Composable
 private fun ProfileSmallButton(label: String, icon: ImageVector, modifier: Modifier, onClick: () -> Unit) {
     val bg = if (QiblyTheme.dark) Color(0x1AFFFFFF) else Color(0xFFE8F0FF)
-    val fg = if (QiblyTheme.dark) Color.White else Color(0xFF2558C4)
+    val fg = if (QiblyTheme.dark) Color.White else QinblyBrand.AccentDeep
     Row(modifier.height(30.dp).clip(RoundedCornerShape(16.dp)).background(bg).clickable(onClick = onClick), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(14.dp))
         Spacer(Modifier.width(4.dp))
@@ -14278,7 +14276,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                                 }
                             }
                             Box(Modifier.align(Alignment.TopEnd).padding(6.dp).size(23.dp).border(1.5.dp, Color.White, CircleShape)
-                                .background(if (selectedIndex >= 0) Color(0xFF2F68E0) else Color(0x55000000), CircleShape),
+                                .background(if (selectedIndex >= 0) QinblyBrand.Accent else Color(0x55000000), CircleShape),
                                 contentAlignment = Alignment.Center) {
                                 if (selectedIndex >= 0) Text("${selectedIndex + 1}", color = Color.White, style = MaterialTheme.typography.labelSmall)
                             }
@@ -15454,7 +15452,7 @@ private fun LivePage(scrollToTopRequest: Int, onNotice: (String) -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
             categories.forEachIndexed { index, category ->
                 Surface(
-                    color = if (selectedCategory == category) Color(0xFF2F68E0) else Panel,
+                    color = if (selectedCategory == category) QinblyBrand.Accent else Panel,
                     shape = RoundedCornerShape(24.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, if (selectedCategory == category) Pink else Color(0xFF292D48)),
                     modifier = Modifier.clickable { selectedCategory = category }
@@ -15537,7 +15535,7 @@ private fun QinblyStoryPublishBar(
                     Box(
                         Modifier.size(40.dp).clip(CircleShape)
                             .background(if (on) accent else chipBg)
-                            .border(1.5.dp, if (on) Color(0xFF7FA6F2) else chipLine, CircleShape)
+                            .border(1.5.dp, if (on) QinblyBrand.Accent else chipLine, CircleShape)
                             .clickable { onHours(h) },
                         contentAlignment = Alignment.Center
                     ) { Text("${h}h", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
@@ -15547,7 +15545,7 @@ private fun QinblyStoryPublishBar(
             Box(Modifier.fillMaxWidth().height(86.dp).padding(horizontal = 14.dp)) {
                 Row(
                     Modifier.align(Alignment.CenterStart).height(42.dp).clip(RoundedCornerShape(21.dp))
-                        .background(chipBg).border(1.5.dp, Color(0xFF7FA6F2), RoundedCornerShape(21.dp))
+                        .background(chipBg).border(1.5.dp, QinblyBrand.Accent, RoundedCornerShape(21.dp))
                         .clickable { sheetOpen = true }.padding(start = 14.dp, end = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -15570,7 +15568,7 @@ private fun QinblyStoryPublishBar(
                 }
                 Box(
                     Modifier.align(Alignment.CenterEnd).height(42.dp).widthIn(min = 78.dp).clip(RoundedCornerShape(21.dp))
-                        .background(if (alsoFeed) accent else chipBg).border(1.5.dp, if (alsoFeed) Color(0xFF7FA6F2) else chipLine, RoundedCornerShape(21.dp))
+                        .background(if (alsoFeed) accent else chipBg).border(1.5.dp, if (alsoFeed) QinblyBrand.Accent else chipLine, RoundedCornerShape(21.dp))
                         .clickable { onAlsoFeed(!alsoFeed) }.padding(horizontal = 14.dp),
                     contentAlignment = Alignment.Center
                 ) { Text(if (alsoFeed) "✓ Feed" else "+ Feed", color = if (alsoFeed) Color.White else Color(0xFFB4B4BC), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1) }
@@ -15586,7 +15584,7 @@ private fun QinblyStoryPublishBar(
             ) {
                 Column(
                     Modifier.width(250.dp).clip(RoundedCornerShape(22.dp)).background(chipBg)
-                        .border(1.5.dp, Color(0xFF7FA6F2), RoundedCornerShape(22.dp)).padding(vertical = 12.dp, horizontal = 8.dp)
+                        .border(1.5.dp, QinblyBrand.Accent, RoundedCornerShape(22.dp)).padding(vertical = 12.dp, horizontal = 8.dp)
                 ) {
                     Text("QUEM PODE VER", color = Color(0xFF8E87A8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp, bottom = 6.dp))
                     options.forEach { (key, title, sub) ->
@@ -15597,8 +15595,8 @@ private fun QinblyStoryPublishBar(
                                 .clickable { onAudience(key); sheetOpen = false }.padding(horizontal = 12.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(Modifier.size(18.dp).border(2.dp, if (on) Color(0xFF7FA6F2) else Color(0xFF55555C), CircleShape), contentAlignment = Alignment.Center) {
-                                if (on) Box(Modifier.size(9.dp).clip(CircleShape).background(Color(0xFF7FA6F2)))
+                            Box(Modifier.size(18.dp).border(2.dp, if (on) QinblyBrand.Accent else Color(0xFF55555C), CircleShape), contentAlignment = Alignment.Center) {
+                                if (on) Box(Modifier.size(9.dp).clip(CircleShape).background(QinblyBrand.Accent))
                             }
                             Spacer(Modifier.width(12.dp))
                             Column {

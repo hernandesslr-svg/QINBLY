@@ -11,7 +11,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -180,9 +179,9 @@ internal fun QinblyContributeFlow(storyId: String, onNotice: (String) -> Unit, o
                     if (!granted) {
                         Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text("Permita o acesso às suas fotos para escolher daqui.", color = Color(0xFFF2F4F8), fontSize = 16.sp)
-                            Text("Permitir acesso", color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFF2F68E0))
+                            Text("Permitir acesso", color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(QinblyBrand.Accent)
                                 .clickable { permissionLauncher.launch(if (Build.VERSION.SDK_INT >= 33) arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES, android.Manifest.permission.READ_MEDIA_VIDEO) else arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)) }.padding(horizontal = 22.dp, vertical = 11.dp))
-                            Text("Escolher pela galeria do celular", color = Color(0xFF7FA6F2), modifier = Modifier.clickable { systemPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }.padding(8.dp))
+                            Text("Escolher pela galeria do celular", color = QinblyBrand.AccentLight, modifier = Modifier.clickable { systemPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }.padding(8.dp))
                         }
                     } else if (items.isEmpty()) {
                         Text("Nenhuma foto ou vídeo encontrado.", color = Color(0xFFF2F4F8), modifier = Modifier.padding(24.dp))

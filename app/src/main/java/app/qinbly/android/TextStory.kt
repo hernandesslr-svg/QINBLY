@@ -4,8 +4,6 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -62,7 +60,7 @@ import androidx.compose.ui.window.DialogProperties
 internal data class QinblyTextStory(val bg: Int, val font: Int, val align: Int, val text: String, val collab: Boolean = false, val dx: Int = 0, val dy: Int = 0)
 
 internal val qinblyTextBgs: List<List<Color>> = listOf(
-    listOf(Color(0xFF2F68E0), Color(0xFF1F4FB0)), listOf(Color(0xFFE0457B), Color(0xFF8A2A5A)), listOf(Color(0xFF1D9E75), Color(0xFF0F6E56)),
+    listOf(Color(0xFF7C4DFF), Color(0xFF2F68E0)), listOf(Color(0xFFE0457B), Color(0xFF8A2A5A)), listOf(Color(0xFF1D9E75), Color(0xFF0F6E56)),
     listOf(Color(0xFFEF9F27), Color(0xFFB45309)), listOf(Color(0xFF378ADD), Color(0xFF185FA5)), listOf(Color(0xFF111111), Color(0xFF2B2B2B)),
     listOf(Color(0xFFD85A30), Color(0xFF993C1D)), listOf(Color(0xFF639922), Color(0xFF3B6D11))
 )
@@ -283,7 +281,7 @@ internal fun QinblyStoryCommentsDialog(storyId: String, isOwner: Boolean, accent
                         Text((c.displayName.ifBlank { c.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.SemiBold)
                     }
                     Column(Modifier.clip(RoundedCornerShape(18.dp)).background(Color(0xFF262628)).padding(horizontal = 14.dp, vertical = 8.dp)) {
-                        Text(c.displayName.ifBlank { c.username }, color = Color(0xFF7FA6F2), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                        Text(c.displayName.ifBlank { c.username }, color = QinblyBrand.AccentLight, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                         if (c.body == QINBLY_VOICE) Text("▶  Ouvir mensagem de voz", color = Color.White, fontSize = 16.sp, modifier = Modifier.clickable { playVoice(c.id) }) else Text(c.body, color = Color.White, fontSize = 16.sp)
                     }
                 }

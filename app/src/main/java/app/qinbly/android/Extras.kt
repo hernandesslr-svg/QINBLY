@@ -3,8 +3,6 @@ package app.qinbly.android
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -310,7 +308,7 @@ internal fun QinblyPillField(value: String, onChange: (String) -> Unit, hint: St
 }
 
 @Composable
-private fun Chip(text: String, selected: Boolean, accent: Color = Color(0xFF2F68E0), onClick: () -> Unit) {
+private fun Chip(text: String, selected: Boolean, accent: Color = QinblyBrand.Accent, onClick: () -> Unit) {
     Text(text, color = if (selected) Color.White else Ink, fontSize = 16.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         modifier = Modifier.clip(RoundedCornerShape(22.dp)).background(if (selected) accent else FieldBg).clickable { onClick() }.padding(horizontal = 18.dp, vertical = 11.dp))
 }
@@ -454,7 +452,7 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
                 Spacer(Modifier.weight(1f))
                 val ready = draft.isNotBlank() && !posting
                 Text(if (posting) "Enviando…" else "Publicar", color = if (ready) Color.White else Hint, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
-                    modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (ready) Color(0xFF2F68E0) else QiblyTheme.border).clickable(enabled = ready) { post() }.padding(horizontal = 20.dp, vertical = 9.dp))
+                    modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (ready) QinblyBrand.Accent else QiblyTheme.border).clickable(enabled = ready) { post() }.padding(horizontal = 20.dp, vertical = 9.dp))
             }
         }
         val list = notices
@@ -469,7 +467,7 @@ internal fun QinblyNeighborhoodBoard(lat: Double, lng: Double, place: String, te
                 val p = n.optJSONObject("profiles")
                 Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(FieldBg).clickable { openNotice = n }.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text((p?.optString("display_name").orEmpty().ifBlank { p?.optString("username").orEmpty() }) + " • " + qinblyAgo(n.optString("created_at")), color = Color(0xFF7FA6F2), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                        Text((p?.optString("display_name").orEmpty().ifBlank { p?.optString("username").orEmpty() }) + " • " + qinblyAgo(n.optString("created_at")), color = QinblyBrand.AccentLight, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                         if (n.optString("user_id") == myId) Text("Apagar", color = Color(0xFFE0457B), fontSize = 12.sp, modifier = Modifier.clickable {
                             val id = n.optString("id"); val token = prefs.getString("token", null) ?: return@clickable
                             notices = notices?.filterNot { it.optString("id") == id }
@@ -502,7 +500,7 @@ private fun mentionText(body: String, color: Color): androidx.compose.ui.text.An
 
 private object MentionTransform : androidx.compose.ui.text.input.VisualTransformation {
     override fun filter(text: androidx.compose.ui.text.AnnotatedString) =
-        androidx.compose.ui.text.input.TransformedText(mentionText(text.text, Color(0xFF7FA6F2)), androidx.compose.ui.text.input.OffsetMapping.Identity)
+        androidx.compose.ui.text.input.TransformedText(mentionText(text.text, QinblyBrand.AccentLight), androidx.compose.ui.text.input.OffsetMapping.Identity)
 }
 
 /** Aviso aberto: foto, texto e comentários. As respostas ficam escondidas até tocar em "Ver respostas". */
@@ -576,7 +574,7 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
         Column(Modifier.fillMaxSize()) {
             Column(Modifier.weight(1f).verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text((p?.optString("display_name").orEmpty().ifBlank { p?.optString("username").orEmpty() }) + " • " + qinblyAgo(n.optString("created_at")), color = Color(0xFF7FA6F2), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 8.dp))
+                    Text((p?.optString("display_name").orEmpty().ifBlank { p?.optString("username").orEmpty() }) + " • " + qinblyAgo(n.optString("created_at")), color = QinblyBrand.AccentLight, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 8.dp))
                 }
                 Text(n.optString("body"), color = Ink, fontSize = 16.sp)
                 val all = comments
@@ -595,11 +593,11 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                                 .pointerInput(c.optString("id"), canMenu) { if (canMenu) detectTapGestures(onLongPress = { menuFor = c.optString("id") }) }
                                 .padding(horizontal = 12.dp, vertical = 8.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(nameOf(c), color = Color(0xFF7FA6F2), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                                    if (c.optString("user_id") == noticeOwner) Text("autor", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 6.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF2F68E0)).padding(horizontal = 6.dp, vertical = 1.dp))
+                                    Text(nameOf(c), color = QinblyBrand.AccentLight, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                    if (c.optString("user_id") == noticeOwner) Text("autor", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 6.dp).clip(RoundedCornerShape(8.dp)).background(QinblyBrand.Accent).padding(horizontal = 6.dp, vertical = 1.dp))
                                     Text(" • " + qinblyAgo(c.optString("created_at")), color = Hint, fontSize = 11.sp)
                                 }
-                                Text(mentionText(c.optString("body"), Color(0xFF7FA6F2)), color = Ink, fontSize = 14.sp)
+                                Text(mentionText(c.optString("body"), QinblyBrand.AccentLight), color = Ink, fontSize = 14.sp)
                             }
                             androidx.compose.material3.DropdownMenu(expanded = menuFor == c.optString("id"), onDismissRequest = { menuFor = null }) {
                                 if (mine) androidx.compose.material3.DropdownMenuItem(text = { Text("Editar") }, onClick = {
@@ -629,7 +627,7 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                 }
             }
             if (editing != null) Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Editando comentário", color = Color(0xFF7FA6F2), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Text("Editando comentário", color = QinblyBrand.AccentLight, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 QinblyCloseIcon(QiblyTheme.hint, 18.dp, Modifier.clickable { editing = null; input = androidx.compose.ui.text.input.TextFieldValue("") })
             }
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -642,7 +640,7 @@ private fun NoticeDetail(n: JSONObject, myId: String?, prefs: android.content.Sh
                     )
                 }
                 val ready = input.text.isNotBlank() && !sending
-                Box(Modifier.size(42.dp).clip(CircleShape).background(if (ready) Color(0xFF2F68E0) else QiblyTheme.border).clickable(enabled = ready) { send() }, contentAlignment = Alignment.Center) { QinblySendIcon(Ink, 19.dp) }
+                Box(Modifier.size(42.dp).clip(CircleShape).background(if (ready) QinblyBrand.Accent else QiblyTheme.border).clickable(enabled = ready) { send() }, contentAlignment = Alignment.Center) { QinblySendIcon(Ink, 19.dp) }
             }
         }
     }
