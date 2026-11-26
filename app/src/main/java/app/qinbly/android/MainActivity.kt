@@ -161,6 +161,7 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.BarChart
@@ -1139,7 +1140,7 @@ private fun qinblyTextBgBrush(index: Int): Brush? {
 
 /** Texto com #hashtags e @menções clicáveis. */
 @Composable
-private fun QinblyRichText(
+internal fun QinblyRichText(
     text: String,
     color: Color,
     modifier: Modifier = Modifier,
@@ -10523,28 +10524,37 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 Icon(Icons.Default.Menu, contentDescription = "Configurações do perfil", tint = RemoteAppearance.screenTextColor)
             }
         }
-        // Cabeçalho: foto no meio; nome e @ (com a seta da troca de conta) logo abaixo.
-        Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.size(112.dp), contentAlignment = Alignment.Center) {
-                if (QinblyStoryRings.hasUnseen(username)) Box(Modifier.size(112.dp).border(3.dp, QinblyBrand.RingBrush, CircleShape))
-                Box(Modifier.size(100.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
-                    val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
-                    if (image.isNotBlank()) { expandedImage = image } else if (username.isBlank()) onAuth() else onEditProfilePhoto()
-                }) {
-                    val image = profilePhotoUrl.ifBlank { avatarUrl }
-                    if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                    else Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(20.dp))
+        // Cabeçalho: foto à esquerda; ao lado nome, @ · país e os números.
+        val ownParts = qinblyBioParts(bio)
+        var showAbout by remember { mutableStateOf(false) }
+        QinblyProfileTop(
+            avatar = {
+                Box(Modifier.size(92.dp), contentAlignment = Alignment.Center) {
+                    if (QinblyStoryRings.hasUnseen(username)) Box(Modifier.size(92.dp).border(3.dp, QinblyBrand.RingBrush, CircleShape))
+                    Box(Modifier.size(82.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
+                        val image = originalCoverUrl.ifBlank { profilePhotoUrl.ifBlank { avatarUrl } }
+                        if (image.isNotBlank()) { expandedImage = image } else if (username.isBlank()) onAuth() else onEditProfilePhoto()
+                    }) {
+                        val image = profilePhotoUrl.ifBlank { avatarUrl }
+                        if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                        else Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(18.dp))
+                    }
                 }
-            }
-            Row(Modifier.padding(top = 10.dp).clickable { onEdit() }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(shownName.ifBlank { if (username.isBlank()) "Seu nome" else username }, color = RemoteAppearance.screenTextColor, fontSize = 24.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                if (profileVerified) QinblyVerifiedBadge(22.dp)
-            }
-            Row(Modifier.padding(top = 1.dp).clickable { if (username.isBlank()) onAuth() else onSwitchAccounts() }, verticalAlignment = Alignment.CenterVertically) {
-                Text(if (username.isBlank()) "Entre ou crie sua conta" else "@${username.removePrefix("@")}", color = RemoteAppearance.screenSecondaryTextColor, fontSize = 15.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                if (username.isNotBlank()) Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Trocar de conta", tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(18.dp))
-            }
-        }
+            },
+            name = shownName.ifBlank { if (username.isBlank()) "Seu nome" else username },
+            verified = profileVerified,
+            handle = if (username.isBlank()) "Entre ou crie sua conta" else "@${username.removePrefix("@")}",
+            onHandle = { if (username.isBlank()) onAuth() else onSwitchAccounts() },
+            arrow = username.isNotBlank(),
+            country = ownParts.country,
+            onAbout = if (username.isBlank()) null else ({ showAbout = true }),
+            likes = profilePosts.sumOf { it.likes },
+            following = followingCount,
+            followers = followersCount,
+            onFollowing = { onStat("Seguindo") },
+            onFollowers = { onStat("Seguidores") }
+        )
+        if (showAbout) QinblyProfileAbout(joinedMonthYear, ownParts.country) { showAbout = false }
         if (username.isBlank()) {
             // Sem conta: só um botão grande de Entrar (leva para entrar ou criar conta).
             Button(
@@ -10560,39 +10570,15 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             }
             return@Column
         }
-        Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(Modifier.fillMaxWidth()) {
-                ProfileStatFlat("Publicações", profilePosts.size.toString(), Modifier.weight(1f)) { }
-                ProfileStatFlat("Seguindo", followingCount.toString(), Modifier.weight(1f)) { onStat("Seguindo") }
-                ProfileStatFlat("Seguidores", followersCount.toString(), Modifier.weight(1f)) { onStat("Seguidores") }
-            }
-            Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ProfileSmallButton("Editar perfil", Icons.Default.Edit, Modifier.weight(1f)) { if (username.isBlank()) onAuth() else onEdit() }
-                ProfileSmallButton("Compartilhar perfil", Icons.Outlined.Share, Modifier.weight(1f)) {
-                    if (username.isBlank()) onAuth() else try {
-                        val share = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Conheça meu perfil no ${QinblyBrand.Name}: @${username.removePrefix("@")}") }
-                        snapContext.startActivity(Intent.createChooser(share, "Compartilhar perfil"))
-                    } catch (_: Exception) { onNotice("Não foi possível abrir o compartilhamento neste aparelho.") }
-                }
-            }
-            val ownCategories = if (shownBio.startsWith("✦ ")) shownBio.substringBefore('\n').removePrefix("✦ ") else ""
-            val ownDescription = if (shownBio.startsWith("✦ ")) shownBio.substringAfter('\n', "") else shownBio
-            if (ownCategories.isNotBlank()) QinblyCategoryLine(ownCategories, RemoteAppearance.screenTextColor, RemoteAppearance.screenSecondaryTextColor, Modifier.fillMaxWidth().padding(top = 14.dp), compact = true, center = true)
-            QinblyProfileBio(ownDescription, Modifier.padding(top = 10.dp), placeholder = "Adicione uma descrição ao seu perfil")
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                if (shownCountry.isNotBlank()) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Icon(Icons.Default.LocationOn, contentDescription = "País", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(15.dp))
-                        Text(shownCountry, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 12.sp)
-                    }
-                }
-                if (shownCountry.isNotBlank() && joinedMonthYear.isNotBlank()) Spacer(Modifier.width(16.dp))
-                if (joinedMonthYear.isNotBlank()) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = "Data de entrada", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(15.dp))
-                        Text("Entrou em $joinedMonthYear", color = RemoteAppearance.screenSecondaryTextColor, fontSize = 12.sp)
-                    }
-                }
+        QinblyProfileBioLeft(ownParts.description, placeholder = "Adicione uma descrição ao seu perfil")
+        QinblyProfileLinks(ownParts.links)
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            QinblyGrayButton("Editar perfil", Modifier.weight(1f)) { if (username.isBlank()) onAuth() else onEdit() }
+            QinblyGrayButton("Compartilhar perfil", Modifier.weight(1f)) {
+                if (username.isBlank()) onAuth() else try {
+                    val share = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Conheça meu perfil no ${QinblyBrand.Name}: @${username.removePrefix("@")}") }
+                    snapContext.startActivity(Intent.createChooser(share, "Compartilhar perfil"))
+                } catch (_: Exception) { onNotice("Não foi possível abrir o compartilhamento neste aparelho.") }
             }
         }
         QinblyHighlightsRow(username.removePrefix("@"), profilePrefs, mine = true, onNotice = onNotice)
@@ -11018,9 +11004,9 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
             }.start()
         }
     }
-    val countryPrefix = "🌍 "
     val countryOptions = listOf("Brasil", "Portugal", "Estados Unidos", "Argentina", "Chile", "Colômbia", "México", "Espanha", "França", "Alemanha", "Itália", "Reino Unido", "Canadá", "Japão", "Angola", "Moçambique", "Outro")
-    val initialCountry = initialBio.lineSequence().firstOrNull { it.startsWith(countryPrefix) }?.removePrefix(countryPrefix).orEmpty()
+    val initialParts = qinblyBioParts(initialBio)
+    val initialCountry = initialParts.country
     var selectedCountry by rememberKept("editprofile.country", initialCountry)
     var countryMenuExpanded by remember { mutableStateOf(false) }
     var username by rememberKept("editprofile.username", initialUsername)
@@ -11035,12 +11021,8 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
         val free = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { QinblyApi.isUsernameAvailable(wanted) }.getOrNull() }
         usernameStatus = when (free) { true -> "free"; false -> "taken"; null -> "" }
     }
-    val availableCategories = listOf("Criador de conteúdo", "Lifestyle", "Viagens 🌎", "Games 🎮", "Beleza 💄", "Moda", "Fitness", "Música", "Arte", "Fotografia", "Tecnologia", "Gastronomia", "Humor", "Educação", "Esportes", "Natureza", "Academia 🏋️", "Musculação 💪", "Corrida 🏃", "Dança 💃", "Saúde e bem-estar", "Nutrição 🥗", "Yoga 🧘", "Pets 🐾", "Família", "Maternidade", "Empreendedorismo", "Negócios", "Finanças", "Carros 🚗", "Motos 🏍️", "Cinema 🎬", "Livros 📚", "DIY e artesanato", "Decoração", "Jardinagem 🌱", "Ciência", "Comédia", "Futebol ⚽", "Culinária 🍳")
-    val categoryPrefix = "✦ "
-    val initialCategoryLine = initialBio.lineSequence().firstOrNull().orEmpty()
-    val storedCategories = if (initialCategoryLine.startsWith(categoryPrefix)) initialCategoryLine.removePrefix(categoryPrefix).split(" • ").filter { it in availableCategories } else emptyList()
-    var selectedCategories by rememberKept("editprofile.categories", storedCategories)
-    var bio by rememberKept("editprofile.bio", (if (storedCategories.isNotEmpty()) initialBio.substringAfter('\n', "") else initialBio).lineSequence().filterNot { it.startsWith(countryPrefix) }.joinToString("\n").trim())
+    var bio by rememberKept("editprofile.bio", initialParts.description)
+    var links by rememberKept("editprofile.links", initialParts.links)
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var adjustingImage by remember { mutableStateOf("") }
@@ -11052,6 +11034,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                     if (name.isBlank()) error = "Informe seu nome."
                     else if (usernameStatus == "taken") error = "Esse nome de usuário já está em uso. Escolha outro."
                     else if (!username.matches(Regex("[a-z0-9_.]{3,24}"))) error = "O @usuário precisa ter de 3 a 24 caracteres."
+                    else if (links.map { qinblyCleanLink(it) }.filter { it.isNotBlank() }.any { !it.contains('.') || it.startsWith('.') || it.endsWith('.') }) error = "Um dos links não parece certo. Use algo como meusite.com."
                     else {
                         loading = true; error = ""
                         val token = prefs.getString("token", null)
@@ -11064,7 +11047,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                                     }
                                     return@Thread
                                 }
-                                val composedBio = (if (selectedCategories.isNotEmpty()) categoryPrefix + selectedCategories.joinToString(" • ") + "\n" else "") + (if (selectedCountry.isNotBlank()) countryPrefix + selectedCountry + "\n" else "") + bio.trim()
+                                val composedBio = qinblyComposeBio(bio, selectedCountry, links.map { qinblyCleanLink(it) }.filter { it.isNotBlank() }.take(3))
                                 QinblyApi.updateProfile(token, username.trim(), name.trim(), composedBio)
                                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                                     loading = false
@@ -11155,58 +11138,61 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
             }
             editCard(Icons.Default.Description, "Bio", bio, "Escreva uma breve descrição sobre você", { bio = it }, singleLine = false, max = 300)
             Box {
-                OutlinedButton(onClick = { countryMenuExpanded = true }, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Default.Language, contentDescription = null, tint = QinblyBrand.Accent)
-                    Spacer(Modifier.width(8.dp))
-                    Text(selectedCountry.ifBlank { "Selecionar meu país" }, color = RemoteAppearance.screenTextColor)
-                    Spacer(Modifier.weight(1f))
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                        .border(BorderStroke(1.dp, QiblyTheme.border), RoundedCornerShape(14.dp))
+                        .clickable { countryMenuExpanded = true }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text("País", color = Muted, style = MaterialTheme.typography.labelMedium)
+                        Text(selectedCountry.ifBlank { "Selecionar meu país" }, color = if (selectedCountry.isBlank()) Muted.copy(alpha = 0.8f) else RemoteAppearance.screenTextColor, fontSize = 16.sp)
+                    }
                     Icon(Icons.Default.ExpandMore, contentDescription = null, tint = RemoteAppearance.screenTextColor)
                 }
                 if (countryMenuExpanded) QinblyCountrySheet(countryOptions, selectedCountry, { selectedCountry = it; countryMenuExpanded = false }, { countryMenuExpanded = false })
             }
+            // Links (até 3), logo abaixo do país.
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Categorias", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                Text("${selectedCategories.size} de 5", color = QinblyBrand.Accent, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.labelMedium)
+                Text("Links", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                Text("${links.size} de 3", color = QinblyBrand.Accent, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.labelMedium)
             }
-            Text("Aparecem abaixo do seu nome.", color = RemoteAppearance.screenSecondaryTextColor, fontSize = 11.sp)
-            val pillBg = if (QiblyTheme.dark) Color(0x17FFFFFF) else QiblyTheme.soft
-            val categoryGroups = listOf(
-                "Criação e mídia" to listOf("Criador de conteúdo", "Arte", "Fotografia", "Música", "Cinema", "Humor", "Comédia", "Livros", "Games"),
-                "Estilo de vida" to listOf("Lifestyle", "Viagens", "Moda", "Beleza", "Gastronomia", "Culinária", "Pets", "Família", "Maternidade", "Decoração", "Jardinagem", "Natureza", "DIY e artesanato"),
-                "Esporte e saúde" to listOf("Fitness", "Academia", "Musculação", "Corrida", "Yoga", "Nutrição", "Saúde e bem-estar", "Dança", "Esportes", "Futebol"),
-                "Negócios e aprender" to listOf("Tecnologia", "Educação", "Ciência", "Empreendedorismo", "Negócios", "Finanças"),
-                "Hobbies" to listOf("Carros", "Motos")
-            )
-            val groupedNames = categoryGroups.flatMap { it.second }
-            val categoryByName = availableCategories.associateBy { qinblyCategoryName(it) }
-            fun toggleCategory(category: String) {
-                selectedCategories = if (category in selectedCategories) selectedCategories - category else if (selectedCategories.size < 5) selectedCategories + category else selectedCategories
-            }
-            if (selectedCategories.isNotEmpty()) {
-                Text("Escolhidas", color = RemoteAppearance.screenSecondaryTextColor, fontSize = 11.sp)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    selectedCategories.forEach { category ->
-                        Row(Modifier.clip(RoundedCornerShape(15.dp)).background(QinblyBrand.Accent).clickable { toggleCategory(category) }.padding(horizontal = 11.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(qinblyCategoryName(category), color = Color.White, fontSize = 12.sp)
-                            Spacer(Modifier.width(5.dp))
-                            Icon(Icons.Default.Close, contentDescription = "Tirar", tint = Color.White, modifier = Modifier.size(12.dp))
+            links.forEachIndexed { i, link ->
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                        .border(BorderStroke(1.dp, QiblyTheme.border), RoundedCornerShape(14.dp))
+                        .padding(start = 14.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Link, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(20.dp))
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = link,
+                        onValueChange = { typed -> links = links.toMutableList().also { it[i] = qinblyCleanLink(typed) } },
+                        enabled = !loading,
+                        singleLine = true,
+                        textStyle = androidx.compose.ui.text.TextStyle(color = QinblyBrand.Accent, fontSize = 16.sp),
+                        cursorBrush = androidx.compose.ui.graphics.SolidColor(QinblyBrand.Accent),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri),
+                        modifier = Modifier.weight(1f).padding(horizontal = 10.dp, vertical = 10.dp),
+                        decorationBox = { inner ->
+                            Box {
+                                if (link.isEmpty()) Text("meusite.com", color = Muted.copy(alpha = 0.8f), fontSize = 16.sp)
+                                inner()
+                            }
                         }
+                    )
+                    IconButton(onClick = { links = links.filterIndexed { idx, _ -> idx != i } }, enabled = !loading) {
+                        Icon(Icons.Default.Close, contentDescription = "Remover link", tint = Muted)
                     }
                 }
-                Box(Modifier.fillMaxWidth().height(0.5.dp).background(QiblyTheme.border))
             }
-            val leftovers = availableCategories.filter { qinblyCategoryName(it) !in groupedNames }
-            (categoryGroups.map { (title, names) -> title to names.mapNotNull { categoryByName[it] } } + listOf("Outras" to leftovers)).forEach { (title, items) ->
-                val shown = items.filter { it !in selectedCategories }
-                if (shown.isNotEmpty()) {
-                    Text(title, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        shown.forEach { category ->
-                            Text(qinblyCategoryName(category), color = RemoteAppearance.screenTextColor, fontSize = 12.sp,
-                                modifier = Modifier.clip(RoundedCornerShape(15.dp)).background(pillBg).clickable { toggleCategory(category) }.padding(horizontal = 11.dp, vertical = 6.dp))
-                        }
-                    }
-                }
+            if (links.size < 3) Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(enabled = !loading) { links = links + "" }.padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(20.dp))
+                Text("Adicionar link", color = QinblyBrand.Accent, fontWeight = FontWeight.Medium, fontSize = 15.sp, modifier = Modifier.padding(start = 8.dp))
             }
             if (error.isNotBlank()) Text(error, color = Pink, style = MaterialTheme.typography.bodySmall)
         }
@@ -11978,28 +11964,39 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
             Spacer(Modifier.weight(1f))
             IconButton(onClick = { showMoreOptions = true }) { Icon(Icons.Default.MoreHoriz, contentDescription = "Opções deste perfil", tint = RemoteAppearance.screenTextColor) }
         }
-        Box(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(112.dp), contentAlignment = Alignment.Center) {
-                if (QinblyStoryRings.hasUnseen(publicUsername)) Box(Modifier.size(112.dp).border(3.dp, QinblyBrand.RingBrush, CircleShape))
-                Box(Modifier.size(100.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
-                    if (profilePhotoUrl.isNotBlank()) { expandedImage = profilePhotoUrl }
-                }) {
-                    if (profilePhotoUrl.isNotBlank()) AsyncImage(model = profilePhotoUrl, contentDescription = "Foto de $displayName", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                    else Icon(Icons.Default.Person, contentDescription = "Sem foto", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(22.dp))
-                }
-            }
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Text(displayName, textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenTextColor, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
-            if (user.optBoolean("verified")) { Spacer(Modifier.width(6.dp)); QinblyVerifiedBadge(22.dp) }
-        }
-        Text("@$publicUsername", modifier = Modifier.fillMaxWidth().padding(top = 2.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodyMedium)
-        val publicCategories = bio.lineSequence().firstOrNull { it.startsWith("✦ ") }?.removePrefix("✦ ").orEmpty()
-        val publicCountry = bio.lineSequence().firstOrNull { it.startsWith("🌍 ") }?.removePrefix("🌍 ").orEmpty()
-        val publicDescription = bio.lineSequence().filterNot { it.startsWith("✦ ") || it.startsWith("🌍 ") }.joinToString("\n").trim()
+        val publicParts = qinblyBioParts(bio)
         val joinedDate = listOf("createdAt", "created_at", "joined_at").map { user.optString(it) }.firstOrNull { it.matches(Regex("\\d{4}-\\d{2}.*")) }.orEmpty()
         val joinMonth = joinedDate.drop(5).take(2).toIntOrNull() ?: 0
         val monthNames = listOf("jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez")
+        var showAbout by remember { mutableStateOf(false) }
+        QinblyProfileTop(
+            avatar = {
+                Box(Modifier.size(92.dp), contentAlignment = Alignment.Center) {
+                    if (QinblyStoryRings.hasUnseen(publicUsername)) Box(Modifier.size(92.dp).border(3.dp, QinblyBrand.RingBrush, CircleShape))
+                    Box(Modifier.size(82.dp).clip(CircleShape).background(QiblyTheme.card).clickable {
+                        if (profilePhotoUrl.isNotBlank()) { expandedImage = profilePhotoUrl }
+                    }) {
+                        if (profilePhotoUrl.isNotBlank()) AsyncImage(model = profilePhotoUrl, contentDescription = "Foto de $displayName", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                        else Icon(Icons.Default.Person, contentDescription = "Sem foto", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(18.dp))
+                    }
+                }
+            },
+            name = displayName,
+            verified = user.optBoolean("verified"),
+            handle = "@$publicUsername",
+            onHandle = null,
+            arrow = false,
+            country = publicParts.country,
+            onAbout = { showAbout = true },
+            likes = profilePosts.sumOf { it.likes },
+            following = user.optInt("following"),
+            followers = user.optInt("followers"),
+            onFollowing = { openConnections("following") },
+            onFollowers = { openConnections("followers") }
+        )
+        if (showAbout) QinblyProfileAbout(if (joinMonth in 1..12) "${monthNames[joinMonth - 1]} ${joinedDate.take(4)}" else "", publicParts.country) { showAbout = false }
+        QinblyProfileBioLeft(publicParts.description)
+        QinblyProfileLinks(publicParts.links)
     if (connectionListType.isNotBlank()) {
         QinblyDialog(onDismissRequest = { connectionListType = "" }) {
             Surface(shape = RoundedCornerShape(20.dp), color = QiblyTheme.card) {
@@ -12018,11 +12015,6 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
             }
         }
     }
-        Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 14.dp, bottom = 4.dp)) {
-            ProfileStatFlat("Publicações", profilePosts.size.toString(), Modifier.weight(1f)) { }
-            ProfileStatFlat("Seguindo", user.optInt("following").toString(), Modifier.weight(1f)) { openConnections("following") }
-            ProfileStatFlat("Seguidores", user.optInt("followers").toString(), Modifier.weight(1f)) { openConnections("followers") }
-        }
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             QinblyFollowButton(
                 following = QinblyEngagement.isFollowing(prefs, publicUsername, user.optBoolean("isFollowing")),
@@ -12051,22 +12043,6 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                 }
             }
         }
-        if (publicCategories.isNotBlank()) QinblyCategoryLine(publicCategories, RemoteAppearance.screenTextColor, RemoteAppearance.screenSecondaryTextColor, Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), compact = true, center = true)
-        QinblyProfileBio(publicDescription, Modifier.padding(top = 4.dp))
-        Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            if (publicCountry.isNotBlank()) {
-                Icon(Icons.Default.LocationOn, contentDescription = "País", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(5.dp))
-                Text(publicCountry, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
-            }
-            if (publicCountry.isNotBlank() && joinMonth in 1..12) Spacer(Modifier.width(18.dp))
-            if (joinMonth in 1..12) {
-                Icon(Icons.Default.CalendarToday, contentDescription = "Data de entrada", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(5.dp))
-                Text("Entrou em ${monthNames[joinMonth - 1]} ${joinedDate.take(4)}", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall)
-            }
-        }
-
         QinblyHighlightsRow(publicUsername, prefs, mine = publicUsername.equals(prefs.getString("username", "").orEmpty().removePrefix("@"), ignoreCase = true), onNotice = onNotice)
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
             listOf("Publicações", "Vídeos", "Fotos").forEach { section ->

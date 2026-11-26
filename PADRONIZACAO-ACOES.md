@@ -1273,3 +1273,11 @@ Fonte: Roboto (padrão do Android). Só estes tamanhos podem ser usados em `font
 - Card com foto/vídeo: música embaixo do nome (nota, sem fundo nem contorno), legenda no canto esquerdo com 1 linha + "mais", hora logo acima do coração.
 - Repost no feed (servidor `GET /api/posts` traz reposts de quem você segue com `repostedBy` e `repostedAt`): foto pequena de quem repostou sobre a foto do autor e "Repostado por Fulano · Há X" acima do coração. Menu: "Desfazer repost" (se foi você), "Silenciar/Bloquear @quem repostou". Web mostra a linha "Repostado por".
 - Voltar: em qualquer aba, 1 toque leva ao Explorar; 2 toques rápidos (até 1,2 s) fecham o app.
+
+## Perfil novo (app e web)
+- Topo: foto à esquerda; ao lado nome com selo, "@usuário · país" (com o "i" para a folha "Sobre este perfil", que mostra "Entrou em ...") e os números Curtidas / Seguindo / Seguidores.
+- Bio inteira, sem "mais", alinhada à esquerda. Até 3 links numa linha só (a letra diminui para caber). Botões cinza claro: Editar perfil e Compartilhar perfil.
+- A bio guarda o país ("🌍 ") e os links ("🔗 ", separados por " | ") em linhas próprias. A linha antiga de categorias ("✦ ") é ignorada e não é mais gravada. Não existem mais categorias/hobbies no Editar perfil.
+- FAVORITOS (nunca "Destaques"): bolinhas sem contorno, "Novo" primeiro (só no seu perfil). Cada favorito é um grupo de fotos com o mesmo nome (tabela `story_highlights`, agrupada pelo nome, nome até 12 letras). A capa é sempre a última foto adicionada.
+- Novo favorito: uma tela só (X, título, "Adicionar"; capa redonda; nome com lápis; galeria com a câmera no primeiro quadrado). Dentro do favorito, menu de 3 pontinhas: Adicionar fotos / Mudar nome / Remover esta foto / Excluir favorito.
+- Servidor: `POST /api/highlights` aceita `mediaFileIds` (fotos já enviadas); `POST /api/highlights/rename` e `POST /api/highlights/remove-group`.

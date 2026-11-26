@@ -1507,6 +1507,19 @@ object QinblyApi {
 
     fun deleteHighlight(token: String, id: String) { request("DELETE", "/api/highlights/$id", JSONObject(), token) }
 
+    /** Favoritos do perfil: cria (ou aumenta) o favorito com esse nome usando fotos já enviadas. A capa é a última foto adicionada. */
+    fun createFavorite(token: String, title: String, fileIds: List<String>) {
+        request("POST", "/api/highlights", JSONObject().put("title", title).put("mediaFileIds", org.json.JSONArray(fileIds)), token)
+    }
+
+    fun renameFavorite(token: String, title: String, newTitle: String) {
+        request("POST", "/api/highlights/rename", JSONObject().put("title", title).put("newTitle", newTitle), token)
+    }
+
+    fun deleteFavorite(token: String, title: String) {
+        request("POST", "/api/highlights/remove-group", JSONObject().put("title", title), token)
+    }
+
     /** true se o token de acesso (JWT) já venceu ou vence em menos de 30 segundos. */
     private fun tokenExpired(token: String): Boolean = try {
         val payload = String(android.util.Base64.decode(token.split(".")[1], android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING), Charsets.UTF_8)

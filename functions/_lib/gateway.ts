@@ -391,7 +391,7 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
         payload.username = u;
       }
       if (body.displayName !== undefined) payload.display_name = String(body.displayName).trim().slice(0, 60);
-      if (body.bio !== undefined) payload.bio = String(body.bio).trim().slice(0, 500);
+      if (body.bio !== undefined) payload.bio = String(body.bio).trim().slice(0, 800);
       payload.updated_at = new Date().toISOString();
       try {
         const rows = await rest(`profiles?id=eq.${viewerId}&select=*`, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify(payload) });
@@ -974,13 +974,44 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
       const rows = await rest(`story_highlights?user_id=eq.${target.id}&select=*&order=created_at.desc&limit=100`);
       return reply({ highlights: (rows || []).map((h: any) => ({ id: h.id, title: h.title, mediaUrl: pub(h.media_path), mediaType: h.media_type, caption: h.caption || "", createdAt: h.created_at })) });
     }
+    // Favoritos: fotos escolhidas da galeria/câmera, agrupadas pelo nome (a capa é a última foto adicionada).
+    if (method === "POST" && path === "/api/highlights" && (body.mediaFileId || Array.isArray(body.mediaFileIds))) {
+      const id = need();
+      const title = String(body.title || "").trim().slice(0, 12);
+      if (!title) return reply({ error: "Dê um nome ao favorito." }, 400);
+      const ids: string[] = (Array.isArray(body.mediaFileIds) ? body.mediaFileIds : [body.mediaFileId]).map(String).slice(0, 30);
+      if (!ids.length) return reply({ error: "Escolha ao menos uma foto." }, 400);
+      const base = Date.now();
+      const made: any[] = [];
+      for (let i = 0; i < ids.length; i++) {
+        const { mime } = await fileOwned(ids[i], "story_media");
+        const type = mime.startsWith("video/") ? "video" : "image";
+        const row = (await ins("story_highlights", { user_id: id, title, media_path: ids[i], media_type: type, caption: "", created_at: new Date(base + i).toISOString() }))?.[0];
+        if (row) made.push({ id: row.id, title: row.title, mediaUrl: pub(row.media_path), mediaType: row.media_type, caption: "", createdAt: row.created_at });
+      }
+      return reply({ highlights: made, highlight: made[made.length - 1] || null }, 201);
+    }
+    if (method === "POST" && path === "/api/highlights/rename") {
+      const id = need();
+      const from = String(body.title || "").trim(), to = String(body.newTitle || "").trim().slice(0, 12);
+      if (!from || !to) return reply({ error: "Nome inválido." }, 400);
+      await rest(`story_highlights?user_id=eq.${id}&title=eq.${encodeURIComponent(from)}`, { method: "PATCH", body: JSON.stringify({ title: to }) });
+      return reply({ ok: true });
+    }
+    if (method === "POST" && path === "/api/highlights/remove-group") {
+      const id = need();
+      const from = String(body.title || "").trim();
+      if (!from) return reply({ error: "Nome inválido." }, 400);
+      await rest(`story_highlights?user_id=eq.${id}&title=eq.${encodeURIComponent(from)}`, { method: "DELETE" });
+      return reply({ ok: true });
+    }
     if (method === "POST" && path === "/api/highlights") {
       const id = need();
       const sid = String(body.storyId || "");
       if (!isUuid(sid)) return reply({ error: "Story inválido." }, 400);
       const story = (await rest(`stories?id=eq.${sid}&user_id=eq.${id}&select=media_path,media_type,caption`))?.[0];
       if (!story) return reply({ error: "Story não encontrado." }, 404);
-      const title = String(body.title || "").trim().slice(0, 24) || "Destaques";
+      const title = String(body.title || "").trim().slice(0, 12) || "Favoritos";
       const row = (await ins("story_highlights", { user_id: id, title, media_path: story.media_path || "", media_type: story.media_type, caption: story.caption || "" }))?.[0];
       return reply({ highlight: { id: row.id, title: row.title, mediaUrl: pub(row.media_path), mediaType: row.media_type, caption: row.caption || "", createdAt: row.created_at } }, 201);
     }

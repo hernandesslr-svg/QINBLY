@@ -678,11 +678,27 @@
   }
 
   function parseBio(bio) {
-    var cats = "", country = "", desc = [];
+    var country = "", links = [], desc = [];
     String(bio || "").split("\n").forEach(function (l) {
-      if (l.indexOf("✦ ") === 0) cats = l.slice(2); else if (l.indexOf("🌍 ") === 0) country = l.slice(3); else desc.push(l);
+      if (l.indexOf("✦ ") === 0) return;
+      if (l.indexOf("🌍 ") === 0) country = l.slice(3).trim();
+      else if (l.indexOf("🔗 ") === 0) links = l.slice(3).split(" | ").map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 3);
+      else desc.push(l);
     });
-    return { cats: cats ? cats.split(" • ").map(function (c) { return c.replace(/^[^\p{L}\p{N}]+/u, "").trim(); }).filter(Boolean) : [], country: country, desc: desc.join("\n").trim() };
+    return { cats: [], country: country, links: links, desc: desc.join("\n").trim() };
+  }
+  function linkClean(x) { return String(x || "").replace(/[\s|]/g, "").slice(0, 80); }
+  function linkLabel(x) { return String(x).replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/$/, ""); }
+  function linksHtml(list) {
+    list = (list || []).filter(Boolean); if (!list.length) return "";
+    var w = Math.min(window.innerWidth || 400, 470) - 32, chars = list.reduce(function (n, l) { return n + linkLabel(l).length; }, 0) || 1;
+    var px = Math.max(9, Math.min(14, (w - list.length * 22 - (list.length - 1) * 12) / (chars * 0.53)));
+    var ic = '<svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg>';
+    return '<div class="plk" style="font-size:' + px.toFixed(1) + 'px">' + list.map(function (l) {
+      var url = /^https?:\/\//i.test(l) ? l : "https://" + l;
+      if (!/^https?:\/\/[^\s"'<>]+$/i.test(url)) return "";
+      return '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + ic + "<span>" + esc(linkLabel(l)) + "</span></a>";
+    }).join("") + "</div>";
   }
   function joinedTxt(u, short) {
     var d = u.createdAt || u.created_at; if (!d) return ""; var dt = new Date(d); if (isNaN(dt)) return "";
@@ -703,18 +719,16 @@
       var bio = parseBio(u.bio), shown = u.displayName || u.username, unseen = (window.__unseen || {})[String(u.username).toLowerCase()];
       var tabs = own ? ["Publicações", "Vídeos", "Fotos", "Salvos"] : ["Publicações", "Vídeos", "Fotos"];
       var TIC = { "Publicações": "grid", "Vídeos": "vdisp", "Fotos": "photo", "Salvos": "save" };
-      var meta = (bio.country ? '<span>' + svg("pin") + esc(bio.country) + "</span>" : "") + (joinedTxt(u, true) ? "<span>" + svg("cal") + esc(joinedTxt(u, true)) + "</span>" : "");
-      var cats = bio.cats.length ? '<div class="pcats">' + bio.cats.map(function (c) { return "<span>" + svg("spark") + esc(c) + "</span>"; }).join("") + "</div>" : "";
-      var stats = '<div class="pst"><div><b>' + (posts.length || u.posts_count || 0) + '</b><span>Publicações</span></div><button data-stat="following"><b>' + (u.following || 0) + '</b><span>Seguindo</span></button><button data-stat="followers"><b>' + (u.followers || 0) + "</b><span>Seguidores</span></button></div>";
-      var photo = '<div class="pbig"><span class="pring xl ' + (unseen ? "new" : "") + '">' + avatar(u.avatarUrl, shown, "l") + "</span></div>";
-      var who = own
-        ? '<div class="pc"><button class="nm2" data-edit><span>' + esc(shown) + "</span>" + (u.verified ? VERIFIED : "") + '</button><button class="at at2" data-accounts>@' + esc(u.username) + svg("chev") + "</button></div>"
-        : '<div class="pc"><h2>' + esc(shown) + (u.verified ? VERIFIED : "") + '</h2><div class="at">@' + esc(u.username) + "</div></div>";
+      var likes = posts.reduce(function (n, p) { return n + (Number(p.likes) || 0); }, 0);
+      var INFO = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>';
+      var handle = own ? '<button class="at3" data-accounts>@' + esc(u.username) + svg("chev") + "</button>" : '<span class="at3">@' + esc(u.username) + "</span>";
+      var where = bio.country ? '<span class="dot">·</span><span class="pl">' + svg("pin") + esc(bio.country) + "</span>" : "";
+      var topH = '<div class="ptop"><span class="pring xl s ' + (unseen ? "new" : "") + '">' + avatar(u.avatarUrl, shown, "l") + '</span><div class="pid"><div class="pnm">' + (own ? '<button data-edit><span>' + esc(shown) + "</span></button>" : "<span>" + esc(shown) + "</span>") + (u.verified ? VERIFIED : "") + '</div><div class="pat">' + handle + where + '<button class="inf" data-about aria-label="Sobre este perfil">' + INFO + '</button></div><div class="pn3"><div><b>' + likes + '</b><span>Curtidas</span></div><button data-stat="following"><b>' + (u.following || 0) + '</b><span>Seguindo</span></button><button data-stat="followers"><b>' + (u.followers || 0) + "</b><span>Seguidores</span></button></div></div></div>";
       var btns = own
-        ? '<div class="pbt"><button class="pill" data-edit>' + svg("edit") + 'Editar perfil</button><button class="pill" data-shareprofile="' + esc(u.username) + '">' + svg("send") + "Compartilhar perfil</button></div>"
+        ? '<div class="pbt"><button class="pill" data-edit>Editar perfil</button><button class="pill" data-shareprofile="' + esc(u.username) + '">Compartilhar perfil</button></div>'
         : '<div class="pfb"><button class="fol ' + (u.isFollowing ? "on" : "") + '" data-follow="' + u.id + '" data-profile="' + esc(u.username) + '">' + svg(u.isFollowing ? "check" : "add") + "<span>" + (u.isFollowing ? "Seguindo" : "Seguir") + '</span></button><button class="msgb" data-chat="' + esc(u.username) + '">' + svg("msg") + "Mensagem</button></div>";
-      var bioHtml = bio.desc ? '<div class="pbio2"><p>' + linkify(bio.desc) + "</p></div>" : (own && !cats ? '<div class="pbio2"><p class="mut">Adicione uma descrição ao seu perfil</p></div>' : "");
-      var head = photo + who + stats.replace('class="pst"', 'class="pst big"') + btns + cats + bioHtml + (meta ? '<div class="pmeta c">' + meta + "</div>" : "");
+      var bioHtml = bio.desc ? '<div class="pbio2"><p>' + linkify(bio.desc) + "</p></div>" : (own ? '<div class="pbio2"><p class="mut">Adicione uma descrição ao seu perfil</p></div>' : "");
+      var head = topH + bioHtml + linksHtml(bio.links) + btns;
       function gridOf(list) {
         return list.map(function (p) { POSTS[p.id] = p; return '<button data-open="' + p.id + '" style="' + (p.mediaUrl ? "background-image:url('" + safeUrl(p.mediaUrl) + "')" : "") + '"></button>'; }).join("");
       }
@@ -734,13 +748,16 @@
       pf.innerHTML = head + '<div id="hl"></div><div class="ptabs">' + tabs.map(function (t, i) { return '<button data-ptab="' + t + '" aria-label="' + t + '" class="' + (i ? "" : "on") + '">' + svg(TIC[t]) + "<i></i></button>"; }).join("") + '</div><div id="pg"></div>';
       show("Publicações");
       pf.addEventListener("click", function (e) {
-        var t = e.target.closest("[data-ptab],[data-hl]"); if (!t) return;
+        var t = e.target.closest("[data-ptab],[data-hl],[data-about]"); if (!t) return;
+        if (t.hasAttribute("data-about")) { sheet("Sobre este perfil", '<div class="row"><span class="t"><b>' + esc(joinedTxt(u, false) || "Sem informações de entrada") + "</b></span></div>" + (bio.country ? '<div class="row"><span class="t"><b>País: ' + esc(bio.country) + "</b></span></div>" : "")); return; }
         if (t.dataset.hl !== undefined) { var h = (window.__hls || [])[Number(t.dataset.hl)]; if (h) openHighlight(h); return; }
         show(t.dataset.ptab);
       });
       api("/api/users/" + encodeURIComponent(u.username) + "/highlights").then(function (r) {
-        var l = r.highlights || []; window.__hls = l; var el = document.getElementById("hl"); if (!el || !l.length) return;
-        el.innerHTML = '<div class="hls">' + l.map(function (h, i) { return '<button data-hl="' + i + '" aria-label="Destaque"><span class="hc2" ' + (h.mediaType === "image" && h.mediaUrl ? 'style="background-image:url(\'' + safeUrl(h.mediaUrl) + '\')"' : "") + ">" + (h.mediaType === "image" && h.mediaUrl ? "" : "Aa") + "</span><em>" + esc(h.title) + "</em></button>"; }).join("") + "</div>";
+        var l = r.highlights || [], groups = [], idx = {};
+        l.forEach(function (h) { if (idx[h.title] === undefined) { idx[h.title] = groups.length; groups.push({ title: h.title, items: [] }); } groups[idx[h.title]].items.push(h); });
+        window.__hls = groups; var el = document.getElementById("hl"); if (!el || !groups.length) return;
+        el.innerHTML = '<div class="hls">' + groups.map(function (g, i) { var h = g.items[0]; return '<button data-hl="' + i + '" aria-label="Favorito"><span class="hc2" ' + (h.mediaType === "image" && h.mediaUrl ? 'style="background-image:url(\'' + safeUrl(h.mediaUrl) + '\')"' : "") + ">" + (h.mediaType === "image" && h.mediaUrl ? "" : "Aa") + "</span><em>" + esc(g.title) + "</em></button>"; }).join("") + "</div>";
       }).catch(function () { });
     }).catch(function (e) { document.getElementById("pf").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
   }
@@ -809,12 +826,14 @@
     var me = cur();
     setView(top("Editar perfil", { back: true }) + '<div class="form" id="ef">' + spin() + "</div>", "", "noNav");
     api("/api/auth/me").then(function (j) {
-      var u = j.user;
+      var u = j.user, P = parseBio(u.bio), COUNTRIES = ["Brasil", "Portugal", "Estados Unidos", "Argentina", "Chile", "Colômbia", "México", "Espanha", "França", "Alemanha", "Itália", "Reino Unido", "Canadá", "Japão", "Angola", "Moçambique", "Outro"];
       document.getElementById("ef").innerHTML =
         '<div style="text-align:center"><span class="ring">' + avatar(u.avatarUrl, u.displayName || u.username, "l") + '</span><br><label class="link" style="cursor:pointer;display:inline-block;padding:10px;font-weight:600">Trocar foto<input id="af" type="file" accept="image/*" hidden></label></div>' +
         '<label class="fld">Nome<input class="inp" id="dn" maxlength="60" value="' + esc(u.displayName) + '"></label>' +
         '<label class="fld">Nome de usuário<input class="inp" id="un" maxlength="30" autocapitalize="none" value="' + esc(u.username) + '"></label>' +
-        '<label class="fld">Bio<textarea class="inp" id="bi" maxlength="500">' + esc(u.bio) + '</textarea></label><div class="err" id="er"></div><button class="btn" id="sv">Salvar</button>';
+        '<label class="fld">Bio<textarea class="inp" id="bi" maxlength="300">' + esc(P.desc) + '</textarea></label>' +
+        '<label class="fld">País<select class="inp" id="ct"><option value="">Selecionar meu país</option>' + COUNTRIES.map(function (c) { return '<option' + (c === P.country ? " selected" : "") + ">" + esc(c) + "</option>"; }).join("") + "</select></label>" +
+        '<div class="fld">Links (até 3)' + [0, 1, 2].map(function (i) { return '<input class="inp lkin" maxlength="80" inputmode="url" autocapitalize="none" placeholder="meusite.com" value="' + esc(P.links[i] || "") + '">'; }).join("") + '</div><div class="err" id="er"></div><button class="btn" id="sv">Salvar</button>';
       var ef = document.getElementById("ef");
       ef.querySelector("#af").addEventListener("change", function (e) {
         var f = e.target.files[0]; if (!f) return;
@@ -825,7 +844,10 @@
       });
       ef.querySelector("#sv").addEventListener("click", function () {
         var btn = this; btn.disabled = true; ef.querySelector("#er").textContent = "";
-        api("/api/users/me", { method: "PATCH", body: { displayName: ef.querySelector("#dn").value, username: ef.querySelector("#un").value, bio: ef.querySelector("#bi").value } })
+        var lks = Array.prototype.map.call(ef.querySelectorAll(".lkin"), function (i) { return linkClean(i.value); }).filter(Boolean).slice(0, 3);
+        if (lks.some(function (l) { return l.indexOf(".") < 1 || l.slice(-1) === "."; })) { ef.querySelector("#er").textContent = "Um dos links não parece certo. Use algo como meusite.com."; btn.disabled = false; return; }
+        var ctry = ef.querySelector("#ct").value, composed = (ctry ? "🌍 " + ctry + "\n" : "") + (lks.length ? "🔗 " + lks.join(" | ") + "\n" : "") + ef.querySelector("#bi").value.trim();
+        api("/api/users/me", { method: "PATCH", body: { displayName: ef.querySelector("#dn").value, username: ef.querySelector("#un").value, bio: composed } })
           .then(function (r) { me.username = r.user.username; me.displayName = r.user.displayName; save(); toast("Perfil salvo."); location.hash = "#/me"; })
           .catch(function (e) { ef.querySelector("#er").textContent = e.message; btn.disabled = false; });
       });
@@ -1508,7 +1530,10 @@
   }
 
   /* ---------- destaques, comentários, stories ---------- */
-  function openHighlight(h) { openStories({ username: "", displayName: h.title, avatarUrl: "", stories: [{ id: "", mediaUrl: h.mediaUrl, mediaType: h.mediaType, caption: h.caption, createdAt: h.createdAt }], hl: true }); }
+  function openHighlight(g) {
+    var items = (g.items || [g]).slice().reverse();
+    openStories({ username: "", displayName: g.title, avatarUrl: "", stories: items.map(function (h) { return { id: "", mediaUrl: h.mediaUrl, mediaType: h.mediaType, caption: h.caption, createdAt: h.createdAt }; }), hl: true });
+  }
 
   /* =====================================================================
      Segunda leva: mensagens completas, compartilhar, caixa de entrada,

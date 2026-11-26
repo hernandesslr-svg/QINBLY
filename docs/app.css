@@ -674,3 +674,31 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 
 .rpl{padding:0 14px 6px;font-size:12px;color:var(--muted)}
 .rpl a{color:inherit;font-weight:500}
+
+/* Perfil novo: foto à esquerda, nome / @ · país / números ao lado; bio e links à esquerda; botões cinza claro; favoritos sem contorno */
+.ptop{display:flex;align-items:center;gap:16px;padding:6px 16px}
+.ptop .pring.xl .av,.ptop .pring.xl .av.l{width:82px;height:82px;font-size:30px}
+.ptop .pring.xl{padding:5px}.ptop .pring.xl.new{padding:3px}
+.pid{flex:1;min-width:0}
+.pnm{display:flex;align-items:center;gap:6px;font-size:20px;font-weight:600;color:var(--text)}
+.pnm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pnm button{display:flex;min-width:0;font:inherit;color:inherit}.pnm svg{width:19px;height:19px;flex:none}
+.pat{display:flex;align-items:center;margin-top:2px;font-size:14px;color:var(--muted);min-width:0}
+.pat .at3{display:inline-flex;align-items:center;color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pat .at3 svg{width:18px;height:18px;stroke:var(--text);fill:none;stroke-width:2}
+.pat .dot{margin:0 4px}.pat .pl{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pat svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8}
+.pat .inf{margin-left:6px;display:inline-flex;color:var(--muted)}.pat .inf svg{width:18px;height:18px}
+.pn3{display:flex;gap:22px;margin-top:10px}
+.pn3>*{display:flex;flex-direction:column;align-items:flex-start;text-align:left}
+.pn3 b{font-size:17px;font-weight:600;color:var(--text)}.pn3 span{font-size:12px;color:var(--muted)}
+.pbio2{justify-content:flex-start;padding:6px 16px 0}
+.pbio2 p{max-width:none;width:100%}
+.plk{display:flex;gap:12px;padding:6px 16px 0;white-space:nowrap}
+.plk a{display:inline-flex;align-items:center;gap:4px;color:#2F68E0;min-width:0}
+.plk a span{overflow:hidden;text-overflow:ellipsis}
+.plk svg{width:16px;height:16px;flex:none;stroke:#2F68E0;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.pbt .pill{border-radius:10px;font-size:13px}
+[data-theme=light] .pill{background:#F1F2F5;color:#111}
+.hls .hc2{width:60px;height:60px;border:0;background-color:#F1F2F5;color:#111}
+[data-theme=dark] .hls .hc2{background-color:rgba(255,255,255,.1);color:#fff}
+@media(min-width:700px){.ptop{max-width:470px;margin-left:auto;margin-right:auto}.plk{max-width:470px;margin-left:auto;margin-right:auto}}
