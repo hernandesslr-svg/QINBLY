@@ -1789,11 +1789,14 @@ private fun AccountSwitcherDialog(
   properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
  ) {
   // Folha de baixo para cima: toque fora fecha. Lista simples, sem cartões.
+  // A barra de botões do celular é medida aqui (a janela própria não recebe o recuo sozinha).
+  var sheetNav = 0.dp
+  androidx.compose.runtime.CompositionLocalProvider(LocalQinblyNavHandled provides false) { sheetNav = qinblyNavBarPadding() }
   Box(Modifier.fillMaxSize().background(Color(0x73000000)).clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() }, contentAlignment = Alignment.BottomCenter) {
    Column(
     Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)).background(QiblyTheme.card)
      .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { }
-     .navigationBarsPadding().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 14.dp)
+     .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 14.dp + sheetNav)
    ) {
     Box(Modifier.align(Alignment.CenterHorizontally).width(36.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(QiblyTheme.border))
     Text("Trocar de conta", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = QiblyTheme.text, modifier = Modifier.padding(top = 12.dp, bottom = 6.dp))
