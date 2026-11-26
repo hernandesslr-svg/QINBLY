@@ -215,11 +215,11 @@ internal fun QinblyTagPeopleDialog(token: String?, myUsername: String, initial: 
                             }.padding(horizontal = 14.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Box(Modifier.size(44.dp).clip(CircleShape).background(QiblyTheme.soft), contentAlignment = Alignment.Center) {
+                            Box(Modifier.size(44.dp).clip(CircleShape).background(qinblyAvatarColor(user.username)), contentAlignment = Alignment.Center) {
                                 if (user.avatarUrl.isNotBlank()) {
                                     coil.compose.AsyncImage(model = user.avatarUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                                 } else {
-                                    Text((user.displayName.ifBlank { user.username }).take(1).uppercase(), color = QiblyTheme.text, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                    Text(qinblyAvatarLetter(user.displayName.ifBlank { user.username }), color = Color.White, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                                 }
                             }
                             Column(Modifier.weight(1f)) {

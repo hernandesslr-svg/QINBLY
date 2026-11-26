@@ -571,10 +571,10 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                         if (recent.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy((-10).dp)) {
                             recent.forEach { v ->
                                 Box(
-                                    Modifier.size(34.dp).clip(CircleShape).border(1.5.dp, Color.White, CircleShape).background(Color(0xFF2B3544)),
+                                    Modifier.size(34.dp).clip(CircleShape).border(1.5.dp, Color.White, CircleShape).background(qinblyAvatarColor(v.username)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text((v.displayName.ifBlank { v.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                    Text(qinblyAvatarLetter(v.displayName.ifBlank { v.username }), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                     if (v.avatarUrl.isNotBlank()) AsyncImage(model = v.avatarUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                                 }
                             }
@@ -784,8 +784,8 @@ internal fun QinblyStorySummary(storyId: String, createdAt: String, accent: Colo
         val peak = buckets.indices.maxByOrNull { buckets[it] } ?: 0
         @Composable fun Person(v: QinblyApi.StoryViewer, sub: String) {
             Row(Modifier.fillMaxWidth().clickable { onOpenProfile(v.username) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(46.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
-                    Text((v.displayName.ifBlank { v.username }).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                Box(Modifier.size(46.dp).clip(CircleShape).background(qinblyAvatarColor(v.username)), contentAlignment = Alignment.Center) {
+                    Text(qinblyAvatarLetter(v.displayName.ifBlank { v.username }), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
                     if (v.avatarUrl.isNotBlank()) AsyncImage(model = v.avatarUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 }
                 Spacer(Modifier.width(14.dp))

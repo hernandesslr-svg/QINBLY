@@ -82,7 +82,9 @@
   function svg(n) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + IC[n] + "</svg>"; }
   var VERIFIED = '<svg class="vf" viewBox="0 0 24 24" aria-label="verificado"><path d="M12 2l2.4 2 3.1-.2 1 3 2.7 1.6-.9 3 .9 3-2.7 1.6-1 3-3.1-.2L12 22l-2.4-2-3.1.2-1-3-2.7-1.6.9-3-.9-3 2.7-1.6 1-3 3.1.2z"/><path d="M8.5 12l2.5 2.5 4.5-5" stroke="#fff" fill="none" stroke-width="2"/></svg>';
   function avatar(url, name, cls) {
-    var st = safeUrl(url) ? ' style="background-image:url(\'' + safeUrl(url) + '\')"' : "";
+    var AVC = ["#7C4DFF", "#2F68E0", "#E0368C", "#1E9E6A", "#F08A24", "#1AA3B8", "#E5484D", "#565BF0"], hh = 0, key = String(name || "?").trim().replace(/^@/, "").toLowerCase();
+    for (var i = 0; i < key.length; i++) hh = (hh * 31 + key.charCodeAt(i)) & 0x7fffffff;
+    var st = safeUrl(url) ? ' style="background-image:url(\'' + safeUrl(url) + '\')"' : ' style="background:' + AVC[hh % AVC.length] + '"';
     var ini = safeUrl(url) ? "" : esc((name || "?").trim().charAt(0).toUpperCase());
     return '<span class="av ' + (cls || "") + '"' + st + ">" + ini + "</span>";
   }

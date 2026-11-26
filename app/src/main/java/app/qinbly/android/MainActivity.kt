@@ -1810,7 +1810,7 @@ private fun AccountSwitcherDialog(
         .padding(vertical = 10.dp),
        verticalAlignment = Alignment.CenterVertically
       ) {
-       QiblyAccountAvatar(account.username, "", 44.dp) { if (!active) onSelect(account) }
+       QiblyAccountAvatar(account.username, "", 44.dp, displayName = account.displayName) { if (!active) onSelect(account) }
        Spacer(Modifier.width(12.dp))
        Column(Modifier.weight(1f)) {
         Text(account.displayName.ifBlank { account.username }, color = QiblyTheme.text, fontWeight = FontWeight.Medium, fontSize = 14.sp, maxLines = 1)
@@ -10365,7 +10365,7 @@ private fun QinblyNoteBubble(note: String, onClick: (() -> Unit)? = null) {
 }
 
 @Composable
-private fun QiblyAccountAvatar(username: String, fallbackUrl: String, diameter: Dp, storyRing: Boolean = false, onClick: () -> Unit) {
+private fun QiblyAccountAvatar(username: String, fallbackUrl: String, diameter: Dp, storyRing: Boolean = false, displayName: String = "", onClick: () -> Unit) {
     val avatarVersion = qiblyAvatarRefreshVersion.intValue
     val avatarContext = androidx.compose.ui.platform.LocalContext.current
     QinblyAvatarCache.init(avatarContext)
@@ -10399,7 +10399,7 @@ private fun QiblyAccountAvatar(username: String, fallbackUrl: String, diameter: 
         if (ringOn) Box(Modifier.size(diameter).border(2.dp, QinblyBrand.RingBrush, CircleShape))
         Box(Modifier.size(if (ringOn) diameter - 8.dp else diameter).clip(CircleShape).background(QiblyTheme.card)) {
             if (resolvedUrl.isNotBlank()) AsyncImage(model = coil.request.ImageRequest.Builder(avatarContext).data(resolvedUrl).memoryCacheKey("avatar:$username:$avatarVersion:$resolvedUrl").diskCacheKey("avatar:$username:$avatarVersion:$resolvedUrl").build(), contentDescription = "Foto de @$username", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-            else Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.fillMaxSize().padding(8.dp))
+            else QinblyInitialAvatar(displayName.ifBlank { username }, username)
         }
     }
 }
@@ -10562,7 +10562,8 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                     }) {
                         val image = profilePhotoUrl.ifBlank { avatarUrl }
                         if (image.isNotBlank()) AsyncImage(model = image, contentDescription = "Foto do perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                        else Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(18.dp))
+                        else if (username.isBlank()) Icon(Icons.Default.Person, contentDescription = "Foto do perfil", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(18.dp))
+                        else QinblyInitialAvatar(shownName.ifBlank { username }, username)
                     }
                 }
             },
@@ -12011,7 +12012,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                         if (profilePhotoUrl.isNotBlank()) { expandedImage = profilePhotoUrl }
                     }) {
                         if (profilePhotoUrl.isNotBlank()) AsyncImage(model = profilePhotoUrl, contentDescription = "Foto de $displayName", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                        else Icon(Icons.Default.Person, contentDescription = "Sem foto", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.fillMaxSize().padding(18.dp))
+                        else QinblyInitialAvatar(displayName.ifBlank { publicUsername }, publicUsername)
                     }
                 }
             },

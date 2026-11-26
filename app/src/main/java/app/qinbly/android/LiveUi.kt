@@ -95,9 +95,9 @@ private fun liveNameColor(name: String): Color {
 @Composable
 internal fun QinblyLiveAvatar(name: String, url: String, size: androidx.compose.ui.unit.Dp, ring: Color? = null) {
     val base = if (ring != null) Modifier.size(size).clip(CircleShape).border(2.dp, ring, CircleShape) else Modifier.size(size).clip(CircleShape)
-    Box(base.background(liveNameColor(name).copy(alpha = 0.55f)), contentAlignment = Alignment.Center) {
+    Box(base.background(qinblyAvatarColor(name)), contentAlignment = Alignment.Center) {
         if (url.isNotBlank()) coil.compose.AsyncImage(model = url, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-        else Text(name.trim().removePrefix("@").take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Medium, fontSize = (size.value * 0.42f).sp)
+        else Text(qinblyAvatarLetter(name), color = Color.White, fontWeight = FontWeight.Medium, fontSize = (size.value * 0.42f).sp)
     }
 }
 
