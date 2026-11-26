@@ -149,9 +149,9 @@ internal fun QinblyProfileTop(
                     modifier = Modifier.padding(start = 6.dp).size(18.dp).clickable(onClick = onAbout))
             }
             Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
-                QinblyProfileStat("Curtidas", likes, null)
                 QinblyProfileStat("Seguindo", following, onFollowing)
                 QinblyProfileStat("Seguidores", followers, onFollowers)
+                QinblyProfileStat("Curtidas", likes, null)
             }
         }
     }
@@ -196,8 +196,8 @@ internal fun QinblyProfileLinks(links: List<String>) {
             Row(Modifier.weight(1f, fill = false).clickable {
                 try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(qinblyLinkUrl(raw)))) } catch (_: Exception) { }
             }, verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Link, contentDescription = null, tint = QinblyBrand.Accent, modifier = Modifier.size(16.dp))
-                Text(labels[i], color = QinblyBrand.Accent, fontSize = sp.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 4.dp, end = 2.dp))
+                QinblyAccentIcon(Icons.Default.Link, contentDescription = null, modifier = Modifier.size(16.dp))
+                QinblyAccentText(labels[i], fontSize = sp.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 4.dp, end = 2.dp))
             }
         }
     }
@@ -368,7 +368,7 @@ internal fun QinblyFavoriteEditor(existingTitle: String?, onClose: () -> Unit, o
                 items(selected.filter { u -> items.none { it.uri == u } }, key = { "cam:" + it.toString() }) { u ->
                     Box(Modifier.aspectRatio(1f).clickable { selected.remove(u) }) {
                         MediaThumb(u, false, Modifier.fillMaxSize())
-                        Box(Modifier.align(Alignment.TopEnd).padding(6.dp).size(22.dp).clip(CircleShape).background(QinblyBrand.Accent), contentAlignment = Alignment.Center) {
+                        Box(Modifier.align(Alignment.TopEnd).padding(6.dp).size(22.dp).clip(CircleShape).background(qinblyAccentBrush()), contentAlignment = Alignment.Center) {
                             Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
                         }
                     }
@@ -388,7 +388,7 @@ internal fun QinblyFavoriteEditor(existingTitle: String?, onClose: () -> Unit, o
                     Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("Permita o acesso às suas fotos para escolher daqui.", color = QiblyTheme.text, fontSize = 16.sp)
                         Text("Permitir acesso", color = Color.White, fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(QinblyBrand.Accent).clickable { permissionLauncher.launch(perms) }.padding(horizontal = 20.dp, vertical = 10.dp))
+                            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(qinblyAccentBrush()).clickable { permissionLauncher.launch(perms) }.padding(horizontal = 20.dp, vertical = 10.dp))
                     }
                 }
             }

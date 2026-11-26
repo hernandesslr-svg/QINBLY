@@ -702,3 +702,18 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 .hls .hc2{width:60px;height:60px;border:0;background-color:#F1F2F5;color:#111}
 [data-theme=dark] .hls .hc2{background-color:rgba(255,255,255,.1);color:#fff}
 @media(min-width:700px){.ptop{max-width:470px;margin-left:auto;margin-right:auto}.plk{max-width:470px;margin-left:auto;margin-right:auto}}
+
+/* Degradê no lugar do azul: roxo em cima, azul embaixo (o botão Seguir vai da esquerda para a direita) */
+:root{--grad-v:linear-gradient(180deg,#7C4DFF,#2F68E0);--grad-h:linear-gradient(90deg,#7C4DFF,#2F68E0)}
+.sb.pri,.dot,.btn,.seg button.on,.msg.me,.composer .send,.story .plus,.tog.on,.dotn,.pchips button.on,.nav .badge,[data-theme=light] .msg.me{background:var(--grad-v);color:#fff}
+.rad.on::after{background:var(--grad-v)}
+.link,.pbio2 a,.plk a,.hc a,.tagged a,.atags a,.asee,.athumb .ta,.asort button.on,p a,.cm2 a{background-image:var(--grad-v);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.atags a{background-color:rgba(47,104,224,.12)}
+.plk svg{stroke:#5A5BE8}
+.fol{background:var(--grad-h);border-radius:12px;height:46px;color:#fff}
+.fol.on,.msgb{border:1px solid #111;border-radius:12px;height:46px;font-weight:500;background-color:#F1F2F5;background-image:var(--grad-v),none;-webkit-background-clip:text,border-box;background-clip:text,border-box;color:transparent;-webkit-text-fill-color:transparent}
+.fol.on svg,.msgb svg{stroke:#5A5BE8}
+[data-theme=dark] .fol.on,[data-theme=dark] .msgb{border-color:#fff;background-color:rgba(255,255,255,.1)}
+.pbt .pill{border-radius:12px}
+[data-theme=light] .msgb,[data-theme=light] .fol.on{background-color:#F1F2F5;background-image:var(--grad-v),none;color:transparent;border:1px solid #111}
+[data-theme=dark] .msgb,[data-theme=dark] .fol.on{background-color:rgba(255,255,255,.1);background-image:var(--grad-v),none;color:transparent;border:1px solid #fff}
