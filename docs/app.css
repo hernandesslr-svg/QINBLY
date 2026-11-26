@@ -717,3 +717,8 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 .pbt .pill{border-radius:12px}
 [data-theme=light] .msgb,[data-theme=light] .fol.on{background-color:#F1F2F5;background-image:var(--grad-v),none;color:transparent;border:1px solid #111}
 [data-theme=dark] .msgb,[data-theme=dark] .fol.on{background-color:rgba(255,255,255,.1);background-image:var(--grad-v),none;color:transparent;border:1px solid #fff}
+
+/* Chat afinado: bolha só com o texto; a hora fica fora, só na última mensagem da sequência */
+.msg{padding:6px 12px}
+.tm{font-size:11px;color:var(--muted);align-self:flex-start;margin:-3px 6px 2px}
+.tm.me{align-self:flex-end}

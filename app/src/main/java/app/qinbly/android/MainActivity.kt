@@ -9646,7 +9646,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                         val bubbleColor = if (isOwn) QinblyBrand.Accent else if (QiblyTheme.dark) QiblyTheme.soft else Color(0xFFE9ECF1)
                         val textColor = if (sharedBare) QiblyTheme.text else if (isOwn) Color.White else if (QiblyTheme.dark) Color.White else Color(0xFF111827)
                         Surface(color = if (sharedBare || message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) Color.Transparent else bubbleColor, shape = bubbleShape, modifier = Modifier.widthIn(max = 300.dp).onGloballyPositioned { bubbleRect[0] = it.boundsInWindow() }.clip(bubbleShape).combinedClickable(onClick = { if (message.stickerUrl.isNotBlank() || QinblyStickers.idOf(message.body) != null) { menuAnchor = bubbleRect[0]; menuMessage = message } else if (message.poll == null && message.fileUrl.isBlank() && message.imageUrl.isNotBlank()) { chatPhotoUrl = message.imageUrl } }, onLongClick = { menuAnchor = bubbleRect[0]; menuMessage = message })) {
-                            Column(Modifier.padding(horizontal = if (sharedBare) 0.dp else if (message.imageUrl.isNotBlank() && message.poll == null && message.fileUrl.isBlank() && message.stickerUrl.isBlank()) 3.dp else 12.dp, vertical = if (sharedBare) 0.dp else if (message.imageUrl.isNotBlank() && message.poll == null && message.fileUrl.isBlank() && message.stickerUrl.isBlank()) 3.dp else 8.dp)) {
+                            Column(Modifier.padding(horizontal = if (sharedBare) 0.dp else if (message.imageUrl.isNotBlank() && message.poll == null && message.fileUrl.isBlank() && message.stickerUrl.isBlank()) 3.dp else 12.dp, vertical = if (sharedBare) 0.dp else if (message.imageUrl.isNotBlank() && message.poll == null && message.fileUrl.isBlank() && message.stickerUrl.isBlank()) 3.dp else 6.dp)) {
                                 val sharedPostId = remember(message.body) { Regex("post/([0-9a-fA-F-]{36})").find(message.body)?.groupValues?.get(1) }
                                 val stickerId = remember(message.body) { QinblyStickers.idOf(message.body) }
                                 if (message.poll != null) {
@@ -9710,10 +9710,7 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                                         if (note.isNotBlank()) Text(note, color = textColor, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 4.dp, top = 8.dp))
                                     }
                                 }
-                                val timeLabel = try {
-                                    java.time.Instant.parse(message.createdAt).atZone(zone).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
-                                } catch (_: Exception) { message.createdAt.take(16).replace("T", " ") }
-                                Row(Modifier.align(Alignment.End).padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                if (reactions[message.id].orEmpty().isNotEmpty()) Row(Modifier.align(Alignment.End).padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     val reacts = reactions[message.id].orEmpty()
                                     val reactChip: @Composable () -> Unit = {
                                         if (reacts.isNotEmpty()) Row(Modifier.padding(horizontal = 2.dp).clip(RoundedCornerShape(12.dp)).background(Color.Black.copy(alpha = 0.22f)).padding(horizontal = 6.dp, vertical = 1.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -9723,10 +9720,22 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                                         }
                                     }
                                     if (isOwn) reactChip()
-                                    Text(timeLabel, color = textColor.copy(alpha = 0.65f), style = MaterialTheme.typography.labelSmall)
-                                    if (isOwn) Icon(Icons.Default.CheckCircle, contentDescription = "Enviada", tint = if (sharedBare) QiblyTheme.secondary else Color.White.copy(alpha = 0.75f), modifier = Modifier.size(12.dp))
                                     if (!isOwn) reactChip()
                                 }
+                            }
+                        }
+                    }
+                    val nextMessage = visibleMessages.getOrNull(index + 1)
+                    val lastOfSequence = nextMessage == null || nextMessage.senderId != message.senderId || dayOf(nextMessage) != day
+                    if (lastOfSequence) {
+                        val timeOutside = try {
+                            java.time.Instant.parse(message.createdAt).atZone(zone).format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
+                        } catch (_: Exception) { message.createdAt.take(16).replace("T", " ") }
+                        Row(Modifier.fillMaxWidth().padding(top = 2.dp, start = 6.dp, end = 6.dp), horizontalArrangement = if (isOwn) Arrangement.End else Arrangement.Start, verticalAlignment = Alignment.CenterVertically) {
+                            Text(timeOutside, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 11.sp)
+                            if (isOwn) {
+                                Spacer(Modifier.width(4.dp))
+                                Icon(Icons.Default.CheckCircle, contentDescription = "Enviada", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(12.dp))
                             }
                         }
                     }

@@ -1781,10 +1781,14 @@
       if (sig === last) return; last = sig;
       var stick = (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 160 || !ch.dataset.done; ch.dataset.done = "1";
       var h = "", prev = "";
-      list.forEach(function (m) {
+      list.forEach(function (m, i) {
         var d = new Date(m.createdAt), day = d.toDateString();
         if (day !== prev) { prev = day; h += '<div class="day">' + dayLabel(d) + "</div>"; }
-        h += '<div class="' + bubbleClass(m) + (own(m) ? " me" : "") + '" data-msg="' + m.id + '">' + msgHTML(m) + "<small>" + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) + "</small>" + ((REACT[m.id] || []).length ? reactChips(REACT[m.id], me.id) : "") + "</div>";
+        h += '<div class="' + bubbleClass(m) + (own(m) ? " me" : "") + '" data-msg="' + m.id + '">' + msgHTML(m) + ((REACT[m.id] || []).length ? reactChips(REACT[m.id], me.id) : "") + "</div>";
+        var nx = list[i + 1];
+        if (!nx || own(nx) !== own(m) || new Date(nx.createdAt).toDateString() !== day) {
+          h += '<div class="tm' + (own(m) ? " me" : "") + '">' + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) + "</div>";
+        }
       });
       ch.innerHTML = h || '<div class="empty">' + (q ? "Nenhuma mensagem encontrada." : "Diga olá para @" + esc(name) + ".") + "</div>";
       hydrateShared(ch);
