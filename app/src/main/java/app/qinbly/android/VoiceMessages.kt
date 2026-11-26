@@ -165,7 +165,7 @@ internal fun QinblyVoiceBar(
         )
         Box(Modifier.size(11.dp).clip(CircleShape).background(if (paused) textColor.copy(alpha = 0.35f) else Color(0xFFE24B4A).copy(alpha = pulse.value)))
         Text("%d:%02d".format(seconds / 60, seconds % 60), color = textColor, fontSize = 16.sp)
-        Canvas(Modifier.weight(1f).height(38.dp)) {
+        Canvas(Modifier.weight(1f).height(24.dp)) {
             val gap = size.width / slots
             val barW = gap * 0.5f
             val brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
