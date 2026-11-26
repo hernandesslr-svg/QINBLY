@@ -689,7 +689,7 @@ html,body{font-family:var(--font,Roboto,system-ui,-apple-system,"Segoe UI",Arial
 .pat svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8}
 .pat .inf{margin-left:6px;display:inline-flex;color:var(--muted)}.pat .inf svg{width:18px;height:18px}
 .pn3{display:flex;gap:22px;margin-top:10px}
-.pn3>*{display:flex;flex-direction:column;align-items:flex-start;text-align:left}
+.pn3>*{display:flex;flex-direction:column;align-items:center;text-align:center}
 .pn3 b{font-size:17px;font-weight:600;color:var(--text)}.pn3 span{font-size:12px;color:var(--muted)}
 .pbio2{justify-content:flex-start;padding:6px 16px 0}
 .pbio2 p{max-width:none;width:100%}

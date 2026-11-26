@@ -168,7 +168,7 @@ internal fun QinblyProfileTop(
 
 @Composable
 private fun QinblyProfileStat(label: String, n: Int, onClick: (() -> Unit)?) {
-    Column(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier) {
+    Column(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier, horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
         Text(qinblyStatText(n), color = RemoteAppearance.screenTextColor, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
         Text(label, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 12.sp)
     }
