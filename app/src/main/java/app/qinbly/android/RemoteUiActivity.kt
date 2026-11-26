@@ -361,31 +361,65 @@ class RemoteUiActivity : ComponentActivity() {
         return m.groupValues[1].toInt() * 1000000 + m.groupValues[2].toInt() * 10000 + m.groupValues[3].toInt()
     }
 
+    /** Consulta a API do GitHub. Devolve null se der erro ou se a rede estiver limitada (403/429). */
+    private fun fetchReleaseFromApi(): JSONObject? {
+        return try {
+            val connection = (java.net.URL("https://api.github.com/repos/hernandesslr-svg/QINBLY/releases/latest")
+                .openConnection() as java.net.HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 12000
+                readTimeout = 12000
+                setRequestProperty("Accept", "application/vnd.github+json")
+                setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
+                setRequestProperty("User-Agent", "QINBLY-Android-Updater")
+            }
+            try {
+                val status = connection.responseCode
+                if (status !in 200..299) return null
+                JSONObject(connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() })
+            } finally {
+                connection.disconnect()
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /** Plano B: o endereço releases/latest redireciona para a versão mais nova e não tem limite de consultas. */
+    private fun fetchReleaseFromRedirect(): JSONObject? {
+        return try {
+            val connection = (java.net.URL("https://github.com/hernandesslr-svg/QINBLY/releases/latest")
+                .openConnection() as java.net.HttpURLConnection).apply {
+                requestMethod = "GET"
+                instanceFollowRedirects = false
+                connectTimeout = 12000
+                readTimeout = 12000
+                setRequestProperty("User-Agent", "QINBLY-Android-Updater")
+            }
+            try {
+                connection.responseCode
+                val location = connection.getHeaderField("Location").orEmpty()
+                val tag = location.substringAfterLast("/tag/", "").substringBefore('?').substringBefore('#').trim()
+                if (tag.isBlank()) return null
+                JSONObject()
+                    .put("tag_name", tag)
+                    .put("body", "")
+                    .put("assets", org.json.JSONArray().put(JSONObject()
+                        .put("name", "qinbly-release.apk")
+                        .put("browser_download_url", "https://github.com/hernandesslr-svg/QINBLY/releases/download/$tag/QINBLY-release.apk")))
+            } finally {
+                connection.disconnect()
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private fun loadLatestReleasePage() {
         Thread {
             try {
-                val connection = (java.net.URL("https://api.github.com/repos/hernandesslr-svg/QINBLY/releases/latest")
-                    .openConnection() as java.net.HttpURLConnection).apply {
-                    requestMethod = "GET"
-                    connectTimeout = 12000
-                    readTimeout = 12000
-                    setRequestProperty("Accept", "application/vnd.github+json")
-                    setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
-                    setRequestProperty("User-Agent", "QINBLY-Android-Updater")
-                }
-                val release = try {
-                    val status = connection.responseCode
-                    val stream = if (status in 200..299) connection.inputStream else connection.errorStream
-                    val response = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
-                    if (status !in 200..299) {
-                        // A API do GitHub pode limitar IPs compartilhados de rede móvel.
-                        if (status == 403 || status == 429) return@Thread showReleaseFallback()
-                        throw IllegalStateException("GitHub respondeu HTTP $status.")
-                    }
-                    JSONObject(response)
-                } finally {
-                    connection.disconnect()
-                }
+                // 1) API do GitHub (traz as novidades); 2) se ela estiver limitando a rede, o endereço "releases/latest" (sem limite).
+                val release = fetchReleaseFromApi() ?: fetchReleaseFromRedirect() ?: return@Thread showReleaseFallback()
                 val tag = release.optString("tag_name", "")
                 val shownVersion = tag.removePrefix("v").ifBlank { "mais recente" }
                 val installedName = BuildConfig.VERSION_NAME
