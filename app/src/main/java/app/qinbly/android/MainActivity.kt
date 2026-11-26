@@ -10548,7 +10548,6 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
         // Cabeçalho: foto à esquerda; ao lado nome, @ · país e os números.
         val ownParts = qinblyBioParts(bio)
-        var showAbout by remember { mutableStateOf(false) }
         var showTopPosts by remember { mutableStateOf(false) }
         QinblyProfileTop(
             avatar = {
@@ -10570,7 +10569,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             onHandle = { if (username.isBlank()) onAuth() else onSwitchAccounts() },
             arrow = username.isNotBlank(),
             country = ownParts.country,
-            onAbout = if (username.isBlank()) null else ({ showAbout = true }),
+            onAbout = null,
             likes = profilePosts.sumOf { it.likes },
             following = followingCount,
             followers = followersCount,
@@ -10578,7 +10577,6 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             onFollowers = { onStat("Seguidores") },
             onLikes = if (username.isBlank()) null else ({ showTopPosts = true })
         )
-        if (showAbout) QinblyProfileAbout(joinedMonthYear, ownParts.country) { showAbout = false }
         if (showTopPosts) QinblyTopPostsSheet(username.removePrefix("@"), onOpenPost = { id -> QinblyDeepLink.postId = id }) { showTopPosts = false }
         if (username.isBlank()) {
             // Sem conta: só um botão grande de Entrar (leva para entrar ou criar conta).
@@ -11487,6 +11485,12 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
     if (showLegal.isNotBlank()) QinblyLegalScreen(showLegal) { showLegal = "" }
     if (showClearLocation) QinblyClearLocationScreen(prefs, { showClearLocation = false }, onNotice)
     if (showHiddenWords) QinblyHiddenWordsScreen(prefs) { showHiddenWords = false }
+    var showAccountAbout by remember { mutableStateOf(false) }
+    if (showAccountAbout) {
+        val snap = context.getSharedPreferences("qinbly_profile_snapshot", android.content.Context.MODE_PRIVATE)
+        val joinedLabel = if (snap.getString("username", "").orEmpty().removePrefix("@") == username.removePrefix("@")) snap.getString("joined", "").orEmpty() else ""
+        QinblyProfileAbout(joinedLabel, qinblyBioParts(prefs.getString("bio", "").orEmpty()).country) { showAccountAbout = false }
+    }
     var showDeleteAccount by remember { mutableStateOf(false) }
     var deleteConfirmText by remember { mutableStateOf("") }
     var deletingAccount by remember { mutableStateOf(false) }
@@ -11694,6 +11698,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                         }.start()
                     } }
                     item { Text("CONTA", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)) }
+                    item { SettingsLink("Sobre esta conta", "Data de entrada e país", Icons.Outlined.Info) { if (username.isBlank()) onNotice("Entre na sua conta primeiro.") else showAccountAbout = true } }
                     item { SettingsLink("Compartilhar perfil", "Convide amigos para conhecer seu perfil", Icons.Outlined.Share) {
                         try {
                             val share = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Conheça meu perfil no ${QinblyBrand.Name}: @${username}") }
