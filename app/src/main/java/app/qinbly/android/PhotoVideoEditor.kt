@@ -81,6 +81,7 @@ import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.Transformer
 import coil.compose.AsyncImage
+import coil.request.videoFrameMillis
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.roundToInt
@@ -424,7 +425,6 @@ private fun pvStartTransformer(context: Context, clips: List<PvClip>, baked: Lis
     try {
         val out = File(context.cacheDir, "qinbly-photovideo-${System.currentTimeMillis()}.mp4")
         val sequenceBuilder = EditedMediaItemSequence.Builder()
-        if (clips.any { it.video }) sequenceBuilder.experimentalSetForceAudioTrack(true)
         clips.forEachIndexed { i, clip ->
             val mediaItem = if (clip.video) MediaItem.Builder().setUri(baked[i]).build()
             else MediaItem.Builder()
@@ -441,7 +441,9 @@ private fun pvStartTransformer(context: Context, clips: List<PvClip>, baked: Lis
                 .build()
             sequenceBuilder.addItem(edited)
         }
-        val composition = Composition.Builder(sequenceBuilder.build()).build()
+        val composition = Composition.Builder(sequenceBuilder.build())
+            .experimentalSetForceAudioTrack(clips.any { it.video })
+            .build()
         val transformer = Transformer.Builder(context)
             .setVideoMimeType(MimeTypes.VIDEO_H264)
             .addListener(object : Transformer.Listener {
