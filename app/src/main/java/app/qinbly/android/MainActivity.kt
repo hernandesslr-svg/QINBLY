@@ -14404,7 +14404,20 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
 } else if (uri != null) {
                 // Mesmo player do feed (ExoPlayer, repetição e toque para pausar). Sem barra de progresso
                 // para não cobrir a barra de ferramentas do editor.
-                QinblyFullscreenVideo(url = uri.toString(), modifier = Modifier.fillMaxSize(), showProgress = false)
+                // Formato no vídeo: o quadro muda a cada toque em Formato (Original = tela inteira).
+                val videoFrame = qinblyFrameRect(editorPreviewW, editorPreviewH, qinblyRatioValue(editorRatio, 9f / 16f))
+                if (editorRatio == "Original" || editorPreviewW <= 0 || editorPreviewH <= 0) {
+                    QinblyFullscreenVideo(url = uri.toString(), modifier = Modifier.fillMaxSize(), showProgress = false)
+                } else {
+                    val vDensity = androidx.compose.ui.platform.LocalDensity.current
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        QinblyFullscreenVideo(
+                            url = uri.toString(),
+                            modifier = Modifier.size(with(vDensity) { videoFrame.w.toDp() }, with(vDensity) { videoFrame.h.toDp() }).clipToBounds(),
+                            showProgress = false
+                        )
+                    }
+                }
             }
             val editorFilterTint = when (selectedFilter) {
                 in QinblyNewFilterNames -> qinblyAutoTint(selectedFilter)
@@ -14631,7 +14644,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     editorTool = if (editorTool == "Desenho") "Filtros" else "Desenho"
                 }
                 QinblyCameraSideItem(QinblyCreateIcons.sticker, "Stickers", on = editorTool == "Stickers") { editorTool = if (editorTool == "Stickers") "Filtros" else "Stickers" }
-                QinblyCameraSideItem(QinblyCameraIcons.format, "Formato", on = editorTool == "Ajustar") {
+                QinblyCameraSideItem(QinblyCameraIcons.format, "Formato") {
                     editorTool = "Ajustar"
                     val nextRatio = QINBLY_FORMATS[(QINBLY_FORMATS.indexOf(editorRatio) + 1) % QINBLY_FORMATS.size]
                     editorRatio = nextRatio; editorZoom = 1f; editorPanX = 0f; editorPanY = 0f
@@ -14846,21 +14859,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
 }
                  }
 }
-                if (editorTool == "Ajustar") {
-                    QinblyFormatBar(
-                        ratio = editorRatio, imageRatio = editorImageRatio, zoom = editorZoom, blurBg = editorBlur,
-                        onFill = { m ->
-                            val fr = qinblyRatioValue(editorRatio, editorImageRatio)
-                            editorPanX = 0f; editorPanY = 0f
-                            if (m == "fill") {
-                                editorZoom = 1f
-                                val u = selectedUri
-                                if (u != null) formatScope.launch { editorPanY = qinblyFacePanY(context, u, editorImageRatio, fr) }
-                            } else { editorZoom = qinblyFitFactor(editorImageRatio, fr); editorBlur = m == "blur" }
-                        },
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
-                }
                 if (editorTool == "Stickers") {
                     androidx.compose.foundation.lazy.LazyRow(
                         modifier = Modifier.fillMaxWidth(),
