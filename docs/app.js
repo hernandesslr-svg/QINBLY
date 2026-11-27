@@ -211,7 +211,7 @@
     return '<aside class="side"><button class="logo brandg" data-go="#/">QINBLY</button>' +
       it("home", "Início", "home", "#/") + it("search", "Buscar", "search", "#/search") + it("trending", "Em alta", "flame", "#/trending") +
       it("inbox", "Mensagens", "msg", "#/inbox", badge("inbox", unread)) + it("notif", "Notificações", "bell", "#/notifications", badge("notif", notifN)) +
-      it("communities", "Comunidades", "groups", "#/communities") + it("market", "Mercado", "bag", "#/market") + it("saved", "Salvos", "save", "#/saved") +
+      it("communities", "Comunidades", "groups", "#/communities") + it("saved", "Salvos", "save", "#/saved") +
       it("new", "Criar", "plus", "#/new") +
       '<button class="si ' + (tab === "me" ? "on" : "") + '" data-go="#/me" aria-label="Perfil">' + (me ? avatar(me.avatarUrl, me.displayName || me.username, "xs") : svg("user")) + '<span class="lbl">Perfil</span></button>' +
       '<button class="si more" data-moremenu aria-label="Mais">' + svg("menu") + '<span class="lbl">Mais</span></button></aside>';
@@ -562,7 +562,7 @@
   }
   function viewFeed(tab) {
     if (tab) feedTab = tab;
-    var mob = '<header class="top mob apphd"><button class="ib" data-moremenu aria-label="Menu e configurações">' + svg("menu") + '</button><h1 class="brandg">QINBLY</h1><div class="hr"><button class="ib" data-go="#/market" aria-label="Mercado e avisos">' + svg("bag") + '</button><button class="ib" data-go="#/search" aria-label="Buscar">' + svg("search") + '</button><button class="ib" data-go="#/notifications" aria-label="Notificações">' + svg("bell") + badge("notif", notifN) + "</button></div></header>";
+    var mob = '<header class="top mob apphd"><button class="ib" data-moremenu aria-label="Menu e configurações">' + svg("menu") + '</button><h1 class="brandg">QINBLY</h1><div class="hr"><button class="ib" data-go="#/search" aria-label="Buscar">' + svg("search") + '</button><button class="ib" data-go="#/notifications" aria-label="Notificações">' + svg("bell") + badge("notif", notifN) + "</button></div></header>";
     setView(mob + '<div class="ftabs">' + FTABS.map(function (t) { return '<button data-ftab="' + t + '" class="' + (t === feedTab ? "on" : "") + '">' + (FTAB_LABEL[t] || t) + "</button>"; }).join("") + '</div><div id="st"' + (feedTab === "Descobrir" ? "" : " hidden") + '></div><div id="fd">' + spin() + "</div>", tab ? "trending" : "home");
     loadStories();
     if (FEED.length) drawFeed();
@@ -780,50 +780,6 @@
     });
   }
 
-  /* ---------- mercado completo ---------- */
-  var MK_CATS = [["Tudo", ""], ["Vendas", "venda"], ["Doações", "doacao"], ["Achados", "achado,perdido"], ["Eventos", "evento"], ["Serviços", "servico"], ["Avisos", "aviso"], ["Meus", "@me"], ["Salvos", "@saved"]];
-  var MKS = {};
-  function mkCols() { return "id,user_id,kind,title,description,price,extra,photos,city,created_at,profiles!marketplace_listings_user_id_fkey(username,display_name)"; }
-  function viewMarket() {
-    setView(top("Mercado", { right: '<button class="ib" data-newlisting aria-label="Anunciar">' + svg("plus") + "</button>" }) + '<div class="chips">' + MK_CATS.map(function (c, i) { return '<button data-mk="' + i + '" class="' + (i === mkCat ? "on" : "") + '">' + c[0] + "</button>"; }).join("") + '</div><div style="padding:0 16px 8px"><input class="inp" id="city" placeholder="Filtrar por cidade (opcional)" value="' + esc(mkCity) + '"></div><div id="ml">' + spin() + "</div>", "market");
-    var ci = document.getElementById("city"), t;
-    ci.addEventListener("input", function () { clearTimeout(t); t = setTimeout(function () { mkCity = ci.value.trim(); LS.set("qb_city", mkCity); load(); }, 400); });
-    function paint(l) {
-      var ml = document.getElementById("ml"); if (!ml) return;
-      l.forEach(function (x) { MK[x.id] = x; });
-      ml.innerHTML = l.length ? l.map(function (x) {
-        var ph = (x.photos || [])[0], pr = x.price != null && x.price !== "" ? Number(x.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "";
-        return '<button class="row" data-listing="' + x.id + '"><span class="av" style="width:64px;height:64px;border-radius:10px;' + (ph ? "background-image:url('" + safeUrl(photoUrl(ph)) + "')" : "") + '"></span><span class="t"><b>' + esc(x.title) + "</b><small>" + (pr ? pr + " · " : "") + esc(MK_LABEL[x.kind] || "Aviso") + (x.city ? " · " + esc(x.city) : "") + " · " + ago(x.created_at) + "</small></span></button>";
-      }).join("") : '<div class="empty">' + (MK_CATS[mkCat][1] === "@me" ? "Você ainda não anunciou nada. Toque no + para anunciar." : "Nada por aqui" + (mkCity ? " em " + esc(mkCity) : "") + " ainda.") + "</div>";
-    }
-    function load() {
-      var kinds = MK_CATS[mkCat][1], q;
-      if (kinds === "@saved") q = "/rest/v1/marketplace_saves?select=created_at,marketplace_listings(" + mkCols() + ")&order=created_at.desc&limit=100";
-      else {
-        q = "/rest/v1/marketplace_listings?select=" + mkCols() + "&order=created_at.desc&limit=60";
-        if (kinds === "@me") q += "&user_id=eq." + cur().id;
-        else { if (kinds) q += "&kind=in.(" + kinds + ")"; if (mkCity) q += "&city=ilike.*" + encodeURIComponent(mkCity.replace(/[,()*]/g, " ")) + "*"; }
-      }
-      call(HOST + q).then(function (l) {
-        if (!Array.isArray(l)) l = [];
-        if (kinds === "@saved") l = l.map(function (x) { return x.marketplace_listings; }).filter(Boolean);
-        paint(l);
-      }).catch(function (e) { var ml = document.getElementById("ml"); if (ml) ml.innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
-    }
-    call(HOST + "/rest/v1/marketplace_saves?select=listing_id&limit=500").then(function (r) { MKS = {}; (Array.isArray(r) ? r : []).forEach(function (x) { MKS[x.listing_id] = 1; }); }).catch(function () { });
-    load();
-  }
-  function openListing(id) {
-    var x = MK[id]; if (!x) return;
-    var p = x.profiles || {}, me = cur(), own = me && x.user_id === me.id, pr = x.price != null && x.price !== "" ? Number(x.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "";
-    var s = sheet(x.title, '<div class="gal">' + (x.photos || []).map(function (u) { return '<img src="' + safeUrl(photoUrl(u)) + '" alt="">'; }).join("") + '</div><div style="padding:12px 16px"><b style="font-size:20px">' + pr + "</b><div style='color:var(--muted);font-size:12px;margin:4px 0 8px'>" + esc(MK_LABEL[x.kind] || "Aviso") + (x.city ? " · " + esc(x.city) : "") + "</div>" + (x.description ? "<div class='cap' style='padding:0'>" + linkify(x.description) + "</div>" : "") + (x.extra ? "<div style='color:var(--muted);font-size:14px;margin-top:8px'>" + esc(x.extra) + "</div>" : "") + "</div>" +
-      (p.username ? '<a class="row" href="#/u/' + esc(p.username) + '"><span class="t"><b>' + esc(p.display_name || p.username) + "</b><small>@" + esc(p.username) + "</small></span></a>" : "") +
-      '<div style="padding:8px 16px 16px;display:flex;flex-direction:column;gap:8px">' + (own ? '<button class="btn" id="mkd" style="background:var(--danger)">Excluir anúncio</button>' : (p.username ? '<button class="btn" data-chat="' + esc(p.username) + '">Falar com o vendedor</button>' : "") + '<button class="btn ghost" id="mks">' + (MKS[id] ? "Remover dos salvos" : "Salvar anúncio") + "</button>") + "</div>");
-    var d = s.querySelector("#mkd"); if (d) d.addEventListener("click", function () { call(HOST + "/rest/v1/marketplace_listings?id=eq." + id, { method: "DELETE" }).then(function () { closeSheet(); toast("Anúncio excluído."); viewMarket(); }).catch(onErr); });
-    var sv = s.querySelector("#mks"); if (sv) sv.addEventListener("click", function () {
-      (MKS[id] ? call(HOST + "/rest/v1/marketplace_saves?listing_id=eq." + id, { method: "DELETE" }) : call(HOST + "/rest/v1/marketplace_saves", { method: "POST", body: { listing_id: id, user_id: me.id } })).then(function () { if (MKS[id]) delete MKS[id]; else MKS[id] = 1; closeSheet(); toast(MKS[id] ? "Anúncio salvo." : "Removido dos salvos."); }).catch(onErr);
-    });
-  }
   function viewEdit() {
     var me = cur();
     setView(top("Editar perfil", { back: true }) + '<div class="form" id="ef">' + spin() + "</div>", "", "noNav");
@@ -1063,12 +1019,9 @@
     });
   }
 
-  /* ---------- mercado ---------- */
-    var MK_LABEL = { venda: "Venda", doacao: "Doação", achado: "Achado", perdido: "Perdido", evento: "Evento", servico: "Serviço", aviso: "Aviso" };
-  var mkCat = 0, mkCity = LS.get("qb_city", "");
+  /* ---------- fotos antigas ---------- */
   var OLD_PUB = "https://jqomgrdlocdqaarfqkay.supabase.co/storage/v1/object/public/post-media/";
   function photoUrl(p) { if (!p) return ""; if (p.indexOf(OLD_PUB) === 0) p = p.slice(OLD_PUB.length); return /^https?:/.test(p) ? p : HOST + "/storage/v1/object/public/post-media/" + p; }
-  var MK = {};
   /* ---------- mais, criar story ---------- */
   /* Menu dos três tracinhos: tela cheia "Atalhos", igual ao app */
   function closeShortcuts() { var o = document.getElementById("scr"); if (o) o.remove(); document.removeEventListener("keydown", scrEsc); }
@@ -1082,7 +1035,6 @@
     o.innerHTML = '<div class="scw"><div class="sch"><button class="ib" data-sc="close" aria-label="Voltar">' + svg("back") + "</button><h2>Atalhos</h2></div>" +
       (me ? '<button class="scp" data-sc="profile">' + avatar(me.avatarUrl, me.displayName || me.username) + '<span class="t"><b>' + esc(me.username) + "</b><small>Ver meu perfil</small></span></button>" : "") +
       lab("EXPLORAR") + item("play", "tab:Vídeos", "Vídeos", "Curtos e longos") + item("flame", "tab:Em alta", "Em alta", "O que está bombando") + item("sensors", "tab:Lives", "Ao vivo", "Transmissões ao vivo") + item("pin", "tab:Perto de mim", "Perto de mim", "Gente da sua cidade") +
-      lab("NA SUA CIDADE") + item("bag", "mk:1", "Mercado", "Compre e venda perto de você") + item("gift", "mk:2", "Doações", "Dê e ganhe coisas") + item("search", "mk:3", "Achados", "Achei algo, perdi algo") + item("cal", "mk:4", "Eventos", "O que vai rolar na cidade") + item("tool", "mk:5", "Serviços", "Quem faz o quê") + item("mega", "mk:6", "Avisos", "Recados do bairro") +
       lab("SEUS ESPAÇOS") + item("groups", "go:#/communities", "Comunidades", "Seus grupos") + item("save", "go:#/saved", "Salvos", "Publicações que você guardou") + item("adduser", "invite", "Convidar amigos", "Compartilhe o QINBLY") + item("sensors", "go:#/golive", "Transmitir ao vivo", "Comece uma live agora") +
       '<div class="scg"></div>' + item("gear", "go:#/settings", "Configurações", "Conta, privacidade, tela e mais") + item("groups", "accounts", "Trocar de conta", me ? "@" + esc(me.username) : "") + item("download", "install", "Instalar o app", "Instala direto no celular") +
       '<div class="scf"><a href="privacidade.html">Privacidade</a><a href="termos.html">Termos de uso</a></div>' +
@@ -1099,7 +1051,6 @@
       if (k === "drop") return dropAccount(activeId);
       if (k === "invite") return inviteFriends();
       if (k.indexOf("go:") === 0) { location.hash = k.slice(3); return; }
-      if (k.indexOf("mk:") === 0) { mkCat = Number(k.slice(3)); if (location.hash === "#/market") viewMarket(); else location.hash = "#/market"; return; }
       if (k.indexOf("tab:") === 0) { feedTab = k.slice(4); if (location.hash === "#/" || location.hash === "" || location.hash === "#") render(); else location.hash = "#/"; return; }
     });
   }
@@ -1300,39 +1251,6 @@
       var text = s.querySelector("#tst").value.trim(); if (!text) { s.querySelector("#tse").textContent = "Escreva algo para publicar."; return; }
       call(HOST + "/rest/v1/stories", { method: "POST", body: { user_id: cur().id, media_path: "text", media_type: "text", caption: "qinbly:text:" + bg + ":3:1:0:0\n" + text, audience: s.querySelector("#tsa").value, city: s.querySelector("#tsa").value === "near" ? myCity() : "", expires_at: new Date(Date.now() + 86400000).toISOString() } })
         .then(function () { closeSheet(); toast("Story publicado por 24 horas."); loadStories(); }).catch(function (e) { s.querySelector("#tse").textContent = e.message; });
-    });
-  }
-
-  /* ---------- mercado: anunciar, meus anúncios, salvos ---------- */
-  var MK_KINDS = [["venda", "Venda"], ["doacao", "Doação"], ["achado", "Achado"], ["perdido", "Perdido"], ["evento", "Evento"], ["servico", "Serviço"], ["aviso", "Aviso"]];
-  function newListing() {
-    var photos = [];
-    var s = sheet("Anunciar", '<div class="form"><label class="fld">Tipo<select class="inp" id="lk">' + MK_KINDS.map(function (k) { return '<option value="' + k[0] + '">' + k[1] + "</option>"; }).join("") + '</select></label><label class="fld">Título<input class="inp" id="lt" maxlength="120"></label><label class="fld">Descrição<textarea class="inp" id="ld" maxlength="2000"></textarea></label><label class="fld" id="lpw">Preço (R$)<input class="inp" id="lp" inputmode="decimal" placeholder="0,00"></label><label class="fld">Data, local ou detalhe (opcional)<input class="inp" id="le" maxlength="80"></label><label class="fld">Cidade<input class="inp" id="lc" value="' + esc(mkCity) + '"></label><button class="btn ghost" id="lph">Adicionar fotos (até 5)</button><div id="lpv" class="pick"></div>' + err("ler") + '<button class="btn" id="lgo">Publicar anúncio</button></div>');
-    function price() { var k = s.querySelector("#lk").value; s.querySelector("#lpw").style.display = (k === "venda" || k === "servico") ? "" : "none"; }
-    s.querySelector("#lk").addEventListener("change", price); price();
-    s.querySelector("#lph").addEventListener("click", function () {
-      var f = document.createElement("input"); f.type = "file"; f.accept = "image/*"; f.multiple = true;
-      f.onchange = function () { photos = Array.prototype.slice.call(f.files).filter(function (x) { return ["image/jpeg", "image/png", "image/webp"].indexOf(x.type) >= 0; }).slice(0, 5); s.querySelector("#lpv").innerHTML = photos.map(function (x) { return '<div class="th" style="background-image:url(' + URL.createObjectURL(x) + ')"></div>'; }).join(""); };
-      f.click();
-    });
-    s.querySelector("#lgo").addEventListener("click", function () {
-      var btn = this, e = s.querySelector("#ler"), kind = s.querySelector("#lk").value, title = s.querySelector("#lt").value.trim(), city = s.querySelector("#lc").value.trim(), pr = parseFloat(String(s.querySelector("#lp").value).replace(",", "."));
-      if (!title) { e.textContent = "Escreva um título."; return; }
-      if (!city) { e.textContent = "Informe a cidade."; return; }
-      if (kind === "venda" && !(pr >= 0)) { e.textContent = "Informe o preço."; return; }
-      if ((kind === "venda" || kind === "doacao") && !photos.length) { e.textContent = "Adicione pelo menos uma foto."; return; }
-      btn.disabled = true; btn.textContent = "Publicando…"; var uid = cur().id;
-      Promise.all(photos.map(function (f, i) {
-        return shrink(f).then(function (b) {
-          var path = uid + "/market/" + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "" + i) + "-" + i + ".jpg";
-          return fetch(HOST + "/storage/v1/object/post-media/" + path, { method: "PUT", headers: { Authorization: "Bearer " + cur().token, "Content-Type": b.type || "image/jpeg" }, body: b }).then(function (r) { if (!r.ok) throw new Error("Não foi possível enviar a foto."); return path; });
-        });
-      })).then(function (paths) {
-        var body = { user_id: uid, kind: kind, title: title.slice(0, 120), description: s.querySelector("#ld").value.trim().slice(0, 2000), extra: s.querySelector("#le").value.trim().slice(0, 80), photos: paths, city: city };
-        if ((kind === "venda" || kind === "servico") && pr >= 0) body.price = pr;
-        return call(HOST + "/rest/v1/marketplace_listings", { method: "POST", body: body });
-      }).then(function () { mkCity = city; LS.set("qb_city", city); closeSheet(); toast("Anúncio publicado. Fica no ar por 7 dias."); viewMarket(); })
-        .catch(function (x) { e.textContent = x.message; btn.disabled = false; btn.textContent = "Publicar anúncio"; });
     });
   }
 
@@ -2063,7 +1981,7 @@
     api("/api/users/" + id + "/follow", { method: "POST", body: {} }).then(function () { if (name) viewProfile(name); else { toast("Seguindo."); RC.sug = RC.sug.filter(function (u) { return u.id !== id; }); fillRcol(); Object.keys(POSTS).forEach(function (k) { if (POSTS[k].authorId === id) { POSTS[k].isFollowing = true; repaint(k); } }); } }).catch(onErr);
   }
   document.addEventListener("click", function (e) {
-    var t = e.target.closest("[data-go],[data-back],[data-like],[data-save],[data-comments],[data-share],[data-vote],[data-follow],[data-open],[data-story],[data-more],[data-settings],[data-accounts],[data-edit],[data-shareprofile],[data-chat],[data-find],[data-switch],[data-drop],[data-addacc],[data-install],[data-mode],[data-moremenu],[data-ftab],[data-aperiod],[data-ctab],[data-joincom],[data-newcom],[data-mk],[data-listing],[data-addstory],[data-pmenu],[data-pact],[data-repost],[data-newwith],[data-locon],[data-nrefresh],[data-notice],[data-invite],[data-forgot],[data-cvote],[data-golive],[data-stat],[data-umenu],[data-newlisting]");
+    var t = e.target.closest("[data-go],[data-back],[data-like],[data-save],[data-comments],[data-share],[data-vote],[data-follow],[data-open],[data-story],[data-more],[data-settings],[data-accounts],[data-edit],[data-shareprofile],[data-chat],[data-find],[data-switch],[data-drop],[data-addacc],[data-install],[data-mode],[data-moremenu],[data-ftab],[data-aperiod],[data-ctab],[data-joincom],[data-newcom],[data-addstory],[data-pmenu],[data-pact],[data-repost],[data-newwith],[data-locon],[data-nrefresh],[data-notice],[data-invite],[data-forgot],[data-cvote],[data-golive],[data-stat],[data-umenu]");
     if (!t) return;
     var d = t.dataset;
     if (d.go) { if (location.hash === d.go) render(); else location.hash = d.go; return; }
@@ -2095,8 +2013,6 @@
     if (d.ctab) { comTab = d.ctab; viewCommunities(); return; }
     if (d.joincom) { api("/api/communities/" + d.joincom + "/join", { method: "POST", body: {} }).then(function () { if (t.hasAttribute("data-stay")) viewCommunity(d.joincom); else viewCommunities(); }).catch(onErr); return; }
     if (t.hasAttribute("data-newcom")) return newCommunity();
-    if (d.mk !== undefined) { mkCat = Number(d.mk); viewMarket(); return; }
-    if (d.listing) return openListing(d.listing);
     if (t.hasAttribute("data-addstory")) return storyMenu();
     if (d.newwith !== undefined) { var nw = d.newwith.split(":"); NEWPRE = { kind: nw[0] || "text", text: nw.slice(1).join(":") }; location.hash = "#/new"; if (location.hash === "#/new") render(); return; }
     if (t.hasAttribute("data-locon")) { LS.set("qb_loc_on", true); nearbyView(); return; }
@@ -2111,7 +2027,6 @@
     if (t.hasAttribute("data-golive")) { location.hash = "#/golive"; return; }
     if (d.stat) { var pu2 = window.__pu; if (pu2) peopleSheet(pu2.username, d.stat); return; }
     if (t.hasAttribute("data-umenu")) return userMenu();
-    if (t.hasAttribute("data-newlisting")) return newListing();
   });
 
   /* ---------- rotas ---------- */
@@ -2128,7 +2043,6 @@
     if (r === "notifications") return viewNotifs();
     if (r === "communities") return viewCommunities();
     if (r === "community" && parts[1]) return viewCommunity(parts[1]);
-    if (r === "market") return viewMarket();
     if (r === "saved") return viewSaved();
     if (r === "tag" && parts[1]) return viewTag(decodeURIComponent(parts[1]));
     if (r === "new") return viewNew();

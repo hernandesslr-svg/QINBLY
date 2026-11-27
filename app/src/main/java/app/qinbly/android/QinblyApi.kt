@@ -988,7 +988,7 @@ object QinblyApi {
         rest(token, "PATCH", "profiles?id=eq.$userId", JSONObject().put("city", city).toString(), "return=minimal")
     }
 
-    /** Cidade escolhida no app (Mercado) ou, se não houver, a do Perto de mim. */
+    /** Cidade guardada no app ou, se não houver, a do Perto de mim. */
     fun myCity(prefs: android.content.SharedPreferences): String =
         (prefs.getString("market_city", null)?.takeIf { it.isNotBlank() } ?: prefs.getString("device_place", null)).orEmpty()
 

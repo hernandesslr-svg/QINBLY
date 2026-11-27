@@ -85,7 +85,6 @@ import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Accessibility
 import androidx.compose.material.icons.outlined.Storage
-import androidx.compose.material.icons.outlined.ShoppingBasket
 import androidx.compose.material.icons.outlined.PersonAddAlt1
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.SwapHoriz
@@ -6596,20 +6595,7 @@ private fun QinblyLiveSearch(lives: List<QinblyLive>, onBack: () -> Unit, onOpen
     }
 }
 
-/** Mercado e avisos em tela cheia (aberto pelo mercadinho no topo do Início e pelo Menu). */
-@Composable
-private fun QinblyMarketDialog(onNotice: (String) -> Unit, onOpenConversation: (String) -> Unit, initialCategory: String = "Tudo", single: Boolean = false, onDismiss: () -> Unit) {
-    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding().navigationBarsPadding()) {
-            QinblyNearbyPage(onNotice) { lat, lng, place, refresh ->
-                QinblyNearbyHub(lat, lng, place, RemoteAppearance.feedTextColor, RemoteAppearance.feedSecondaryTextColor, onRefreshLocation = refresh,
-                    onOpenConversation = { onDismiss(); onOpenConversation(it) }, onNotice = onNotice, onClose = onDismiss, initialCategory = initialCategory, single = single)
-            }
-        }
-    }
-}
-
-/** Perto de mim: publicações de quem está na sua cidade ou nas cidades próximas (mesmo estado). O Mercado fica em Configurações. */
+/** Perto de mim: publicações de quem está na sua cidade ou nas cidades próximas (mesmo estado). */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun QinblyNearbyFeed(
@@ -6666,7 +6652,7 @@ private fun QinblyNearbyPage(onNotice: (String) -> Unit, content: @Composable (D
             Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = QiblyTheme.secondary, modifier = Modifier.size(44.dp))
             Spacer(Modifier.height(12.dp))
             Text("A localização está desligada", color = QiblyTheme.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-            Text("Perto de mim, Mural e Mercado precisam saber onde você está. Você pode religar quando quiser (também em Configurações > Localização).", color = QiblyTheme.secondary, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(top = 8.dp, bottom = 18.dp))
+            Text("O Perto de mim precisa saber onde você está. Você pode religar quando quiser (também em Configurações > Localização).", color = QiblyTheme.secondary, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(top = 8.dp, bottom = 18.dp))
             QinblyGradientButton(onClick = { locPrefs.edit().putBoolean("setting_location_enabled", true).apply(); locEnabled = true }, colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White), shape = RoundedCornerShape(24.dp)) { Text("Ligar a localização", fontWeight = FontWeight.SemiBold) }
         }
         return
@@ -7588,9 +7574,6 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         else -> allFeedPosts
     }
     var nearbyPosts by remember { mutableStateOf<List<QinblyApi.PostSummary>>(emptyList()) }
-    var showMarket by remember { mutableStateOf(false) }
-    var marketCategory by remember { mutableStateOf("Vendas") }
-    if (showMarket) QinblyMarketDialog(onNotice, onOpenConversation, marketCategory, single = true) { showMarket = false }
     var showShortcuts by remember { mutableStateOf(false) }
     val shortcutsContext = androidx.compose.ui.platform.LocalContext.current
     if (showShortcuts) QinblyShortcutsScreen(currentUsername, onDismiss = { showShortcuts = false }) { id ->
@@ -7598,7 +7581,6 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         when (id) {
             "profile" -> onGoTab(4)
             "Vídeos", "Em alta", "Lives", "Perto de mim" -> selectedFeedTab = id
-            "m:Vendas", "m:Doações", "m:Achados", "m:Eventos", "m:Serviços", "m:Avisos" -> { marketCategory = id.removePrefix("m:"); showMarket = true }
             "communities" -> onGoTab(3)
             "saved" -> { QinblyProfileJump.tab = "Salvos"; onGoTab(4) }
             "invite" -> try {
@@ -7766,9 +7748,6 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
             }
             Text(QinblyBrand.Name, style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(QinblyBrand.Logo, QinblyBrand.Pink))), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, modifier = Modifier.align(Alignment.Center))
             Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { marketCategory = "Vendas"; showMarket = true }, modifier = Modifier.size(42.dp)) {
-                Icon(androidx.compose.material.icons.Icons.Outlined.ShoppingBasket, contentDescription = "Mercado e avisos", tint = hdrText, modifier = Modifier.size(26.dp))
-            }
             IconButton(onClick = onSearch, modifier = Modifier.size(42.dp)) {
                 Icon(Icons.Default.Search, contentDescription = "Buscar", tint = hdrText, modifier = Modifier.size(26.dp))
             }
@@ -10323,13 +10302,6 @@ private fun QinblyShortcutsScreen(username: String, onDismiss: () -> Unit, onIte
             Item(outlined.LocalFireDepartment, QinblyBrand.Accent, "Em alta", "Em alta", "O que está bombando")
             Item(outlined.Sensors, QinblyBrand.Accent, "Lives", "Lives", "Transmissões ao vivo")
             Item(outlined.LocationOn, QinblyBrand.Accent, "Perto de mim", "Perto de mim", "Gente da sua cidade")
-            Label("NA SUA CIDADE", QinblyBrand.Pink)
-            Item(outlined.ShoppingBasket, QinblyBrand.Pink, "m:Vendas", "Mercado", "Compre e venda perto de você")
-            Item(outlined.CardGiftcard, QinblyBrand.Pink, "m:Doações", "Doações", "Dê e ganhe coisas")
-            Item(outlined.Search, QinblyBrand.Pink, "m:Achados", "Achados", "Achei algo, perdi algo")
-            Item(outlined.Event, QinblyBrand.Pink, "m:Eventos", "Eventos", "O que vai rolar na cidade")
-            Item(outlined.Build, QinblyBrand.Pink, "m:Serviços", "Serviços", "Quem faz o quê")
-            Item(outlined.Campaign, QinblyBrand.Pink, "m:Avisos", "Avisos", "Recados do bairro")
             Label("SEUS ESPAÇOS", QinblyBrand.Logo)
             Item(outlined.Groups, QinblyBrand.Logo, "communities", "Comunidades", "Seus grupos")
             Item(outlined.BookmarkBorder, QinblyBrand.Logo, "saved", "Salvos", "Publicações que você guardou")
@@ -11632,8 +11604,6 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
         }.start()
     }
 
-    var showMarket by remember { mutableStateOf(false) }
-    if (showMarket) QinblyMarketDialog(onNotice, onOpenConversation) { showMarket = false }
     val title = when (section) {
         "account" -> "Conta"
         "privacy" -> "Privacidade"
@@ -11700,7 +11670,6 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                 categories.forEach { category ->
                     item {
                         val icon = when (category.first) {
-                            "market" -> Icons.Outlined.ShoppingBasket
                             "account" -> Icons.Outlined.PersonOutline
                             "privacy" -> Icons.Outlined.Lock
                             "location" -> Icons.Outlined.LocationOn
@@ -11718,8 +11687,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                                     val share = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Venha para o ${QinblyBrand.Name}! Baixe o app e me siga: @${username}") }
                                     context.startActivity(Intent.createChooser(share, "Convidar amigos"))
                                 } catch (_: Exception) { onNotice("Não foi possível abrir o compartilhamento neste aparelho.") }
-                            } else if (category.first == "market") showMarket = true
-                            else section = category.first
+                            } else section = category.first
                         }
                     }
                 }
@@ -11791,7 +11759,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                     item { SettingsLink("Contas silenciadas", "Quem você parou de ver no feed", Icons.Outlined.NotificationsOff) { showMutedAccounts = true } }
                 }
                 "location" -> {
-                    item { VideoPrefSwitch("Usar minha localização", "Perto de mim, Mural e Mercado. Desligado, essas telas não pedem sua posição", "setting_location_enabled", true, prefs, Icons.Outlined.LocationOn) }
+                    item { VideoPrefSwitch("Usar minha localização", "Perto de mim. Desligado, essa tela não pede sua posição", "setting_location_enabled", true, prefs, Icons.Outlined.LocationOn) }
                     item { Text("O QUE FICA GUARDADO", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 14.dp, bottom = 2.dp)) }
                     item { Text("A cidade do seu perfil e a posição de cada aviso que você publicou no Mural.", color = Muted, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) }
                     item { SettingsLink("Apagar dados de localização", "Remove seus avisos do Mural e a cidade guardada", Icons.Outlined.DeleteOutline) { showClearLocation = true } }
@@ -14667,7 +14635,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     val advance: () -> Unit = advance@{
         if (publishing || editorBusy) return@advance
         if (storyDirect && storyAudience == "near" && QinblyApi.myCity(prefs).isBlank()) {
-            onNotice("Pra publicar \"Perto de você\", abra o Perto de mim ou escolha sua cidade no Mercado antes.")
+            onNotice("Pra publicar \"Perto de você\", abra o Perto de mim antes.")
             return@advance
         }
                             if (selectedUri == null && sourceUri == null) {
