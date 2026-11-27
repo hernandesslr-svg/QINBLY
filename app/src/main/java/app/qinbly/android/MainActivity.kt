@@ -3666,6 +3666,7 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
     val context = androidx.compose.ui.platform.LocalContext.current
     var playbackError by remember(url) { mutableStateOf(false) }
     var isPlaying by remember(url) { mutableStateOf(autoplay) }
+    var videoAspect by remember(url) { mutableStateOf(0f) }
     var firstFrameShown by remember(url) { mutableStateOf(false) }
     var buffering by remember(url) { mutableStateOf(false) }
     // Sem autoplay, o vídeo só é preparado (e só consome rede) quando a pessoa aperta play; até lá aparece o primeiro quadro.
@@ -3685,6 +3686,9 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
             // Só começa a tocar quando este vídeo for o que está em foco na tela (veja QinblyVideoFocus).
             playWhenReady = false
             addListener(object : androidx.media3.common.Player.Listener {
+                override fun onVideoSizeChanged(size: androidx.media3.common.VideoSize) {
+                    if (size.width > 0 && size.height > 0) videoAspect = size.width * size.pixelWidthHeightRatio / size.height
+                }
                 override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                     // Falhas passageiras (rede lenta, decodificador ocupado) ganham até 3 novas tentativas antes de mostrar o erro.
                     if (prepared && retryCount < 3) {
@@ -3791,21 +3795,25 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
                 Icon(Icons.Default.PlayArrow, contentDescription = "Tentar reproduzir vídeo", tint = Color.White, modifier = Modifier.size(38.dp))
             }
         } else {
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { viewContext -> PlayerView(viewContext).apply {
-                    this.player = player
-                    useController = false
-                    setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
-                    setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
-                    resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
-                } },
-                update = { view ->
-                    view.player = player
-                    view.useController = false
-                    view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
-                }
-            )
+            // Moldura com a proporção real do vídeo: mostra o vídeo inteiro (sem zoom/corte), com o fundo desfocado nas laterais.
+            QinblyVideoFrame(videoAspect) { frameMod ->
+                AndroidView(
+                    modifier = frameMod,
+                    factory = { viewContext ->
+                        (android.view.LayoutInflater.from(viewContext).inflate(R.layout.qinbly_inline_player, null) as PlayerView).apply {
+                            this.player = player
+                            useController = false
+                            setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+                            resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
+                        }
+                    },
+                    update = { view ->
+                        view.player = player
+                        view.useController = false
+                        view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    }
+                )
+            }
             if (!firstFrameShown) {
                 QinblyVideoPoster(url, Modifier.fillMaxSize(), if (fitPoster) ContentScale.Fit else ContentScale.Crop)
             }
