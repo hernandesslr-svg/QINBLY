@@ -11752,7 +11752,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
             verified = user.optBoolean("verified"),
             onHandle = null,
             arrow = false,
-            onAbout = { showAbout = true },
+            onAbout = null,
             below = { QinblyProfileStatsInline(likes = profilePosts.sumOf { it.likes }, following = user.optInt("following"), followers = user.optInt("followers"), onFollowing = { openConnections("following") }, onFollowers = { openConnections("followers") }, onLikes = { showTopPosts = true }) }
         )
         if (showTopPosts) QinblyTopPostsSheet(publicUsername, onOpenPost = { id -> QinblyDeepLink.postId = id }) { showTopPosts = false }
