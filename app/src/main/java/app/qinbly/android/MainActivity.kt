@@ -3488,7 +3488,7 @@ private fun QinblySearchPostRow(post: QinblyApi.PostSummary, onClick: () -> Unit
 
 /** Primeiro quadro do vídeo mostrado enquanto o player ainda carrega (em vez de um retângulo preto). */
 @Composable
-private fun QinblyVideoPoster(url: String, modifier: Modifier = Modifier, contentScale: ContentScale = ContentScale.Fit) {
+private fun QinblyVideoPoster(url: String, modifier: Modifier = Modifier, contentScale: ContentScale = ContentScale.Fit, alignment: Alignment = Alignment.Center) {
     if (!url.startsWith("http")) return
     val context = androidx.compose.ui.platform.LocalContext.current
     val request = remember(url) {
@@ -3501,7 +3501,7 @@ private fun QinblyVideoPoster(url: String, modifier: Modifier = Modifier, conten
             .crossfade(true)
             .build()
     }
-    AsyncImage(model = request, contentDescription = null, modifier = modifier, contentScale = contentScale)
+    AsyncImage(model = request, contentDescription = null, modifier = modifier, contentScale = contentScale, alignment = alignment)
 }
 
 @Composable
@@ -3545,6 +3545,20 @@ internal fun QinblyVideoFrame(aspect: Float, content: @Composable (Modifier) -> 
             val fitW = if (wide) wc else hc * aspect
             val fillW = if (wide) hc * aspect else wc
             val w = if (fillW <= fitW * 1.08f) fillW else fitW
+            Modifier.requiredSize(w.dp, (w / aspect).dp)
+        }
+        content(frameMod)
+    }
+}
+
+/** Moldura que PREENCHE o espaço (sem faixas): o vídeo cobre tudo e o corte é feito embaixo, preservando o topo (rostos). */
+@Composable
+internal fun QinblyVideoFill(aspect: Float, content: @Composable (Modifier) -> Unit) {
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().clipToBounds(), contentAlignment = Alignment.TopCenter) {
+        val wc = maxWidth.value
+        val hc = maxHeight.value
+        val frameMod = if (aspect <= 0f || wc <= 0f || hc <= 0f) Modifier.fillMaxSize() else {
+            val w = if (aspect >= wc / hc) hc * aspect else wc
             Modifier.requiredSize(w.dp, (w / aspect).dp)
         }
         content(frameMod)
@@ -3657,12 +3671,12 @@ private fun QiblyPublicationVideo(url: String, modifier: Modifier = Modifier, fi
     // Padrão do app: o vídeo já começa sozinho (sem som) e repete até a pessoa pausar.
     Box(modifier.clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
         // No feed não tem pausar/tocar por toque: o toque abre o vídeo, e é lá dentro que a pessoa pausa.
-        InlineVideoPlayer(url = url, modifier = Modifier.fillMaxSize(), autoplay = true, pausable = false, fitPoster = fitPoster)
+        InlineVideoPlayer(url = url, modifier = Modifier.fillMaxSize(), autoplay = true, pausable = false, fitPoster = fitPoster, fill = true)
     }
 }
 
 @Composable
-private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autoplay: Boolean = false, pausable: Boolean = true, fitPoster: Boolean = false) {
+private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autoplay: Boolean = false, pausable: Boolean = true, fitPoster: Boolean = false, fill: Boolean = false) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var playbackError by remember(url) { mutableStateOf(false) }
     var isPlaying by remember(url) { mutableStateOf(autoplay) }
@@ -3796,7 +3810,8 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
             }
         } else {
             // Moldura com a proporção real do vídeo: mostra o vídeo inteiro (sem zoom/corte), com o fundo desfocado nas laterais.
-            QinblyVideoFrame(videoAspect) { frameMod ->
+            val frameHost: @Composable (@Composable (Modifier) -> Unit) -> Unit = { c -> if (fill) QinblyVideoFill(videoAspect, c) else QinblyVideoFrame(videoAspect, c) }
+            frameHost { frameMod ->
                 AndroidView(
                     modifier = frameMod,
                     factory = { viewContext ->
@@ -3815,7 +3830,7 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
                 )
             }
             if (!firstFrameShown) {
-                QinblyVideoPoster(url, Modifier.fillMaxSize(), if (fitPoster) ContentScale.Fit else ContentScale.Crop)
+                QinblyVideoPoster(url, Modifier.fillMaxSize(), if (fill) ContentScale.Crop else if (fitPoster) ContentScale.Fit else ContentScale.Crop, if (fill) Alignment.TopCenter else Alignment.Center)
             }
             if (isPlaying && (buffering || !firstFrameShown)) QinblyLoadingSpinner(Modifier.fillMaxSize(), tint = QinblyBrand.Accent)
             if (!isPlaying) {
@@ -5326,8 +5341,8 @@ private fun QinblyPostCard(
                 }
 
             } else if (post.mediaUrl.isNotBlank() && post.mediaType == "video") {
-                // Na aba Explorar o vídeo é mais baixo (16:10); nas outras abas continua 4:5.
-                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp).aspectRatio(if (smallVideo) 1.6f else 0.8f)
+                // Na aba Explorar o vídeo é mais baixo (quadrado); nas outras abas continua 4:5.
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp).aspectRatio(if (smallVideo) 1.0f else 0.8f)
                     .clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
                     if (badge != null) Surface(
                         modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
