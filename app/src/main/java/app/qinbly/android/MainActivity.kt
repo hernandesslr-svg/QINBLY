@@ -14631,7 +14631,13 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 }
                 QinblyCameraSideItem(QinblyCreateIcons.text, "Texto", on = editorTool == "Texto") { editorTool = if (editorTool == "Texto") "Filtros" else "Texto"; editorTextEditing = editorTool == "Texto" }
                 QinblyCameraSideItem(QinblyCreateIcons.sticker, "Stickers", on = editorTool == "Stickers") { editorTool = if (editorTool == "Stickers") "Filtros" else "Stickers" }
-                QinblyCameraSideItem(QinblyCameraIcons.format, "Formato", on = editorTool == "Ajustar") { editorTool = if (editorTool == "Ajustar") "Filtros" else "Ajustar" }
+                QinblyCameraSideItem(QinblyCameraIcons.format, "Formato", on = editorTool == "Ajustar") {
+                    editorTool = "Ajustar"
+                    val nextRatio = QINBLY_FORMATS[(QINBLY_FORMATS.indexOf(editorRatio) + 1) % QINBLY_FORMATS.size]
+                    editorRatio = nextRatio; editorZoom = 1f; editorPanX = 0f; editorPanY = 0f
+                    val u = selectedUri
+                    if (u != null && selectedType == "foto") formatScope.launch { editorPanY = qinblyFacePanY(context, u, editorImageRatio, qinblyRatioValue(nextRatio, editorImageRatio)) }
+                }
                 if (selectedType == "foto") QinblyCameraSideItem(QinblyCameraIcons.crop, "Recortar") {
                     cropRatio = editorRatio; cropZoom = editorZoom; cropPanX = editorPanX; cropPanY = editorPanY
                     cropOpen = true
@@ -14862,11 +14868,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 if (editorTool == "Ajustar") {
                     QinblyFormatBar(
                         ratio = editorRatio, imageRatio = editorImageRatio, zoom = editorZoom, blurBg = editorBlur,
-                        onRatio = { r ->
-                            editorRatio = r; editorZoom = 1f; editorPanX = 0f; editorPanY = 0f
-                            val u = selectedUri
-                            if (u != null) formatScope.launch { editorPanY = qinblyFacePanY(context, u, editorImageRatio, qinblyRatioValue(r, editorImageRatio)) }
-                        },
                         onFill = { m ->
                             val fr = qinblyRatioValue(editorRatio, editorImageRatio)
                             editorPanX = 0f; editorPanY = 0f

@@ -140,11 +140,11 @@ internal fun QinblyFormatFrame(
     }
 }
 
-/** Barra de baixo: formatos (Original, 1:1, 4:5, 3:4, 4:3, 9:16, 16:9) e como a foto ocupa o quadro (Preencher, Inteira, Desfocar). */
+/** Barra de baixo: como a foto ocupa o quadro (o formato muda ao tocar em Formato) (Preencher, Inteira, Desfocar). */
 @Composable
 internal fun QinblyFormatBar(
     ratio: String, imageRatio: Float, zoom: Float, blurBg: Boolean,
-    onRatio: (String) -> Unit, onFill: (String) -> Unit, modifier: Modifier = Modifier
+    onFill: (String) -> Unit, modifier: Modifier = Modifier
 ) {
     val factor = qinblyFitFactor(imageRatio, qinblyRatioValue(ratio, imageRatio))
     val whole = factor < 0.97f && zoom <= factor + 0.02f
@@ -157,9 +157,6 @@ internal fun QinblyFormatBar(
                 .clickable { click() }.padding(horizontal = 11.dp, vertical = 6.dp))
     }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.Center) {
-            QINBLY_FORMATS.forEach { r -> Pill(r, ratio == r) { onRatio(r) } }
-        }
         if (factor < 0.97f) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 Pill("Preencher", mode == "fill") { onFill("fill") }
