@@ -3664,10 +3664,10 @@ private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, sh
 }
 
 @Composable
-private fun QiblyPublicationVideo(url: String, modifier: Modifier = Modifier, fitPoster: Boolean = false) {
+private fun QiblyPublicationVideo(url: String, modifier: Modifier = Modifier, fitPoster: Boolean = false, square: Boolean = false) {
     val saverContext = androidx.compose.ui.platform.LocalContext.current
     // Padrão do app: o vídeo já começa sozinho (sem som) e repete até a pessoa pausar.
-    Box(modifier.clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
+    Box(modifier.clip(if (square) androidx.compose.ui.graphics.RectangleShape else RoundedCornerShape(16.dp)).background(Color.Black)) {
         // No feed não tem pausar/tocar por toque: o toque abre o vídeo, e é lá dentro que a pessoa pausa.
         InlineVideoPlayer(url = url, modifier = Modifier.fillMaxSize(), autoplay = true, pausable = false, fitPoster = fitPoster, fill = true)
     }
@@ -4298,7 +4298,8 @@ private fun QinblyPostActionBar(
     modifier: Modifier = Modifier,
     vertical: Boolean = false,
     showRepost: Boolean = true,
-    compact: Boolean = false
+    compact: Boolean = false,
+    showSave: Boolean = true
 ) {
     if (vertical) {
         Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -4314,9 +4315,10 @@ private fun QinblyPostActionBar(
             Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(0.dp)) {
                 QinblyLikeButton(QinblyEngagement.isLiked(post), QinblyEngagement.likeCount(post), { QinblyEngagement.toggleLike(prefs, post, onNotice) }, tone, false)
                 QinblyCommentButton(post.comments, onComment, tone, false)
-                QinblyRepostButton(QinblyEngagement.isReposted(post), QinblyEngagement.repostCount(post), { QinblyEngagement.toggleReposted(prefs, post, onNotice) }, tone, false)
-                QinblyShareButton(onShare, tone, false)
-                QinblySaveButton(QinblyEngagement.isSaved(post), { QinblyEngagement.toggleSaved(prefs, post, onNotice) }, tone, false)
+                if (showRepost) QinblyRepostButton(QinblyEngagement.isReposted(post), QinblyEngagement.repostCount(post), { QinblyEngagement.toggleReposted(prefs, post, onNotice) }, tone, false)
+                // Setinha de enviar virada para o outro lado (espelhada).
+                Box(Modifier.graphicsLayer { scaleX = -1f }) { QinblyShareButton(onShare, tone, false) }
+                if (showSave) QinblySaveButton(QinblyEngagement.isSaved(post), { QinblyEngagement.toggleSaved(prefs, post, onNotice) }, tone, false)
             }
         }
     } else {
@@ -4340,6 +4342,17 @@ private fun QinblyPostActionBar(
             QinblySaveButton(QinblyEngagement.isSaved(post), { QinblyEngagement.toggleSaved(prefs, post, onNotice) }, tone, false)
         }
         }
+    }
+}
+
+/** Menu da publicação: 3 tracinhos, o de cima maior e o de baixo menor, alinhados à direita. */
+@Composable
+private fun QinblyMenuBarsIcon(tint: Color, size: Dp = 26.dp) {
+    androidx.compose.foundation.Canvas(Modifier.size(size)) {
+        val w = this.size.width; val h = this.size.height
+        val stroke = h * 0.1f
+        fun bar(y: Float, frac: Float) = drawLine(tint, Offset(w * 0.92f - w * 0.84f * frac, y), Offset(w * 0.92f, y), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        bar(h * 0.27f, 1f); bar(h * 0.5f, 0.7f); bar(h * 0.73f, 0.4f)
     }
 }
 
@@ -5223,40 +5236,6 @@ private fun QinblyPostCard(
                     }
                                         
             }
-            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
-                    verticalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                        QinblyPostAvatar(post, onOpenProfile)
-                        Column(Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name },
-                                color = RemoteAppearance.feedTextColor, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
-                                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }
-                            )
-                            if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) }
-                            if (post.repostedByUsername.isBlank()) {
-                                Text(" · ", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
-                                LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor, short = true)
-                            }
-                            }
-                            if (post.musicUrl.isNotBlank()) QinblyPostMusicChip(post, Modifier, RemoteAppearance.feedSecondaryTextColor)
-                        }
-                    QinblyCardFollow(post, prefs, onNotice)
-                        QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = RemoteAppearance.feedTextColor, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true })
-                    }
-
-                }
-            }
-            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video") && post.caption.isNotBlank()) {
-                QinblyFeedCaption(post.caption, Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 2.dp, bottom = 8.dp))
-            }
-            // Pessoas marcadas: logo embaixo do texto da legenda e antes da mídia.
-            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
             if (post.mediaUrl.isNotBlank() && post.mediaType == "image") {
                 val demoGallery = remember(post.id) {
                     when (post.id) {
@@ -5287,12 +5266,11 @@ private fun QinblyPostCard(
                 var dragDistance by remember(post.id) { mutableFloatStateOf(0f) }
                 var likeBurst by remember(post.id) { mutableIntStateOf(0) }
                 // O corte do quadro acompanha o rosto (a cabeça nunca fica de fora); a foto inteira abre ao tocar.
-                val faceAlignment = rememberQinblyFaceAlignment(shownPhoto, imageAspectRatio, imageAspectRatio.coerceIn(0.8f, 1.8f))
+                val faceAlignment = rememberQinblyFaceAlignment(shownPhoto, imageAspectRatio, 16f / 9f)
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)
-                        // Altura máxima 4:5 (como o vídeo): fotos muito altas não empurram os botões para fora da tela.
-                        .aspectRatio(imageAspectRatio.coerceIn(0.8f, 1.8f))
-                        .clip(RoundedCornerShape(16.dp))
+                    modifier = Modifier.fillMaxWidth()
+                        // Foto de ponta a ponta da tela, na proporção do YouTube (16:9).
+                        .aspectRatio(16f / 9f)
                         .background(Color.Black)
                 ) {
                     if (badge != null) Surface(
@@ -5365,8 +5343,7 @@ private fun QinblyPostCard(
 
             } else if (post.mediaUrl.isNotBlank() && post.mediaType == "video") {
                 // Na aba Explorar o vídeo é mais baixo (quadrado); nas outras abas continua 4:5.
-                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp).aspectRatio(if (smallVideo) 1.0f else 0.8f)
-                    .clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
+                Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).background(Color.Black)) {
                     if (badge != null) Surface(
                         modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
                         color = QinblyBrand.AccentDeep.copy(alpha = 0.92f),
@@ -5386,11 +5363,16 @@ private fun QinblyPostCard(
                             }
                         )
                     }) {
-                        QiblyPublicationVideo(url = post.mediaUrl, modifier = Modifier.fillMaxSize(), fitPoster = smallVideo)
+                        QiblyPublicationVideo(url = post.mediaUrl, modifier = Modifier.fillMaxSize(), fitPoster = smallVideo, square = true)
                         QinblyHeartBurst(videoBurst, Modifier.align(Alignment.Center))
                     }
                 }
             }
+            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video") && post.caption.isNotBlank()) {
+                QinblyFeedCaption(post.caption, Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 2.dp))
+            }
+            // Pessoas marcadas: logo embaixo do texto da legenda e antes da mídia.
+            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
             if (post.mediaType == "poll" && post.pollOptions.isNotEmpty()) {
                 Column(
                     Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
@@ -5497,7 +5479,35 @@ private fun QinblyPostCard(
                     QinblyPostTimeLine(post, RemoteAppearance.feedSecondaryTextColor, onOpenProfile)
                 }
             }
-            if (post.mediaType != "poll") { // Enquetes exibem apenas votação e total de votos
+            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    QinblyPostAvatar(post, onOpenProfile, size = 40.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name },
+                                color = RemoteAppearance.feedTextColor, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }
+                            )
+                            if (post.verified) { Spacer(Modifier.width(4.dp)); QinblyVerifiedBadge(14.dp) }
+                        }
+                        if (post.repostedByUsername.isBlank()) LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor, short = true)
+                        if (post.musicUrl.isNotBlank()) QinblyPostMusicChip(post, Modifier, RemoteAppearance.feedSecondaryTextColor)
+                    }
+                    QinblyPostActionBar(
+                        post = post, prefs = prefs, tone = QinblyTone.Feed, onNotice = onNotice,
+                        onComment = { onComment(post) }, onShare = { onShare(post) },
+                        compact = true, showRepost = false, showSave = false
+                    )
+                    QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = RemoteAppearance.feedTextColor, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true }, barsIcon = true, withActions = true)
+                }
+            }
+            if (post.mediaType != "poll" && !(post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video"))) { // Enquetes exibem apenas votação e total de votos
                 QinblyPostActionBar(
                     post = post,
                     prefs = prefs,
@@ -5634,7 +5644,9 @@ private fun QinblyPostMenu(
     tint: Color?,
     onReport: () -> Unit,
     onBlock: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
+    barsIcon: Boolean = false,
+    withActions: Boolean = false
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var expanded by remember(post.id) { mutableStateOf(false) }
@@ -5674,10 +5686,24 @@ private fun QinblyPostMenu(
     Row(verticalAlignment = Alignment.CenterVertically) {
         if (post.pinned) QinblyIconOf(QinblyIcon.PushPin, QiblyTheme.secondary, 18.dp)
         IconButton(onClick = { expanded = true }) {
-            if (tint != null) Icon(Icons.Default.MoreVert, contentDescription = "Opções da publicação", tint = tint)
+            if (barsIcon) QinblyMenuBarsIcon(tint ?: QiblyTheme.text)
+            else if (tint != null) Icon(Icons.Default.MoreVert, contentDescription = "Opções da publicação", tint = tint)
             else Icon(Icons.Default.MoreVert, contentDescription = "Opções da publicação")
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            if (withActions) {
+                val savedNow = QinblyEngagement.isSaved(post)
+                DropdownMenuItem(
+                    text = { Text(if (savedNow) "Remover dos salvos" else "Salvar") },
+                    leadingIcon = { Icon(if (savedNow) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = null, tint = QiblyTheme.text) },
+                    onClick = { expanded = false; QinblyEngagement.toggleSaved(prefs, post, onNotice) }
+                )
+                if (!QinblyEngagement.isReposted(post)) DropdownMenuItem(
+                    text = { Text("Recompartilhar") },
+                    leadingIcon = { Icon(Icons.Default.Repeat, contentDescription = null, tint = QiblyTheme.text) },
+                    onClick = { expanded = false; QinblyEngagement.toggleReposted(prefs, post, onNotice) }
+                )
+            }
             if (mine) {
                 DropdownMenuItem(text = { Text("Editar") }, leadingIcon = { QinblyMenuIcon("Editar") }, onClick = { expanded = false; onEdit() })
                 DropdownMenuItem(text = { Text("Ver estatísticas") }, leadingIcon = { Icon(QinblyCreateIcons.poll, contentDescription = null, tint = QiblyTheme.text) }, onClick = { expanded = false; showStats = true })
