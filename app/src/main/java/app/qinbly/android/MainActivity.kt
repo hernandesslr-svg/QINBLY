@@ -3534,10 +3534,21 @@ private fun QinblyHeartBurst(trigger: Int, modifier: Modifier = Modifier) {
 
 /** Moldura do vídeo, igual ao TikTok: vídeo em pé (9:16) enche a tela; vídeo largo ou quadrado aparece inteiro, sem zoom e sem corte, com faixas pretas. */
 @Composable
-internal fun QinblyVideoFrame(aspect: Float, content: @Composable (Modifier) -> Unit) {
+internal fun QinblyVideoFrame(aspect: Float, snap: Boolean = false, content: @Composable (Modifier) -> Unit) {
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().clipToBounds(), contentAlignment = Alignment.Center) {
         val wc = maxWidth.value
         val hc = maxHeight.value
+        if (snap && aspect > 0f && wc > 0f && hc > 0f) {
+            // Aba Vídeos: o vídeo sai num dos 2 formatos (9:16 grandão ou 3:4 médio), preenchendo o quadro.
+            val target = if (aspect <= 0.65f) 9f / 16f else 3f / 4f
+            val fw = minOf(wc, hc * target)
+            val fh = fw / target
+            val vw = maxOf(fw, fh * aspect)
+            androidx.compose.foundation.layout.Box(Modifier.requiredSize(fw.dp, fh.dp).clipToBounds(), contentAlignment = Alignment.Center) {
+                content(Modifier.requiredSize(vw.dp, (vw / aspect).dp))
+            }
+            return@BoxWithConstraints
+        }
         val frameMod = if (aspect <= 0f || wc <= 0f || hc <= 0f) Modifier.fillMaxSize() else {
             val wide = aspect >= wc / hc
             val fitW = if (wide) wc else hc * aspect
@@ -3564,7 +3575,7 @@ internal fun QinblyVideoFill(aspect: Float, content: @Composable (Modifier) -> U
 }
 
 @Composable
-private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, showProgress: Boolean = true, thinProgress: Boolean = false, onDoubleTap: (() -> Unit)? = null) {
+private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, showProgress: Boolean = true, thinProgress: Boolean = false, onDoubleTap: (() -> Unit)? = null, snapFormat: Boolean = false) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var firstFrameShown by remember(url) { mutableStateOf(false) }
     var buffering by remember(url) { mutableStateOf(true) }
@@ -3608,7 +3619,7 @@ private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, sh
         }
     }
     Box(modifier.background(Color.Black)) {
-        QinblyVideoFrame(videoAspect) { frameMod ->
+        QinblyVideoFrame(videoAspect, snapFormat) { frameMod ->
             AndroidView(modifier = frameMod, factory = { ctx -> PlayerView(ctx).apply { this.player = player; useController = false; resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT } }, update = { view -> view.player = player; view.useController = false; view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT })
             if (!firstFrameShown) QinblyVideoPoster(url, frameMod, ContentScale.Crop)
         }
@@ -3808,7 +3819,7 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
             }
         } else {
             // Moldura com a proporção real do vídeo: mostra o vídeo inteiro (sem zoom/corte), com o fundo desfocado nas laterais.
-            val frameHost: @Composable (@Composable (Modifier) -> Unit) -> Unit = { c -> if (fill) QinblyVideoFill(videoAspect, c) else QinblyVideoFrame(videoAspect, c) }
+            val frameHost: @Composable (@Composable (Modifier) -> Unit) -> Unit = { c -> if (fill) QinblyVideoFill(videoAspect, c) else QinblyVideoFrame(videoAspect, content = c) }
             frameHost { frameMod ->
                 AndroidView(
                     modifier = frameMod,
@@ -4554,7 +4565,8 @@ private fun QinblyVideoPager(
                     QinblyFullscreenVideo(
                         post.mediaUrl.ifBlank { images.firstOrNull().orEmpty() }, Modifier.fillMaxSize(),
                         showProgress = !embedded, thinProgress = embedded,
-                        onDoubleTap = { if (!QinblyEngagement.isLiked(post)) QinblyEngagement.toggleLike(prefs, post, onNotice) }
+                        onDoubleTap = { if (!QinblyEngagement.isLiked(post)) QinblyEngagement.toggleLike(prefs, post, onNotice) },
+                        snapFormat = true
                     )
                 }
             } else {
