@@ -10354,17 +10354,9 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             },
             name = shownName.ifBlank { if (username.isBlank()) "Seu nome" else username },
             verified = profileVerified,
-            handle = if (username.isBlank()) "Entre ou crie sua conta" else "@${username.removePrefix("@")}",
             onHandle = { if (username.isBlank()) onAuth() else onSwitchAccounts() },
             arrow = username.isNotBlank(),
-            country = ownParts.country,
-            onAbout = null,
-            likes = profilePosts.sumOf { it.likes },
-            following = followingCount,
-            followers = followersCount,
-            onFollowing = { onStat("Seguindo") },
-            onFollowers = { onStat("Seguidores") },
-            onLikes = if (username.isBlank()) null else ({ showTopPosts = true })
+            onAbout = null
         )
         if (showTopPosts) QinblyTopPostsSheet(username.removePrefix("@"), onOpenPost = { id -> QinblyDeepLink.postId = id }) { showTopPosts = false }
         if (username.isBlank()) {
@@ -10384,6 +10376,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
         QinblyProfileBioLeft(ownParts.description, placeholder = "Adicione uma descrição ao seu perfil")
         QinblyProfileLinks(ownParts.links)
+        QinblyProfileStatsRow(likes = profilePosts.sumOf { it.likes }, following = followingCount, followers = followersCount, onFollowing = { onStat("Seguindo") }, onFollowers = { onStat("Seguidores") }, onLikes = if (username.isBlank()) null else ({ showTopPosts = true }))
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             QinblyGrayButton("Editar perfil", Modifier.weight(1f)) { if (username.isBlank()) onAuth() else onEdit() }
             QinblyGrayButton("Compartilhar perfil", Modifier.weight(1f)) {
@@ -11799,22 +11792,15 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
             },
             name = displayName,
             verified = user.optBoolean("verified"),
-            handle = "@$publicUsername",
             onHandle = null,
             arrow = false,
-            country = publicParts.country,
-            onAbout = { showAbout = true },
-            likes = profilePosts.sumOf { it.likes },
-            following = user.optInt("following"),
-            followers = user.optInt("followers"),
-            onFollowing = { openConnections("following") },
-            onFollowers = { openConnections("followers") },
-            onLikes = { showTopPosts = true }
+            onAbout = { showAbout = true }
         )
         if (showTopPosts) QinblyTopPostsSheet(publicUsername, onOpenPost = { id -> QinblyDeepLink.postId = id }) { showTopPosts = false }
         if (showAbout) QinblyProfileAbout(if (joinMonth in 1..12) "${monthNames[joinMonth - 1]} ${joinedDate.take(4)}" else "", publicParts.country) { showAbout = false }
         QinblyProfileBioLeft(publicParts.description)
         QinblyProfileLinks(publicParts.links)
+        QinblyProfileStatsRow(likes = profilePosts.sumOf { it.likes }, following = user.optInt("following"), followers = user.optInt("followers"), onFollowing = { openConnections("following") }, onFollowers = { openConnections("followers") }, onLikes = { showTopPosts = true })
     if (connectionListType.isNotBlank()) {
         QinblyDialog(onDismissRequest = { connectionListType = "" }) {
             Surface(shape = RoundedCornerShape(20.dp), color = QiblyTheme.card) {
