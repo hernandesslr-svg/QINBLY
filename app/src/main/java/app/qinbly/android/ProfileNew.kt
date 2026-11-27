@@ -127,26 +127,30 @@ internal fun QinblyProfileTop(
     verified: Boolean,
     onHandle: (() -> Unit)?,
     arrow: Boolean,
-    onAbout: (() -> Unit)?
+    onAbout: (() -> Unit)?,
+    below: @Composable () -> Unit = {}
 ) {
     Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
         avatar()
         Spacer(Modifier.width(14.dp))
-        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(name, color = RemoteAppearance.screenTextColor, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-            if (verified) QinblyVerifiedBadge(20.dp)
-            if (arrow) Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Trocar de conta", tint = RemoteAppearance.screenTextColor,
-                modifier = Modifier.size(24.dp).then(if (onHandle != null) Modifier.clickable(onClick = onHandle) else Modifier))
-            if (onAbout != null) QinblyAccentIcon(Icons.Outlined.Info, contentDescription = "Sobre este perfil",
-                modifier = Modifier.size(18.dp).clickable(onClick = onAbout))
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(name, color = RemoteAppearance.screenTextColor, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                if (verified) QinblyVerifiedBadge(20.dp)
+                if (arrow) Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Trocar de conta", tint = RemoteAppearance.screenTextColor,
+                    modifier = Modifier.size(24.dp).then(if (onHandle != null) Modifier.clickable(onClick = onHandle) else Modifier))
+                if (onAbout != null) QinblyAccentIcon(Icons.Outlined.Info, contentDescription = "Sobre este perfil",
+                    modifier = Modifier.size(18.dp).clickable(onClick = onAbout))
+            }
+            below()
         }
     }
 }
 
-/** Seguindo, Seguidores e Curtidas, logo embaixo da legenda, alinhados à esquerda. */
+/** Seguindo, Seguidores e Curtidas, na frente da foto, embaixo do nome. */
 @Composable
-internal fun QinblyProfileStatsRow(likes: Int, following: Int, followers: Int, onFollowing: () -> Unit, onFollowers: () -> Unit, onLikes: (() -> Unit)? = null) {
-    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+internal fun QinblyProfileStatsInline(likes: Int, following: Int, followers: Int, onFollowing: () -> Unit, onFollowers: () -> Unit, onLikes: (() -> Unit)? = null) {
+    Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
         QinblyProfileStat("Seguindo", following, onFollowing)
         QinblyProfileStat("Seguidores", followers, onFollowers)
         QinblyProfileStat("Curtidas", likes, onLikes)
