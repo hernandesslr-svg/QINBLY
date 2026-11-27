@@ -12473,7 +12473,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var cameraError by remember { mutableStateOf("") }
     var lensFacing by remember { mutableIntStateOf(androidx.camera.core.CameraSelector.LENS_FACING_BACK) }
     var selectedFilter by remember { mutableStateOf("Original") }
-    var stabilizeOn by remember { mutableStateOf(false) }
+    var stabilizeOn by remember { mutableStateOf(true) }
     var stabilizeSupported by remember { mutableStateOf(false) }
     var activeCameraPanel by remember { mutableStateOf("") }
     var selectedCameraFormat by remember { mutableStateOf("9:16") }
@@ -12507,7 +12507,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     var hdrOn by remember { mutableStateOf(false) }
     var collageCount by remember { mutableIntStateOf(0) }
     val collageShots = remember { mutableStateListOf<Uri>() }
-    var qualityChoice by remember { mutableStateOf("HD") }
+    var qualityChoice by remember { mutableStateOf("FHD") }
     var countdown by remember { mutableIntStateOf(0) }
     var pendingAction by remember { mutableStateOf("") }
     var recElapsed by remember { mutableIntStateOf(0) }
@@ -13662,11 +13662,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                             selectedTimerSeconds = when (selectedTimerSeconds) { "Desligado" -> "3 s"; "3 s" -> "5 s"; "5 s" -> "10 s"; else -> "Desligado" }
                             flashLabel = if (selectedTimerSeconds == "Desligado") "Temporizador desligado" else "Temporizador: " + selectedTimerSeconds
                         }
-                        QinblyCameraSideItem(QinblyCameraIcons.collage, "Colagem", on = collageCount > 0) {
-                            collageShots.clear()
-                            collageCount = when (collageCount) { 0 -> 2; 2 -> 4; else -> 0 }
-                            flashLabel = if (collageCount == 0) "Colagem desligada" else "Colagem de $collageCount fotos: tire uma por vez"
-                        }
                         QinblyCameraSideItem(QinblyCameraIcons.format, "Formato") {
                             selectedCameraFormat = when (selectedCameraFormat) { "9:16" -> "4:3"; "4:3" -> "1:1"; else -> "9:16" }
                             flashLabel = "Formato " + selectedCameraFormat
@@ -13676,46 +13671,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                             flashLabel = if (retouchOn) "Retoque ligado (aplicado nas fotos)" else "Retoque desligado"
                         }
                         QinblyCameraSideItem(QinblyCameraIcons.filters, "Filtros", on = filtersVisible) { filtersVisible = !filtersVisible }
-                        if (sideExpanded) {
- QinblySplit {
-                            QinblyCameraSideItem(QinblyCameraIcons.grid, "Grade", on = gridOn) {
-                                gridOn = !gridOn
-                                flashLabel = if (gridOn) "Grade ligada" else "Grade desligada"
-                            }
-                            QinblyCameraSideItem(QinblyCameraIcons.mirror, "Espelhar", on = mirrorOn) {
-                                mirrorOn = !mirrorOn
-                                flashLabel = if (mirrorOn) "Espelhar ligado" else "Espelhar desligado"
-                            }
-                            QinblyCameraSideItem(QinblyCameraIcons.speed, "Velocidade", on = speedChoice != 1f) {
-                                speedChoice = when (speedChoice) { 1f -> 0.5f; 0.5f -> 2f; 2f -> 3f; else -> 1f }
-                                flashLabel = if (speedChoice == 1f) "Velocidade normal" else "Velocidade " + (if (speedChoice == 0.5f) "0,5x" else speedChoice.toInt().toString() + "x") + " (nos vídeos)"
-                            }
-                            QinblyCameraSideItem(QinblyCameraIcons.handsFree, "Mãos livres", on = handsFreeOn) {
-                                handsFreeOn = !handsFreeOn
-                                flashLabel = if (handsFreeOn) "Mãos livres: o vídeo começa após a contagem" else "Mãos livres desligado"
-                            }
-                            QinblyCameraSideItem(QinblyCameraIcons.exposure, "Exposição") { cameraSheet = "Exposição" }
-                            QinblyCameraSideItem(QinblyCameraIcons.night, "Modo noite", on = nightOn) {
-                                val up = cameraControl?.cameraInfo?.exposureState?.exposureCompensationRange?.upper ?: 0
-                                if (up <= 0) onNotice("Este aparelho não permite clarear a imagem.")
-                                else { nightOn = !nightOn; flashLabel = if (nightOn) "Modo noite ligado" else "Modo noite desligado" }
-                            }
-                            QinblyCameraSideItem(QinblyCameraIcons.hdr, "HDR", on = hdrOn) {
-                                hdrOn = !hdrOn
-                                flashLabel = if (hdrOn) "HDR ligado (aplicado nas fotos)" else "HDR desligado"
-                            }
-                            QinblyCameraSideItem(QinblyCameraIcons.stabilize, "Estabilizar", dim = !stabilizeOn) {
-                                if (!stabilizeSupported) onNotice("Este aparelho não tem estabilização de vídeo.")
-                                else { stabilizeOn = !stabilizeOn; onNotice(if (stabilizeOn) "Estabilização ligada." else "Estabilização desligada.") }
-                            }
-                            QinblyCameraSideItem(QinblyCameraIcons.quality, "Qualidade", on = qualityChoice != "HD") {
-                                qualityChoice = when (qualityChoice) { "HD" -> "FHD"; "FHD" -> "UHD"; else -> "HD" }
-                                flashLabel = "Qualidade " + qualityChoice
-                            }
-                         }
-}
-                        QinblyCameraSideItem(if (sideExpanded) QinblyCameraIcons.chevronUp else QinblyCameraIcons.chevronDown, "") { sideExpanded = !sideExpanded }
-                        if (sideExpanded) Spacer(Modifier.height(24.dp))
                      }
 }
                  }
