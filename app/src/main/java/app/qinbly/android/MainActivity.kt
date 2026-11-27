@@ -14582,10 +14582,15 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
  QinblySplit {
-                if (selectedType == "foto") QinblyCameraSideItem(QinblyCameraIcons.editor, "Editar") {
+                QinblyCameraSideItem(QinblyCameraIcons.editor, "Editar") {
                     photoVideoClips.clear()
-                    val seed = if (gallerySelection.isNotEmpty()) gallerySelection.toList() else listOfNotNull(sourceUri ?: selectedUri)
-                    photoVideoClips.addAll(seed.map { PvClip(it) })
+                    if (selectedType == "foto") {
+                        val seed = if (gallerySelection.isNotEmpty()) gallerySelection.toList() else listOfNotNull(sourceUri ?: selectedUri)
+                        photoVideoClips.addAll(seed.map { PvClip(it) })
+                    } else {
+                        val v = selectedUri
+                        if (v != null) photoVideoClips.add(PvClip(v, secs = qinblyVideoSecs(context, v), video = true))
+                    }
                     photoVideoPending = emptyList()
                     photoVideoOpen = true
                 }

@@ -91,7 +91,17 @@ private const val PvMaxPhotos = 20
 private val PvTransitions = listOf("Nenhuma", "Zoom", "Deslizar", "Surgir")
 
 /** Uma foto na linha do tempo do vídeo: duração, filtro e transição de entrada. */
-internal data class PvClip(val uri: Uri, val secs: Int = 3, val filter: String = "Original", val transition: String = "Nenhuma")
+internal data class PvClip(val uri: Uri, val secs: Int = 3, val filter: String = "Original", val transition: String = "Nenhuma", val video: Boolean = false)
+
+/** Duração (em segundos, arredondada para cima) de um vídeo já gravado; usada quando o vídeo entra no montador. */
+internal fun qinblyVideoSecs(context: Context, uri: Uri): Int = try {
+    val r = android.media.MediaMetadataRetriever()
+    try {
+        r.setDataSource(context, uri)
+        val ms = r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 3000L
+        ((ms + 999L) / 1000L).toInt().coerceAtLeast(1)
+    } finally { r.release() }
+} catch (_: Exception) { 3 }
 
 private fun pvTime(sec: Int): String = "${sec / 60}:${(sec % 60).toString().padStart(2, '0')}"
 
@@ -114,6 +124,9 @@ internal fun QinblyPhotoVideoEditor(
     onNotice: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val pvCtx = androidx.compose.ui.platform.LocalContext.current
+    fun pvModel(c: PvClip): Any = if (c.video) coil.request.ImageRequest.Builder(pvCtx).data(c.uri)
+        .decoderFactory(coil.decode.VideoFrameDecoder.Factory()).videoFrameMillis(500).build() else c.uri
     val pps = with(LocalDensity.current) { PvPxPerSec.dp.toPx() }
     val scroll = rememberScrollState()
     var playing by remember { mutableStateOf(false) }
@@ -199,10 +212,10 @@ internal fun QinblyPhotoVideoEditor(
                 if (cur != null) {
                     Box(Modifier.fillMaxHeight().aspectRatio(9f / 16f).clip(RoundedCornerShape(14.dp)).background(Color(0xFF15181C)).clickable { playing = !playing }) {
                         AsyncImage(
-                            model = cur.uri,
+                            model = pvModel(cur),
                             contentDescription = "Prévia",
                             contentScale = ContentScale.Crop,
-                            colorFilter = pvFilter(cur.filter),
+                            colorFilter = if (cur.video) null else pvFilter(cur.filter),
                             modifier = Modifier.fillMaxSize().graphicsLayer {
                                 val p = (tIn / 0.5f).coerceIn(0f, 1f)
                                 when (cur.transition) {
@@ -262,7 +275,7 @@ internal fun QinblyPhotoVideoEditor(
                                         Modifier.padding(end = 3.dp).fillMaxWidth().height(70.dp).clip(RoundedCornerShape(9.dp))
                                             .border(if (i == curIndex) BorderStroke(2.dp, Color.White) else BorderStroke(1.dp, Color(0x40FFFFFF)), RoundedCornerShape(9.dp))
                                     ) {
-                                        AsyncImage(model = c.uri, contentDescription = "Foto ${i + 1}", contentScale = ContentScale.Crop, colorFilter = pvFilter(c.filter), modifier = Modifier.fillMaxSize())
+                                        AsyncImage(model = pvModel(c), contentDescription = "Foto ${i + 1}", contentScale = ContentScale.Crop, colorFilter = if (c.video) null else pvFilter(c.filter), modifier = Modifier.fillMaxSize())
                                     }
                                     Text("${c.secs} s", color = Color(0xFF9AA4B2), fontSize = 11.sp, modifier = Modifier.padding(top = 3.dp))
                                 }
@@ -287,7 +300,7 @@ internal fun QinblyPhotoVideoEditor(
                     Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         when (tool) {
                             "dur" -> {
-                                for (s in 1..10) PvChip("$s s", cur.secs == s) {
+                                if (!cur.video) for (s in 1..10) PvChip("$s s", cur.secs == s) {
                                     commit(clips.toMutableList().also { it[curIndex] = cur.copy(secs = s) })
                                 }
                             }
@@ -297,7 +310,7 @@ internal fun QinblyPhotoVideoEditor(
                                 }
                             }
                             "fil" -> {
-                                for (f in qinblyPvFilterNames()) PvChip(f, cur.filter == f) {
+                                if (!cur.video) for (f in qinblyPvFilterNames()) PvChip(f, cur.filter == f) {
                                     commit(clips.toMutableList().also { it[curIndex] = cur.copy(filter = f) })
                                 }
                                 PvChip("Aplicar em todas", false) { commit(clips.map { it.copy(filter = cur.filter) }) }
@@ -399,7 +412,7 @@ internal fun qinblyBuildPhotoVideo(context: Context, clips: List<PvClip>, onResu
     val main = Handler(Looper.getMainLooper())
     Thread {
         try {
-            val baked = clips.map { qinblyPvBake(context, it.uri, it.filter) }
+            val baked = clips.map { if (it.video) it.uri else qinblyPvBake(context, it.uri, it.filter) }
             main.post { pvStartTransformer(context, clips, baked, onResult) }
         } catch (t: Throwable) {
             main.post { onResult(null, "Não foi possível preparar as fotos: " + (t.localizedMessage ?: "tente novamente")) }
@@ -411,17 +424,19 @@ private fun pvStartTransformer(context: Context, clips: List<PvClip>, baked: Lis
     try {
         val out = File(context.cacheDir, "qinbly-photovideo-${System.currentTimeMillis()}.mp4")
         val sequenceBuilder = EditedMediaItemSequence.Builder()
+        if (clips.any { it.video }) sequenceBuilder.experimentalSetForceAudioTrack(true)
         clips.forEachIndexed { i, clip ->
-            val mediaItem = MediaItem.Builder()
+            val mediaItem = if (clip.video) MediaItem.Builder().setUri(baked[i]).build()
+            else MediaItem.Builder()
                 .setUri(baked[i])
                 .setMimeType(MimeTypes.IMAGE_JPEG)
                 .setImageDurationMs(clip.secs * 1000L)
                 .build()
             val videoEffects = mutableListOf<Effect>(Presentation.createForWidthAndHeight(720, 1280, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP))
             pvTransitionEffect(clip)?.let { videoEffects.add(it) }
-            val edited = EditedMediaItem.Builder(mediaItem)
-                .setDurationUs(clip.secs * 1_000_000L)
-                .setFrameRate(30)
+            val editedBuilder = EditedMediaItem.Builder(mediaItem)
+            if (!clip.video) editedBuilder.setDurationUs(clip.secs * 1_000_000L).setFrameRate(30)
+            val edited = editedBuilder
                 .setEffects(Effects(emptyList(), videoEffects))
                 .build()
             sequenceBuilder.addItem(edited)
