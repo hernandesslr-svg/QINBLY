@@ -125,39 +125,52 @@ internal fun QinblyProfileTop(
     avatar: @Composable () -> Unit,
     name: String,
     verified: Boolean,
+    handle: String,
     onHandle: (() -> Unit)?,
     arrow: Boolean,
-    onAbout: (() -> Unit)?
+    country: String,
+    onAbout: (() -> Unit)?,
+    likes: Int,
+    following: Int,
+    followers: Int,
+    onFollowing: () -> Unit,
+    onFollowers: () -> Unit,
+    onLikes: (() -> Unit)? = null
 ) {
-    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-        avatar()
-        Spacer(Modifier.width(14.dp))
-        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(name, color = RemoteAppearance.screenTextColor, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-            if (verified) QinblyVerifiedBadge(20.dp)
-            if (arrow) Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Trocar de conta", tint = RemoteAppearance.screenTextColor,
-                modifier = Modifier.size(24.dp).then(if (onHandle != null) Modifier.clickable(onClick = onHandle) else Modifier))
-            if (onAbout != null) QinblyAccentIcon(Icons.Outlined.Info, contentDescription = "Sobre este perfil",
-                modifier = Modifier.size(18.dp).clickable(onClick = onAbout))
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.width(androidx.compose.foundation.layout.IntrinsicSize.Max)) {
+            Row(Modifier.offset(x = (-18).dp), verticalAlignment = Alignment.CenterVertically) {
+                avatar()
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.widthIn(max = 170.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(name, color = RemoteAppearance.screenTextColor, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                        if (verified) QinblyVerifiedBadge(20.dp)
+                    }
+                    Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(if (onHandle != null) Modifier.weight(1f, fill = false).clickable(onClick = onHandle) else Modifier.weight(1f, fill = false), verticalAlignment = Alignment.CenterVertically) {
+                            Text(handle, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                            if (arrow) Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Trocar de conta", tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(18.dp))
+                        }
+                        if (onAbout != null) QinblyAccentIcon(Icons.Outlined.Info, contentDescription = "Sobre este perfil",
+                            modifier = Modifier.padding(start = 6.dp).size(18.dp).clickable(onClick = onAbout))
+                    }
+                }
+            }
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(42.dp, Alignment.CenterHorizontally)) {
+                QinblyProfileStat("Seguindo", following, onFollowing)
+                QinblyProfileStat("Seguidores", followers, onFollowers)
+                QinblyProfileStat("Curtidas", likes, onLikes)
+            }
         }
-    }
-}
-
-/** Seguindo, Seguidores e Curtidas, logo embaixo da legenda, alinhados à esquerda. */
-@Composable
-internal fun QinblyProfileStatsRow(likes: Int, following: Int, followers: Int, onFollowing: () -> Unit, onFollowers: () -> Unit, onLikes: (() -> Unit)? = null) {
-    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-        QinblyProfileStat("Seguindo", following, onFollowing)
-        QinblyProfileStat("Seguidores", followers, onFollowers)
-        QinblyProfileStat("Curtidas", likes, onLikes)
     }
 }
 
 @Composable
 private fun QinblyProfileStat(label: String, n: Int, onClick: (() -> Unit)?) {
-    Column(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier, horizontalAlignment = androidx.compose.ui.Alignment.Start) {
-        Text(qinblyStatText(n), color = RemoteAppearance.screenTextColor, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-        Text(label, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 12.sp)
+    Column(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier, horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+        Text(qinblyStatText(n), color = RemoteAppearance.screenTextColor, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+        Text(label, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 13.sp)
     }
 }
 
