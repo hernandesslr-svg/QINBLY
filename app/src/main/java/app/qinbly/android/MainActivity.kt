@@ -280,7 +280,7 @@ internal fun postRelativeTime(createdAt: String, nowMillis: Long): String {
 }
 
 @androidx.compose.runtime.Composable
-private fun LivePostTime(createdAt: String, color: androidx.compose.ui.graphics.Color, suffix: String = "") {
+private fun LivePostTime(createdAt: String, color: androidx.compose.ui.graphics.Color, suffix: String = "", short: Boolean = false) {
     var nowMillis by androidx.compose.runtime.remember { androidx.compose.runtime.mutableLongStateOf(System.currentTimeMillis()) }
     androidx.compose.runtime.LaunchedEffect(createdAt) {
         while (true) {
@@ -288,7 +288,7 @@ private fun LivePostTime(createdAt: String, color: androidx.compose.ui.graphics.
             kotlinx.coroutines.delay(15_000L)
         }
     }
-    androidx.compose.material3.Text(postRelativeTime(createdAt, nowMillis) + suffix, color = color, fontSize = androidx.compose.ui.unit.TextUnit(12f, androidx.compose.ui.unit.TextUnitType.Sp))
+    androidx.compose.material3.Text((postRelativeTime(createdAt, nowMillis).let { if (short) it.removePrefix("Há ") else it }) + suffix, color = color, fontSize = androidx.compose.ui.unit.TextUnit(12f, androidx.compose.ui.unit.TextUnitType.Sp))
 }
 
 
@@ -5238,9 +5238,14 @@ private fun QinblyPostCard(
                             Text(
                                 post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name },
                                 color = RemoteAppearance.feedTextColor, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }
+                                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }
                             )
                             if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) }
+                            if (post.repostedByUsername.isBlank()) {
+                                Text(" · ", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp)
+                                LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor, short = true)
+                            }
                             }
                             if (post.musicUrl.isNotBlank()) QinblyPostMusicChip(post, Modifier, RemoteAppearance.feedSecondaryTextColor)
                         }
@@ -5489,8 +5494,8 @@ private fun QinblyPostCard(
                 }
             }
             if (!(post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) && !(post.mediaType == "text" && post.caption.isNotBlank() && qinblyTextBgBrush(post.textBg) != null)) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
-            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) {
-                // Hora logo em cima do coração (com a cidade, se houver).
+            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video") && post.repostedByUsername.isNotBlank()) {
+                // Repost: "Repostado por Fulano · Há 1 h" continua em cima do coração. A hora normal agora fica ao lado do nome.
                 Box(Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp)) {
                     QinblyPostTimeLine(post, RemoteAppearance.feedSecondaryTextColor, onOpenProfile)
                 }
