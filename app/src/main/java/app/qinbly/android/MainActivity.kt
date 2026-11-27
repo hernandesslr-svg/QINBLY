@@ -12819,6 +12819,12 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
         publishSettings = false
     }
     // Ferramenta aberta no editor (Formato, Stickers, Desenho, Texto): voltar fecha a ferramenta primeiro, depois sai do editor.
+    // Ao gravar ou tirar a foto, uma música livre aleatória já começa a tocar sozinha (dá pra trocar ou tirar no topo).
+    LaunchedEffect(showComposer) {
+        if (showComposer && onCaptured == null && storyMusic == null && soundUri == null) {
+            storyMusic = qinblyFreeTracks.flatMap { it.second }.random()
+        }
+    }
     BackHandler(enabled = showComposer && !publishSettings && (editorTool == "Ajustar" || editorTool == "Stickers" || editorTool == "Desenho" || editorTool == "Texto" || editorTool == "HDR")) {
         if (editorTextEditing) editorTextEditing = false else editorTool = "Filtros"
     }
@@ -14606,6 +14612,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     if (sm0 != null) QinblyCloseIcon(Color.White, 16.dp, modifier = Modifier.clickable { storyMusic = null })
                 }
                 if (showMusicPicker) QinblyMusicPicker(onPick = { storyMusic = it; showMusicPicker = false }, onDismiss = { showMusicPicker = false }, freeOnly = !QinblyComposeSeed.story)
+                if (sm0 != null && selectedUri != null) QinblyMusicPlayer(sm0.url, muted = false, paused = showMusicPicker)
             }
             Column(
                 modifier = Modifier.align(Alignment.TopEnd).padding(end = 12.dp, top = 92.dp).width(140.dp)
@@ -14799,35 +14806,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
  QinblySplit {
-                // A tira de quadros pertence à edição de vídeo. Não repetir
-                // a mesma fotografia como se fossem frames de uma timeline.
-                if (selectedUri != null && selectedType == "vídeo") {
- QinblySplit {
-                    Row(
-                        Modifier.fillMaxWidth().height(54.dp).padding(horizontal = 12.dp)
-                            .clip(RoundedCornerShape(8.dp)).background(Color(0xAA171717)),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
- QinblySplit {
-                        androidx.compose.foundation.lazy.LazyRow(
-                            modifier = Modifier.weight(1f).height(50.dp),
-                            horizontalArrangement = Arrangement.spacedBy(2.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            items(videoFrames.size) { index ->
-                                AsyncImage(
-                                    model = videoFrames[index],
-                                    contentDescription = "Quadro de vídeo ${index + 1}",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.width(43.dp).height(46.dp).clip(RoundedCornerShape(4.dp))
-                                )
-                            }
-                        }
-                        Box(Modifier.width(3.dp).height(52.dp).background(Color.White))
-                     }
-}
-                 }
-}
                 if (newEditorChrome && editorTool == "Filtros" && storyFiltersOpen) {
  QinblySplit {
                     if (selectedFilter != "Original") {
