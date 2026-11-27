@@ -3551,18 +3551,15 @@ internal fun QinblyVideoFrame(aspect: Float, content: @Composable (Modifier) -> 
     }
 }
 
-/** Moldura que PREENCHE o espaço (sem faixas): o vídeo cobre tudo e o corte vai para baixo, mantendo o rosto (faceTop 0..1, ou -1 sem rosto) inteiro. */
+/** Moldura que PREENCHE o espaço (sem faixas): o vídeo cobre tudo e o corte é feito embaixo, preservando o topo (rostos). */
 @Composable
-internal fun QinblyVideoFill(aspect: Float, faceTop: Float, content: @Composable (Modifier) -> Unit) {
+internal fun QinblyVideoFill(aspect: Float, content: @Composable (Modifier) -> Unit) {
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().clipToBounds(), contentAlignment = Alignment.TopCenter) {
         val wc = maxWidth.value
         val hc = maxHeight.value
         val frameMod = if (aspect <= 0f || wc <= 0f || hc <= 0f) Modifier.fillMaxSize() else {
             val w = if (aspect >= wc / hc) hc * aspect else wc
-            val h = w / aspect
-            // Sobe o vídeo só o necessário para o topo do rosto ficar com uma folga de 15% da altura visível.
-            val off = if (faceTop >= 0f && h > hc) (faceTop * h - 0.15f * hc).coerceIn(0f, h - hc) else 0f
-            Modifier.requiredSize(w.dp, h.dp).offset(y = (-off).dp)
+            Modifier.requiredSize(w.dp, (w / aspect).dp)
         }
         content(frameMod)
     }
@@ -3683,7 +3680,6 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
     val context = androidx.compose.ui.platform.LocalContext.current
     var playbackError by remember(url) { mutableStateOf(false) }
     var isPlaying by remember(url) { mutableStateOf(autoplay) }
-    var focus by remember(url) { mutableStateOf(QinblyFaceFocusCache.get(url)) }
     var videoAspect by remember(url) { mutableStateOf(0f) }
     var firstFrameShown by remember(url) { mutableStateOf(false) }
     var buffering by remember(url) { mutableStateOf(false) }
@@ -3735,9 +3731,6 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
     DisposableEffect(player) {
         val unreg = QinblyPlayback.add({ val w = player.playWhenReady; player.pause(); isPlaying = false; w }, { player.play(); isPlaying = true })
         onDispose { unreg(); player.release() }
-    }
-    if (fill) LaunchedEffect(url) {
-        if (focus == null) focus = QinblyFaceFocusCache.find(context, url)
     }
     val volumeTicksAtStart = remember(url) { QinblyVolumeKey.upTicks }
     val isFocused by remember(instanceKey) { derivedStateOf { QinblyVideoFocus.focusedKey() == instanceKey } }
@@ -3817,33 +3810,27 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
             }
         } else {
             // Moldura com a proporção real do vídeo: mostra o vídeo inteiro (sem zoom/corte), com o fundo desfocado nas laterais.
-            val aspectNow = if (videoAspect > 0f) videoAspect else (focus?.aspect ?: 0f)
-            val faceTop = focus?.top ?: -1f
-            val frameHost: @Composable (@Composable (Modifier) -> Unit) -> Unit = { c -> if (fill) QinblyVideoFill(aspectNow, faceTop, c) else QinblyVideoFrame(videoAspect, c) }
+            val frameHost: @Composable (@Composable (Modifier) -> Unit) -> Unit = { c -> if (fill) QinblyVideoFill(videoAspect, c) else QinblyVideoFrame(videoAspect, c) }
             frameHost { frameMod ->
-                Box(frameMod) {
-                    AndroidView(
-                        modifier = Modifier.fillMaxSize(),
-                        factory = { viewContext ->
-                            (android.view.LayoutInflater.from(viewContext).inflate(R.layout.qinbly_inline_player, null) as PlayerView).apply {
-                                this.player = player
-                                useController = false
-                                setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
-                                resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
-                            }
-                        },
-                        update = { view ->
-                            view.player = player
-                            view.useController = false
-                            view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
+                AndroidView(
+                    modifier = frameMod,
+                    factory = { viewContext ->
+                        (android.view.LayoutInflater.from(viewContext).inflate(R.layout.qinbly_inline_player, null) as PlayerView).apply {
+                            this.player = player
+                            useController = false
+                            setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+                            resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
                         }
-                    )
-                    // Capa dentro da mesma moldura, para ficar exatamente na mesma posição do vídeo.
-                    if (fill && !firstFrameShown) QinblyVideoPoster(url, Modifier.fillMaxSize(), if (aspectNow > 0f) ContentScale.FillBounds else ContentScale.Crop, Alignment.TopCenter)
-                }
+                    },
+                    update = { view ->
+                        view.player = player
+                        view.useController = false
+                        view.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    }
+                )
             }
-            if (!fill && !firstFrameShown) {
-                QinblyVideoPoster(url, Modifier.fillMaxSize(), if (fitPoster) ContentScale.Fit else ContentScale.Crop)
+            if (!firstFrameShown) {
+                QinblyVideoPoster(url, Modifier.fillMaxSize(), if (fill) ContentScale.Crop else if (fitPoster) ContentScale.Fit else ContentScale.Crop, if (fill) Alignment.TopCenter else Alignment.Center)
             }
             if (isPlaying && (buffering || !firstFrameShown)) QinblyLoadingSpinner(Modifier.fillMaxSize(), tint = QinblyBrand.Accent)
             if (!isPlaying) {
