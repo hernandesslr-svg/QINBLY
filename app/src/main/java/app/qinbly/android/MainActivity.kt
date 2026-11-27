@@ -10449,8 +10449,8 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
                 }
             } else {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
                     shownSaved.forEach { post ->
                         QinblyPostCard(
@@ -10486,8 +10486,8 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             if (profileTab == "Publicações" || profileTab == "Vídeos") {
                 // Lista vertical de publicações mistas; "Vídeos" usa o mesmo cartão/player da tela de início, sem modificar o cabeçalho ou as demais abas.
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
                     visiblePosts.forEach { post ->
                         QinblyPostCard(
@@ -11890,7 +11890,7 @@ private fun PublicProfilePage(username: String, onBack: () -> Unit, onMessage: (
                 }
             }
         } else {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 profilePosts.filter { (selectedTab != "Vídeos" || it.mediaType == "video") }.sortedByDescending { it.pinned }
                     .filter { selectedTab != "Fotos" || it.mediaType == "image" }
                     .forEach { post ->
