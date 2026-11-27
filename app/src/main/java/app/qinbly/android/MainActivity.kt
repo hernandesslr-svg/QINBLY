@@ -10384,17 +10384,13 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
         QinblyProfileBioLeft(ownParts.description, placeholder = "Adicione uma descrição ao seu perfil")
         QinblyProfileLinks(ownParts.links)
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceAround) {
-            Box(Modifier.clickable { if (username.isBlank()) onAuth() else onEdit() }.padding(horizontal = 8.dp, vertical = 8.dp)) {
-                QinblyAccentText("Editar perfil", fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1)
-            }
-            Box(Modifier.clickable {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            QinblyGrayButton("Editar perfil", Modifier.weight(1f)) { if (username.isBlank()) onAuth() else onEdit() }
+            QinblyGrayButton("Compartilhar perfil", Modifier.weight(1f)) {
                 if (username.isBlank()) onAuth() else try {
                     val share = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Conheça meu perfil no ${QinblyBrand.Name}: @${username.removePrefix("@")}") }
                     snapContext.startActivity(Intent.createChooser(share, "Compartilhar perfil"))
                 } catch (_: Exception) { onNotice("Não foi possível abrir o compartilhamento neste aparelho.") }
-            }.padding(horizontal = 8.dp, vertical = 8.dp)) {
-                QinblyAccentText("Compartilhar perfil", fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1)
             }
         }
         QinblyHighlightsRow(username.removePrefix("@"), profilePrefs, mine = true, onNotice = onNotice)
