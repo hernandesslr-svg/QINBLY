@@ -14646,7 +14646,9 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                 QinblyCameraSideItem(QinblyCreateIcons.sticker, "Stickers", on = editorTool == "Stickers") { editorTool = if (editorTool == "Stickers") "Filtros" else "Stickers" }
                 QinblyCameraSideItem(QinblyCameraIcons.format, "Formato") {
                     editorTool = "Ajustar"
-                    val nextRatio = QINBLY_FORMATS[(QINBLY_FORMATS.indexOf(editorRatio) + 1) % QINBLY_FORMATS.size]
+                    // Vídeo: só 2 formatos, como no TikTok (9:16 tela cheia e 3:4). Foto continua com todos.
+                    val ratioList = if (selectedType == "foto") QINBLY_FORMATS else listOf("9:16", "3:4")
+                    val nextRatio = ratioList[(ratioList.indexOf(editorRatio) + 1) % ratioList.size]
                     editorRatio = nextRatio; editorZoom = 1f; editorPanX = 0f; editorPanY = 0f
                     val u = selectedUri
                     if (u != null && selectedType == "foto") formatScope.launch { editorPanY = qinblyFacePanY(context, u, editorImageRatio, qinblyRatioValue(nextRatio, editorImageRatio)) }
