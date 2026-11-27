@@ -2,6 +2,7 @@ package app.qinbly.android
 
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
