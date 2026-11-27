@@ -3652,17 +3652,17 @@ private fun QinblyFullscreenVideo(url: String, modifier: Modifier = Modifier, sh
 }
 
 @Composable
-private fun QiblyPublicationVideo(url: String, modifier: Modifier = Modifier) {
+private fun QiblyPublicationVideo(url: String, modifier: Modifier = Modifier, fitPoster: Boolean = false) {
     val saverContext = androidx.compose.ui.platform.LocalContext.current
     // Padrão do app: o vídeo já começa sozinho (sem som) e repete até a pessoa pausar.
     Box(modifier.clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
         // No feed não tem pausar/tocar por toque: o toque abre o vídeo, e é lá dentro que a pessoa pausa.
-        InlineVideoPlayer(url = url, modifier = Modifier.fillMaxSize(), autoplay = true, pausable = false)
+        InlineVideoPlayer(url = url, modifier = Modifier.fillMaxSize(), autoplay = true, pausable = false, fitPoster = fitPoster)
     }
 }
 
 @Composable
-private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autoplay: Boolean = false, pausable: Boolean = true) {
+private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autoplay: Boolean = false, pausable: Boolean = true, fitPoster: Boolean = false) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var playbackError by remember(url) { mutableStateOf(false) }
     var isPlaying by remember(url) { mutableStateOf(autoplay) }
@@ -3807,7 +3807,7 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
                 }
             )
             if (!firstFrameShown) {
-                QinblyVideoPoster(url, Modifier.fillMaxSize(), ContentScale.Crop)
+                QinblyVideoPoster(url, Modifier.fillMaxSize(), if (fitPoster) ContentScale.Fit else ContentScale.Crop)
             }
             if (isPlaying && (buffering || !firstFrameShown)) QinblyLoadingSpinner(Modifier.fillMaxSize(), tint = QinblyBrand.Accent)
             if (!isPlaying) {
@@ -5340,7 +5340,7 @@ private fun QinblyPostCard(
                             }
                         )
                     }) {
-                        QiblyPublicationVideo(url = post.mediaUrl, modifier = Modifier.fillMaxSize())
+                        QiblyPublicationVideo(url = post.mediaUrl, modifier = Modifier.fillMaxSize(), fitPoster = smallVideo)
                         QinblyHeartBurst(videoBurst, Modifier.align(Alignment.Center))
                     }
                     overlayTop()
