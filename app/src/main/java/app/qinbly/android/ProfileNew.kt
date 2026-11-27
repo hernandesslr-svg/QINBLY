@@ -136,41 +136,36 @@ internal fun QinblyProfileTop(
     onFollowers: () -> Unit,
     onLikes: (() -> Unit)? = null
 ) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
         avatar()
-        Spacer(Modifier.width(16.dp))
-        Column(Modifier.weight(1f)) {
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f, fill = false)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(name, color = RemoteAppearance.screenTextColor, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                if (verified) QinblyVerifiedBadge(19.dp)
+                Text(name, color = RemoteAppearance.screenTextColor, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                if (verified) QinblyVerifiedBadge(20.dp)
             }
             Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 Row(if (onHandle != null) Modifier.weight(1f, fill = false).clickable(onClick = onHandle) else Modifier.weight(1f, fill = false), verticalAlignment = Alignment.CenterVertically) {
                     Text(handle, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                     if (arrow) Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Trocar de conta", tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(18.dp))
                 }
-                if (country.isNotBlank()) {
-                    Text(" · ", color = RemoteAppearance.screenSecondaryTextColor, fontSize = 14.sp)
-                    Icon(Icons.Default.LocationOn, contentDescription = "País", tint = RemoteAppearance.screenSecondaryTextColor, modifier = Modifier.size(14.dp))
-                    Text(country, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 2.dp).weight(1f, fill = false))
-                }
                 if (onAbout != null) QinblyAccentIcon(Icons.Outlined.Info, contentDescription = "Sobre este perfil",
                     modifier = Modifier.padding(start = 6.dp).size(18.dp).clickable(onClick = onAbout))
             }
-            Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(22.dp)) {
-                QinblyProfileStat("Seguindo", following, onFollowing)
-                QinblyProfileStat("Seguidores", followers, onFollowers)
-                QinblyProfileStat("Curtidas", likes, onLikes)
-            }
         }
+    }
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 14.dp), horizontalArrangement = Arrangement.SpaceAround) {
+        QinblyProfileStat("Seguindo", following, onFollowing)
+        QinblyProfileStat("Seguidores", followers, onFollowers)
+        QinblyProfileStat("Curtidas", likes, onLikes)
     }
 }
 
 @Composable
 private fun QinblyProfileStat(label: String, n: Int, onClick: (() -> Unit)?) {
     Column(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier, horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-        Text(qinblyStatText(n), color = RemoteAppearance.screenTextColor, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-        Text(label, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 12.sp)
+        Text(qinblyStatText(n), color = RemoteAppearance.screenTextColor, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+        Text(label, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 13.sp)
     }
 }
 
@@ -179,13 +174,13 @@ private fun QinblyProfileStat(label: String, n: Int, onClick: (() -> Unit)?) {
 internal fun QinblyProfileBioLeft(text: String, placeholder: String = "") {
     val clean = text.trim()
     if (clean.isBlank() && placeholder.isBlank()) return
-    if (clean.isBlank()) Text(placeholder, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 14.sp, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp))
+    if (clean.isBlank()) Text(placeholder, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp))
     else QinblyRichText(
         text = clean,
         color = RemoteAppearance.screenTextColor,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
         fontSize = 14.sp,
-        textAlign = androidx.compose.ui.text.style.TextAlign.Start,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         linkColor = QinblyBrand.Accent
     )
 }
@@ -200,7 +195,7 @@ internal fun QinblyProfileLinks(links: List<String>) {
     val chars = labels.sumOf { it.length }.coerceAtLeast(1)
     val fixed = links.size * 22 + (links.size - 1) * 12
     val sp = ((widthDp - fixed) / (chars * 0.53f)).coerceIn(9f, 14f)
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
         links.forEachIndexed { i, raw ->
             Row(Modifier.weight(1f, fill = false).clickable {
                 try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(qinblyLinkUrl(raw)))) } catch (_: Exception) { }
