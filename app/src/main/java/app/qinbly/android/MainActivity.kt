@@ -1819,7 +1819,6 @@ private fun AccountSwitcherDialog(
        Spacer(Modifier.width(12.dp))
        Column(Modifier.weight(1f)) {
         Text(account.displayName.ifBlank { account.username }, color = QiblyTheme.text, fontWeight = FontWeight.Medium, fontSize = 14.sp, maxLines = 1)
-        Text("@" + account.username.removePrefix("@"), color = QiblyTheme.hint, fontSize = 12.sp, maxLines = 1)
        }
        if (active) Icon(Icons.Default.CheckCircle, "Conta atual", tint = blue)
        else Icon(Icons.Default.RadioButtonUnchecked, "Trocar para esta conta", tint = QiblyTheme.hint)
@@ -3027,7 +3026,6 @@ private fun NotificationsPage(
                                 QiblyAccountAvatar(person.username, person.avatarUrl, 46.dp) { onOpenProfile(person.username) }
                                 Column(Modifier.weight(1f).clickable { onOpenProfile(person.username) }) {
                                     Row(verticalAlignment = Alignment.CenterVertically) { Text(person.displayName.ifBlank { person.username }, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, maxLines = 1); if (person.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) } }
-                                    Text("@" + person.username, color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall, maxLines = 1)
                                 }
                                 QinblyFollowButton(
                                     following = QinblyEngagement.isFollowing(notifPrefs, person.username, person.isFollowing),
@@ -3071,7 +3069,6 @@ private fun QinblyUserRow(user: QinblyApi.UserSummary, prefs: android.content.Sh
                                 }
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                     Text(user.displayName.ifBlank { user.username }, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold)
-                                    Text("@${user.username}", color = Muted, style = MaterialTheme.typography.bodySmall)
                                     if (user.bio.isNotBlank()) Text(user.bio, color = Muted, maxLines = 1, style = MaterialTheme.typography.labelSmall)
                                 }
                                 if (!user.username.equals(prefs.getString("username", "").orEmpty().removePrefix("@"), ignoreCase = true)) {
@@ -3480,7 +3477,7 @@ private fun QinblySearchPostRow(post: QinblyApi.PostSummary, onClick: () -> Unit
             }
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("@" + post.username, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Text(post.displayName.ifBlank { post.username }, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             Text(post.caption.ifBlank { if (post.mediaType == "video") "Vídeo" else "Foto" }, color = Muted, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             Text(post.likes.toString() + " curtidas · " + post.comments + " comentários", color = Muted, fontSize = 12.sp)
         }
@@ -4619,7 +4616,7 @@ private fun QinblyVideoPager(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     QiblyAccountAvatar(post.username, post.avatarUrl, 54.dp, storyRing = true) { onOpenProfile(post.username) }
-                    Text("@" + post.username, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1, fontSize = 16.sp, modifier = Modifier.weight(1f, fill = false))
+                    Text(post.displayName.ifBlank { post.username }, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1, fontSize = 16.sp, modifier = Modifier.weight(1f, fill = false))
                     if (post.username.isNotBlank() && !post.username.equals(currentUsername.removePrefix("@"), ignoreCase = true)) {
                         QinblyFollowButton(
                             following = QinblyEngagement.isFollowing(prefs, post.username, post.isFollowing),
@@ -6081,7 +6078,6 @@ private fun QiblyShareDialog(
                             QiblyAccountAvatar(username, "", 46.dp) { toggle() }
                             Column(Modifier.weight(1f)) {
                                 Text(name.ifBlank { username }, color = QiblyTheme.text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                                Text("@" + username, color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall, maxLines = 1)
                             }
                             Box(
                                 Modifier.size(24.dp).clip(CircleShape).then(if (picked) Modifier.background(qinblyAccentBrush()) else Modifier.border(1.5.dp, QiblyTheme.border, CircleShape)),
@@ -6447,7 +6443,6 @@ private fun QinblyLiveRow(position: Int, live: QinblyLive, sort: String, showPos
         }
         Column(Modifier.weight(1f)) {
             Text(qinblyHighlight(live.displayName.ifBlank { live.host }, highlight), color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, maxLines = 1)
-            Text(qinblyHighlight("@${live.host}", highlight), color = Muted, fontSize = 12.sp, maxLines = 1)
         }
         Column(horizontalAlignment = Alignment.End) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -7199,7 +7194,6 @@ private fun QinblyRankRow(rank: Int, post: QinblyApi.PostSummary, onMore: (() ->
         Column(Modifier.weight(1f)) {
             val title = post.caption.lineSequence().firstOrNull().orEmpty().trim().ifBlank { post.displayName.ifBlank { post.username } }
             Text(title, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-            Text("@${post.username}", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp, maxLines = 1)
             Text("${qinblyCount(QinblyEngagement.likeCount(post))} curtidas · ${qinblyCount(post.comments)} comentários", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp, maxLines = 1)
         }
         if (onMore != null) IconButton(onClick = onMore, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.MoreVert, contentDescription = "Mais opções", tint = RemoteAppearance.feedSecondaryTextColor) }
@@ -7836,7 +7830,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                             )
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("@${post.username}", color = Color.White, fontWeight = FontWeight.SemiBold)
+                                Text(post.displayName.ifBlank { post.username }, color = Color.White, fontWeight = FontWeight.SemiBold)
                                 Text(post.caption, color = Color.LightGray, maxLines = 3)
                             }
                             Icon(Icons.Default.PlayCircle, contentDescription = "Assistir", tint = Color.White)
@@ -8872,7 +8866,6 @@ private fun BlockedAccountsDialog(prefs: android.content.SharedPreferences, onDi
                     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(user.displayName.ifBlank { user.username }, fontWeight = FontWeight.SemiBold)
-                            Text("@" + user.username, style = MaterialTheme.typography.bodySmall)
                         }
                         TextButton(onClick = {
                             val token = prefs.getString("token", null)
@@ -9161,7 +9154,6 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                 QiblyAccountAvatar(person.username, person.avatarUrl, 46.dp) { onOpenProfile(person.username) }
                 Column(Modifier.weight(1f).clickable { onOpenProfile(person.username) }) {
                     Row(verticalAlignment = Alignment.CenterVertically) { Text(person.displayName.ifBlank { person.username }, color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold, maxLines = 1); if (person.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) } }
-                    Text("@" + person.username, color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.bodySmall, maxLines = 1)
                 }
                 QinblyFollowButton(
                     following = QinblyEngagement.isFollowing(prefs, person.username, person.isFollowing),
@@ -10816,16 +10808,6 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     var countryMenuExpanded by remember { mutableStateOf(false) }
     var username by rememberKept("editprofile.username", initialUsername)
     var name by rememberKept("editprofile.name", initialName)
-    // "" = não verificado, "checking", "free" (livre) ou "taken" (já existe outro perfil com esse @usuário).
-    var usernameStatus by remember { mutableStateOf("") }
-    LaunchedEffect(username) {
-        val wanted = username.trim()
-        if (wanted.equals(initialUsername, ignoreCase = true) || !wanted.matches(Regex("[a-z0-9_.]{3,24}"))) { usernameStatus = ""; return@LaunchedEffect }
-        usernameStatus = "checking"
-        kotlinx.coroutines.delay(500)
-        val free = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { QinblyApi.isUsernameAvailable(wanted) }.getOrNull() }
-        usernameStatus = when (free) { true -> "free"; false -> "taken"; null -> "" }
-    }
     var bio by rememberKept("editprofile.bio", initialParts.description)
     var links by rememberKept("editprofile.links", initialParts.links)
     var loading by remember { mutableStateOf(false) }
@@ -10837,8 +10819,6 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
     val effectOptions = listOf("Original", "Vivo", "Neon", "Quente", "Frio", "Preto e branco", "Cinema", "Retrô", "Brilho", "Contraste", "Saturação", "Fade", "Glow", "Desfoque", "VHS", "Granulado", "Vinheta")
     val saveProfile: () -> Unit = {
                     if (name.isBlank()) error = "Informe seu nome."
-                    else if (usernameStatus == "taken") error = "Esse nome de usuário já está em uso. Escolha outro."
-                    else if (!username.matches(Regex("[a-z0-9_.]{3,24}"))) error = "O @usuário precisa ter de 3 a 24 caracteres."
                     else if (links.map { qinblyCleanLink(it) }.filter { it.isNotBlank() }.any { !it.contains('.') || it.startsWith('.') || it.endsWith('.') }) error = "Um dos links não parece certo. Use algo como meusite.com."
                     else {
                         loading = true; error = ""
@@ -10852,7 +10832,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                                     }
                                     return@Thread
                                 }
-                                val composedBio = qinblyComposeBio(bio, selectedCountry, links.map { qinblyCleanLink(it) }.filter { it.isNotBlank() }.take(3))
+                                val composedBio = qinblyComposeBio(bio, "", links.map { qinblyCleanLink(it) }.filter { it.isNotBlank() }.take(3))
                                 QinblyApi.updateProfile(token, username.trim(), name.trim(), composedBio)
                                 android.os.Handler(android.os.Looper.getMainLooper()).post {
                                     loading = false
@@ -10935,30 +10915,8 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
             }
 
             editCard(Icons.Default.Person, "Nome", name, "Seu nome", { name = it }, max = 80)
-            editCard(Icons.Default.AlternateEmail, "Nome de usuário", username, "seuusuario", { username = it }, max = 24, sanitize = { it.lowercase().filter { ch -> ch.isLetterOrDigit() || ch == '_' || ch == '.' } })
-            when (usernameStatus) {
-                "checking" -> Text("Verificando…", color = Muted, style = MaterialTheme.typography.bodySmall)
-                "free" -> Text("✓ @$username está disponível", color = Color(0xFF1E8E3E), style = MaterialTheme.typography.bodySmall)
-                "taken" -> Text("Esse nome de usuário já está em uso. Escolha outro.", color = Color(0xFFD93025), style = MaterialTheme.typography.bodySmall)
-            }
             editCard(Icons.Default.Description, "Bio", bio, "Escreva uma breve descrição sobre você", { bio = it }, singleLine = false, max = 150)
-            Box {
-                Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
-                        .border(BorderStroke(1.dp, QiblyTheme.border), RoundedCornerShape(14.dp))
-                        .clickable { countryMenuExpanded = true }
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("País", color = Muted, style = MaterialTheme.typography.labelMedium)
-                        Text(selectedCountry.ifBlank { "Selecionar meu país" }, color = if (selectedCountry.isBlank()) Muted.copy(alpha = 0.8f) else RemoteAppearance.screenTextColor, fontSize = 16.sp)
-                    }
-                    Icon(Icons.Default.ExpandMore, contentDescription = null, tint = RemoteAppearance.screenTextColor)
-                }
-                if (countryMenuExpanded) QinblyCountrySheet(countryOptions, selectedCountry, { selectedCountry = it; countryMenuExpanded = false }, { countryMenuExpanded = false })
-            }
-            // Links (até 3), logo abaixo do país.
+            // Links (até 3).
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("Links", color = RemoteAppearance.screenTextColor, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
                 QinblyAccentText("${links.size} de 3", fontWeight = FontWeight.Medium, style = MaterialTheme.typography.labelMedium)
@@ -15545,7 +15503,6 @@ private fun QinblyFollowRequestsScreen(token: String, requests: List<QinblyApi.F
                 QiblyAccountAvatar(r.username, r.avatarUrl, 48.dp) { }
                 Column(Modifier.weight(1f)) {
                     Text(r.displayName.ifBlank { r.username }, color = QiblyTheme.text, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, maxLines = 1)
-                    if (r.username.isNotBlank()) Text("@" + r.username.removePrefix("@"), color = QiblyTheme.secondary, fontSize = 14.sp, maxLines = 1)
                 }
                 val busy = busyId == r.userId
                 QinblyGradientButton(

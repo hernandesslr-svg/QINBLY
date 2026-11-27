@@ -224,7 +224,7 @@
   function fillRcol() {
     var r = document.getElementById("rcol"), me = cur(); if (!r || !me) return;
     function draw() {
-      r.innerHTML = '<div class="racc"><a href="#/me" class="ring">' + avatar(me.avatarUrl, me.displayName || me.username) + '</a><div class="t"><b>@' + esc(me.username) + "</b><small>" + esc(me.displayName) + '</small></div><button class="link" data-accounts>Trocar</button></div>' +
+      r.innerHTML = '<div class="racc"><a href="#/me" class="ring">' + avatar(me.avatarUrl, me.displayName || me.username) + '</a><div class="t"><b>' + esc(me.displayName || me.username) + '</b></div><button class="link" data-accounts>Trocar</button></div>' +
         (RC.sug.length ? '<div class="rh">Sugestões para você</div>' + RC.sug.slice(0, 5).map(function (u) {
           return '<div class="racc"><a href="#/u/' + esc(u.username) + '">' + avatar(u.avatarUrl, u.displayName || u.username, "s") + '</a><div class="t"><b><a href="#/u/' + esc(u.username) + '">' + esc(u.username) + "</a></b><small>" + esc(u.displayName) + '</small></div><button class="link" data-follow="' + u.id + '">Seguir</button></div>';
         }).join("") : "") +
@@ -273,7 +273,7 @@
     var cap = (p.mediaType !== "text" && p.mediaType !== "poll" && p.caption) || (p.mediaType === "poll" ? p.caption : "");
     return '<article class="post" data-post="' + p.id + '">' +
       '<div class="ph"><a href="#/u/' + esc(a.username) + '" class="ring ' + ((window.__unseen || {})[String(a.username).toLowerCase()] ? "new" : "") + '" data-u="' + esc(String(a.username).toLowerCase()) + '">' + avatar(a.avatarUrl, a.displayName || a.username, "m") + "</a>" +
-      '<div class="who"><b><a href="#/u/' + esc(a.username) + '">' + esc(a.displayName || a.username) + "</a>" + (a.verified ? VERIFIED : "") + "</b><small>@" + esc(a.username) + " · " + ago(p.createdAt) + (p.visibility === "private" ? " · privado" : "") + "</small></div>" +
+      '<div class="who"><b><a href="#/u/' + esc(a.username) + '">' + esc(a.displayName || a.username) + "</a>" + (a.verified ? VERIFIED : "") + "</b><small>" + ago(p.createdAt) + (p.visibility === "private" ? " · privado" : "") + "</small></div>" +
       (!mine && !p.isFollowing && me ? '<button class="sb" style="flex:none;width:76px" data-follow="' + p.authorId + '">Seguir</button>' : "") + '<button class="ib" data-pmenu="' + p.id + '" aria-label="Mais opções">' + svg("dots") + "</button></div>" +
       (p.repostedBy && p.repostedBy.username ? '<div class="rpl">Repostado por <a href="#/u/' + esc(p.repostedBy.username) + '">' + esc(p.repostedBy.displayName || p.repostedBy.username) + "</a> · " + ago(p.repostedAt || p.createdAt) + "</div>" : "") + (cap ? '<div class="cap">' + linkify(cap) + "</div>" : "") + media + ((p.taggedUsers && p.taggedUsers.length) ? '<div class="tagged">Com ' + p.taggedUsers.map(function (u) { return '<a href="#/u/' + esc(u) + '">@' + esc(u) + "</a>"; }).join(", ") + "</div>" : "") +
       '<div class="acts"><button class="act ' + (p.likedByMe ? "on" : "") + '" data-like="' + p.id + '" aria-label="Curtir">' + svg("heart") + (p.likes || "") + "</button>" +
@@ -494,7 +494,7 @@
   }
   function arow(p, i) {
     var a = p.author || {}, t = String(p.caption || "").split("\n")[0].trim() || a.displayName || a.username || "";
-    return '<a class="arow" href="#/post/' + esc(p.id) + '"><span class="rk r' + (i < 3 ? i + 1 : 0) + '">' + (i + 1) + '</span><span class="athumb">' + thumbIn(p) + '</span><span class="ainf"><b>' + esc(t) + "</b><small>@" + esc(a.username || "") + "</small><small>" + cntFmt(p.likes) + " curtidas · " + cntFmt(p.comments) + " comentários</small></span></a>";
+    return '<a class="arow" href="#/post/' + esc(p.id) + '"><span class="rk r' + (i < 3 ? i + 1 : 0) + '">' + (i + 1) + '</span><span class="athumb">' + thumbIn(p) + '</span><span class="ainf"><b>' + esc(t) + "</b><small>" + cntFmt(p.likes) + " curtidas · " + cntFmt(p.comments) + " comentários</small></span></a>";
   }
   function periodChips(attr, cur2) {
     return '<div class="pchips">' + ["Hoje", "Semana", "Mês"].map(function (x) { return '<button ' + attr + '="' + x + '" class="' + (x === cur2 ? "on" : "") + '">' + x + "</button>"; }).join("") + "</div>";
@@ -514,7 +514,7 @@
       var href = c.lv ? "#/live/" + esc(c.lv.id) + "/" + encodeURIComponent(c.lv.host) : "#/post/" + esc(p.id);
       var chip = c.k === "likes" ? svg("heart") + "Mais curtido" : c.k === "comments" ? svg("comment") + "Mais comentado" : svg("flame") + "Live em alta";
       var title = c.lv ? (c.lv.displayName || c.lv.host) : c.k === "likes" ? "EM ALTA" : (String(p.caption || "").split("\n")[0].trim() || a.displayName || a.username || "");
-      var sub = c.lv ? "@" + c.lv.host + " · " + cntFmt(c.lv.viewers) + " assistindo" : "@" + (a.username || "") + " · " + (c.k === "comments" ? cntFmt(p.comments) + " comentários" : cntFmt(p.likes) + " curtidas");
+      var sub = c.lv ? cntFmt(c.lv.viewers) + " assistindo" : (c.k === "comments" ? cntFmt(p.comments) + " comentários" : cntFmt(p.likes) + " curtidas");
       return '<a class="ahero' + (c.lv ? " live" : "") + '" href="' + href + '">' + hm + (c.lv ? '<span class="alive"><u></u>AO VIVO</span>' : "") + '<span class="ahin"><span class="atag">' + chip + "</span><strong" + (c.k === "likes" ? ' class="big"' : "") + ">" + esc(title) + "</strong><small>" + esc(sub) + "</small></span></a>";
     }).join("") + "</div>" + (cards.length > 1 ? '<div class="adots" id="adots">' + cards.map(function (c, i) { return "<i" + (i === 0 ? ' class="on"' : "") + "></i>"; }).join("") + "</div>" : "") + "</div>";
     out += periodChips("data-aperiod", altaPeriod);
@@ -599,7 +599,7 @@
       '<button class="ra' + (p.savedByMe ? " on" : "") + '" data-save="' + p.id + '" aria-label="Salvar">' + svg("save") + "<span>Salvar</span></button>" +
       '<button class="ra" data-share="' + p.id + '" aria-label="Enviar">' + ARW + "<span>Enviar</span></button>" +
       '<button class="ra" data-pmenu="' + p.id + '" aria-label="Mais opções">' + svg("dots") + "</button></div>" +
-      '<div class="rinfo"><div class="rwho"><a href="#/u/' + esc(a.username) + '">' + avatar(a.avatarUrl, a.displayName || a.username, "m") + '</a><b><a href="#/u/' + esc(a.username) + '">@' + esc(a.username) + "</a></b>" +
+      '<div class="rinfo"><div class="rwho"><a href="#/u/' + esc(a.username) + '">' + avatar(a.avatarUrl, a.displayName || a.username, "m") + '</a><b><a href="#/u/' + esc(a.username) + '">' + esc(a.displayName || a.username) + "</a></b>" +
       (!mine && !p.isFollowing && me ? '<button class="rfol" data-follow="' + p.authorId + '">Seguir</button>' : "") + "</div>" +
       (legend ? '<div class="rcap">' + linkify(legend) + "</div>" : "") +
       '<div class="rsrow"><span class="rsnd">' + NOTE + "Som original · " + nm + '</span><button class="rmute m" data-rmute aria-label="Ligar ou desligar o som">' + SPK + "</button></div></div>" +
@@ -723,8 +723,8 @@
       var TIC = { "Publicações": "grid", "Vídeos": "vdisp", "Fotos": "photo", "Salvos": "save" };
       var likes = posts.reduce(function (n, p) { return n + (Number(p.likes) || 0); }, 0);
       var INFO = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>';
-      var handle = own ? '<button class="at3" data-accounts>@' + esc(u.username) + svg("chev") + "</button>" : '<span class="at3">@' + esc(u.username) + "</span>";
-      var where = bio.country ? '<span class="dot">·</span><span class="pl">' + svg("pin") + esc(bio.country) + "</span>" : "";
+      var handle = own ? '<button class="at3" data-accounts aria-label="Trocar de conta">' + svg("chev") + "</button>" : "";
+      var where = "";
       var topH = '<div class="ptop"><span class="pring xl s ' + (unseen ? "new" : "") + '">' + avatar(u.avatarUrl, shown, "l") + '</span><div class="pid"><div class="pnm">' + (own ? '<button data-edit><span>' + esc(shown) + "</span></button>" : "<span>" + esc(shown) + "</span>") + (u.verified ? VERIFIED : "") + '</div><div class="pat">' + handle + where + '<button class="inf" data-about aria-label="Sobre este perfil">' + INFO + '</button></div><div class="pn3"><div><b>' + likes + '</b><span>Curtidas</span></div><button data-stat="following"><b>' + (u.following || 0) + '</b><span>Seguindo</span></button><button data-stat="followers"><b>' + (u.followers || 0) + "</b><span>Seguidores</span></button></div></div></div>";
       var btns = own
         ? '<div class="pbt"><button class="pill" data-edit>Editar perfil</button><button class="pill" data-shareprofile="' + esc(u.username) + '">Compartilhar perfil</button></div>'
@@ -766,7 +766,7 @@
   function peopleSheet(name, kind) {
     var s = sheet(kind === "followers" ? "Seguidores" : "Seguindo", spin());
     api("/api/users/" + encodeURIComponent(name) + "/" + kind).then(function (j) {
-      var l = j.users || []; s.querySelector(".body").innerHTML = l.length ? l.map(function (u) { return '<a class="row" href="#/u/' + esc(u.username) + '">' + avatar(u.avatarUrl, u.displayName || u.username) + '<span class="t"><b>' + esc(u.displayName || u.username) + "</b><small>@" + esc(u.username) + "</small></span></a>"; }).join("") : '<div class="empty">Ninguém por aqui ainda.</div>';
+      var l = j.users || []; s.querySelector(".body").innerHTML = l.length ? l.map(function (u) { return '<a class="row" href="#/u/' + esc(u.username) + '">' + avatar(u.avatarUrl, u.displayName || u.username) + '<span class="t"><b>' + esc(u.displayName || u.username) + "</b></span></a>"; }).join("") : '<div class="empty">Ninguém por aqui ainda.</div>';
     }).catch(function (e) { s.querySelector(".body").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; });
   }
   function userMenu() {
@@ -788,9 +788,7 @@
       document.getElementById("ef").innerHTML =
         '<div style="text-align:center"><span class="ring">' + avatar(u.avatarUrl, u.displayName || u.username, "l") + '</span><br><label class="link" style="cursor:pointer;display:inline-block;padding:10px;font-weight:600">Trocar foto<input id="af" type="file" accept="image/*" hidden></label></div>' +
         '<label class="fld">Nome<input class="inp" id="dn" maxlength="60" value="' + esc(u.displayName) + '"></label>' +
-        '<label class="fld">Nome de usuário<input class="inp" id="un" maxlength="30" autocapitalize="none" value="' + esc(u.username) + '"></label>' +
-        '<label class="fld">Bio<textarea class="inp" id="bi" maxlength="300">' + esc(P.desc) + '</textarea></label>' +
-        '<label class="fld">País<select class="inp" id="ct"><option value="">Selecionar meu país</option>' + COUNTRIES.map(function (c) { return '<option' + (c === P.country ? " selected" : "") + ">" + esc(c) + "</option>"; }).join("") + "</select></label>" +
+        '<label class="fld">Bio<textarea class="inp" id="bi" maxlength="150">' + esc(P.desc) + '</textarea></label>' +
         '<div class="fld">Links (até 3)' + [0, 1, 2].map(function (i) { return '<input class="inp lkin" maxlength="80" inputmode="url" autocapitalize="none" placeholder="meusite.com" value="' + esc(P.links[i] || "") + '">'; }).join("") + '</div><div class="err" id="er"></div><button class="btn" id="sv">Salvar</button>';
       var ef = document.getElementById("ef");
       ef.querySelector("#af").addEventListener("change", function (e) {
@@ -804,8 +802,8 @@
         var btn = this; btn.disabled = true; ef.querySelector("#er").textContent = "";
         var lks = Array.prototype.map.call(ef.querySelectorAll(".lkin"), function (i) { return linkClean(i.value); }).filter(Boolean).slice(0, 3);
         if (lks.some(function (l) { return l.indexOf(".") < 1 || l.slice(-1) === "."; })) { ef.querySelector("#er").textContent = "Um dos links não parece certo. Use algo como meusite.com."; btn.disabled = false; return; }
-        var ctry = ef.querySelector("#ct").value, composed = (ctry ? "🌍 " + ctry + "\n" : "") + (lks.length ? "🔗 " + lks.join(" | ") + "\n" : "") + ef.querySelector("#bi").value.trim();
-        api("/api/users/me", { method: "PATCH", body: { displayName: ef.querySelector("#dn").value, username: ef.querySelector("#un").value, bio: composed } })
+        var composed = (lks.length ? "🔗 " + lks.join(" | ") + "\n" : "") + ef.querySelector("#bi").value.trim();
+        api("/api/users/me", { method: "PATCH", body: { displayName: ef.querySelector("#dn").value, bio: composed } })
           .then(function (r) { me.username = r.user.username; me.displayName = r.user.displayName; save(); toast("Perfil salvo."); location.hash = "#/me"; })
           .catch(function (e) { ef.querySelector("#er").textContent = e.message; btn.disabled = false; });
       });
@@ -884,7 +882,7 @@
       t = setTimeout(function () {
         api("/api/users/search?q=" + encodeURIComponent(q.replace(/^@/, ""))).then(function (j) {
           s.querySelector("#qr").innerHTML = (j.users || []).map(function (u) {
-            return '<button class="row" data-chat="' + esc(u.username) + '">' + avatar(u.avatarUrl, u.displayName || u.username) + '<span class="t"><b>' + esc(u.displayName || u.username) + "</b><small>@" + esc(u.username) + "</small></span></button>";
+            return '<button class="row" data-chat="' + esc(u.username) + '">' + avatar(u.avatarUrl, u.displayName || u.username) + '<span class="t"><b>' + esc(u.displayName || u.username) + "</b></span></button>";
           }).join("") || '<div class="empty">Ninguém encontrado.</div>';
         }).catch(onErr);
       }, 300);
@@ -894,7 +892,7 @@
 
   function accountsSheet() {
     var s = sheet("Suas contas", accounts.map(function (a) {
-      return '<div class="row" style="padding:0 16px 0 0"><button class="row" data-switch="' + a.id + '">' + avatar(a.avatarUrl, a.displayName || a.username) + '<span class="t"><b>' + esc(a.displayName || a.username) + "</b><small>@" + esc(a.username) + "</small></span>" + (a.id === activeId ? '<span class="link">●</span>' : "") + '</button><button class="link" data-drop="' + a.id + '" style="font-size:12px;color:var(--muted)">Sair</button></div>';
+      return '<div class="row" style="padding:0 16px 0 0"><button class="row" data-switch="' + a.id + '">' + avatar(a.avatarUrl, a.displayName || a.username) + '<span class="t"><b>' + esc(a.displayName || a.username) + "</b></span>" + (a.id === activeId ? '<span class="link">●</span>' : "") + '</button><button class="link" data-drop="' + a.id + '" style="font-size:12px;color:var(--muted)">Sair</button></div>';
     }).join("") + '<button class="row" data-addacc><span class="av">+</span><span class="t"><b>Adicionar outra conta</b></span></button>');
     return s;
   }
@@ -913,7 +911,7 @@
     el.innerHTML = posts.length ? posts.map(postHTML).join("") : '<div class="empty">' + empty + "</div>";
   }
   function userRow(u) {
-    return '<a class="row" href="#/u/' + esc(u.username) + '">' + avatar(u.avatarUrl, u.displayName || u.username) + '<span class="t"><b>' + esc(u.displayName || u.username) + (u.verified ? " " + VERIFIED : "") + "</b><small>@" + esc(u.username) + (u.bio ? " · " + esc(u.bio) : "") + "</small></span></a>";
+    return '<a class="row" href="#/u/' + esc(u.username) + '">' + avatar(u.avatarUrl, u.displayName || u.username) + '<span class="t"><b>' + esc(u.displayName || u.username) + (u.verified ? " " + VERIFIED : "") + "</b>" + (u.bio ? "<small>" + esc(u.bio) + "</small>" : "") + "</span></a>";
   }
   function viewSearch(prefill) {
     setView(top("Buscar") + '<div style="padding:12px 16px"><input class="inp" id="q" placeholder="Pessoas, publicações e #assuntos" autocomplete="off" value="' + esc(prefill || "") + '"></div><div id="sr"></div>', "search");
@@ -1036,7 +1034,7 @@
       (me ? '<button class="scp" data-sc="profile">' + avatar(me.avatarUrl, me.displayName || me.username) + '<span class="t"><b>' + esc(me.username) + "</b><small>Ver meu perfil</small></span></button>" : "") +
       lab("EXPLORAR") + item("play", "tab:Vídeos", "Vídeos", "Curtos e longos") + item("flame", "tab:Em alta", "Em alta", "O que está bombando") + item("sensors", "tab:Lives", "Ao vivo", "Transmissões ao vivo") +
       lab("SEUS ESPAÇOS") + item("groups", "go:#/communities", "Comunidades", "Seus grupos") + item("save", "go:#/saved", "Salvos", "Publicações que você guardou") + item("adduser", "invite", "Convidar amigos", "Compartilhe o QINBLY") + item("sensors", "go:#/golive", "Transmitir ao vivo", "Comece uma live agora") +
-      '<div class="scg"></div>' + item("gear", "go:#/settings", "Configurações", "Conta, privacidade, tela e mais") + item("groups", "accounts", "Trocar de conta", me ? "@" + esc(me.username) : "") + item("download", "install", "Instalar o app", "Instala direto no celular") +
+      '<div class="scg"></div>' + item("gear", "go:#/settings", "Configurações", "Conta, privacidade, tela e mais") + item("groups", "accounts", "Trocar de conta", me ? esc(me.displayName || me.username) : "") + item("download", "install", "Instalar o app", "Instala direto no celular") +
       '<div class="scf"><a href="privacidade.html">Privacidade</a><a href="termos.html">Termos de uso</a></div>' +
       '<button class="sci out" data-sc="drop">' + svg("x") + '<span class="t"><b>Sair desta conta</b></span></button></div>';
     document.body.appendChild(o);
@@ -1378,11 +1376,11 @@
         function reqs() {
           call(HOST + "/rest/v1/follow_requests?target_id=eq." + me.id + "&select=requester_id,profiles!follow_requests_requester_id_fkey(username,display_name,avatar_path)&order=created_at.desc&limit=100").then(function (l) {
             var el = document.getElementById("fr"); if (!el) return; l = Array.isArray(l) ? l : [];
-            el.innerHTML = l.length ? l.map(function (x) { var p = x.profiles || {}; return '<div class="row">' + avatar(photoUrl(p.avatar_path), p.display_name || p.username) + '<span class="t"><b>' + esc(p.display_name || p.username) + "</b><small>@" + esc(p.username) + '</small></span><button class="sb pri" style="flex:none;width:72px" data-fr="ok:' + x.requester_id + '">Aceitar</button><button class="sb" style="flex:none;width:72px" data-fr="no:' + x.requester_id + '">Recusar</button></div>'; }).join("") : '<div class="empty" style="padding:12px 16px;text-align:left">Nenhum pedido.</div>';
+            el.innerHTML = l.length ? l.map(function (x) { var p = x.profiles || {}; return '<div class="row">' + avatar(photoUrl(p.avatar_path), p.display_name || p.username) + '<span class="t"><b>' + esc(p.display_name || p.username) + "</b>" + '</span><button class="sb pri" style="flex:none;width:72px" data-fr="ok:' + x.requester_id + '">Aceitar</button><button class="sb" style="flex:none;width:72px" data-fr="no:' + x.requester_id + '">Recusar</button></div>'; }).join("") : '<div class="empty" style="padding:12px 16px;text-align:left">Nenhum pedido.</div>';
           }).catch(function () { });
         }
         function blocks() {
-          api("/api/users/me/blocks").then(function (j) { var el = document.getElementById("bl"); if (!el) return; var l = j.blocks || []; el.innerHTML = l.length ? l.map(function (b) { return '<div class="row"><span class="t"><b>' + esc(b.displayName || b.username) + "</b><small>@" + esc(b.username) + '</small></span><button class="sb" style="flex:none;width:90px" data-unblock="' + b.id + '">Desbloquear</button></div>'; }).join("") : '<div class="empty" style="padding:12px 16px;text-align:left">Ninguém bloqueado.</div>'; }).catch(function () { });
+          api("/api/users/me/blocks").then(function (j) { var el = document.getElementById("bl"); if (!el) return; var l = j.blocks || []; el.innerHTML = l.length ? l.map(function (b) { return '<div class="row"><span class="t"><b>' + esc(b.displayName || b.username) + "</b>" + '</span><button class="sb" style="flex:none;width:90px" data-unblock="' + b.id + '">Desbloquear</button></div>'; }).join("") : '<div class="empty" style="padding:12px 16px;text-align:left">Ninguém bloqueado.</div>'; }).catch(function () { });
         }
         sb.addEventListener("click", function (e) {
           var t = e.target.closest("[data-sw],[data-ch],[data-fr],[data-unblock]"); if (!t) return;
@@ -1768,7 +1766,7 @@
         var p = chatPref(c.username), snip = c.body && /^qinbly:/.test(c.body) ? "Mídia" : (c.body || "");
         return '<button class="row" data-chat="' + esc(c.username) + '">' + avatar(c.avatarUrl, c.displayName || c.username) + '<span class="t"><b>' + (p.pin ? "📌 " : "") + esc(c.displayName || c.username) + (p.mute ? " 🔕" : "") + "</b><small>" + esc(snip) + '</small></span><span class="meta">' + ago(c.createdAt) + (c.unreadCount ? ' <i class="dotn">' + c.unreadCount + "</i>" : "") + "</span></button>";
       }).join("") : '<div class="empty">' + (tab === "unread" ? "Tudo em dia!" : tab === "req" ? "Nenhuma solicitação. Mensagens de pessoas que você não segue aparecem aqui." : "Nenhuma conversa ainda. Toque na lupa para procurar alguém.") + "</div>" +
-        (tab === "all" && !l.length && sug.length ? '<div class="sect">Pessoas para seguir</div>' + sug.slice(0, 5).map(function (u) { return '<a class="row" href="#/u/' + esc(u.username) + '">' + avatar(u.avatarUrl, u.displayName || u.username) + '<span class="t"><b>' + esc(u.displayName || u.username) + "</b><small>@" + esc(u.username) + "</small></span></a>"; }).join("") : "");
+        (tab === "all" && !l.length && sug.length ? '<div class="sect">Pessoas para seguir</div>' + sug.slice(0, 5).map(function (u) { return '<a class="row" href="#/u/' + esc(u.username) + '">' + avatar(u.avatarUrl, u.displayName || u.username) + '<span class="t"><b>' + esc(u.displayName || u.username) + "</b></span></a>"; }).join("") : "");
     }
     api("/api/inbox").then(function (j) {
       cs = j.conversations || [];
@@ -1925,7 +1923,7 @@
     document.getElementById("nt").addEventListener("click", function (e) {
       if (!e.target.closest("[data-reqs]")) return;
       var s = sheet("Pedidos de seguir", "");
-      function draw() { s.querySelector(".body").innerHTML = reqs.length ? reqs.map(function (r) { var p = r.profiles || {}; return '<div class="row">' + avatar(photoUrl(p.avatar_path), p.display_name || p.username) + '<span class="t"><b>' + esc(p.display_name || p.username || "") + "</b><small>@" + esc(p.username || "") + '</small></span><button class="sb pri" style="flex:none;width:74px" data-ap="' + r.requester_id + '">Aceitar</button><button class="sb" style="flex:none;width:74px" data-rj="' + r.requester_id + '">Recusar</button></div>'; }).join("") : '<div class="empty">Nenhum pedido.</div>'; }
+      function draw() { s.querySelector(".body").innerHTML = reqs.length ? reqs.map(function (r) { var p = r.profiles || {}; return '<div class="row">' + avatar(photoUrl(p.avatar_path), p.display_name || p.username) + '<span class="t"><b>' + esc(p.display_name || p.username || "") + "</b>" + '</span><button class="sb pri" style="flex:none;width:74px" data-ap="' + r.requester_id + '">Aceitar</button><button class="sb" style="flex:none;width:74px" data-rj="' + r.requester_id + '">Recusar</button></div>'; }).join("") : '<div class="empty">Nenhum pedido.</div>'; }
       draw();
       s.addEventListener("click", function (e) {
         var a = e.target.closest("[data-ap]"), r = e.target.closest("[data-rj]");

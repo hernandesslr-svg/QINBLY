@@ -227,7 +227,6 @@ internal fun QinblyTagPeopleDialog(token: String?, myUsername: String, initial: 
                                     Text(user.displayName.ifBlank { user.username }, color = QiblyTheme.text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                                     if (user.verified) QinblyVerifiedBadge(16.dp)
                                 }
-                                Text("@" + user.username, color = QiblyTheme.secondary, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                             if (on) {
                                 Box(Modifier.size(24.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) { QinblyCheckIcon(Color.White, 15.dp) }
