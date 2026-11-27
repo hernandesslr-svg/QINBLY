@@ -5239,7 +5239,7 @@ private fun QinblyPostCard(
                 // O corte do quadro acompanha o rosto (a cabeça nunca fica de fora); a foto inteira abre ao tocar.
                 val faceAlignment = rememberQinblyFaceAlignment(shownPhoto, imageAspectRatio, imageAspectRatio.coerceIn(0.8f, 1.8f))
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)
                         // Altura máxima 4:5 (como o vídeo): fotos muito altas não empurram os botões para fora da tela.
                         .aspectRatio(imageAspectRatio.coerceIn(0.8f, 1.8f))
                         .clip(RoundedCornerShape(16.dp))
@@ -5315,7 +5315,7 @@ private fun QinblyPostCard(
                 }
 
             } else if (post.mediaUrl.isNotBlank() && post.mediaType == "video") {
-                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).aspectRatio(0.8f)
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp).aspectRatio(0.8f)
                     .clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
                     if (badge != null) Surface(
                         modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
@@ -5460,9 +5460,8 @@ private fun QinblyPostCard(
                     onShare = { onShare(post) }
                 )
             }
-            // Faixa fina (3 dp) separando uma publicação da outra; sem cartão em volta.
-            Spacer(Modifier.height(6.dp))
-            Box(Modifier.fillMaxWidth().padding(top = 6.dp).height(1.dp).background(RemoteAppearance.feedDividerColor.copy(alpha = 0.45f)))
+            // Sem linha entre as publicações: só um respiro em branco.
+            Spacer(Modifier.height(26.dp))
         }
     }
 }
