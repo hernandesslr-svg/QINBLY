@@ -12313,7 +12313,7 @@ private object QinblyCameraIcons {
 
 /** Item da lateral da câmera: nome à esquerda, ícone à direita. */
 @Composable
-private fun QinblyCameraSideItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, on: Boolean = false, dim: Boolean = false, compact: Boolean = false, onClick: () -> Unit) {
+private fun QinblyCameraSideItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, on: Boolean = false, dim: Boolean = false, compact: Boolean = false, glyph: Boolean = false, onClick: () -> Unit) {
     Row(
         Modifier.clip(RoundedCornerShape(10.dp)).clickable { onClick() }.padding(horizontal = 2.dp, vertical = 2.dp).alpha(if (dim) 0.55f else 1f),
         verticalAlignment = Alignment.CenterVertically,
@@ -12323,7 +12323,12 @@ private fun QinblyCameraSideItem(icon: androidx.compose.ui.graphics.vector.Image
             Text(label, color = Color.White, fontSize = if (compact) 11.sp else 14.sp, fontWeight = FontWeight.SemiBold,
                 style = MaterialTheme.typography.labelMedium.copy(shadow = androidx.compose.ui.graphics.Shadow(Color(0xCC000000), blurRadius = 4f)))
         }
-        Icon(icon, contentDescription = label, tint = if (on) QinblyBrand.Accent else Color.White, modifier = Modifier.size(if (compact) 27.dp else 33.dp))
+        if (glyph) {
+            Row(Modifier.size(if (compact) 27.dp else 33.dp).wrapContentSize(unbounded = true), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                Text("T", color = if (on) QinblyBrand.Accent else Color.White, fontSize = 29.sp, fontWeight = FontWeight.SemiBold, fontFamily = androidx.compose.ui.text.font.FontFamily.Serif)
+                Text("t", color = if (on) QinblyBrand.Accent else Color.White, fontSize = 24.sp, fontWeight = FontWeight.SemiBold, fontFamily = androidx.compose.ui.text.font.FontFamily.Serif)
+            }
+        } else Icon(icon, contentDescription = label, tint = if (on) QinblyBrand.Accent else Color.White, modifier = Modifier.size(if (compact) 27.dp else 33.dp))
     }
 }
 
@@ -14584,7 +14589,10 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     photoVideoPending = emptyList()
                     photoVideoOpen = true
                 }
-                QinblyCameraSideItem(QinblyCreateIcons.text, "Texto", on = editorTool == "Texto") { editorTool = if (editorTool == "Texto") "Filtros" else "Texto"; editorTextEditing = editorTool == "Texto" }
+                QinblyCameraSideItem(QinblyCreateIcons.text, "Texto", on = editorTool == "Texto", glyph = true) { editorTool = if (editorTool == "Texto") "Filtros" else "Texto"; editorTextEditing = editorTool == "Texto" }
+                QinblyCameraSideItem(QinblyCameraIcons.pen, "Desenho", on = editorTool == "Desenho") {
+                    editorTool = if (editorTool == "Desenho") "Filtros" else "Desenho"
+                }
                 QinblyCameraSideItem(QinblyCreateIcons.sticker, "Stickers", on = editorTool == "Stickers") { editorTool = if (editorTool == "Stickers") "Filtros" else "Stickers" }
                 QinblyCameraSideItem(QinblyCameraIcons.format, "Formato", on = editorTool == "Ajustar") {
                     editorTool = "Ajustar"
@@ -14592,6 +14600,20 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                     editorRatio = nextRatio; editorZoom = 1f; editorPanX = 0f; editorPanY = 0f
                     val u = selectedUri
                     if (u != null && selectedType == "foto") formatScope.launch { editorPanY = qinblyFacePanY(context, u, editorImageRatio, qinblyRatioValue(nextRatio, editorImageRatio)) }
+                }
+                if (selectedType == "foto") QinblyCameraSideItem(QinblyCameraIcons.mirror, "Espelhar") {
+                    val current = selectedUri
+                    if (current != null && !editorBusy) {
+                        editorBusy = true
+                        Thread {
+                            try {
+                                val copy = qinblyTransformCopy(context, current, false, true)
+                                android.os.Handler(android.os.Looper.getMainLooper()).post { selectedUri = copy; editorBusy = false }
+                            } catch (e: Exception) {
+                                android.os.Handler(android.os.Looper.getMainLooper()).post { editorBusy = false; onNotice("Não foi possível espelhar a foto.") }
+                            }
+                        }.start()
+                    }
                 }
                 if (selectedType == "foto") QinblyCameraSideItem(QinblyCameraIcons.crop, "Recortar") {
                     cropRatio = editorRatio; cropZoom = editorZoom; cropPanX = editorPanX; cropPanY = editorPanY
@@ -14627,39 +14649,6 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
                         }.start()
                     }
                 }
-                if (editorSideExpanded) {
- QinblySplit {
-                    QinblyCameraSideItem(QinblyCameraIcons.pen, "Desenho", on = editorTool == "Desenho") {
-                        editorTool = if (editorTool == "Desenho") "Filtros" else "Desenho"
-                    }
-                    if (selectedType == "foto") {
- QinblySplit {
-                        QinblyCameraSideItem(QinblyCameraIcons.mirror, "Espelhar") {
-                            val current = selectedUri
-                            if (current != null && !editorBusy) {
-                                editorBusy = true
-                                Thread {
-                                    try {
-                                        val copy = qinblyTransformCopy(context, current, false, true)
-                                        android.os.Handler(android.os.Looper.getMainLooper()).post { selectedUri = copy; editorBusy = false }
-                                    } catch (e: Exception) {
-                                        android.os.Handler(android.os.Looper.getMainLooper()).post { editorBusy = false; onNotice("Não foi possível espelhar a foto.") }
-                                    }
-                                }.start()
-                            }
-                        }
-                        QinblyCameraSideItem(QinblyCameraIcons.adjust, "Ajustes", on = editorTool == "Ajustes") { editorTool = if (editorTool == "Ajustes") "Filtros" else "Ajustes" }
-                        QinblyCameraSideItem(QinblyCameraIcons.hdr, "HDR", on = edHdr > 0f) {
-                            if (!editorBusy) {
-                                if (edHdr > 0f) { edHdr = 0f; if (editorTool == "HDR") editorTool = "Filtros"; runEditorFx("HDR tirado.") }
-                                else { edHdr = 0.65f; editorTool = "HDR"; runEditorFx("HDR aplicado.") }
-                            }
-                        }
-                     }
-}
-                 }
-}
-                QinblyCameraSideItem(if (editorSideExpanded) QinblyCameraIcons.chevronUp else QinblyCameraIcons.chevronDown, "") { editorSideExpanded = !editorSideExpanded }
              }
 }
 
