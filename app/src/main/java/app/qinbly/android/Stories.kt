@@ -614,7 +614,7 @@ internal fun QinblyStoryViewer(entry: QinblyApi.TrayEntry, accent: Color, onNoti
                         val sid = current.id.substringBefore("#")
                         val city = QinblyApi.myCity(prefs)
                         if (token.isNullOrBlank()) onNotice("Entre na sua conta.")
-                        else if (key == "near" && city.isBlank()) onNotice("O app ainda não sabe sua cidade. Abra o Perto de mim e tente de novo.")
+                        else if (key == "near" && city.isBlank()) onNotice("O app ainda não sabe sua cidade.")
                         else Thread {
                             try {
                                 QinblyApi.setStoryAudience(token, sid, key, city)

@@ -6588,166 +6588,6 @@ private fun QinblyLiveSearch(lives: List<QinblyLive>, onBack: () -> Unit, onOpen
     }
 }
 
-/** Perto de mim: publicações de quem está na sua cidade ou nas cidades próximas (mesmo estado). */
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-@Composable
-private fun QinblyNearbyFeed(
-    place: String,
-    posts: List<QinblyApi.PostSummary>,
-    onPosts: (List<QinblyApi.PostSummary>) -> Unit,
-    postItem: @Composable (QinblyApi.PostSummary) -> Unit
-) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
-    var loading by remember { mutableStateOf(true) }
-    var failed by remember { mutableStateOf(false) }
-    var refresh by remember { mutableIntStateOf(0) }
-    LaunchedEffect(place, refresh) {
-        loading = true; failed = false
-        val token = prefs.getString("token", null)
-        val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            try {
-                if (!token.isNullOrBlank()) try { QinblyApi.syncMyCity(prefs, token) } catch (_: Exception) { }
-                // Primeiro quem é da sua cidade, depois quem é das cidades próximas (mesmo estado).
-                val where = place.ifBlank { QinblyApi.myCity(prefs) }
-                val inCity = QinblyApi.getNearbyPosts(token, where, false)
-                val inRegion = try { QinblyApi.getNearbyPosts(token, where, true) } catch (_: Exception) { emptyList() }
-                val seen = inCity.map { it.id }.toSet()
-                (inCity + inRegion.filter { it.id !in seen }).take(30)
-            } catch (_: Exception) { null }
-        }
-        if (result == null) failed = true else onPosts(result)
-        loading = false
-    }
-    androidx.compose.material3.pulltorefresh.PullToRefreshBox(isRefreshing = loading, onRefresh = { refresh++ }, modifier = Modifier.fillMaxSize()) {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 18.dp)) {
-            if (!loading && posts.isEmpty()) item(key = "nearby-empty") {
-                Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 36.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = RemoteAppearance.feedSecondaryTextColor, modifier = Modifier.size(36.dp))
-                    Text(if (failed) "Não foi possível carregar" else "Ainda não há publicações perto de você", color = RemoteAppearance.feedTextColor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                    Text(if (failed) "Puxe a tela para baixo para tentar de novo." else "Quando alguém da sua cidade ou das cidades próximas publicar, aparece aqui.", color = RemoteAppearance.feedSecondaryTextColor, style = MaterialTheme.typography.bodyMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                }
-            }
-            items(posts, key = { "near-" + it.id }) { post -> Column(Modifier.fillMaxWidth()) { postItem(post) } }
-        }
-    }
-}
-
-/** Aba "Perto de mim": pede a localização, mostra onde você está e abre as configurações se a permissão foi bloqueada. */
-@Composable
-private fun QinblyNearbyPage(onNotice: (String) -> Unit, content: @Composable (Double, Double, String, () -> Unit) -> Unit) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val locPrefs = remember { context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount() }
-    var locEnabled by remember { mutableStateOf(locPrefs.getBoolean("setting_location_enabled", true)) }
-    if (!locEnabled) {
-        // Configurações > Localização desligada: estas telas não pedem a posição.
-        Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = QiblyTheme.secondary, modifier = Modifier.size(44.dp))
-            Spacer(Modifier.height(12.dp))
-            Text("A localização está desligada", color = QiblyTheme.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-            Text("O Perto de mim precisa saber onde você está. Você pode religar quando quiser (também em Configurações > Localização).", color = QiblyTheme.secondary, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(top = 8.dp, bottom = 18.dp))
-            QinblyGradientButton(onClick = { locPrefs.edit().putBoolean("setting_location_enabled", true).apply(); locEnabled = true }, colors = ButtonDefaults.buttonColors(containerColor = QinblyBrand.Accent, contentColor = Color.White), shape = RoundedCornerShape(24.dp)) { Text("Ligar a localização", fontWeight = FontWeight.SemiBold) }
-        }
-        return
-    }
-    fun hasLocation() = androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
-        androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
-    var allowed by remember { mutableStateOf(hasLocation()) }
-    var blocked by remember { mutableStateOf(false) }
-    var place by remember { mutableStateOf("") }
-    var locating by remember { mutableStateOf(false) }
-    var failed by remember { mutableStateOf(false) }
-    var attempt by remember { mutableIntStateOf(0) }
-    var here by remember { mutableStateOf<Pair<Double, Double>?>(null) }
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-        allowed = result.values.any { it } || hasLocation()
-        blocked = !allowed
-    }
-    LaunchedEffect(allowed, attempt) {
-        if (!allowed) return@LaunchedEffect
-        locating = true; failed = false; place = ""
-        val lm = context.getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
-        var loc: android.location.Location? = null
-        try {
-            for (provider in listOf(android.location.LocationManager.GPS_PROVIDER, android.location.LocationManager.NETWORK_PROVIDER, android.location.LocationManager.PASSIVE_PROVIDER)) {
-                val last = try { lm.getLastKnownLocation(provider) } catch (_: Exception) { null }
-                if (last != null && (loc == null || last.time > loc!!.time)) loc = last
-            }
-            if (loc == null) {
-                val provider = when {
-                    lm.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER) -> android.location.LocationManager.NETWORK_PROVIDER
-                    lm.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER) -> android.location.LocationManager.GPS_PROVIDER
-                    else -> null
-                }
-                if (provider != null) {
-                    loc = kotlinx.coroutines.withTimeoutOrNull(10_000) {
-                        kotlinx.coroutines.suspendCancellableCoroutine<android.location.Location?> { cont ->
-                            androidx.core.location.LocationManagerCompat.getCurrentLocation(lm, provider, null, androidx.core.content.ContextCompat.getMainExecutor(context)) { result ->
-                                if (cont.isActive) cont.resumeWith(Result.success(result))
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (_: SecurityException) { allowed = false }
-        val found = loc
-        if (found == null) { failed = true; locating = false; return@LaunchedEffect }
-        here = found.latitude to found.longitude
-        place = try {
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                @Suppress("DEPRECATION")
-                val a = android.location.Geocoder(context, java.util.Locale("pt", "BR")).getFromLocation(found.latitude, found.longitude, 1)?.firstOrNull()
-                listOfNotNull(a?.subAdminArea ?: a?.locality, a?.adminArea).distinct().joinToString(", ")
-            }
-        } catch (_: Exception) { "" }
-        if (place.isNotBlank()) context.getSharedPreferences("qinbly_session", android.content.Context.MODE_PRIVATE).byAccount().edit().putString("device_place", place).apply()
-        locating = false
-    }
-    val hereNow = here
-    if (allowed && !failed && hereNow != null) {
-        content(hereNow.first, hereNow.second, place) { attempt++ }
-        return
-    }
-    Column(
-        Modifier.fillMaxSize().padding(horizontal = 28.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
-    ) {
-        QinblyAccentIcon(Icons.Outlined.LocationOn, contentDescription = null, modifier = Modifier.size(44.dp))
-        Spacer(Modifier.height(12.dp))
-        when {
-            !allowed -> {
-                Text("Veja o que está perto de você", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = RemoteAppearance.feedTextColor)
-                Spacer(Modifier.height(6.dp))
-                Text("Permita a localização para o ${QinblyBrand.Name} mostrar publicações e pessoas da sua região.", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                Spacer(Modifier.height(16.dp))
-                Button(onClick = {
-                    if (blocked) {
-                        context.startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + context.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                        onNotice("Ative a permissão de Localização nas configurações do app.")
-                    } else launcher.launch(arrayOf(android.Manifest.permission.ACCESS_COARSE_LOCATION, android.Manifest.permission.ACCESS_FINE_LOCATION))
-                }) { Text(if (blocked) "Abrir configurações" else "Permitir localização") }
-            }
-            locating -> {
-                Text("Procurando sua localização…", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
-            }
-            failed -> {
-                Text("Não foi possível obter sua localização", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = RemoteAppearance.feedTextColor)
-                Spacer(Modifier.height(6.dp))
-                Text("Ligue o GPS do aparelho e tente de novo.", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp)
-                Spacer(Modifier.height(16.dp))
-                OutlinedButton(onClick = { attempt++ }) { Text("Tentar de novo") }
-            }
-            else -> {
-                Text(if (place.isNotBlank()) "Você está em $place" else "Localização encontrada", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = RemoteAppearance.feedTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                Spacer(Modifier.height(6.dp))
-                Text("Ainda não há publicações com localização por perto. Elas aparecerão aqui.", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                Spacer(Modifier.height(16.dp))
-                OutlinedButton(onClick = { attempt++ }) { Text("Atualizar") }
-            }
-        }
-    }
-}
-
 /** Janela de tela cheia da live: cobre barra de cima, abas e menu de baixo. O botão voltar chama o que a tela registrar em [backHook]. */
 @Composable
 private fun QinblyLiveWindow(backHook: MutableState<(() -> Unit)?>, content: @Composable () -> Unit) {
@@ -7566,25 +7406,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         "Comunidade" -> allFeedPosts.filter { it.comments > 0 }
         else -> allFeedPosts
     }
-    var nearbyPosts by remember { mutableStateOf<List<QinblyApi.PostSummary>>(emptyList()) }
-    var showShortcuts by remember { mutableStateOf(false) }
-    val shortcutsContext = androidx.compose.ui.platform.LocalContext.current
-    if (showShortcuts) QinblyShortcutsScreen(currentUsername, onDismiss = { showShortcuts = false }) { id ->
-        showShortcuts = false
-        when (id) {
-            "profile" -> onGoTab(4)
-            "Vídeos", "Em alta", "Lives", "Perto de mim" -> selectedFeedTab = id
-            "communities" -> onGoTab(3)
-            "saved" -> { QinblyProfileJump.tab = "Salvos"; onGoTab(4) }
-            "invite" -> try {
-                val share = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Venha para o ${QinblyBrand.Name}! Baixe o app e me siga: @${currentUsername}") }
-                shortcutsContext.startActivity(Intent.createChooser(share, "Convidar amigos"))
-            } catch (_: Exception) { onNotice("Não foi possível abrir o compartilhamento.") }
-            "settings" -> onSettings()
-        }
-    }
     val displayedPosts = when (selectedFeedTab) {
-        "Perto de mim" -> nearbyPosts
         "Vídeos" -> allFeedPosts.filter { it.mediaType.equals("video", ignoreCase = true) }
         "Em alta" -> allFeedPosts.filter { qinblyEmAltaMedia(it) && qinblyInPeriod(it, emAltaPeriod) }.sortedByDescending { qinblyHotScore(it) }.take(20)
         else -> feedTabPosts
@@ -7643,7 +7465,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         QinblyFeedJump.returnEntry = null
         if (back != null) { selectedFeedTab = "Descobrir"; QinblyStoryReturn.index = QinblyFeedJump.returnIndex; QinblyStoryReturn.entry = back }
     }
-    // Deslizar para os lados troca as abas de cima (Descobrir, Seguindo, Em alta, Vídeos, Lives, Perto de mim); a barra de baixo não muda por gesto.
+    // Deslizar para os lados troca as abas de cima (Descobrir, Seguindo, Em alta, Vídeos, Lives); a barra de baixo não muda por gesto.
     val feedTabOrder = listOf("Descobrir", "Vídeos", "Seguindo", "Em alta", "Lives")
     // Aba Vídeos: tela cheia, um vídeo por tela, com o cabeçalho transparente por cima.
     val onVideoTab = selectedFeedTab == "Vídeos"
@@ -7736,9 +7558,6 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                 }
         ) {
         if (!hideTop) Box(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 6.dp).heightIn(min = 42.dp)) {
-            IconButton(onClick = { showShortcuts = true }, modifier = Modifier.align(Alignment.CenterStart).size(44.dp).offset(x = (-8).dp)) {
-                Icon(Icons.Default.Menu, contentDescription = "Menu e configurações", tint = hdrText, modifier = Modifier.size(30.dp))
-            }
             Text(QinblyBrand.Name, style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(QinblyBrand.Logo, QinblyBrand.Pink))), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, modifier = Modifier.align(Alignment.Center))
             Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onSearch, modifier = Modifier.size(42.dp)) {
@@ -7788,23 +7607,6 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         if (selectedFeedTab != "Descobrir" && selectedFeedTab != "Vídeos") QinblyStoriesRow(onNotice, onOpenProfile, onOpenConversation, onAddStory, hostOnly = true)
         if (selectedFeedTab == "Lives") {
             QinblyLivesPage(emptyList(), onNotice)
-        } else if (selectedFeedTab == "Perto de mim") {
-            QinblyNearbyPage(onNotice) { _, _, place, _ ->
-                QinblyNearbyFeed(place, nearbyPosts, { nearbyPosts = it }) { post ->
-                    QinblyPostCard(
-                        post = post,
-                        prefs = prefs,
-                        nameFontStyle = nameFontStyle,
-                        onNotice = onNotice,
-                        onOpenProfile = onOpenProfile,
-                        onOpenViewer = { openPostMedia(it) },
-                        onComment = { openFeedComments(it) },
-                        onShare = { sharePost = it },
-                        onPostsTransform = { change -> nearbyPosts = change(nearbyPosts) },
-                        onRefresh = { }
-                    )
-                }
-            }
         } else if (selectedFeedTab == "Vídeos" && (videoTabPosts.isNotEmpty() || loading)) {
             // A aba Vídeos é desenhada na camada de baixo (tela cheia, atrás do cabeçalho transparente).
         } else if (!loading && displayedPosts.isEmpty() && selectedFeedTab != "Em alta" && selectedFeedTab != "Descobrir") {
@@ -10261,50 +10063,6 @@ private fun QinblyStoriesRow(onNotice: (String) -> Unit, onOpenProfile: (String)
     }
 }
 
-/** Tela de atalhos (menu de três tracinhos do Início): lista simples, sem cartões, para ir direto às partes do app. */
-@Composable
-private fun QinblyShortcutsScreen(username: String, onDismiss: () -> Unit, onItem: (String) -> Unit) {
-    @Composable fun Item(icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color, id: String, title: String, sub: String = "") {
-        Row(Modifier.fillMaxWidth().clickable { onItem(id) }.padding(horizontal = 20.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(26.dp))
-            Spacer(Modifier.width(18.dp))
-            Column {
-                Text(title, color = RemoteAppearance.screenTextColor, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                if (sub.isNotBlank()) Text(sub, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 11.sp)
-            }
-        }
-    }
-    @Composable fun Label(text: String, tint: Color) = Text(text, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp, modifier = Modifier.padding(start = 20.dp, top = 22.dp, bottom = 4.dp))
-    val outlined = androidx.compose.material.icons.Icons.Outlined
-    QinblyDialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Column(Modifier.fillMaxSize().background(QiblyTheme.background).statusBarsPadding().verticalScroll(rememberScrollState()).padding(bottom = 24.dp + qinblyNavBarPadding())) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onDismiss) { Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = RemoteAppearance.screenTextColor) }
-                Text("Atalhos", color = RemoteAppearance.screenTextColor, fontSize = 20.sp, fontWeight = FontWeight.Medium)
-            }
-            Row(Modifier.fillMaxWidth().clickable { onItem("profile") }.padding(horizontal = 20.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                QiblyAccountAvatar(username, "", 56.dp) { onItem("profile") }
-                Spacer(Modifier.width(16.dp))
-                Column {
-                    Text(if (username.isBlank()) QinblyBrand.Name else username, color = RemoteAppearance.screenTextColor, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                    Text("Ver meu perfil", color = RemoteAppearance.screenSecondaryTextColor, fontSize = 11.sp)
-                }
-            }
-            Label("EXPLORAR", QinblyBrand.Accent)
-            Item(outlined.PlayCircle, QinblyBrand.Accent, "Vídeos", "Vídeos", "Curtos e longos")
-            Item(outlined.LocalFireDepartment, QinblyBrand.Accent, "Em alta", "Em alta", "O que está bombando")
-            Item(outlined.Sensors, QinblyBrand.Accent, "Lives", "Lives", "Transmissões ao vivo")
-            Item(outlined.LocationOn, QinblyBrand.Accent, "Perto de mim", "Perto de mim", "Gente da sua cidade")
-            Label("SEUS ESPAÇOS", QinblyBrand.Logo)
-            Item(outlined.Groups, QinblyBrand.Logo, "communities", "Comunidades", "Seus grupos")
-            Item(outlined.BookmarkBorder, QinblyBrand.Logo, "saved", "Salvos", "Publicações que você guardou")
-            Item(outlined.PersonAddAlt1, QinblyBrand.Logo, "invite", "Convidar amigos", "Compartilhe o ${QinblyBrand.Name}")
-            Spacer(Modifier.height(18.dp))
-            Item(outlined.Settings, RemoteAppearance.screenSecondaryTextColor, "settings", "Configurações", "Conta, privacidade, tela e mais")
-        }
-    }
-}
-
 /** Story em bolinha: foto de perfil com anel (azul = não visto), nome embaixo e + no próprio. */
 @Composable
 private fun QinblyStoryBubble(username: String, avatarUrl: String, label: String, ring: Color, plus: Boolean, onPlus: () -> Unit = {}, onClick: () -> Unit) {
@@ -11752,7 +11510,7 @@ private fun SettingsPage(prefs: android.content.SharedPreferences, username: Str
                     item { SettingsLink("Contas silenciadas", "Quem você parou de ver no feed", Icons.Outlined.NotificationsOff) { showMutedAccounts = true } }
                 }
                 "location" -> {
-                    item { VideoPrefSwitch("Usar minha localização", "Perto de mim. Desligado, essa tela não pede sua posição", "setting_location_enabled", true, prefs, Icons.Outlined.LocationOn) }
+                    item { VideoPrefSwitch("Usar minha localização", "Para saber sua cidade. Desligado, o app não pede sua posição", "setting_location_enabled", true, prefs, Icons.Outlined.LocationOn) }
                     item { Text("O QUE FICA GUARDADO", color = RemoteAppearance.screenSecondaryTextColor, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 14.dp, bottom = 2.dp)) }
                     item { Text("A cidade do seu perfil e a posição de cada aviso que você publicou no Mural.", color = Muted, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) }
                     item { SettingsLink("Apagar dados de localização", "Remove seus avisos do Mural e a cidade guardada", Icons.Outlined.DeleteOutline) { showClearLocation = true } }
@@ -14628,7 +14386,7 @@ private fun PostPage(onNotice: (String) -> Unit, onCameraCancelled: () -> Unit, 
     val advance: () -> Unit = advance@{
         if (publishing || editorBusy) return@advance
         if (storyDirect && storyAudience == "near" && QinblyApi.myCity(prefs).isBlank()) {
-            onNotice("Pra publicar \"Perto de você\", abra o Perto de mim antes.")
+            onNotice("O app ainda não sabe sua cidade.")
             return@advance
         }
                             if (selectedUri == null && sourceUri == null) {
