@@ -10329,8 +10329,8 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
 
     val profileAccent = QinblyBrand.Accent
     Column(Modifier.fillMaxSize().background(RemoteAppearance.screenBackgroundColor).verticalScroll(profileScrollState), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.fillMaxWidth().height(56.dp)) {
-            IconButton(onClick = onSettings, modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 12.dp)) {
+        Box(Modifier.fillMaxWidth().height(48.dp)) {
+            IconButton(onClick = onSettings, modifier = Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 12.dp)) {
                 Icon(Icons.Default.Menu, contentDescription = "Configurações do perfil", tint = RemoteAppearance.screenTextColor)
             }
         }
@@ -10384,7 +10384,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
         }
         QinblyProfileBioLeft(ownParts.description, placeholder = "Adicione uma descrição ao seu perfil")
         QinblyProfileLinks(ownParts.links)
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             QinblyGrayButton("Editar perfil", Modifier.weight(1f)) { if (username.isBlank()) onAuth() else onEdit() }
             QinblyGrayButton("Compartilhar perfil", Modifier.weight(1f)) {
                 if (username.isBlank()) onAuth() else try {
@@ -10394,7 +10394,7 @@ private fun ProfilePage(scrollToTopRequest: Int, username: String, displayName: 
             }
         }
         QinblyHighlightsRow(username.removePrefix("@"), profilePrefs, mine = true, onNotice = onNotice)
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(12.dp))
         // Abas em superfície limpa, separadas por um divisor sutil.
         Row(
             Modifier.fillMaxWidth()
@@ -10948,7 +10948,7 @@ private fun EditProfilePage(initialUsername: String, initialName: String, initia
                 "free" -> Text("✓ @$username está disponível", color = Color(0xFF1E8E3E), style = MaterialTheme.typography.bodySmall)
                 "taken" -> Text("Esse nome de usuário já está em uso. Escolha outro.", color = Color(0xFFD93025), style = MaterialTheme.typography.bodySmall)
             }
-            editCard(Icons.Default.Description, "Bio", bio, "Escreva uma breve descrição sobre você", { bio = it }, singleLine = false, max = 300)
+            editCard(Icons.Default.Description, "Bio", bio, "Escreva uma breve descrição sobre você", { bio = it }, singleLine = false, max = 150)
             Box {
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))

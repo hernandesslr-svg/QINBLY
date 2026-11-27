@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -136,28 +137,32 @@ internal fun QinblyProfileTop(
     onFollowers: () -> Unit,
     onLikes: (() -> Unit)? = null
 ) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-        avatar()
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f, fill = false)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(name, color = RemoteAppearance.screenTextColor, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                if (verified) QinblyVerifiedBadge(20.dp)
-            }
-            Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                Row(if (onHandle != null) Modifier.weight(1f, fill = false).clickable(onClick = onHandle) else Modifier.weight(1f, fill = false), verticalAlignment = Alignment.CenterVertically) {
-                    Text(handle, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                    if (arrow) Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Trocar de conta", tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(18.dp))
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.width(androidx.compose.foundation.layout.IntrinsicSize.Max)) {
+            Row(Modifier.offset(x = (-18).dp), verticalAlignment = Alignment.CenterVertically) {
+                avatar()
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.widthIn(max = 170.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(name, color = RemoteAppearance.screenTextColor, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                        if (verified) QinblyVerifiedBadge(20.dp)
+                    }
+                    Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(if (onHandle != null) Modifier.weight(1f, fill = false).clickable(onClick = onHandle) else Modifier.weight(1f, fill = false), verticalAlignment = Alignment.CenterVertically) {
+                            Text(handle, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                            if (arrow) Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Trocar de conta", tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(18.dp))
+                        }
+                        if (onAbout != null) QinblyAccentIcon(Icons.Outlined.Info, contentDescription = "Sobre este perfil",
+                            modifier = Modifier.padding(start = 6.dp).size(18.dp).clickable(onClick = onAbout))
+                    }
                 }
-                if (onAbout != null) QinblyAccentIcon(Icons.Outlined.Info, contentDescription = "Sobre este perfil",
-                    modifier = Modifier.padding(start = 6.dp).size(18.dp).clickable(onClick = onAbout))
+            }
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(42.dp, Alignment.CenterHorizontally)) {
+                QinblyProfileStat("Seguindo", following, onFollowing)
+                QinblyProfileStat("Seguidores", followers, onFollowers)
+                QinblyProfileStat("Curtidas", likes, onLikes)
             }
         }
-    }
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 14.dp), horizontalArrangement = Arrangement.SpaceAround) {
-        QinblyProfileStat("Seguindo", following, onFollowing)
-        QinblyProfileStat("Seguidores", followers, onFollowers)
-        QinblyProfileStat("Curtidas", likes, onLikes)
     }
 }
 
@@ -174,13 +179,13 @@ private fun QinblyProfileStat(label: String, n: Int, onClick: (() -> Unit)?) {
 internal fun QinblyProfileBioLeft(text: String, placeholder: String = "") {
     val clean = text.trim()
     if (clean.isBlank() && placeholder.isBlank()) return
-    if (clean.isBlank()) Text(placeholder, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp))
+    if (clean.isBlank()) Text(placeholder, color = RemoteAppearance.screenSecondaryTextColor, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Start, modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp))
     else QinblyRichText(
         text = clean,
         color = RemoteAppearance.screenTextColor,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp),
         fontSize = 14.sp,
-        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Start,
         linkColor = QinblyBrand.Accent
     )
 }
@@ -195,7 +200,7 @@ internal fun QinblyProfileLinks(links: List<String>) {
     val chars = labels.sumOf { it.length }.coerceAtLeast(1)
     val fixed = links.size * 22 + (links.size - 1) * 12
     val sp = ((widthDp - fixed) / (chars * 0.53f)).coerceIn(9f, 14f)
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
         links.forEachIndexed { i, raw ->
             Row(Modifier.weight(1f, fill = false).clickable {
                 try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(qinblyLinkUrl(raw)))) } catch (_: Exception) { }
@@ -266,17 +271,9 @@ internal fun QinblyHighlightsRow(username: String, prefs: android.content.Shared
         try { list = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { QinblyApi.getHighlights(username, prefs.getString("token", null)) } } catch (_: Exception) { }
     }
     val groups = remember(list) { list.groupBy { it.title }.toList() }
-    if (groups.isEmpty() && !mine) return
+    if (groups.isEmpty()) return
     val gray = if (QiblyTheme.dark) Color(0x1AFFFFFF) else Color(0xFFF1F2F5)
     LazyRow(modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        if (mine) item(key = "novo") {
-            Column(Modifier.width(64.dp).clickable { creating = true }, horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(Modifier.size(60.dp).clip(CircleShape).background(gray), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Add, contentDescription = "Novo favorito", tint = RemoteAppearance.screenTextColor, modifier = Modifier.size(26.dp))
-                }
-                Text("Novo", color = RemoteAppearance.screenTextColor, fontSize = 12.sp, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
-            }
-        }
         items(groups.size, key = { "g:" + groups[it].first }) { i ->
             val (title, photos) = groups[i]
             val cover = photos.first()
