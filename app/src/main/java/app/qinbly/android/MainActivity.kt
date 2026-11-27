@@ -477,6 +477,8 @@ class MainActivity : ComponentActivity() {
             coil.ImageLoader.Builder(this)
                 .crossfade(120)
                 .respectCacheHeaders(false)
+                // Fotos vindas da internet vinham "deitadas" (o giro do EXIF só era aplicado em arquivos locais): agora sempre respeita o EXIF.
+                .components { add(coil.decode.BitmapFactoryDecoder.Factory(exifOrientationPolicy = coil.decode.ExifOrientationPolicy.RESPECT_ALL)) }
                 .memoryCache { coil.memory.MemoryCache.Builder(this).maxSizePercent(0.25).build() }
                 .diskCache { coil.disk.DiskCache.Builder().directory(cacheDir.resolve("qinbly_images")).maxSizeBytes(256L * 1024 * 1024).build() }
                 .build()
