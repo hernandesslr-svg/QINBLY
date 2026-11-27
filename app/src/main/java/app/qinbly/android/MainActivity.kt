@@ -5126,7 +5126,8 @@ private fun QinblyPostCard(
     onShare: (QinblyApi.PostSummary) -> Unit,
     onPostsTransform: ((List<QinblyApi.PostSummary>) -> List<QinblyApi.PostSummary>) -> Unit,
     onRefresh: () -> Unit,
-    badge: String? = null
+    badge: String? = null,
+    smallVideo: Boolean = false
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var editingCaption by remember(post.id) { mutableStateOf(false) }
@@ -5317,7 +5318,8 @@ private fun QinblyPostCard(
                 }
 
             } else if (post.mediaUrl.isNotBlank() && post.mediaType == "video") {
-                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp).aspectRatio(0.8f)
+                // Na aba Explorar o vídeo é mais baixo (16:10); nas outras abas continua 4:5.
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp).aspectRatio(if (smallVideo) 1.6f else 0.8f)
                     .clip(RoundedCornerShape(16.dp)).background(Color.Black)) {
                     if (badge != null) Surface(
                         modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
@@ -7900,7 +7902,8 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                         onComment = { openFeedComments(it) },
                         onShare = { sharePost = it },
                         onPostsTransform = { change -> posts = change(posts) },
-                        onRefresh = { refreshKey++ }
+                        onRefresh = { refreshKey++ },
+                        smallVideo = selectedFeedTab == "Descobrir"
                     )
                     }
                 }
