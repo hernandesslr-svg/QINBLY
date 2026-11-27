@@ -562,7 +562,7 @@
   }
   function viewFeed(tab) {
     if (tab) feedTab = tab;
-    var mob = '<header class="top mob apphd"><button class="ib" data-moremenu aria-label="Menu e configurações">' + svg("menu") + '</button><h1 class="brandg">QINBLY</h1><div class="hr"><button class="ib" data-go="#/search" aria-label="Buscar">' + svg("search") + '</button><button class="ib" data-go="#/notifications" aria-label="Notificações">' + svg("bell") + badge("notif", notifN) + "</button></div></header>";
+    var mob = '<header class="top mob apphd"><h1 class="brandg">QINBLY</h1><div class="hr"><button class="ib" data-go="#/search" aria-label="Buscar">' + svg("search") + '</button><button class="ib" data-go="#/notifications" aria-label="Notificações">' + svg("bell") + badge("notif", notifN) + "</button></div></header>";
     setView(mob + '<div class="ftabs">' + FTABS.map(function (t) { return '<button data-ftab="' + t + '" class="' + (t === feedTab ? "on" : "") + '">' + (FTAB_LABEL[t] || t) + "</button>"; }).join("") + '</div><div id="st"' + (feedTab === "Descobrir" ? "" : " hidden") + '></div><div id="fd">' + spin() + "</div>", tab ? "trending" : "home");
     loadStories();
     if (FEED.length) drawFeed();
@@ -1034,7 +1034,7 @@
     var o = document.createElement("div"); o.id = "scr"; o.className = "scr";
     o.innerHTML = '<div class="scw"><div class="sch"><button class="ib" data-sc="close" aria-label="Voltar">' + svg("back") + "</button><h2>Atalhos</h2></div>" +
       (me ? '<button class="scp" data-sc="profile">' + avatar(me.avatarUrl, me.displayName || me.username) + '<span class="t"><b>' + esc(me.username) + "</b><small>Ver meu perfil</small></span></button>" : "") +
-      lab("EXPLORAR") + item("play", "tab:Vídeos", "Vídeos", "Curtos e longos") + item("flame", "tab:Em alta", "Em alta", "O que está bombando") + item("sensors", "tab:Lives", "Ao vivo", "Transmissões ao vivo") + item("pin", "tab:Perto de mim", "Perto de mim", "Gente da sua cidade") +
+      lab("EXPLORAR") + item("play", "tab:Vídeos", "Vídeos", "Curtos e longos") + item("flame", "tab:Em alta", "Em alta", "O que está bombando") + item("sensors", "tab:Lives", "Ao vivo", "Transmissões ao vivo") +
       lab("SEUS ESPAÇOS") + item("groups", "go:#/communities", "Comunidades", "Seus grupos") + item("save", "go:#/saved", "Salvos", "Publicações que você guardou") + item("adduser", "invite", "Convidar amigos", "Compartilhe o QINBLY") + item("sensors", "go:#/golive", "Transmitir ao vivo", "Comece uma live agora") +
       '<div class="scg"></div>' + item("gear", "go:#/settings", "Configurações", "Conta, privacidade, tela e mais") + item("groups", "accounts", "Trocar de conta", me ? "@" + esc(me.username) : "") + item("download", "install", "Instalar o app", "Instala direto no celular") +
       '<div class="scf"><a href="privacidade.html">Privacidade</a><a href="termos.html">Termos de uso</a></div>' +
