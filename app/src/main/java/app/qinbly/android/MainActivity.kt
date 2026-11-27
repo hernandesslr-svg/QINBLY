@@ -392,15 +392,19 @@ private fun QinblyCommentIcon(tint: Color, iconSize: Dp = 24.dp, flip: Boolean =
 }
 
 @androidx.compose.runtime.Composable
-private fun QinblyShareArrowIcon(tint: Color = Color.White, iconSize: Dp = 26.dp) {
+private fun QinblyShareArrowIcon(tint: Color = Color.White, iconSize: Dp = 26.dp, outline: Boolean = false) {
     // Seta de enviar dos vídeos: cheia, curva, curta e gorda (ponta grande). Grade 34x34.
     androidx.compose.foundation.Canvas(modifier = Modifier.size(iconSize)) {
         val arrow = androidx.compose.ui.graphics.vector.PathParser()
             .parsePathString("M18 4L31 16L18 28V22C12 22 8 24 4 29C4 18 8 11 18 10Z")
             .toPath()
         withTransform({ scale(size.width / 34f, size.width / 34f, pivot = androidx.compose.ui.geometry.Offset.Zero) }) {
-            drawPath(arrow, tint)
-            drawPath(arrow, tint, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.5f, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+            if (outline) {
+                drawPath(arrow, tint, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.6f, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+            } else {
+                drawPath(arrow, tint)
+                drawPath(arrow, tint, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.5f, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+            }
         }
     }
 }
@@ -3851,6 +3855,7 @@ private enum class QinblyTone { Feed, Screen, Overlay }
 /** Tamanho dos ícones e dos números dos botões de ação (nos vídeos em tela cheia ficam maiores). */
 private val LocalQinblyActionIconSize = androidx.compose.runtime.compositionLocalOf { 24.dp }
 private val LocalQinblyActionTextSize = androidx.compose.runtime.compositionLocalOf { 12.sp }
+private val LocalQinblyActionHPad = androidx.compose.runtime.compositionLocalOf { 8.dp }
 
 private fun qinblyIconTint(tone: QinblyTone): Color = when (tone) {
     QinblyTone.Feed -> RemoteAppearance.actionIconColor
@@ -4164,7 +4169,7 @@ private fun QinblyActionButton(
             if (onLongClick != null) Modifier.combinedClickable(onClickLabel = description, onClick = onClick, onLongClick = onLongClick)
             else Modifier.clickable(onClickLabel = description, onClick = onClick)
         )
-        .padding(horizontal = 8.dp, vertical = 6.dp)
+        .padding(horizontal = LocalQinblyActionHPad.current, vertical = 6.dp)
     if (vertical) {
         Column(clickable, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) { content() }
     } else {
@@ -4224,7 +4229,9 @@ private fun QinblySaveButton(saved: Boolean, onClick: () -> Unit, tone: QinblyTo
 private fun QinblyShareButton(onClick: () -> Unit, tone: QinblyTone, vertical: Boolean = false) {
     val onVideo = tone == QinblyTone.Overlay && vertical
     QinblyActionButton("Enviar publicação", onClick, tone, vertical, if (onVideo) "Enviar" else null) {
-        if (onVideo) QinblyShareArrowIcon(tint = qinblyIconTint(tone), iconSize = LocalQinblyActionIconSize.current * 0.95f) else RoundedPaperPlaneIcon(tint = qinblyIconTint(tone))
+        if (onVideo) QinblyShareArrowIcon(tint = qinblyIconTint(tone), iconSize = LocalQinblyActionIconSize.current * 0.95f)
+        else if (tone == QinblyTone.Feed && !vertical) QinblyShareArrowIcon(tint = qinblyIconTint(tone), iconSize = LocalQinblyActionIconSize.current * 0.95f, outline = true)
+        else RoundedPaperPlaneIcon(tint = qinblyIconTint(tone))
     }
 }
 
@@ -4269,11 +4276,27 @@ private fun QinblyPostActionBar(
     onShare: () -> Unit,
     modifier: Modifier = Modifier,
     vertical: Boolean = false,
-    showRepost: Boolean = true
+    showRepost: Boolean = true,
+    compact: Boolean = false
 ) {
     if (vertical) {
         Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             QinblyPostActionButtons(post, prefs, tone, true, false, onNotice, onComment, onShare, showRepost)
+        }
+    } else if (compact) {
+        // Versão menor, no canto direito ao lado do perfil: ícones de 23dp e números de 12sp.
+        androidx.compose.runtime.CompositionLocalProvider(
+            LocalQinblyActionIconSize provides 23.dp,
+            LocalQinblyActionTextSize provides 12.sp,
+            LocalQinblyActionHPad provides 4.dp
+        ) {
+            Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+                QinblyLikeButton(QinblyEngagement.isLiked(post), QinblyEngagement.likeCount(post), { QinblyEngagement.toggleLike(prefs, post, onNotice) }, tone, false)
+                QinblyCommentButton(post.comments, onComment, tone, false)
+                QinblyRepostButton(QinblyEngagement.isReposted(post), QinblyEngagement.repostCount(post), { QinblyEngagement.toggleReposted(prefs, post, onNotice) }, tone, false)
+                QinblyShareButton(onShare, tone, false)
+                QinblySaveButton(QinblyEngagement.isSaved(post), { QinblyEngagement.toggleSaved(prefs, post, onNotice) }, tone, false)
+            }
         }
     } else {
         val background = if (tone == QinblyTone.Feed) RemoteAppearance.feedActionBackgroundColor else Color.Transparent
@@ -5178,35 +5201,14 @@ private fun QinblyPostCard(
                     }
                                         
             }
-            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
-                    verticalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                        QinblyPostAvatar(post, onOpenProfile)
-                        Column(Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name },
-                                color = RemoteAppearance.feedTextColor, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }
-                            )
-                            if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(15.dp) }
-                            }
-                            if (post.musicUrl.isNotBlank()) QinblyPostMusicChip(post, Modifier, RemoteAppearance.feedSecondaryTextColor)
-                        }
+            val isMediaPost = post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")
+            // Seguir e o menu (⋮) ficam no canto de cima da foto/vídeo.
+            val overlayTop: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit = {
+                Row(Modifier.align(Alignment.TopEnd).padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     QinblyCardFollow(post, prefs, onNotice)
-                        QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = RemoteAppearance.feedTextColor, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true })
-                    }
-
+                    QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = Color.White, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true })
                 }
             }
-            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video") && post.caption.isNotBlank()) {
-                QinblyFeedCaption(post.caption, Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 2.dp, bottom = 8.dp))
-            }
-            // Pessoas marcadas: logo embaixo do texto da legenda e antes da mídia.
-            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
             if (post.mediaUrl.isNotBlank() && post.mediaType == "image") {
                 val demoGallery = remember(post.id) {
                     when (post.id) {
@@ -5299,7 +5301,7 @@ private fun QinblyPostCard(
                                     
                                     
                     if (demoGallery.size > 1) {
-                        Box(Modifier.align(Alignment.TopEnd).padding(10.dp).clip(CircleShape)
+                        Box(Modifier.align(Alignment.BottomEnd).padding(10.dp).clip(CircleShape)
                             .background(Color(0x99030711)).padding(horizontal = 10.dp, vertical = 5.dp)) {
                             Text("${photoIndex + 1}/${demoGallery.size}", color = RemoteAppearance.feedTextColor, fontSize = 14.sp)
                         }
@@ -5311,7 +5313,7 @@ private fun QinblyPostCard(
                             }
                         }
                     }
-
+                    overlayTop()
                 }
 
             } else if (post.mediaUrl.isNotBlank() && post.mediaType == "video") {
@@ -5339,9 +5341,39 @@ private fun QinblyPostCard(
                         QiblyPublicationVideo(url = post.mediaUrl, modifier = Modifier.fillMaxSize())
                         QinblyHeartBurst(videoBurst, Modifier.align(Alignment.Center))
                     }
-                                    
-
-                                    
+                    overlayTop()
+                }
+            }
+            if (isMediaPost) {
+                // Foto/vídeo primeiro; embaixo: legenda, depois o perfil à esquerda e os botões no canto direito.
+                if (post.caption.isNotBlank()) {
+                    QinblyFeedCaption(post.caption, Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 2.dp))
+                }
+                QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 14.dp, end = 6.dp, top = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    QinblyPostAvatar(post, onOpenProfile, 40.dp)
+                    Column(Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name },
+                                color = RemoteAppearance.feedTextColor, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }
+                            )
+                            if (post.verified) { Spacer(Modifier.width(4.dp)); QinblyVerifiedBadge(14.dp) }
+                        }
+                        QinblyPostTimeLine(post, RemoteAppearance.feedSecondaryTextColor, onOpenProfile)
+                        if (post.musicUrl.isNotBlank()) QinblyPostMusicChip(post, Modifier, RemoteAppearance.feedSecondaryTextColor)
+                    }
+                    QinblyPostActionBar(
+                        post = post, prefs = prefs, tone = QinblyTone.Feed, onNotice = onNotice,
+                        onComment = { onComment(post) }, onShare = { onShare(post) },
+                        compact = true
+                    )
                 }
             }
             if (post.mediaType == "poll" && post.pollOptions.isNotEmpty()) {
@@ -5444,13 +5476,7 @@ private fun QinblyPostCard(
                 }
             }
             if (!(post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) && !(post.mediaType == "text" && post.caption.isNotBlank() && qinblyTextBgBrush(post.textBg) != null)) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
-            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) {
-                // Hora logo em cima do coração (com a cidade, se houver).
-                Box(Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp)) {
-                    QinblyPostTimeLine(post, RemoteAppearance.feedSecondaryTextColor, onOpenProfile)
-                }
-            }
-            if (post.mediaType != "poll") { // Enquetes exibem apenas votação e total de votos
+            if (post.mediaType != "poll" && !isMediaPost) { // Enquetes exibem apenas votação e total de votos
                 QinblyPostActionBar(
                     post = post,
                     prefs = prefs,
@@ -5549,9 +5575,9 @@ private fun QinblyPhotoViewer(url: String, onNotice: (String) -> Unit, onDismiss
 /** Menu "⋮" único das publicações (dono: editar, copiar link, excluir; outras pessoas: denunciar, bloquear, ocultar, copiar link). */
 /** Foto de perfil do card; se o post veio de um repost, a foto pequena de quem repostou fica por cima, no canto. */
 @Composable
-private fun QinblyPostAvatar(post: QinblyApi.PostSummary, onOpenProfile: (String) -> Unit) {
+private fun QinblyPostAvatar(post: QinblyApi.PostSummary, onOpenProfile: (String) -> Unit, size: Dp = 52.dp) {
     Box {
-        QiblyAccountAvatar(post.username, post.avatarUrl, 52.dp, storyRing = true) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
+        QiblyAccountAvatar(post.username, post.avatarUrl, size, storyRing = true) { if (post.username.isNotBlank()) onOpenProfile(post.username) }
         if (post.repostedByUsername.isNotBlank()) {
             Box(Modifier.align(Alignment.BottomEnd).offset(x = 6.dp, y = 4.dp).size(26.dp).clip(CircleShape).background(QiblyTheme.background).padding(2.dp)) {
                 QiblyAccountAvatar(post.repostedByUsername, post.repostedByAvatar, 22.dp) { onOpenProfile(post.repostedByUsername) }
