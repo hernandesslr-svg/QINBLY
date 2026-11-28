@@ -2476,7 +2476,7 @@ private fun QinblyApp() {
                         icon = {
                             Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
                                 if (RemoteAppearance.navigationUnderlineVisible && tab == 1 && !showNotifications) Box(Modifier.align(Alignment.BottomCenter).offset(y = RemoteAppearance.navigationUnderlineOffset.dp).width(RemoteAppearance.navigationUnderlineWidth.dp).height(RemoteAppearance.navigationUnderlineHeight.dp).clip(RoundedCornerShape(2.dp)).background(qinblyAccentBrush()))
-                                Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Mensagens")
+                                Icon(QinblyMessagesNavIcon, contentDescription = "Mensagens")
                                 if (unreadMessages > 0) {
                                     Box(
                                         Modifier.align(Alignment.TopEnd)
@@ -12303,6 +12303,20 @@ private fun qinblyFilterSwatch(name: String): List<Color> {
 }
 
 /** Ícones de linha da câmera (grade 24x24, traço 1,8). Usados com tint branco. */
+/** Ícone cheio de Mensagens: balão com duas linhas de texto, no mesmo estilo cheio dos outros ícones da barra. */
+private val QinblyMessagesNavIcon: androidx.compose.ui.graphics.vector.ImageVector by lazy {
+    androidx.compose.ui.graphics.vector.ImageVector.Builder("QinblyMessagesNav", 24.dp, 24.dp, 24f, 24f).apply {
+        addPath(
+            pathData = androidx.compose.ui.graphics.vector.PathParser().parsePathString(
+                "M6.5,2.5 H17.5 A5,5 0 0 1 22.5,7.5 V12 A5,5 0 0 1 17.5,17 H11.5 L5,22 V16.77 A5,5 0 0 1 1.5,12 V7.5 A5,5 0 0 1 6.5,2.5 Z " +
+                    "M6.5,7 H17.5 V9 H6.5 Z M6.5,11 H13.5 V13 H6.5 Z"
+            ).toNodes(),
+            pathFillType = androidx.compose.ui.graphics.PathFillType.EvenOdd,
+            fill = androidx.compose.ui.graphics.SolidColor(Color.Black)
+        )
+    }.build()
+}
+
 private object QinblyCameraIcons {
     private fun build(name: String, vararg paths: String): androidx.compose.ui.graphics.vector.ImageVector {
         val b = androidx.compose.ui.graphics.vector.ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)
