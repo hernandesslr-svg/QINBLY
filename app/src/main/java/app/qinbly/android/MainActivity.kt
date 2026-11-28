@@ -3562,15 +3562,16 @@ internal fun QinblyVideoFrame(aspect: Float, snap: Boolean = false, content: @Co
 
 /** Moldura que PREENCHE o espaço (sem faixas): o vídeo cobre tudo e o corte é feito embaixo, preservando o topo (rostos). */
 @Composable
-internal fun QinblyVideoFill(aspect: Float, content: @Composable (Modifier) -> Unit) {
+internal fun QinblyVideoFill(aspect: Float, faceY: Float? = null, content: @Composable (Modifier) -> Unit) {
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().clipToBounds(), contentAlignment = Alignment.TopCenter) {
         val wc = maxWidth.value
         val hc = maxHeight.value
+        val fillAlign = qinblyFaceBias(faceY, aspect, wc, hc)
         val frameMod = if (aspect <= 0f || wc <= 0f || hc <= 0f) Modifier.fillMaxSize() else {
             val w = if (aspect >= wc / hc) hc * aspect else wc
             Modifier.requiredSize(w.dp, (w / aspect).dp)
         }
-        content(frameMod)
+        androidx.compose.foundation.layout.Box(Modifier.fillMaxSize(), contentAlignment = fillAlign) { content(frameMod) }
     }
 }
 
@@ -3687,6 +3688,9 @@ private fun QiblyPublicationVideo(url: String, modifier: Modifier = Modifier, fi
 @Composable
 private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autoplay: Boolean = false, pausable: Boolean = true, fitPoster: Boolean = false, fill: Boolean = false) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    // Feed e perfil (fill): acha o rosto num quadro do vídeo e centraliza o corte nele.
+    var faceY by remember(url) { mutableStateOf(if (fill) QinblyFaceFocus.cachedVideo(url) else null) }
+    LaunchedEffect(url, fill) { if (fill && faceY == null && url.startsWith("http")) faceY = QinblyFaceFocus.findVideo(context.applicationContext, url) }
     var playbackError by remember(url) { mutableStateOf(false) }
     var isPlaying by remember(url) { mutableStateOf(autoplay) }
     var videoAspect by remember(url) { mutableStateOf(0f) }
@@ -3819,7 +3823,7 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
             }
         } else {
             // Moldura com a proporção real do vídeo: mostra o vídeo inteiro (sem zoom/corte), com o fundo desfocado nas laterais.
-            val frameHost: @Composable (@Composable (Modifier) -> Unit) -> Unit = { c -> if (fill) QinblyVideoFill(videoAspect, c) else QinblyVideoFrame(videoAspect, content = c) }
+            val frameHost: @Composable (@Composable (Modifier) -> Unit) -> Unit = { c -> if (fill) QinblyVideoFill(videoAspect, faceY, c) else QinblyVideoFrame(videoAspect, content = c) }
             frameHost { frameMod ->
                 AndroidView(
                     modifier = frameMod,
@@ -3839,7 +3843,9 @@ private fun InlineVideoPlayer(url: String, modifier: Modifier = Modifier, autopl
                 )
             }
             if (!firstFrameShown) {
-                QinblyVideoPoster(url, Modifier.fillMaxSize(), if (fill) ContentScale.Crop else if (fitPoster) ContentScale.Fit else ContentScale.Crop, if (fill) Alignment.TopCenter else Alignment.Center)
+                if (fill) androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+                    QinblyVideoPoster(url, Modifier.fillMaxSize(), ContentScale.Crop, qinblyFaceBias(faceY, videoAspect, maxWidth.value, maxHeight.value))
+                } else QinblyVideoPoster(url, Modifier.fillMaxSize(), if (fitPoster) ContentScale.Fit else ContentScale.Crop, Alignment.Center)
             }
             if (isPlaying && (buffering || !firstFrameShown)) QinblyLoadingSpinner(Modifier.fillMaxSize(), tint = QinblyBrand.Accent)
             if (!isPlaying) {

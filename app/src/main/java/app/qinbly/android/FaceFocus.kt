@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import coil.imageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
+import coil.request.videoFrameMillis
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
@@ -39,6 +40,29 @@ internal object QinblyFaceFocus {
     private var failed = false
 
     fun cached(url: String): Float? = cache[url]
+
+    /** Mesmo detector, para vídeo: usa um quadro do vídeo (o mesmo da capa). Devolve a altura do rosto (0..1) ou -1. */
+    fun cachedVideo(url: String): Float? = cache["v:$url"]
+
+    suspend fun findVideo(context: Context, url: String): Float {
+        val key = "v:$url"
+        cache[key]?.let { return it }
+        val result = withContext(Dispatchers.Default) {
+            try {
+                val request = ImageRequest.Builder(context).data(url)
+                    .decoderFactory(coil.decode.VideoFrameDecoder.Factory())
+                    .videoFrameMillis(500)
+                    .size(512).allowHardware(false)
+                    .memoryCacheKey("facevid:$url").diskCacheKey("facevid:$url")
+                    .build()
+                val loaded = context.imageLoader.execute(request)
+                val bmp = ((loaded as? SuccessResult)?.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap
+                if (bmp == null) -1f else lock.withLock { detect(context, bmp) }
+            } catch (_: Throwable) { -1f }
+        }
+        cache[key] = result
+        return result
+    }
 
     suspend fun find(context: Context, url: String): Float {
         cache[url]?.let { return it }
@@ -119,3 +143,14 @@ internal fun QinblyFaceThumb(url: String, modifier: Modifier = Modifier, frameRa
 }
 
 private object QinblyFaceThumbRatios { val map = ConcurrentHashMap<String, Float>() }
+
+/** Onde alinhar o vídeo cortado no quadro: o rosto fica por volta de 1/3 do quadro. Sem rosto, alinha pelo topo (como já era). */
+internal fun qinblyFaceBias(faceY: Float?, aspect: Float, wc: Float, hc: Float): Alignment {
+    if (aspect <= 0f || wc <= 0f || hc <= 0f) return Alignment.TopCenter
+    val w = if (aspect >= wc / hc) hc * aspect else wc
+    val visible = (hc / (w / aspect)).coerceIn(0.05f, 1f)
+    val room = 1f - visible
+    if (room < 0.001f) return Alignment.Center
+    val top = if (faceY != null && faceY >= 0f) (faceY - 0.33f * visible).coerceIn(0f, room) else 0f
+    return BiasAlignment(0f, 2f * top / room - 1f)
+}
