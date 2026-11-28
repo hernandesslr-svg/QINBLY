@@ -5149,22 +5149,31 @@ private fun QinblyCommentsDialog(
                                 if (token.isNullOrBlank()) {
                                     onNotice("Entre na sua conta para comentar.")
                                 } else {
-                                    commentsLoading = true
+                                    // O comentário aparece na hora; o envio ao servidor acontece por trás (se falhar, ele sai e o texto volta).
+                                    val replyId = replyTo?.id
+                                    val localId = "local:" + System.nanoTime()
+                                    val postIdNow = activePost.id
+                                    val temp = QinblyApi.CommentSummary(
+                                        localId, draftToSend, prefs.getString("username", "").orEmpty().removePrefix("@"),
+                                        prefs.getString("display_name", "").orEmpty(), parentId = replyId.orEmpty(), createdAt = java.time.Instant.now().toString()
+                                    )
+                                    comments = comments + temp
+                                    onCountChanged(postIdNow, comments.size)
+                                    commentDraft = ""
+                                    replyTo = null
                                     Thread {
                                         try {
-                                            QinblyApi.addComment(token ?: "", activePost.id, draftToSend, replyTo?.id)
-                                            val loadedComments = QinblyApi.getComments(activePost.id)
-                                            
+                                            QinblyApi.addComment(token ?: "", postIdNow, draftToSend, replyId)
+                                            val loadedComments = QinblyApi.getComments(postIdNow)
                                             android.os.Handler(android.os.Looper.getMainLooper()).post {
                                                 comments = loadedComments
-                                                onCountChanged(activePost.id, loadedComments.size)
-                                                commentDraft = ""
-                                                replyTo = null
-                                                commentsLoading = false
+                                                onCountChanged(postIdNow, loadedComments.size)
                                             }
                                         } catch (e: Exception) {
                                             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                                commentsLoading = false
+                                                comments = comments.filterNot { it.id == localId }
+                                                onCountChanged(postIdNow, comments.size)
+                                                if (commentDraft.isBlank()) commentDraft = draftToSend
                                                 onNotice(e.message ?: "Não foi possível publicar o comentário.")
                                             }
                                         }
@@ -9738,15 +9747,31 @@ private fun MessagesPage(scrollToTopRequest: Int, recipientUsername: String, onS
                             val token = prefs.getString("token", null)
                             if (token.isNullOrBlank()) onNotice("Entre na sua conta para enviar mensagens.")
                             else {
-                                sending = true
+                                // A mensagem aparece na hora; o envio acontece por trás e não recarrega a conversa inteira.
                                 val body = (replyingTo?.let { "> " + qinblyMessageSnippet(it) + "\n" } ?: "") + draft.trim()
+                                val typed = draft
+                                val localId = "local:" + System.nanoTime()
+                                messages = messages + QinblyApi.MessageSummary(localId, body, ownUserId.ifBlank { prefs.getString("username", "").orEmpty() }, java.time.Instant.now().toString())
+                                draft = ""; replyingTo = null
                                 Thread {
                                     try {
-                                        QinblyApi.sendMessage(token, recipientUsername, body)
-                                        val loaded = QinblyApi.getMessages(token, recipientUsername)
-                                        android.os.Handler(android.os.Looper.getMainLooper()).post { messages = loaded; draft = ""; replyingTo = null; sending = false }
+                                        val sentJson = QinblyApi.sendMessage(token, recipientUsername, body)
+                                        val real = sentJson.optJSONObject("message")
+                                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                            if (real == null || real.optString("id").isBlank()) return@post
+                                            val realMsg = QinblyApi.MessageSummary(real.optString("id"), real.optString("body", body), real.optString("senderId", ownUserId), real.optString("createdAt"))
+                                            messages = when {
+                                                messages.any { it.id == localId } -> messages.map { if (it.id == localId) realMsg else it }
+                                                messages.any { it.id == realMsg.id } -> messages
+                                                else -> messages + realMsg
+                                            }
+                                        }
                                     } catch (e: Exception) {
-                                        android.os.Handler(android.os.Looper.getMainLooper()).post { sending = false; onNotice(e.message ?: "Não foi possível enviar a mensagem.") }
+                                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                            messages = messages.filterNot { it.id == localId }
+                                            if (draft.isBlank()) draft = typed
+                                            onNotice(e.message ?: "Não foi possível enviar a mensagem.")
+                                        }
                                     }
                                 }.start()
                             }

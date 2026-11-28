@@ -663,16 +663,19 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
       if (method === "POST" && action === "comments") {
         const text = String(body.body || "").trim();
         if (!text || text.length > 2000) return reply({ error: "O comentário precisa ter entre 1 e 2000 caracteres." }, 400);
-        const post = (await rest(`posts?id=eq.${pid}&select=id,visibility`))?.[0];
-        if (!post || post.visibility !== "public") return reply({ error: "Publicação não encontrada." }, 404);
         const parentId = body.parentId ? String(body.parentId) : null;
-        if (parentId) {
-          if (!isUuid(parentId)) return reply({ error: "Comentário de origem inválido." }, 400);
-          const parent = (await rest(`comments?id=eq.${parentId}&post_id=eq.${pid}&select=id`))?.[0];
-          if (!parent) return reply({ error: "Comentário de origem não encontrado." }, 404);
-        }
+        if (parentId && !isUuid(parentId)) return reply({ error: "Comentário de origem inválido." }, 400);
+        // Verificações e perfil em paralelo (antes eram uma consulta depois da outra).
+        const [postRows, parentRows, meRow] = await Promise.all([
+          rest(`posts?id=eq.${pid}&select=id,visibility`),
+          parentId ? rest(`comments?id=eq.${parentId}&post_id=eq.${pid}&select=id`) : Promise.resolve([{}]),
+          me(),
+        ]);
+        const post = postRows?.[0];
+        if (!post || post.visibility !== "public") return reply({ error: "Publicação não encontrada." }, 404);
+        if (parentId && !parentRows?.[0]) return reply({ error: "Comentário de origem não encontrado." }, 404);
         const row = (await ins("comments", { post_id: pid, user_id: id, body: text, parent_id: parentId }))?.[0];
-        return reply({ comment: commentDto(row, await me(), [], id) }, 201);
+        return reply({ comment: commentDto(row, meRow, [], id) }, 201);
       }
     }
     const commentM = path.match(/^\/api\/comments\/([0-9a-f-]{36})(?:\/(like))?$/i);
@@ -735,12 +738,15 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
     // ---------- Mensagens ----------
     if (method === "GET" && path === "/api/inbox") {
       const id = need();
-      const blocks = new Set(await myBlocks());
-      const rows = await rest(`messages?or=(sender_id.eq.${id},recipient_id.eq.${id})&select=*&order=created_at.desc&limit=300`);
+      const [blockList, rows, unread] = await Promise.all([
+        myBlocks(),
+        rest(`messages?or=(sender_id.eq.${id},recipient_id.eq.${id})&select=*&order=created_at.desc&limit=300`),
+        rest(`messages?recipient_id=eq.${id}&read_at=is.null&select=sender_id`),
+      ]);
+      const blocks = new Set(blockList);
       const latest = new Map<string, any>();
       for (const m of rows || []) { const peer = m.sender_id === id ? m.recipient_id : m.sender_id; if (!blocks.has(peer) && !latest.has(peer)) latest.set(peer, m); }
       const profiles = await profilesByIds([...latest.keys()]);
-      const unread = await rest(`messages?recipient_id=eq.${id}&read_at=is.null&select=sender_id`);
       const unreadCounts = new Map<string, number>();
       for (const m of unread || []) unreadCounts.set(m.sender_id, (unreadCounts.get(m.sender_id) || 0) + 1);
       return reply({ conversations: [...latest.entries()].map(([pid, m]) => { const p = profiles.get(pid) || {}; return { username: p.username || "", displayName: p.display_name || "", avatarUrl: pub(p.avatar_path), body: previewOf(m.body), createdAt: m.created_at, unreadCount: unreadCounts.get(pid) || 0 }; }) });
@@ -752,8 +758,10 @@ export async function handleApi(req: Request, env: any): Promise<Response> {
       const peer = (await rest(`profiles?username=eq.${encodeURIComponent(peerName)}&select=id`))?.[0];
       if (!peer) return method === "GET" ? reply({ messages: [] }) : reply({ error: "Perfil não encontrado." }, 404);
       if (method === "GET") {
-        await rest(`messages?sender_id=eq.${peer.id}&recipient_id=eq.${id}&read_at=is.null`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ read_at: new Date().toISOString() }) });
-        const rows = await rest(`messages?or=(and(sender_id.eq.${id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${id}))&select=*&order=created_at.asc&limit=500`);
+        const [, rows] = await Promise.all([
+          rest(`messages?sender_id=eq.${peer.id}&recipient_id=eq.${id}&read_at=is.null`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ read_at: new Date().toISOString() }) }),
+          rest(`messages?or=(and(sender_id.eq.${id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${id}))&select=*&order=created_at.asc&limit=500`),
+        ]);
         const dec = await decodeMarks(rows || []);
         return reply({ messages: (rows || []).map((m: any) => ({ id: m.id, senderId: m.sender_id, createdAt: m.created_at, ...dec(m) })) });
       }

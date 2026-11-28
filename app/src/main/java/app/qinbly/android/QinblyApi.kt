@@ -1570,6 +1570,7 @@ object QinblyApi {
                 setRequestProperty("Content-Type", "application/json; charset=utf-8")
             }
         }
+        var finished = false
         try {
             if (body != null) connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
             val status = connection.responseCode
@@ -1598,6 +1599,7 @@ object QinblyApi {
                 } else serverMessage.ifBlank { "Falha na comunicação com o servidor (HTTP $status)." }
                 throw IllegalStateException(diagnostic)
             }
+            finished = true
             return json
         } catch (e: java.io.IOException) {
             if (method == "GET" && !path.startsWith("/api/auth")) cacheGet(cacheKey(token, base + path))?.let { saved -> try { return JSONObject(saved) } catch (_: Exception) { } }
@@ -1605,7 +1607,8 @@ object QinblyApi {
             if (e is java.net.UnknownHostException) throw IllegalStateException("Não foi possível encontrar o backend. Verifique a URL e a conexão.")
             throw e
         } finally {
-            connection.disconnect()
+            // Resposta lida por inteiro: não fecha a conexão, assim a próxima chamada reaproveita a mesma conexão segura (sem refazer o handshake).
+            if (!finished) connection.disconnect()
         }
     }
     private fun jwtExpired(t: String): Boolean = try {
