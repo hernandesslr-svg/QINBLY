@@ -318,7 +318,7 @@ internal object QinblyBrand {
     val Highlight = Color(0xFFFFB020)
     val Pink = Color(0xFFFF4F9A)
     /** Anel de story não visto: degradê roxo para rosa, as cores do logotipo (como o anel do Instagram, mas na cara do QINBLY). */
-    val RingBrush: Brush get() = Brush.linearGradient(listOf(Logo, Pink))
+    val RingBrush: Brush get() = Brush.linearGradient(listOf(Color(0xFF6A29F7), Color(0xFFA31BE2)))
     /** Vermelho clássico do coração de curtida (preenchido). */
     val Liked = Color(0xFFE53935)
     val Ink = Color(0xFF0B1F2A)
@@ -10184,14 +10184,17 @@ private fun QiblyAccountAvatar(username: String, fallbackUrl: String, diameter: 
             }
         }
     }
-    val ringOn = storyRing && QinblyStoryRings.hasUnseen(key)
+    QinblyStoryRings.version
+    val ringUnseen = storyRing && QinblyStoryRings.hasUnseen(key)
+    val ringSeen = storyRing && !ringUnseen && QinblyStoryRings.entries[key]?.stories?.isNotEmpty() == true
+    val ringOn = ringUnseen || ringSeen
     // clip(CircleShape) antes do clickable: o brilho do toque fica redondo, sem o quadrado transparente em volta da foto.
     Box(Modifier.size(diameter).clip(CircleShape).clickable {
         // Com anel (story novo) a foto abre o story; o nome ao lado continua abrindo o perfil.
         val tray = if (ringOn) QinblyStoryRings.entries[key] else null
         if (tray != null) QinblyStoryRings.openRequest = tray else onClick()
     }, contentAlignment = Alignment.Center) {
-        if (ringOn) Box(Modifier.size(diameter).border(2.dp, QinblyBrand.RingBrush, CircleShape))
+        if (ringOn) Box(Modifier.size(diameter).border(2.dp, if (ringUnseen) QinblyBrand.RingBrush else androidx.compose.ui.graphics.SolidColor(Color(0xFF4A4066)), CircleShape))
         Box(Modifier.size(if (ringOn) diameter - 8.dp else diameter).clip(CircleShape).background(QiblyTheme.card)) {
             if (resolvedUrl.isNotBlank()) AsyncImage(model = coil.request.ImageRequest.Builder(avatarContext).data(resolvedUrl).memoryCacheKey("avatar:$username:$avatarVersion:$resolvedUrl").diskCacheKey("avatar:$username:$avatarVersion:$resolvedUrl").build(), contentDescription = "Foto de @$username", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             else QinblyInitialAvatar(displayName.ifBlank { username }, username)
