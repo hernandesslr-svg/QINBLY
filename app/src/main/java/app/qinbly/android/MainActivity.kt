@@ -5305,7 +5305,7 @@ private fun QinblyPostCard(
                 Box(
                     modifier = Modifier.fillMaxWidth()
                         // Foto de ponta a ponta da tela, na proporção do YouTube (16:9).
-                        .padding(horizontal = 1.5.dp).height(320.dp)
+                        .padding(horizontal = 2.dp).aspectRatio(1.275f)
                         .background(Color.Black)
                 ) {
                     if (badge != null) Surface(
@@ -5378,7 +5378,7 @@ private fun QinblyPostCard(
 
             } else if (post.mediaUrl.isNotBlank() && post.mediaType == "video") {
                 // Na aba Explorar o vídeo é mais baixo (quadrado); nas outras abas continua 4:5.
-                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 1.5.dp).height(320.dp).background(Color.Black)) {
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp).aspectRatio(1.275f).background(Color.Black)) {
                     if (badge != null) Surface(
                         modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
                         color = QinblyBrand.AccentDeep.copy(alpha = 0.92f),
@@ -5509,7 +5509,7 @@ private fun QinblyPostCard(
                     LocalQinblyActionTextSize provides 15.sp,
                     LocalQinblyActionHPad provides 10.dp
                 ) {
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
                         QinblyLikeButton(QinblyEngagement.isLiked(post), QinblyEngagement.likeCount(post), { QinblyEngagement.toggleLike(prefs, post, onNotice) }, QinblyTone.Feed, false)
                         QinblyCommentButton(post.comments, { onComment(post) }, QinblyTone.Feed, false)
                         QinblyRepostButton(QinblyEngagement.isReposted(post), QinblyEngagement.repostCount(post), { QinblyEngagement.toggleReposted(prefs, post, onNotice) }, QinblyTone.Feed, false)
