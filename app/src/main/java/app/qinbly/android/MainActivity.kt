@@ -46,6 +46,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -7847,7 +7848,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     items(altaOthers.size, key = { "rank2-" + altaOthers[it].id }) { index ->
                         QinblyRankRow(index + 1, altaOthers[index]) { openPostMedia(altaOthers[index]) }
                     }
-                } else androidx.compose.foundation.lazy.itemsIndexed(displayedPosts, key = { _, p -> p.id }) { index, post ->
+                } else itemsIndexed(displayedPosts, key = { _, p -> p.id }) { index, post ->
                     Column(Modifier.fillMaxWidth()) {
                     QinblyPostCard(
                         post = post,
