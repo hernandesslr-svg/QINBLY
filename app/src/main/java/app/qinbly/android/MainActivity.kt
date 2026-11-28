@@ -5263,7 +5263,7 @@ private fun QinblyPostCard(
                     if (post.musicUrl.isNotBlank()) QinblyPostMusicChip(post, Modifier, RemoteAppearance.feedSecondaryTextColor)
                 }
                 if (!isMediaCard) QinblyCardFollow(post, prefs, onNotice)
-                if (isMediaCard) QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = RemoteAppearance.feedTextColor, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true }, barsIcon = true, withActions = true)
+                if (isMediaCard) QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = RemoteAppearance.feedTextColor, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true }, barsIcon = false, withActions = true)
                 else QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = null, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true })
             }
             // Legenda e pessoas marcadas ficam em cima da foto/vídeo.
@@ -5505,20 +5505,15 @@ private fun QinblyPostCard(
             if (!(post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) && !(post.mediaType == "text" && post.caption.isNotBlank() && qinblyTextBgBrush(post.textBg) != null)) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
             if (isMediaCard) {
                 androidx.compose.runtime.CompositionLocalProvider(
-                    LocalQinblyActionIconSize provides 23.dp,
-                    LocalQinblyActionTextSize provides 13.sp,
+                    LocalQinblyActionIconSize provides 28.dp,
+                    LocalQinblyActionTextSize provides 15.sp,
                     LocalQinblyActionHPad provides 4.dp
                 ) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         QinblyLikeButton(QinblyEngagement.isLiked(post), QinblyEngagement.likeCount(post), { QinblyEngagement.toggleLike(prefs, post, onNotice) }, QinblyTone.Feed, false)
                         QinblyCommentButton(post.comments, { onComment(post) }, QinblyTone.Feed, false)
                         QinblyRepostButton(QinblyEngagement.isReposted(post), QinblyEngagement.repostCount(post), { QinblyEngagement.toggleReposted(prefs, post, onNotice) }, QinblyTone.Feed, false)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            // Setinha de enviar virada para o outro lado (espelhada), como já estava.
-                            Box(Modifier.graphicsLayer { scaleX = -1f }) { QinblyShareButton({ onShare(post) }, QinblyTone.Feed, false) }
-                            Text("Compartilhar", color = RemoteAppearance.feedTextColor, fontSize = 13.sp, fontWeight = FontWeight.Medium,
-                                modifier = Modifier.clickable { onShare(post) }.padding(end = 4.dp))
-                        }
+                        QinblyShareButton({ onShare(post) }, QinblyTone.Feed, false)
                         Spacer(Modifier.weight(1f))
                         QinblySaveButton(QinblyEngagement.isSaved(post), { QinblyEngagement.toggleSaved(prefs, post, onNotice) }, QinblyTone.Feed, false)
                     }
