@@ -5301,11 +5301,11 @@ private fun QinblyPostCard(
                 var dragDistance by remember(post.id) { mutableFloatStateOf(0f) }
                 var likeBurst by remember(post.id) { mutableIntStateOf(0) }
                 // O corte do quadro acompanha o rosto (a cabeça nunca fica de fora); a foto inteira abre ao tocar.
-                val faceAlignment = rememberQinblyFaceAlignment(shownPhoto, imageAspectRatio, 16f / 9f)
+                val faceAlignment = rememberQinblyFaceAlignment(shownPhoto, imageAspectRatio, 408f / 320f)
                 Box(
                     modifier = Modifier.fillMaxWidth()
                         // Foto de ponta a ponta da tela, na proporção do YouTube (16:9).
-                        .aspectRatio(16f / 9f)
+                        .padding(horizontal = 1.5.dp).height(320.dp)
                         .background(Color.Black)
                 ) {
                     if (badge != null) Surface(
@@ -5378,7 +5378,7 @@ private fun QinblyPostCard(
 
             } else if (post.mediaUrl.isNotBlank() && post.mediaType == "video") {
                 // Na aba Explorar o vídeo é mais baixo (quadrado); nas outras abas continua 4:5.
-                Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).background(Color.Black)) {
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 1.5.dp).height(320.dp).background(Color.Black)) {
                     if (badge != null) Surface(
                         modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
                         color = QinblyBrand.AccentDeep.copy(alpha = 0.92f),
@@ -5530,7 +5530,7 @@ private fun QinblyPostCard(
                 )
             }
             // Sem linha entre as publicações: só um respiro em branco (dentro do cartão, só um pouco).
-            Spacer(Modifier.height(if (isMediaCard) 16.dp else 26.dp))
+            Spacer(Modifier.height(if (isMediaCard) 1.dp else 26.dp))
         }
     }
 }
