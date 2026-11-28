@@ -5507,7 +5507,7 @@ private fun QinblyPostCard(
                 androidx.compose.runtime.CompositionLocalProvider(
                     LocalQinblyActionIconSize provides 28.dp,
                     LocalQinblyActionTextSize provides 15.sp,
-                    LocalQinblyActionHPad provides 4.dp
+                    LocalQinblyActionHPad provides 10.dp
                 ) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         QinblyLikeButton(QinblyEngagement.isLiked(post), QinblyEngagement.likeCount(post), { QinblyEngagement.toggleLike(prefs, post, onNotice) }, QinblyTone.Feed, false)
