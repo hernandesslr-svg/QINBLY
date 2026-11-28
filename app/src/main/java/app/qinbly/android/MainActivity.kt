@@ -3534,6 +3534,83 @@ private fun QinblySearchPostRow(post: QinblyApi.PostSummary, onClick: () -> Unit
 }
 
 /** Primeiro quadro do vídeo mostrado enquanto o player ainda carrega (em vez de um retângulo preto). */
+/** Faixa "Vídeos sugeridos" do feed: cards em pé (9:16). Os que aparecem na tela (no máximo 2) tocam mudos em loop; os outros mostram a capa. */
+@Composable
+private fun QinblySuggestedVideos(posts: List<QinblyApi.PostSummary>, onOpen: (QinblyApi.PostSummary) -> Unit) {
+    val rowState = androidx.compose.foundation.lazy.rememberLazyListState()
+    var rowOnScreen by remember { mutableStateOf(false) }
+    val screenH = with(androidx.compose.ui.platform.LocalDensity.current) { androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp.toPx() }
+    val playingIds by remember(posts) {
+        derivedStateOf {
+            val info = rowState.layoutInfo
+            val start = info.viewportStartOffset
+            val end = info.viewportEndOffset
+            info.visibleItemsInfo
+                .filter { (minOf(it.offset + it.size, end) - maxOf(it.offset, start)).toFloat() >= it.size * 0.6f }
+                .take(2)
+                .mapNotNull { posts.getOrNull(it.index)?.id }
+                .toSet()
+        }
+    }
+    Column(
+        Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 14.dp).onGloballyPositioned { c ->
+            val b = c.boundsInWindow()
+            val h = b.height
+            rowOnScreen = c.isAttached && h > 0f && (minOf(b.bottom, screenH) - maxOf(b.top, 0f)) >= h * 0.5f
+        }
+    ) {
+        Text("Vídeos sugeridos", color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
+        LazyRow(state = rowState, contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(posts, key = { "sug-" + it.id }) { post ->
+                QinblySuggestedVideoCard(post, playing = rowOnScreen && post.id in playingIds, onClick = { onOpen(post) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun QinblySuggestedVideoCard(post: QinblyApi.PostSummary, playing: Boolean, onClick: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var firstFrame by remember(post.id) { mutableStateOf(false) }
+    Box(Modifier.width(180.dp).height(320.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF1B1B22)).clickable(onClick = onClick)) {
+        if (playing) {
+            val player = remember(post.mediaUrl) {
+                ExoPlayer.Builder(context).build().apply {
+                    setMediaItem(MediaItem.fromUri(post.mediaUrl))
+                    volume = 0f
+                    repeatMode = androidx.media3.common.Player.REPEAT_MODE_ONE
+                    playWhenReady = true
+                    addListener(object : androidx.media3.common.Player.Listener {
+                        override fun onRenderedFirstFrame() { firstFrame = true }
+                    })
+                    prepare()
+                }
+            }
+            DisposableEffect(player) { onDispose { player.release(); firstFrame = false } }
+            val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+            DisposableEffect(lifecycleOwner, player) {
+                val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                    if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE) player.pause()
+                    else if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) player.play()
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            }
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { viewContext ->
+                    (android.view.LayoutInflater.from(viewContext).inflate(R.layout.qinbly_inline_player, null) as PlayerView).apply {
+                        this.player = player
+                        useController = false
+                        resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    }
+                }
+            )
+        }
+        if (!(playing && firstFrame)) QinblyVideoPoster(post.mediaUrl, Modifier.fillMaxSize(), ContentScale.Crop)
+    }
+}
+
 @Composable
 private fun QinblyVideoPoster(url: String, modifier: Modifier = Modifier, contentScale: ContentScale = ContentScale.Fit, alignment: Alignment = Alignment.Center) {
     if (!url.startsWith("http")) return
@@ -7486,6 +7563,12 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
         "Em alta" -> allFeedPosts.filter { qinblyEmAltaMedia(it) && qinblyInPeriod(it, emAltaPeriod) }.sortedByDescending { qinblyHotScore(it) }.take(20)
         else -> feedTabPosts
     }
+    // Vídeos para a faixa "Vídeos sugeridos": os mais curtidos que não são seus e não estão nas primeiras publicações do feed.
+    val suggestedVideos = remember(allFeedPosts, currentUsername, displayedPosts) {
+        val firstIds = displayedPosts.take(3).map { it.id }.toSet()
+        allFeedPosts.filter { it.mediaType.equals("video", ignoreCase = true) && it.mediaUrl.isNotBlank() && it.id !in firstIds && !it.username.equals(currentUsername.removePrefix("@"), ignoreCase = true) }
+            .sortedByDescending { qinblyHotScore(it) }.take(8)
+    }
     // Como o Instagram: o feed é buscado ao entrar no app, ao voltar depois de um tempo e ao puxar para atualizar. Nunca fica consultando enquanto a pessoa usa.
     // Se a pessoa já começou a rolar quando o feed novo chega, ele não troca a tela por cima (fica guardado para a próxima vez).
     val loadGate = remember { booleanArrayOf(true) }
@@ -7764,7 +7847,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                     items(altaOthers.size, key = { "rank2-" + altaOthers[it].id }) { index ->
                         QinblyRankRow(index + 1, altaOthers[index]) { openPostMedia(altaOthers[index]) }
                     }
-                } else items(displayedPosts, key = { it.id }) { post ->
+                } else androidx.compose.foundation.lazy.itemsIndexed(displayedPosts, key = { _, p -> p.id }) { index, post ->
                     Column(Modifier.fillMaxWidth()) {
                     QinblyPostCard(
                         post = post,
@@ -7779,6 +7862,7 @@ private fun FeedPage(scrollToTopRequest: Int, onlineUsers: Int, currentUsername:
                         onRefresh = { refreshKey++ },
                         smallVideo = selectedFeedTab == "Descobrir"
                     )
+                    if (selectedFeedTab == "Descobrir" && index == 2 && suggestedVideos.size >= 3) QinblySuggestedVideos(suggestedVideos) { openPostMedia(it) }
                     }
                 }
             }
