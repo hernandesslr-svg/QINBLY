@@ -17,7 +17,11 @@ import java.util.concurrent.TimeUnit
  * e ele consulta novidades. Com o app aberto, quem avisa é o próprio app (a cada 15 s), então aqui não repete.
  */
 class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
-    override fun doWork(): ListenableWorker.Result = pollOnce(applicationContext)
+    override fun doWork(): ListenableWorker.Result {
+        val result = pollOnce(applicationContext)
+        ensureChain(applicationContext)
+        return result
+    }
 
     companion object {
         fun pollOnce(ctx: Context): ListenableWorker.Result {
@@ -52,7 +56,7 @@ class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(co
                         if (key in told) continue
                         told += key
                         if (!firstRun && shown < 3) {
-                            qinblyNotify(ctx, c.displayName.ifBlank { c.username }, c.body.take(80).ifBlank { "Nova mensagem" }, key.hashCode(), "message", "", c.username)
+                            qinblyNotify(ctx, c.displayName.ifBlank { c.username }, c.body.take(80).ifBlank { "Nova mensagem" }, key.hashCode(), "message", "", c.username, c.avatarUrl)
                             shown++
                         }
                     }
@@ -82,12 +86,23 @@ class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(co
                     setRequestProperty("Accept", "application/vnd.github+json")
                     setRequestProperty("User-Agent", "QINBLY-Android-Updater")
                 }
+                var apkReady = false
                 val tag = try {
                     if (connection.responseCode !in 200..299) return
-                    org.json.JSONObject(connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }).optString("tag_name")
+                    val release = org.json.JSONObject(connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() })
+                    // Só avisa depois que a compilação terminou: a versão só vale quando o APK já foi enviado ao GitHub.
+                    val assets = release.optJSONArray("assets")
+                    if (assets != null && !release.optBoolean("draft", false) && !release.optBoolean("prerelease", false)) {
+                        for (i in 0 until assets.length()) {
+                            val a = assets.optJSONObject(i) ?: continue
+                            if (a.optString("name").equals("QINBLY-release.apk", ignoreCase = true) && a.optString("state", "uploaded") == "uploaded" && a.optLong("size", 1L) > 0L) apkReady = true
+                        }
+                    }
+                    release.optString("tag_name")
                 } finally {
                     connection.disconnect()
                 }
+                if (!apkReady) return
                 val m = Regex("^v(\\d+)\\.(\\d+)\\.(\\d+)$").matchEntire(tag) ?: return
                 val latestCode = m.groupValues[1].toInt() * 1000000 + m.groupValues[2].toInt() * 10000 + m.groupValues[3].toInt()
                 if (latestCode <= BuildConfig.VERSION_CODE || latestCode == sp.getInt("notified_code", 0)) return
@@ -109,6 +124,31 @@ class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(co
             } == true
         }
 
+        /**
+         * O agendamento periódico do Android só roda a cada 15 min. Para as mensagens chegarem mais rápido, uma sequência de tarefas
+         * de uma consulta cada (a cada ~2 min) se reagenda sozinha enquanto houver conta logada e "Notificações" ligado.
+         */
+        fun ensureChain(ctx: Context) {
+            try {
+                val wm = WorkManager.getInstance(ctx)
+                val alive = listOf("qinbly_chain_a", "qinbly_chain_b").any { name ->
+                    wm.getWorkInfosForUniqueWork(name).get().any { !it.state.isFinished }
+                }
+                if (!alive) enqueueChain(ctx, "a", 0)
+            } catch (_: Exception) { }
+        }
+
+        internal fun enqueueChain(ctx: Context, slot: String, delayMinutes: Long) {
+            try {
+                val request = androidx.work.OneTimeWorkRequestBuilder<QinblyNotifyChainWorker>()
+                    .setInitialDelay(delayMinutes, TimeUnit.MINUTES)
+                    .setInputData(androidx.work.workDataOf("slot" to slot))
+                    .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+                    .build()
+                WorkManager.getInstance(ctx).enqueueUniqueWork("qinbly_chain_$slot", androidx.work.ExistingWorkPolicy.REPLACE, request)
+            } catch (_: Exception) { }
+        }
+
         /** Liga a verificação periódica (a cada 15 min, só com internet). Chamar de novo não duplica. */
         fun schedule(context: Context) {
             try {
@@ -124,6 +164,20 @@ class QinblyNotifyWorker(context: Context, params: WorkerParameters) : Worker(co
                 )
             } catch (_: Exception) { }
         }
+    }
+}
+
+/** Uma consulta de avisos e agenda a próxima (trocando entre dois nomes para não cancelar a si mesma). Para quando não há conta ou "Notificações" está desligado. */
+class QinblyNotifyChainWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
+    override fun doWork(): ListenableWorker.Result {
+        val ctx = applicationContext
+        val prefs = ctx.getSharedPreferences("qinbly_session", Context.MODE_PRIVATE).byAccount()
+        val token = prefs.getString("token", null)
+        if (token.isNullOrBlank() || !prefs.getBoolean("setting_notifications", true)) return ListenableWorker.Result.success()
+        try { QinblyNotifyWorker.pollOnce(ctx) } catch (_: Exception) { }
+        val next = if (inputData.getString("slot") == "b") "a" else "b"
+        QinblyNotifyWorker.enqueueChain(ctx, next, 2)
+        return ListenableWorker.Result.success()
     }
 }
 

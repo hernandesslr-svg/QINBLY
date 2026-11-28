@@ -653,7 +653,32 @@ internal fun qinblyClearSocialNotifications(context: android.content.Context) {
     } catch (_: Exception) { }
 }
 
-internal fun qinblyNotify(context: android.content.Context, title: String, text: String, id: Int, kind: String = "", entityId: String = "", actor: String = "") {
+/** Baixa a foto de perfil e recorta em círculo para ser o ícone grande da notificação. Precisa rodar fora da thread principal. */
+internal fun qinblyNotificationAvatar(url: String): android.graphics.Bitmap? {
+    if (!url.startsWith("http")) return null
+    return try {
+        val connection = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).apply { connectTimeout = 6000; readTimeout = 6000 }
+        val source: android.graphics.Bitmap? = try {
+            connection.inputStream.use { android.graphics.BitmapFactory.decodeStream(it) }
+        } finally {
+            connection.disconnect()
+        }
+        if (source == null) return null
+        val size = 192
+        val side = minOf(source.width, source.height)
+        val square = android.graphics.Bitmap.createBitmap(source, (source.width - side) / 2, (source.height - side) / 2, side, side)
+        val scaled = android.graphics.Bitmap.createScaledBitmap(square, size, size, true)
+        val out = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(out)
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
+        paint.xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN)
+        canvas.drawBitmap(scaled, 0f, 0f, paint)
+        out
+    } catch (_: Exception) { null }
+}
+
+internal fun qinblyNotify(context: android.content.Context, title: String, text: String, id: Int, kind: String = "", entityId: String = "", actor: String = "", avatarUrl: String = "") {
     try {
         val manager = context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
         val soundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
@@ -679,7 +704,7 @@ internal fun qinblyNotify(context: android.content.Context, title: String, text:
             context, id, tapIntent,
             android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
         )
-        val notification = androidx.core.app.NotificationCompat.Builder(context, "qinbly_social_v2")
+        val builder = androidx.core.app.NotificationCompat.Builder(context, "qinbly_social_v2")
             .setSmallIcon(R.drawable.ic_stat_qinbly)
             .setContentTitle(title)
             .setContentText(text)
@@ -691,8 +716,9 @@ internal fun qinblyNotify(context: android.content.Context, title: String, text:
             .setDefaults(androidx.core.app.NotificationCompat.DEFAULT_ALL)
             .setSound(soundUri)
             .setOnlyAlertOnce(false)
-            .build()
-        manager.notify(id, notification)
+        // Foto de perfil de quem enviou (mensagens).
+        if (avatarUrl.isNotBlank()) qinblyNotificationAvatar(avatarUrl)?.let { builder.setLargeIcon(it) }
+        manager.notify(id, builder.build())
     } catch (_: Exception) { }
 }
 
@@ -2183,12 +2209,35 @@ private fun QinblyApp() {
         if (token.isNullOrBlank()) {
             unreadMessages = 0
         } else {
+            var inboxSeeded = false
             while (true) {
                 try {
                     val inbox = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                         QinblyApi.getInbox(token)
                     }
                     unreadMessages = inbox.sumOf { it.unreadCount }.coerceAtLeast(0)
+                    // Aviso de mensagem nova (com a foto de quem enviou), exceto se você já está na tela de mensagens.
+                    if (appPrefs.getBoolean("setting_notifications", true) && appPrefs.getBoolean("setting_notice_messages", true)) {
+                        val told = appPrefs.getStringSet("bg_notified", emptySet()).orEmpty().toMutableSet()
+                        val fresh = ArrayList<QinblyApi.InboxSummary>()
+                        for (c in inbox.filter { it.unreadCount > 0 }) {
+                            val key = "msg:" + c.username + ":" + c.createdAt
+                            if (key in told) continue
+                            told += key
+                            if (inboxSeeded && tab != 1) fresh.add(c)
+                        }
+                        if (fresh.isNotEmpty() || !inboxSeeded) {
+                            appPrefs.edit().putStringSet("bg_notified", told.toList().takeLast(200).toSet()).apply()
+                        }
+                        if (fresh.isNotEmpty()) {
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                for (c in fresh.take(3)) {
+                                    qinblyNotify(appContext, c.displayName.ifBlank { c.username }, c.body.take(80).ifBlank { "Nova mensagem" }, ("msg:" + c.username + ":" + c.createdAt).hashCode(), "message", "", c.username, c.avatarUrl)
+                                }
+                            }
+                        }
+                    }
+                    inboxSeeded = true
                 } catch (_: Exception) {
                     // Mantém o último contador válido se a rede estiver indisponível.
                 }
