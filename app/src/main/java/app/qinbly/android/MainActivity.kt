@@ -5233,27 +5233,44 @@ private fun QinblyPostCard(
     Surface(
         color = Color.Transparent,
         shape = androidx.compose.ui.graphics.RectangleShape,
-        modifier = Modifier.fillMaxWidth().then(if (isMediaCard) Modifier.padding(horizontal = 10.dp).padding(bottom = 14.dp) else Modifier)
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            Modifier.fillMaxWidth().then(if (isMediaCard) Modifier.clip(RoundedCornerShape(22.dp)).background(cardFill) else Modifier),
+            Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             QinblyPostViewAndSchedule(post, prefs)
-                        if (post.mediaUrl.isBlank() || (post.mediaType != "image" && post.mediaType != "video")) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().background(Color.Transparent).padding(horizontal = 14.dp, vertical = 7.dp)) {
-                    val avatarUrl = post.avatarUrl
-                    QinblyPostAvatar(post, onOpenProfile)
-                    Spacer(Modifier.width(10.dp))
-                    Column(Modifier.weight(1f).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }) {
-                        Row(verticalAlignment = Alignment.CenterVertically) { Text(post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name }, color = RemoteAppearance.feedTextColor, fontSize = 16.sp, fontWeight = if (nameFontStyle == "Elegante") FontWeight.Medium else FontWeight.SemiBold, fontFamily = nameFontFamily(nameFontStyle)); if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(16.dp) } }
-                        QinblyPostTimeLine(post, RemoteAppearance.feedSecondaryTextColor, onOpenProfile)
+            // Cabeçalho no alto: foto, nome com a data ao lado, a música embaixo (se tiver) e o menu na ponta.
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().background(Color.Transparent).padding(horizontal = 14.dp, vertical = 7.dp)) {
+                QinblyPostAvatar(post, onOpenProfile, size = if (isMediaCard) 40.dp else 52.dp)
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name },
+                            color = RemoteAppearance.feedTextColor, fontSize = 16.sp,
+                            fontWeight = if (nameFontStyle == "Elegante") FontWeight.Medium else FontWeight.SemiBold, fontFamily = nameFontFamily(nameFontStyle),
+                            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }
+                        )
+                        if (post.verified) { Spacer(Modifier.width(5.dp)); QinblyVerifiedBadge(16.dp) }
+                        if (post.repostedByUsername.isBlank()) {
+                            Spacer(Modifier.width(8.dp))
+                            LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor, suffix = if (post.authorCity.isNotBlank()) " · " + qinblyFullPlace(post.authorCity) else "")
+                        }
                     }
-                    QinblyCardFollow(post, prefs, onNotice)
-                    QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = null, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true })
-                    }
-                                        
+                    if (post.repostedByUsername.isNotBlank()) QinblyPostTimeLine(post, RemoteAppearance.feedSecondaryTextColor, onOpenProfile)
+                    if (post.musicUrl.isNotBlank()) QinblyPostMusicChip(post, Modifier, RemoteAppearance.feedSecondaryTextColor)
+                }
+                if (!isMediaCard) QinblyCardFollow(post, prefs, onNotice)
+                if (isMediaCard) QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = RemoteAppearance.feedTextColor, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true }, barsIcon = true, withActions = true)
+                else QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = null, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true })
             }
+            // Legenda e pessoas marcadas ficam em cima da foto/vídeo.
+            if (isMediaCard && post.caption.isNotBlank()) {
+                QinblyFeedCaption(post.caption, Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 2.dp, bottom = 8.dp))
+            }
+            if (isMediaCard) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
             if (post.mediaUrl.isNotBlank() && post.mediaType == "image") {
                 val demoGallery = remember(post.id) {
                     when (post.id) {
@@ -5386,11 +5403,6 @@ private fun QinblyPostCard(
                     }
                 }
             }
-            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video") && post.caption.isNotBlank()) {
-                QinblyFeedCaption(post.caption, Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 2.dp))
-            }
-            // Pessoas marcadas: logo embaixo do texto da legenda e antes da mídia.
-            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
             if (post.mediaType == "poll" && post.pollOptions.isNotEmpty()) {
                 Column(
                     Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
@@ -5491,38 +5503,25 @@ private fun QinblyPostCard(
                 }
             }
             if (!(post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) && !(post.mediaType == "text" && post.caption.isNotBlank() && qinblyTextBgBrush(post.textBg) != null)) QinblyTaggedUsersRow(post.taggedUsers, onOpenProfile)
-            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video") && post.repostedByUsername.isNotBlank()) {
-                // Repost: "Repostado por Fulano · Há 1 h" continua em cima do coração. A hora normal agora fica ao lado do nome.
-                Box(Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp)) {
-                    QinblyPostTimeLine(post, RemoteAppearance.feedSecondaryTextColor, onOpenProfile)
-                }
-            }
-            if (post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video")) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            if (isMediaCard) {
+                androidx.compose.runtime.CompositionLocalProvider(
+                    LocalQinblyActionIconSize provides 23.dp,
+                    LocalQinblyActionTextSize provides 13.sp,
+                    LocalQinblyActionHPad provides 4.dp
                 ) {
-                    QinblyPostAvatar(post, onOpenProfile, size = 40.dp)
-                    Spacer(Modifier.width(10.dp))
-                    Column(Modifier.weight(1f)) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        QinblyLikeButton(QinblyEngagement.isLiked(post), QinblyEngagement.likeCount(post), { QinblyEngagement.toggleLike(prefs, post, onNotice) }, QinblyTone.Feed, false)
+                        QinblyCommentButton(post.comments, { onComment(post) }, QinblyTone.Feed, false)
+                        QinblyRepostButton(QinblyEngagement.isReposted(post), QinblyEngagement.repostCount(post), { QinblyEngagement.toggleReposted(prefs, post, onNotice) }, QinblyTone.Feed, false)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                post.displayName.ifBlank { post.username }.ifBlank { QinblyBrand.Name },
-                                color = RemoteAppearance.feedTextColor, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
-                                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false).clickable { if (post.username.isNotBlank()) onOpenProfile(post.username) }
-                            )
-                            if (post.verified) { Spacer(Modifier.width(4.dp)); QinblyVerifiedBadge(14.dp) }
+                            // Setinha de enviar virada para o outro lado (espelhada), como já estava.
+                            Box(Modifier.graphicsLayer { scaleX = -1f }) { QinblyShareButton({ onShare(post) }, QinblyTone.Feed, false) }
+                            Text("Compartilhar", color = RemoteAppearance.feedTextColor, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                                modifier = Modifier.clickable { onShare(post) }.padding(end = 4.dp))
                         }
-                        if (post.repostedByUsername.isBlank()) LivePostTime(post.createdAt, RemoteAppearance.feedSecondaryTextColor, short = true)
-                        if (post.musicUrl.isNotBlank()) QinblyPostMusicChip(post, Modifier, RemoteAppearance.feedSecondaryTextColor)
+                        Spacer(Modifier.weight(1f))
+                        QinblySaveButton(QinblyEngagement.isSaved(post), { QinblyEngagement.toggleSaved(prefs, post, onNotice) }, QinblyTone.Feed, false)
                     }
-                    QinblyPostActionBar(
-                        post = post, prefs = prefs, tone = QinblyTone.Feed, onNotice = onNotice,
-                        onComment = { onComment(post) }, onShare = { onShare(post) },
-                        compact = true, showRepost = false, showSave = false
-                    )
-                    QinblyPostMenu(post, prefs, onNotice, onPostsTransform, tint = RemoteAppearance.feedTextColor, onReport = { reportingPost = true }, onBlock = { blockingAuthor = true }, onEdit = { editingCaption = true }, barsIcon = true, withActions = true)
                 }
             }
             if (post.mediaType != "poll" && !(post.mediaUrl.isNotBlank() && (post.mediaType == "image" || post.mediaType == "video"))) { // Enquetes exibem apenas votação e total de votos
@@ -5536,7 +5535,7 @@ private fun QinblyPostCard(
                 )
             }
             // Sem linha entre as publicações: só um respiro em branco (dentro do cartão, só um pouco).
-            Spacer(Modifier.height(if (isMediaCard) 4.dp else 26.dp))
+            Spacer(Modifier.height(if (isMediaCard) 16.dp else 26.dp))
         }
     }
 }
@@ -6395,57 +6394,31 @@ private fun QinblyHomeComposer(onCreateWith: (String, String) -> Unit) {
     }
 }
 
-/** Pergunta do dia e desafio da semana num cartão que desliza para o lado, no topo do Descobrir (sem saudação nem novidades). */
+/** Desafio da semana no topo do Descobrir (sem saudação nem novidades). */
 @Composable
 private fun QinblyHomeHeader(
     posts: List<QinblyApi.PostSummary>, prefs: android.content.SharedPreferences,
     onCreateWith: (String, String) -> Unit
 ) {
     val today = java.time.LocalDate.now()
-    val question = qinblyDailyQuestions[today.dayOfYear % qinblyDailyQuestions.size]
     val challenge = qinblyWeeklyChallenges[(today.dayOfYear / 7) % qinblyWeeklyChallenges.size]
     val participants = posts.filter { it.caption.contains("#" + challenge.first, ignoreCase = true) }.map { it.username.lowercase() }.distinct().size
-    val pager = androidx.compose.foundation.pager.rememberPagerState(pageCount = { 2 })
-    Column(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp)) {
-        androidx.compose.foundation.pager.HorizontalPager(
-            state = pager, modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 14.dp), pageSpacing = 16.dp
-        ) { page ->
-            if (page == 0) {
-                Column(
-                    Modifier.fillMaxWidth().height(112.dp).clip(RoundedCornerShape(16.dp)).border(1.dp, RemoteAppearance.feedDividerColor, RoundedCornerShape(16.dp))
-                        .clickable { onCreateWith("text", "#perguntadodia ") }.padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text("PERGUNTA DO DIA", color = QinblyBrand.Lavender, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.8.sp)
-                    Text(question, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, maxLines = 2,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
-                    Text("Responder com uma publicação  →", color = QiblyTheme.hint, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
-                }
-            } else {
-                Row(
-                    Modifier.fillMaxWidth().height(112.dp).clip(RoundedCornerShape(16.dp)).border(1.dp, RemoteAppearance.feedDividerColor, RoundedCornerShape(16.dp))
-                        .clickable { QinblyTagNav.tag = challenge.first }.padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(androidx.compose.material.icons.Icons.Default.PhotoCamera, contentDescription = null, tint = QinblyBrand.Lavender, modifier = Modifier.size(26.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("DESAFIO DA SEMANA", color = QinblyBrand.Lavender, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.8.sp, maxLines = 1)
-                        Text(challenge.second, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, maxLines = 2)
-                        if (participants > 0) Text(if (participants == 1) "1 participante" else "$participants participantes", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp, maxLines = 1)
-                    }
-                    Text("Participar", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
-                        modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(QinblyBrand.Lavender)
-                            .clickable { onCreateWith("camera", "#" + challenge.first + " ") }.padding(horizontal = 14.dp, vertical = 7.dp))
-                }
+    Column(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp).padding(horizontal = 14.dp)) {
+        Row(
+            Modifier.fillMaxWidth().height(76.dp).clip(RoundedCornerShape(16.dp)).border(1.dp, RemoteAppearance.feedDividerColor, RoundedCornerShape(16.dp))
+                .clickable { QinblyTagNav.tag = challenge.first }.padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(androidx.compose.material.icons.Icons.Default.PhotoCamera, contentDescription = null, tint = QinblyBrand.Lavender, modifier = Modifier.size(24.dp))
+            Column(Modifier.weight(1f)) {
+                Text("DESAFIO DA SEMANA", color = QinblyBrand.Lavender, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.8.sp, maxLines = 1)
+                Text(challenge.second, color = RemoteAppearance.feedTextColor, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                if (participants > 0) Text(if (participants == 1) "1 participante" else "$participants participantes", color = RemoteAppearance.feedSecondaryTextColor, fontSize = 12.sp, maxLines = 1)
             }
-        }
-        Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            repeat(2) { i ->
-                val on = pager.currentPage == i
-                Box(Modifier.padding(horizontal = 3.dp).height(5.dp).width(if (on) 14.dp else 5.dp).clip(CircleShape)
-                    .background(if (on) QinblyBrand.Accent else RemoteAppearance.feedDividerColor))
-            }
+            Text("Participar", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
+                modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(QinblyBrand.Lavender)
+                    .clickable { onCreateWith("camera", "#" + challenge.first + " ") }.padding(horizontal = 14.dp, vertical = 7.dp))
         }
     }
     Box(Modifier.fillMaxWidth().height(1.dp).background(RemoteAppearance.feedDividerColor.copy(alpha = 0.45f)))
